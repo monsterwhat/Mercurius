@@ -12,10 +12,10 @@
         {#include _kit/page-header title="Análisis de Márgenes de Utilidad" subtitle="Rentabilidad por departamento y artículo" /}
 
         <div class="metric-strip">
-            {#include _kit/metric label="Margen promedio" value=(averageMargin.toString() + "%") /}
-            {#include _kit/metric label="Ingresos totales" value=totalRevenue /}
-            {#include _kit/metric label="Utilidad total" value=totalProfit /}
-            {#include _kit/metric label="Registros" value=registros /}
+            {#include _kit/metric label="Margen promedio" value=fmt:porcentaje(averageMargin) /}
+            {#include _kit/metric label="Ingresos totales" value=fmt:moneda(totalRevenue) /}
+            {#include _kit/metric label="Utilidad total" value=fmt:moneda(totalProfit) /}
+            {#include _kit/metric label="Registros" value=fmt:numero(registros) /}
         </div>
         {#include _kit/filter-bar id="margenes-filtros" method="get"}
             <div class="field">
@@ -64,9 +64,10 @@
                     </select>
                 </div>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Generar Análisis</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Generar Análisis</button>
+            </div>
         {/include}
 
         <div class="buttons mt-4">
@@ -94,20 +95,20 @@
             {#fragment id=tabla}
                 {#if seccion == 'top'}
                 <div class="table-container" id="margenes-top-tabla">
-                    <table class="table is-striped is-hoverable is-fullwidth">
-                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th><th>Diferencia</th><th>Diferencia %</th></tr></thead>
+                    <table class="table is-hoverable is-fullwidth">
+                        <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" class="num">Precio Venta</th><th scope="col" class="num">Costo</th><th scope="col" class="num">Diferencia</th><th scope="col" class="num">Diferencia %</th></tr></thead>
                         <tbody>
                             {#if topArticulos == null || topArticulos.isEmpty()}
-                            <tr><td colspan="6" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                            <tr><td colspan="6" class="kit-empty-cell">Sin registros</td></tr>
                             {#else}
                             {#for a in topArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
                                 <td>{a.nombre}</td>
-                                <td class="num">₡{a.precioVenta}</td>
-                                <td class="num">₡{a.precioCosto}</td>
-                                <td class="num">₡{a.diferencia}</td>
-                                <td class="num">{a.diferenciaPct}%</td>
+                                <td class="num">{fmt:moneda(a.precioVenta)}</td>
+                                <td class="num">{fmt:moneda(a.precioCosto)}</td>
+                                <td class="num">{fmt:moneda(a.diferencia)}</td>
+                                <td class="num">{fmt:porcentaje(a.diferenciaPct)}</td>
                             </tr>
                             {/for}
                             {/if}
@@ -116,20 +117,20 @@
                 </div>
                 {#else if seccion == 'bajo'}
                 <div class="table-container" id="margenes-bajo-tabla">
-                    <table class="table is-striped is-hoverable is-fullwidth">
-                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th><th>Diferencia</th><th>Diferencia %</th></tr></thead>
+                    <table class="table is-hoverable is-fullwidth">
+                        <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" class="num">Precio Venta</th><th scope="col" class="num">Costo</th><th scope="col" class="num">Diferencia</th><th scope="col" class="num">Diferencia %</th></tr></thead>
                         <tbody>
                             {#if peoresArticulos == null || peoresArticulos.isEmpty()}
-                            <tr><td colspan="6" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                            <tr><td colspan="6" class="kit-empty-cell">Sin registros</td></tr>
                             {#else}
                             {#for a in peoresArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
                                 <td>{a.nombre}</td>
-                                <td class="num">₡{a.precioVenta}</td>
-                                <td class="num">₡{a.precioCosto}</td>
-                                <td class="num">₡{a.diferencia}</td>
-                                <td class="num">{a.diferenciaPct}%</td>
+                                <td class="num">{fmt:moneda(a.precioVenta)}</td>
+                                <td class="num">{fmt:moneda(a.precioCosto)}</td>
+                                <td class="num">{fmt:moneda(a.diferencia)}</td>
+                                <td class="num">{fmt:porcentaje(a.diferenciaPct)}</td>
                             </tr>
                             {/for}
                             {/if}
@@ -145,16 +146,19 @@
                     <tr data-row-key="{fila.grupo}">
                         <td>{fila.grupo}</td>
                         <td>{#if fila.familia??}{fila.familia}{#else}-{/if}</td>
-                        <td class="num">₡{#if fila.ventas??}{fila.ventas}{#else}0{/if}</td>
-                        <td class="num">₡{#if fila.utilidad??}{fila.utilidad}{#else}0{/if}</td>
-                        <td class="num">₡{#if fila.precioVenta??}{fila.precioVenta}{#else}0{/if}</td>
-                        <td class="num">₡{#if fila.precioCosto??}{fila.precioCosto}{#else}0{/if}</td>
-                        <td class="num">₡{#if fila.diferencia??}{fila.diferencia}{#else}0{/if}</td>
-                        <td class="num">{#if fila.diferenciaPct??}{fila.diferenciaPct}{#else}0{/if}%</td>
-                        <td class="num">{#if fila.margen??}{fila.margen}{#else}0{/if}%</td>
+                        <td class="num">{fmt:moneda(fila.ventas)}</td>
+                        <td class="num">{fmt:moneda(fila.utilidad)}</td>
+                        <td class="num">{fmt:moneda(fila.precioVenta)}</td>
+                        <td class="num">{fmt:moneda(fila.precioCosto)}</td>
+                        <td class="num">{fmt:moneda(fila.diferencia)}</td>
+                        <td class="num">{fmt:porcentaje(fila.diferenciaPct)}</td>
+                        <td class="num">{fmt:porcentaje(fila.margen)}</td>
                         <td><span class="status-chip {#if fila.etiqueta == 'Excelente'}is-success{#else if fila.etiqueta == 'Bueno'}is-info{#else if fila.etiqueta == 'Regular'}is-warning{#else}is-danger{/if}">{fila.etiqueta}</span></td>
                     </tr>
                     {/for}
+                    {#if filas.isEmpty()}
+                    <tr><td colspan="{margenesColumnas.size()}" class="kit-empty-cell">Sin márgenes para los filtros seleccionados</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
                 {#include _kit/chart-card title="Ventas por Departamento" canvasId="margenes-chart" height="300px"}
@@ -183,7 +187,8 @@
                         type: 'bar',
                         labels: data.labels || [],
                         datasets: [{ label: 'Ventas', data: data.values || [], backgroundColor: seriesOne }],
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                        // One series: the card title names it, so no legend.
+                        options: { plugins: { legend: { display: false } } }
                     });
                 }
             }

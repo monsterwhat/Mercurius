@@ -18,19 +18,23 @@
 !}
 <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
-    <div class="level mb-2">
+    <div class="level is-flex-wrap-wrap mb-2">
         <div class="level-left">
-            <h3 class="title is-5 mb-0" style="text-transform:capitalize">{#if modelo.bucket == "vencidos"}Vencidos{#else if modelo.bucket == "pagadas"}Pagadas{#else if modelo.bucket == "procesadas"}Procesadas{#else if modelo.bucket == "todas"}Todas{#else}{modelo.bucket}{/if}</h3>
+            <h3 class="title is-5 mb-0">{#if modelo.bucket == "vencidos"}Vencidos{#else if modelo.bucket == "pagadas"}Pagadas{#else if modelo.bucket == "procesadas"}Procesadas{#else if modelo.bucket == "todas"}Todas{#else}{modelo.bucket}{/if}</h3>
         </div>
-        <div class="level-right">
-            <div class="field mb-0" style="min-width:16rem">
+        <div class="level-right" style="flex:1 1 16rem;justify-content:flex-end">
+            <div class="field mb-0" style="width:100%;max-width:24rem">
+                <label class="is-sr-only" for="{modelo.id}-q">Buscar facturas</label>
                 <div class="control has-icons-left">
-                    <input class="input is-small" type="text" name="q"
+                    {! hx-preserve keeps the focused search box (and its caret)
+                       alive across the 300 ms type-ahead swaps of the wrapper. !}
+                    <input class="input is-small" type="text" id="{modelo.id}-q" name="q"
                            value="{#if q??}{q}{/if}" autocomplete="off"
                            placeholder="Buscar facturas..."
                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
                            hx-trigger="keyup changed delay:300ms"
-                           hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                           hx-target="#{modelo.id}" hx-swap="outerHTML"
+                           hx-preserve="true" hx-sync="this:replace"/>
                     <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
                 </div>
             </div>
@@ -42,51 +46,65 @@
             {#for fila in modelo.filas}
             <tr>
                 <td class="kit-code">{#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}&mdash;{/if}</td>
-                <td>{#if fila.dto.fechaEmision??}{fila.dto.fechaEmision}{#else}&mdash;{/if}</td>
+                <td>{#if fila.dto.fechaEmision??}{time:format(fila.dto.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
                 <td>{#if fila.dto.emisorNombre??}{fila.dto.emisorNombre}{#else}&mdash;{/if}</td>
-                <td class="num" style="font-weight:600">{#if fila.dto.totalComprobante??}&#8362;{fila.dto.totalComprobante}{#else}&mdash;{/if}</td>
-                <td class="num">{#if fila.dto.totalImpuesto??}&#8362;{fila.dto.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td class="num" style="font-weight:600">{fmt:moneda(fila.dto.totalComprobante)}</td>
+                <td class="num">{fmt:moneda(fila.dto.totalImpuesto)}</td>
                 <td>
-                    {#if fila.activa}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
-                    {#if fila.pagada}<span class="status-chip is-info">Pagada</span>{/if}
-                    {#if fila.procesada}<span class="status-chip is-info">Procesada</span>{/if}
-                    {#if fila.vencida}<span class="status-chip is-danger">Vencida</span>{/if}
-                    {#if fila.dto.haciendaEstado??}<span class="status-chip is-neutral">{fila.dto.haciendaEstado}</span>{/if}
+                    <div class="is-flex is-flex-wrap-wrap" style="gap:0.25rem">
+                        {#if fila.vencida}<span class="status-chip is-danger" title="Crédito no pagado dentro del plazo">Vencida</span>{/if}
+                        {#if fila.activa}<span class="status-chip is-neutral">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
+                        {#if fila.pagada}<span class="status-chip is-success">Pagada</span>{/if}
+                        {#if fila.procesada}<span class="status-chip is-info">Procesada</span>{/if}
+                        {#if fila.dto.haciendaEstado??}<span class="status-chip is-neutral">{fila.dto.haciendaEstado}</span>{/if}
+                    </div>
                 </td>
                 <td class="has-text-centered" style="white-space:nowrap">
-                    <button type="button" class="button is-small is-info" title="Ver detalles"
-                            aria-label="Ver detalles"
+                    <button type="button" class="button is-small is-outlined" title="Ver detalles"
+                            aria-label="Ver el detalle de la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             aria-haspopup="dialog"
                             hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
-                            hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
+                            hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">{#include _kit/icon name="eye" /}</button>
                     {#if !fila.notaCredito}
-                    <button type="button" class="button is-small is-warning" title="Marcar como pagada"
-                            aria-label="Marcar como pagada"
+                    <button type="button" class="button is-small is-outlined" title="Marcar como pagada"
+                            aria-label="Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             {#if fila.pagada}disabled{/if}
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/pay"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-disabled-elt="this"
                             hx-confirm="&iquest;Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}?">{#include _kit/icon name="money" /}</button>
                     {/if}
-                    <button type="button" class="button is-small is-success" title="Procesar (enviar a Hacienda)"
-                            aria-label="Procesar (enviar a Hacienda)"
+                    <button type="button" class="button is-small is-outlined" title="Procesar (enviar a Hacienda)"
+                            aria-label="Procesar y enviar a Hacienda la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             {#if fila.procesada}disabled{/if}
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/process"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-disabled-elt="this"
                             hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">{#include _kit/icon name="refresh" /}</button>
-                    <button type="button" class="button is-small is-link" title="Aceptar factura (Mensaje Receptor)"
-                            aria-label="Aceptar factura (Mensaje Receptor)"
+                    <button type="button" class="button is-small is-outlined" title="Aceptar factura (Mensaje Receptor)"
+                            aria-label="Aceptar la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if} (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/accept"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-disabled-elt="this"
                             hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">{#include _kit/icon name="check" /}</button>
-                    <button type="button" class="button is-small is-danger" title="Rechazar factura (Mensaje Receptor)"
-                            aria-label="Rechazar factura (Mensaje Receptor)"
+                    <button type="button" class="button is-small is-danger is-outlined" title="Rechazar factura (Mensaje Receptor)"
+                            aria-label="Rechazar la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if} (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/reject"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-disabled-elt="this"
                             hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">{#include _kit/icon name="close" /}</button>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron facturas con los criterios proporcionados</td></tr>
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                <p class="kit-empty">No se encontraron facturas{#if q??}{#if !q.isEmpty()} para &laquo;{q}&raquo;{/if}{/if} en esta vista.</p>
+                {#if q??}{#if !q.isEmpty()}
+                <a class="button is-small mt-2"
+                   href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar b&uacute;squeda</a>
+                {/if}{/if}
+            </td></tr>
             {/for}
         {/rows}
     {/include}

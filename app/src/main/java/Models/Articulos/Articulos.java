@@ -141,7 +141,7 @@ public class Articulos implements Serializable {
 
     public BigDecimal getLastPrecioArticulo() {
         ArticuloPrecio lastPrecio = getLastPrecio();
-        return lastPrecio.getPrecioFinal();
+        return lastPrecio != null ? lastPrecio.getPrecioFinal() : null;
     }
 
     public BigDecimal getPrecioFinalBetweenDates(Date startDate, Date endDate) {

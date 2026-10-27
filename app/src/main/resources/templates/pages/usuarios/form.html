@@ -4,16 +4,21 @@
   the form-urlencoded POST/PUT twins on validation failure (ui-kit.md
   Pattern A: fragment redisplay + out-of-band toast).
 
-  Field labels are verbatim ports of CreateUsersDialog.xhtml /
+  Field names are verbatim ports of CreateUsersDialog.xhtml /
   EditUsersDialog.xhtml ("Nombre de usuario:", "Contraseña:", "Permisos:").
+  The visible labels drop the trailing colon and the permisos checkboxes
+  carry a one-line description of what each module grants.
   The permisos checkboxes reproduce UsersController's
   Arrays.toString(selectedPuestos) groupName storage format ("[a, b]"),
   which Services.auth.UserRoleMapper parses back into role tokens.
 
-  In editar mode the form posts to the dedicated permisos endpoint
-  PUT /api/app/users/{id}/permisos, which updates ONLY groupName (never
-  username/email/status/password); the checkboxes are pre-checked from the
-  stored groupName using UserRoleMapper's case-sensitive substring semantics.
+  EDIT MODE IS TWO FORMS, ON PURPOSE
+  ----------------------------------
+  PUT /{id}/permisos updates ONLY groupName and PUT /{id} updates ONLY
+  username/email. The old single form posted username+email to the permisos
+  endpoint, so edits to those two fields were silently discarded. The dialog
+  now renders one form per endpoint, each with its own submit, so nothing a
+  user types is thrown away.
 
   Model:
     modo           String - "crear" | "editar"
@@ -30,88 +35,203 @@
     toastMessage   String - OOB toast text (nullable)
 !}
 <div id="forma-usuario">
-    {#if modo == 'editar' && usuario??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}/permisos"
-          hx-target="#forma-usuario" hx-swap="outerHTML">
-    {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/users"
-          hx-target="#forma-usuario" hx-swap="outerHTML">
+    {#if errorGeneral??}
+    <p class="help is-danger mb-4" role="alert">{errorGeneral}</p>
     {/if}
+
+    {#if modo == 'editar' && usuario??}
+    <p class="help mercurius-text-muted mb-4">
+        Los datos de la cuenta y los permisos se guardan por separado.
+    </p>
+
+    {! ── Cuenta: PUT /{id} (username + email) ────────────────────────── !}
+    <form class="mb-5" hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}"
+          hx-target="#forma-usuario" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
+          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); }">
+        <h2 class="is-size-6 has-text-weight-semibold mb-3">Datos de la cuenta</h2>
+        <p class="help mercurius-text-muted mb-4">
+            Los campos marcados con <span class="has-text-danger" aria-hidden="true">*</span><span class="is-sr-only">asterisco</span>
+            son obligatorios.
+        </p>
         <div class="field">
-            <label class="label" for="usuario-username">Nombre de usuario:</label>
+            <label class="label" for="usuario-username">Nombre de usuario
+                <span class="has-text-danger" aria-hidden="true">*</span></label>
             <div class="control">
                 <input class="input {#if errorUsuario??}is-danger{/if}" id="usuario-username"
-                       name="username" required="required" autocomplete="off"
+                       name="username" required="required" autocomplete="username" maxlength="255"
+                       {#if errorUsuario??}aria-invalid="true" aria-describedby="usuario-username-error"{/if}
                        value="{#if usuario??}{usuario.username}{/if}"/>
             </div>
-            {#if errorUsuario??}<p class="help is-danger">{errorUsuario}</p>{/if}
+            {#if errorUsuario??}<p class="help is-danger" id="usuario-username-error" role="alert">{errorUsuario}</p>{/if}
         </div>
-        {#if modo == 'editar' && usuario??}
         <div class="field">
-            <label class="label" for="usuario-email">Correo:</label>
+            <label class="label" for="usuario-email">Correo electrónico</label>
             <div class="control">
-                <input class="input" type="email" id="usuario-email" name="email" autocomplete="off"
+                <input class="input" type="email" id="usuario-email" name="email" autocomplete="email"
+                       maxlength="255" placeholder="usuario@ejemplo.com"
                        value="{#if usuario.email??}{usuario.email}{/if}"/>
             </div>
+            <p class="help mercurius-text-muted">Opcional. Se usa para avisos del sistema.</p>
         </div>
         <div class="field">
-            <label class="label">Permisos:</label>
+            <button class="button" type="submit">Guardar datos de la cuenta</button>
+        </div>
+    </form>
+
+    <hr/>
+
+    {! ── Permisos: PUT /{id}/permisos (groupName only) ────────────────── !}
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}/permisos"
+          hx-target="#forma-usuario" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
+          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); }">
+        <h2 class="is-size-6 has-text-weight-semibold mb-1">Permisos</h2>
+        <p class="help mercurius-text-muted mb-3">
+            Marque al menos un módulo. El permiso Administrativo incluye todos los demás.
+        </p>
+        <div class="field" role="group" aria-labelledby="permisos-label"
+             {#if errorPermisos??}aria-describedby="permisos-error"{/if}>
+            <span class="label" id="permisos-label">Módulos permitidos</span>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="admin"
+                       {#if usuario.groupName?? && usuario.groupName.contains('admin')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Administrativo</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Acceso a todos los módulos, incluida la administración de usuarios.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="facturacion"
+                       {#if usuario.groupName?? && usuario.groupName.contains('facturacion')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Facturación</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Facturas, recibos y punto de venta.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="inventario"
+                       {#if usuario.groupName?? && usuario.groupName.contains('inventario')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Inventarios</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Artículos, inventario y compras.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="usuario"
+                       {#if usuario.groupName?? && usuario.groupName.contains('usuario')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Usuarios</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Cuentas de usuario del sistema.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="tributacion"
+                       {#if usuario.groupName?? && usuario.groupName.contains('tributacion')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Tributación</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Comprobantes electrónicos y envíos a Hacienda.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="registro"
+                       {#if usuario.groupName?? && usuario.groupName.contains('registro')}checked="checked"{/if}/>
+                <span class="has-text-weight-medium">Registros</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Bitácoras y registros de la aplicación.</span>
+            </label>
+            {#if errorPermisos??}<p class="help is-danger" id="permisos-error" role="alert">{errorPermisos}</p>{/if}
+        </div>
+        <div class="field">
+            <button class="button is-primary" type="submit">Guardar permisos</button>
+        </div>
+    </form>
+    {#else}
+    {! ── Crear: POST /api/app/users ───────────────────────────────────── !}
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/users"
+          hx-target="#forma-usuario" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
+          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); }">
+        <p class="help mercurius-text-muted mb-4">
+            Los campos marcados con <span class="has-text-danger" aria-hidden="true">*</span><span class="is-sr-only">asterisco</span>
+            son obligatorios.
+        </p>
+
+        <h2 class="is-size-6 has-text-weight-semibold mb-3">Datos de la cuenta</h2>
+        <div class="field">
+            <label class="label" for="usuario-username">Nombre de usuario
+                <span class="has-text-danger" aria-hidden="true">*</span></label>
             <div class="control">
-                <label class="checkbox mr-2">
-                    <input type="checkbox" name="groupName" value="admin"
-                           {#if usuario.groupName?? && usuario.groupName.contains('admin')}checked="checked"{/if}/>
-                    Administrativo
-                </label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="facturacion"
-                           {#if usuario.groupName?? && usuario.groupName.contains('facturacion')}checked="checked"{/if}/> Facturacion</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="inventario"
-                           {#if usuario.groupName?? && usuario.groupName.contains('inventario')}checked="checked"{/if}/> Inventarios</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="usuario"
-                           {#if usuario.groupName?? && usuario.groupName.contains('usuario')}checked="checked"{/if}/> Usuarios</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="tributacion"
-                           {#if usuario.groupName?? && usuario.groupName.contains('tributacion')}checked="checked"{/if}/> Tributacion</label>
-                <label class="checkbox"><input type="checkbox" name="groupName" value="registro"
-                           {#if usuario.groupName?? && usuario.groupName.contains('registro')}checked="checked"{/if}/> Registros</label>
+                <input class="input {#if errorUsuario??}is-danger{/if}" id="usuario-username"
+                       name="username" required="required" autocomplete="username" maxlength="255"
+                       {#if errorUsuario??}aria-invalid="true" aria-describedby="usuario-username-error"{/if}/>
             </div>
-            {#if errorPermisos??}<p class="help is-danger">{errorPermisos}</p>{/if}
+            {#if errorUsuario??}<p class="help is-danger" id="usuario-username-error" role="alert">{errorUsuario}</p>{/if}
         </div>
-        {#else}
         <div class="field">
-            <label class="label" for="usuario-password">Contraseña:</label>
+            <label class="label" for="usuario-email">Correo electrónico</label>
+            <div class="control">
+                <input class="input" type="email" id="usuario-email" name="email" autocomplete="email"
+                       maxlength="255" placeholder="usuario@ejemplo.com"/>
+            </div>
+            <p class="help mercurius-text-muted">Opcional. Se usa para avisos del sistema.</p>
+        </div>
+        <div class="field">
+            <label class="label" for="usuario-password">Contraseña
+                <span class="has-text-danger" aria-hidden="true">*</span></label>
             <div class="control">
                 <input class="input {#if errorPassword??}is-danger{/if}" type="password" id="usuario-password"
-                       name="password" required="required" autocomplete="new-password"/>
+                       name="password" required="required" autocomplete="new-password"
+                       aria-describedby="usuario-password-help"
+                       {#if errorPassword??}aria-invalid="true"{/if}/>
             </div>
-            {#if errorPassword??}<p class="help is-danger">{errorPassword}</p>{/if}
+            {#if errorPassword??}<p class="help is-danger" role="alert">{errorPassword}</p>{/if}
+            <p class="help mercurius-text-muted" id="usuario-password-help">
+                Se guarda cifrada; después nadie puede consultarla, solo cambiarla.
+            </p>
         </div>
-        <div class="field">
-            <label class="label">Permisos:</label>
-            <div class="control">
-                <label class="checkbox mr-2">
-                    <input type="checkbox" name="groupName" value="admin"/>
-                    Administrativo
-                </label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="facturacion"/> Facturacion</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="inventario"/> Inventarios</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="usuario"/> Usuarios</label>
-                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="tributacion"/> Tributacion</label>
-                <label class="checkbox"><input type="checkbox" name="groupName" value="registro"/> Registros</label>
-            </div>
-            {#if errorPermisos??}<p class="help is-danger">{errorPermisos}</p>{/if}
+
+        <h2 class="is-size-6 has-text-weight-semibold mb-1 mt-5">Permisos</h2>
+        <p class="help mercurius-text-muted mb-3">
+            Marque al menos un módulo. El permiso Administrativo incluye todos los demás.
+        </p>
+        <div class="field" role="group" aria-labelledby="permisos-label"
+             {#if errorPermisos??}aria-describedby="permisos-error"{/if}>
+            <span class="label" id="permisos-label">Módulos permitidos</span>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="admin"/>
+                <span class="has-text-weight-medium">Administrativo</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Acceso a todos los módulos, incluida la administración de usuarios.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="facturacion"/>
+                <span class="has-text-weight-medium">Facturación</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Facturas, recibos y punto de venta.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="inventario"/>
+                <span class="has-text-weight-medium">Inventarios</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Artículos, inventario y compras.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="usuario"/>
+                <span class="has-text-weight-medium">Usuarios</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Cuentas de usuario del sistema.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="tributacion"/>
+                <span class="has-text-weight-medium">Tributación</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Comprobantes electrónicos y envíos a Hacienda.</span>
+            </label>
+            <label class="checkbox is-block mb-3">
+                <input type="checkbox" name="groupName" value="registro"/>
+                <span class="has-text-weight-medium">Registros</span>
+                <span class="is-block is-size-7 mercurius-text-muted">Bitácoras y registros de la aplicación.</span>
+            </label>
+            {#if errorPermisos??}<p class="help is-danger" id="permisos-error" role="alert">{errorPermisos}</p>{/if}
         </div>
-        {/if}
-        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
-        <div class="field is-grouped is-grouped-right">
+        <div class="field is-grouped is-grouped-right is-grouped-multiline mt-5">
             <div class="control">
-                <button class="button is-primary" type="submit">
-                    {#if modo == 'editar'}Actualizar datos{#else}Crear Usuario{/if}
-                </button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button is-primary" type="submit">Crear usuario</button>
             </div>
         </div>
     </form>
+    {/if}
 </div>
 
 {#if toastMessage??}

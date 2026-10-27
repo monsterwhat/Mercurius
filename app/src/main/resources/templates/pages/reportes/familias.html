@@ -24,7 +24,6 @@
                     <div class="control">
                         <button class="button is-primary" type="submit">Cargar Reportes</button>
                     </div>
-                </div>
                     {/include}
 
         {! One family, four cuts: Por cajero, Por fecha, Por departamento
@@ -52,11 +51,18 @@
             var labels = [{#for l in chartLabels}'{l}',{/for}];
             var values = [{#for v in chartValues}{v},{/for}];
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: the series colour comes from
+                // --mercurius-chart-series-1 instead of a second hard-coded
+                // green that ignored the colour scheme.
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-familias', {
                     type: 'bar',
                     labels: labels,
-                    datasets: [{ label: 'Ventas', data: values, backgroundColor: '#48c78e' }],
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    datasets: [{ label: 'Ventas', data: values, backgroundColor: seriesOne }],
+                    // One series: the card title names it, so no legend.
+                    options: { plugins: { legend: { display: false } } }
                 });
             }
         })();

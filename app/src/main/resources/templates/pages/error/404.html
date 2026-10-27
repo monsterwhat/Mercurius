@@ -4,23 +4,33 @@
 
   Model:
     ruta String - the requested path that matched nothing (nullable)
+
+  This page used to be a bare "404" title over two buttons, with the layout
+  supplied by three inline styles. It now uses the shared .error-page state:
+  the big number is decorative (aria-hidden), the h1 is the screen's name, and
+  the two exits are real links. The old secondary exit was
+  `javascript:history.back()`, which a CSP can block and which does nothing in
+  a fresh tab; it is now a real link to the app start.
 !}
 {#include layout}
     {#title}Página no encontrada | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem">
-        <div style="text-align:center">
-            <p class="title is-1" style="margin-bottom:0.5rem">404</p>
-            <h1 class="title is-4 has-text-centered">Página no encontrada</h1>
-            {#if ruta??}
-            <p class="subtitle is-6 has-text-centered mercurius-text-muted" style="word-break:break-all">{ruta}</p>
-            {/if}
-        </div>
-
+    <section class="error-page">
+        <p class="error-page-code" aria-hidden="true">404</p>
+        <h1 class="title is-4">Página no encontrada</h1>
+        <p class="error-page-text">
+            No encontramos esta dirección. Puede estar mal escrita o la página
+            se movió de lugar.
+        </p>
+        {#if ruta??}
+        <p class="error-page-path mercurius-text-muted">
+            <span class="kit-code">{ruta}</span>
+        </p>
+        {/if}
         <div class="buttons is-centered">
             <a class="button is-primary" href="{config:['quarkus.http.root-path']}/app/dashboard">Ir al dashboard</a>
-            <a class="button" href="javascript:history.back()">Volver atrás</a>
+            <a class="button" href="{config:['quarkus.http.root-path']}/app">Ir al inicio</a>
         </div>
     </section>
     {/body}

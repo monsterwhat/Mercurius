@@ -37,9 +37,10 @@
                     <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
                 </div>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Cargar Datos</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Cargar Datos</button>
+            </div>
         {/include}
 
 
@@ -80,13 +81,15 @@
                 {#include _kit/chart-card title="Ventas Diarias del Período" subtitle=periodoTexto canvasId="grafica-tendencias" height="360px"}
 
             {#chartBody}
-                <canvas id="grafica-tendencias" width="900" height="320"
+                <canvas id="grafica-tendencias" role="img"
+                        aria-label="Ventas diarias en colones del período seleccionado"
                         data-root="{config:['quarkus.http.root-path']}"
                         data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
                     Su navegador no soporta canvas.
                 </canvas>
             {/chartBody}
         {/include}
+        <p class="help mt-2" id="grafica-tendencias-estado" role="status" aria-live="polite">Cargando datos…</p>
 
 <script>
 (function () {
@@ -104,14 +107,24 @@
         }
     }
     fetch(url, { credentials: 'same-origin' })
-        .then(function (respuesta) { return respuesta.json(); })
+        .then(function (respuesta) {
+            if (!respuesta.ok) {
+                throw new Error('HTTP ' + respuesta.status);
+            }
+            return respuesta.json();
+        })
         .then(function (datos) {
             var etiquetas = [];
             var valores = [];
-            datos.forEach(function (punto) {
+            (datos || []).forEach(function (punto) {
                 etiquetas.push(punto.date);
                 valores.push(Number(punto.totalSales));
             });
+            var estado = document.getElementById('grafica-tendencias-estado');
+            if (estado) {
+                estado.textContent = etiquetas.length === 0
+                    ? 'Sin ventas registradas en el período seleccionado.' : '';
+            }
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
                 // One hue for the data: --mercurius-chart-series-1, resolved
                 // through resolveColour() because a canvas cannot paint var().
@@ -121,12 +134,19 @@
                 window.MercuriusCharts.create('grafica-tendencias', {
                     type: 'line',
                     labels: etiquetas,
-                    datasets: [{ label: 'Ventas diarias', data: valores, borderColor: seriesOne, tension: 0.2, fill: false }],
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    datasets: [{ label: 'Ventas diarias', data: valores, borderColor: seriesOne, tension: 0, fill: false }],
+                    // One series: the card title names it, so no legend.
+                    options: { plugins: { legend: { display: false } } }
                 });
             }
         })
-        .catch(function () { /* sin datos */ });
+        .catch(function (error) {
+            console.warn('[reportes/tendencias] No se pudo cargar la serie diaria.', error);
+            var estado = document.getElementById('grafica-tendencias-estado');
+            if (estado) {
+                estado.textContent = 'No se pudieron cargar los datos. Vuelva a intentarlo.';
+            }
+        });
 })();
 </script>
     {/body}

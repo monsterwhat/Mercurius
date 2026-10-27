@@ -32,30 +32,53 @@
     {#content}
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{q}" autocomplete="off"
-                   placeholder="Buscar códigos CAByS..."
+            <input class="input" type="search" id="buscar-cabys" name="q" value="{q}" autocomplete="off"
+                   placeholder="Buscar códigos CAByS…"
+                   aria-label="Buscar códigos CAByS por código o descripción"
+                   enterkeyhint="search" spellcheck="false"
                    hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-sync="this:replace"
+                   hx-target="#resultados-{modelo.id}" hx-swap="outerHTML"
+                   hx-select="#resultados-{modelo.id}"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {! Search input outside the swapped region: swapping the input's own wrapper
+       replaced the focused field mid-word (see tabla-articulos.html). The endpoint
+       still returns the whole fragment; hx-select takes only the results. !}
+    <div id="resultados-{modelo.id}">
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for cabys in modelo.filas}
             <tr>
                 <td class="kit-code">{cabys.codigo}</td>
-                <td>{#if cabys.categorias??}{cabys.categorias}{#else}&mdash;{/if}</td>
-                <td>{#if cabys.descripcion??}{cabys.descripcion}{#else}&mdash;{/if}</td>
-                <td class="num">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
-                <td class="has-text-centered">{#if cabys.estado??}{cabys.estado}{#else}&mdash;{/if}</td>
+                <td>{#if cabys.categorias??}<span class="table-clamp" title="{cabys.categorias}">{cabys.categorias}</span>{#else}&mdash;{/if}</td>
+                <td>{#if cabys.descripcion??}<span class="table-clamp" title="{cabys.descripcion}">{cabys.descripcion}</span>{#else}&mdash;{/if}</td>
+                <td class="num">{#if cabys.impuesto?? && cabys.impuesto != ''}{fmt:porcentaje(cabys.impuesto)}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">{#if cabys.estado?? && cabys.estado != ''}{cabys.estado}{#else}&mdash;{/if}</td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron códigos CAByS</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    {#if q??}
+                    <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
+                    <p class="help">Busque por código o por una palabra de la descripción. Si el código no existe, use «Importar/Actualizar Catálogo».</p>
+                    <button type="button" class="button is-small mt-2"
+                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-on::before-request="document.getElementById('buscar-cabys').focus()"
+                            hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>
+                    {#else}
+                    <p class="has-text-weight-semibold">El catálogo CAByS está vacío</p>
+                    <p class="help">Importe el catálogo desde Hacienda para poder asignar códigos a los artículos.</p>
+                    {/if}
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}
+    </div>
 
     {#if toastMessage??}
     <div hx-swap-oob="beforeend:#toast-container">

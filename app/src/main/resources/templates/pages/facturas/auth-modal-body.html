@@ -16,6 +16,7 @@
     <div class="notification is-success" role="status" style="padding:0.5rem 0.75rem">
         <strong>Autorización registrada.</strong> Ya puede facturar los precios personalizados.
     </div>
+    <button type="button" class="button is-small is-primary" @click="open = false">Volver al carrito</button>
     {#else}
     {#if auth.errorGeneral??}
     <div class="notification is-danger" role="alert" style="padding:0.5rem 0.75rem">{auth.errorGeneral}</div>
@@ -23,29 +24,43 @@
     <p class="block">El carrito contiene precios personalizados. Un supervisor debe autorizar
         la venta con sus credenciales.</p>
     {/if}
-    <form id="forma-autorizacion">
+    {! One form, so Enter in the username field submits it like the button:
+       hx-post lived on the button and the keyboard had no way through. !}
+    <form id="forma-autorizacion"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/override-authorize-form"
+          hx-target="#modal-autorizacion-body" hx-swap="outerHTML"
+          hx-disabled-elt="find button">
         <div class="field">
             <label class="label is-small" for="auth-user">Supervisor</label>
             <div class="control has-icons-left">
                 <input class="input" type="text" id="auth-user" name="username"
-                       value="" autocomplete="off" autofocus/>
-                <span class="icon is-small is-left">&#128100;</span>
+                       value="" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus/>
+                <span class="icon is-small is-left">{#include _kit/icon name="user" /}</span>
             </div>
         </div>
         <div class="field">
             <label class="label is-small" for="auth-pass">Contraseña</label>
             <div class="control has-icons-left">
-                <input class="input" type="password" id="auth-pass" name="password" value=""/>
-                <span class="icon is-small is-left">&#128274;</span>
+                <input class="input" type="password" id="auth-pass" name="password" value=""
+                       autocomplete="off"/>
+                <span class="icon is-small is-left">{#include _kit/icon name="lock" /}</span>
             </div>
         </div>
         <div class="field">
-            <button type="button" class="button is-warning is-fullwidth"
-                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/override-authorize-form"
-                    hx-include="#forma-autorizacion"
-                    hx-target="#modal-autorizacion-body" hx-swap="outerHTML">Autorizar</button>
+            <button type="submit" class="button is-primary is-fullwidth">Autorizar</button>
         </div>
     </form>
+    {! The fragment is re-rendered on failure, which drops focus: send it back to
+       the username field. Hidden on first paint (offsetParent null), so the page
+       load does not steal focus into a closed dialog. !}
+    <script>
+        (function () {
+            var usuario = document.getElementById('auth-user');
+            if (usuario && usuario.offsetParent !== null) {
+                usuario.focus();
+            }
+        })();
+    </script>
     {/if}
 
     {#if auth.panelHtml??}

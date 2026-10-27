@@ -38,15 +38,15 @@
 !}
 {@java.lang.String id}
 {@java.lang.String title}
-{@java.lang.String triggerLabel}
-{@java.lang.String triggerClass}
 {@java.lang.String bodyUrl}
-<div class="kit-modal-root" style="display:inline-block" x-data="{ open:false }">
+<div class="kit-modal-root" x-data="{ open:false }"
+     x-init="$watch('open', value => value ? window.kitModalOpened($el) : window.kitModalClosed($el))">
 
     {#insert trigger}
     <button type="button"
             class="button {#if triggerClass??}{triggerClass}{#else}is-link{/if}"
             aria-haspopup="dialog"
+            aria-controls="{id}"
             @click="open = true; $nextTick(() => $refs.card.focus())"
             hx-get="{config:['quarkus.http.root-path']}{bodyUrl}"
             hx-target="#{id}-body"
@@ -79,17 +79,26 @@
 {!
   Minimal focus trap shared by all kit dialogs (defined once, reused by
   _kit/confirm.html). Braces after "{" keep whitespace for Qute.
+
+  Two defects the first version had: it only wrapped between the first and
+  last descendant, so Shift+Tab from the dialog card (the element that takes
+  focus when the dialog opens) walked back into the page behind it; and it
+  counted hidden controls, so a Tab could land on an invisible element. The
+  container itself is now part of the cycle and only rendered controls count.
 !}
 <script>
     if (!window.kitTrapTab) {
         window.kitTrapTab = function (event, container) {
-            var focusables = container.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            var all = container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+            var focusables = Array.prototype.filter.call(all, function (el) {
+                return el.getClientRects().length > 0;
+            });
             if (focusables.length === 0) {
                 return;
             }
             var first = focusables[0];
             var last = focusables[focusables.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
+            if (event.shiftKey && (document.activeElement === first || document.activeElement === container)) {
                 event.preventDefault();
                 last.focus();
             } else if (!event.shiftKey && document.activeElement === last) {
@@ -97,5 +106,85 @@
                 first.focus();
             }
         };
+    }
+
+    {!
+      Focus return and scroll lock. The dialog used to close with focus
+      wherever it happened to be, so a keyboard user was dropped at the top of
+      the document after every save; and the page behind the overlay kept
+      scrolling under the backdrop.
+    !}
+    if (!window.kitScrollLock) {
+        window.kitScrollDepth = 0;
+        window.kitScrollLock = function (lock) {
+            window.kitScrollDepth = Math.max(0, window.kitScrollDepth + (lock ? 1 : -1));
+            document.body.classList.toggle('kit-scroll-locked', window.kitScrollDepth > 0);
+        };
+    }
+
+    if (!window.kitModalOpened) {
+        window.kitModalOpened = function (root) {
+            if (window.kitSyncModalFooter) {
+                window.kitSyncModalFooter(root);
+            }
+            // A row button (data-kit-open) focuses itself on click in Chrome,
+            // but Safari leaves activeElement on <body>. Fall back to the
+            // opener kitBridge remembered, so focus is not returned to the
+            // whole document.
+            var active = document.activeElement;
+            if (!active || active === document.body || active === document.documentElement) {
+                active = window.mercuriusLastOpener || null;
+            }
+            root.__kitReturnFocus = active;
+            window.kitScrollLock(true);
+        };
+        window.kitModalClosed = function (root) {
+            window.kitScrollLock(false);
+            // Drop the loaded fragment on close. Two dialogs on one page often
+            // share the same body URL (crear/editar); leaving the old body in
+            // the closed dialog duplicated every id inside it, so a later
+            // hx-target could resolve to the wrong dialog. The next open
+            // re-fetches the body from the server.
+            var body = root.querySelector('.modal-card-body');
+            if (body) {
+                body.innerHTML = '';
+            }
+            var target = root.__kitReturnFocus;
+            root.__kitReturnFocus = null;
+            if (target && target.isConnected && typeof target.focus === 'function') {
+                target.focus({ preventScroll: true });
+            }
+        };
+    }
+
+    {!
+      When the swapped body contains its own form action row, the generic
+      "Cerrar" footer is a second action row: it duplicates the form's Cancel
+      control and, on a phone, takes the space the form's sticky Save button
+      needs. Hide the generic footer only when the body actually owns actions;
+      dialogs whose body is read-only keep the footer.
+    !}
+    if (!window.kitSyncModalFooter) {
+        window.kitSyncModalFooter = function (root) {
+            if (!root) {
+                return;
+            }
+            var body = root.querySelector('.modal-card-body');
+            var foot = root.querySelector('.modal-card-foot');
+            if (!body || !foot) {
+                return;
+            }
+            foot.hidden = !!body.querySelector(
+                'form button:not([type="button"]):not([type="reset"]), [data-kit-modal-actions], .kit-form-actions'
+            );
+        };
+        var syncFooterAfterSwap = function (evt) {
+            var target = evt.detail.target;
+            if (target && target.classList && target.classList.contains('modal-card-body')) {
+                window.kitSyncModalFooter(target.closest('.modal-card'));
+            }
+        };
+        document.body.addEventListener('htmx:afterSwap', syncFooterAfterSwap);
+        document.body.addEventListener('htmx:afterSettle', syncFooterAfterSwap);
     }
 </script>

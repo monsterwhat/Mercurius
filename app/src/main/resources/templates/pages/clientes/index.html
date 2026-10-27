@@ -33,10 +33,10 @@
     page, BELOW the table it creates: the operator had to scroll past the
     whole board to reach it.
   - The three counts are _kit/metric cards with an href (they are FILTERS,
-    not tabs). NOTE: their href is a quoted include parameter, so the
-    {config:['quarkus.http.root-path']} inside it is literal text, not an
-    expression - the filter links do not resolve the deployment root. The
-    migration contract forbids changing an href, so it is left as it is.
+    not tabs). _kit/metric prepends the deployment root itself, so these
+    hrefs are context-relative and correct as written. The board endpoint is
+    the same one the navbar uses: without HX-Request it renders the full page,
+    with it only the table fragment, so a plain click still lands on the board.
 !}
 {#include layout}
     {#title}Gestión de Clientes | Mercurius{/title}

@@ -100,47 +100,58 @@
     {#body}
 <div id="pagina-ajustes">
 {#fragment contenido}
-    {#if modo != 'backups'}
+    {! The screen's name exists in BOTH modes: backups mode used to render no
+       <h1> at all, which left the page without a document outline. !}
+    {#if modo == 'backups'}
+    {#include _kit/page-header title="Respaldos de base de datos"
+         subtitle="Copias de seguridad programadas y bajo demanda" /}
+    {#else}
     {#include _kit/page-header title="Ajustes de la Aplicación"
-         subtitle="Perfil, notificaciones, loyalty, umbrales de stock y respaldos" /}
+         subtitle="Perfil, notificaciones, lealtad, umbrales de stock y respaldos" /}
     {/if}
 
     {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
     {#if modo != 'backups'}
     {! ── Legacy p:steps replacement: Alpine-driven wizard (client-side only) ── !}
-    <div id="asistente-aplicacion" class="box mb-5" x-data="{ paso: 0 }">
-        <p class="title is-5">Asistente Inicial</p>
+    <section id="asistente-aplicacion" class="box mb-5" x-data="{ paso: 0 }"
+             aria-labelledby="asistente-titulo">
+        <h2 class="title is-5" id="asistente-titulo">Asistente inicial</h2>
         <p class="subtitle is-6 mercurius-text-muted">
             Misma secuencia del asistente legacy: Perfil, Logo, Correo,
-            Tributacion y Confirmacion. La navegación es local; el guardado
+            Tributación y Confirmación. La navegación es local; el guardado
             final usa el mismo endpoint de ajustes.
         </p>
 
-        <div class="buttons">
+        <div class="buttons" role="group" aria-label="Pasos del asistente">
             <button class="button" type="button" @click="paso = 0"
+                    :aria-pressed="paso === 0"
                     :class="{ 'is-primary': paso === 0 }">1. Perfil</button>
             <button class="button" type="button" @click="paso = 1"
+                    :aria-pressed="paso === 1"
                     :class="{ 'is-primary': paso === 1 }">2. Logo</button>
             <button class="button" type="button" @click="paso = 2"
+                    :aria-pressed="paso === 2"
                     :class="{ 'is-primary': paso === 2 }">3. Correo</button>
             <button class="button" type="button" @click="paso = 3"
-                    :class="{ 'is-primary': paso === 3 }">4. Tributacion</button>
+                    :aria-pressed="paso === 3"
+                    :class="{ 'is-primary': paso === 3 }">4. Tributación</button>
             <button class="button" type="button" @click="paso = 4"
-                    :class="{ 'is-primary': paso === 4 }">5. Confirmacion</button>
+                    :aria-pressed="paso === 4"
+                    :class="{ 'is-primary': paso === 4 }">5. Confirmación</button>
         </div>
 
-        <div x-show="paso === 0">
-            <p class="heading">Nombre del perfil</p>
+        <div x-show="paso === 0" role="region" aria-label="Paso 1: Perfil">
+            <p class="is-size-7 mercurius-text-muted">Nombre del perfil</p>
             <p class="title is-4">{settings.nombrePerfil ?: '—'}</p>
-            <p class="heading">Estado del perfil</p>
-            <span class="status-chip {#if settings.estatus}is-success{#else}is-danger{/if}">
+            <p class="is-size-7 mercurius-text-muted">Estado del perfil</p>
+            <span class="status-chip {#if settings.estatus}is-success{#else}is-neutral{/if}">
                 {#if settings.estatus}Activo{#else}Inactivo{/if}</span>
-            <p class="heading">Progreso del asistente</p>
+            <p class="is-size-7 mercurius-text-muted">Progreso del asistente</p>
             <p>Paso {settings.completedSteps} de 5</p>
         </div>
 
-        <div x-show="paso === 1" style="display: none;">
-            <p class="heading">Logo configurado</p>
+        <div x-show="paso === 1" style="display: none;" role="region" aria-label="Paso 2: Logo">
+            <p class="is-size-7 mercurius-text-muted">Logo configurado</p>
             <span class="status-chip {#if settings.logoMimeType??}is-success{#else}is-warning{/if}">
                 {#if settings.logoMimeType??}Sí ({settings.logoMimeType}){#else}Sin logo{/if}</span>
             <p class="help mercurius-text-muted">
@@ -149,10 +160,10 @@
             </p>
         </div>
 
-        <div x-show="paso === 2" style="display: none;">
-            <p class="heading">Correo electrónico principal</p>
+        <div x-show="paso === 2" style="display: none;" role="region" aria-label="Paso 3: Correo">
+            <p class="is-size-7 mercurius-text-muted">Correo electrónico principal</p>
             <p>{settings.correoElectronico ?: '—'}</p>
-            <p class="heading">Notificaciones de rechazos</p>
+            <p class="is-size-7 mercurius-text-muted">Notificaciones de rechazos</p>
             <p>{#if settings.notificarRechazos}Activadas{#else}Desactivadas{/if}</p>
             <p class="help mercurius-text-muted">
                 Por seguridad, las credenciales del correo no se muestran ni se
@@ -160,37 +171,37 @@
             </p>
         </div>
 
-        <div x-show="paso === 3" style="display: none;">
+        <div x-show="paso === 3" style="display: none;" role="region" aria-label="Paso 4: Tributación">
             <div class="columns is-multiline">
                 <div class="column is-half">
-                    <p class="heading">Identificación</p>
+                    <p class="is-size-7 mercurius-text-muted">Identificación</p>
                     <p>{settings.identificacion ?: '—'}
                         {#if settings.tipoIdentificacion??}<small>({settings.tipoIdentificacion})</small>{/if}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Nombre del negocio</p>
+                    <p class="is-size-7 mercurius-text-muted">Nombre del negocio</p>
                     <p>{settings.nombreNegocio ?: '—'}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Provincia</p>
+                    <p class="is-size-7 mercurius-text-muted">Provincia</p>
                     <p>{settings.provincia ?: '—'}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Teléfono</p>
+                    <p class="is-size-7 mercurius-text-muted">Teléfono</p>
                     <p>{settings.telefono ?: '—'}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Correo de tributación</p>
+                    <p class="is-size-7 mercurius-text-muted">Correo de tributación</p>
                     <p>{settings.correoElectronicoTributacion ?: '—'}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Entorno Hacienda</p>
-                    <p>{settings.haciendaEnvironment ?: '—'}</p>
+                    <p class="is-size-7 mercurius-text-muted">Entorno Hacienda</p>
+                    <p>{#if settings.haciendaEnvironment??}{#if settings.haciendaEnvironment == 'production'}Producción{#else}{#if settings.haciendaEnvironment == 'sandbox'}Pruebas (sandbox){#else}{settings.haciendaEnvironment}{/if}{/if}{#else}&mdash;{/if}</p>
                 </div>
             </div>
         </div>
 
-        <div x-show="paso === 4" style="display: none;">
+        <div x-show="paso === 4" style="display: none;" role="region" aria-label="Paso 5: Confirmación">
             <p class="notification is-info is-light">
                 Revise el resumen y confirme. Esto envía los campos operativos
                 editables (notificaciones y respaldos) al mismo endpoint de
@@ -199,15 +210,16 @@
 
             {! ── Seleccion del punto de venta (rama/terminal) antes de confirmar ── !}
             <div class="box" id="asistente-sucursal" data-group="sucursal-asistente">
-                <p class="heading">Sucursal y terminal que emiten</p>
+                <p class="is-size-7 mercurius-text-muted">Sucursal y terminal que emiten</p>
                 {#if sucursales?? && sucursales.size() > 0}
                 <form id="sucursal-seleccion-forma" data-json-save
                       hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/seleccionar"
                       hx-target="#sucursal-seleccion-forma" hx-swap="outerHTML"
                       hx-on::after-request="if (event.detail.successful) window.location.reload()">
                     <div class="field">
+                        <label class="label" for="sucursal-seleccion">Punto de venta</label>
                         <div class="select">
-                            <select name="id" aria-label="Sucursal y terminal">
+                            <select id="sucursal-seleccion" name="id">
                                 {#for s in sucursales}
                                 <option value="{s.id}"
                                         {#if sucursalSeleccionadaId?? && s.id == sucursalSeleccionadaId}selected{/if}
@@ -239,12 +251,15 @@
             </div>
 
             <div class="buttons">
-                <button class="button is-primary is-rounded" type="button"
+                <button class="button is-primary" type="button"
                         data-json-save
                         hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-include="#ajustes-forma"
-                        hx-target="#ajustes-forma" hx-swap="outerHTML">
-                    Confirmar y Guardar</button>
+                        hx-target="#ajustes-forma" hx-swap="outerHTML"
+                        hx-disabled-elt="this"
+                        hx-on::before-request="this.classList.add('is-loading')"
+                        hx-on::after-request="this.classList.remove('is-loading')">
+                    Confirmar y guardar</button>
             </div>
         </div>
 
@@ -255,7 +270,7 @@
                     @click="paso = Math.min(4, paso + 1)"
                     :disabled="paso === 4">Siguiente &rarr;</button>
         </div>
-    </div>
+    </section>
 
     {! ── Registro de sucursales y terminales: va FUERA de #ajustes-forma a
          proposito, porque sus formularios propios no pueden anidarse dentro de
@@ -263,7 +278,7 @@
          queda sin elemento al que colgar el hx-post). ── !}
     {#if modo != 'backups'}
     <div class="box mb-5" data-group="sucursales">
-        <p class="title is-5">Sucursales y Terminales</p>
+        <h2 class="title is-5">Sucursales y terminales</h2>
         <p class="subtitle is-6 mercurius-text-muted">
             Registro de puntos de venta. El código de sucursal usa 3 dígitos y el
             de terminal 5, el mismo formato con el que se imprime el consecutivo
@@ -272,13 +287,14 @@
 
         {#if sucursales?? && sucursales.size() > 0}
         <div class="table-container">
-        <table class="table is-striped is-fullwidth">
+        <table class="table is-hoverable is-fullwidth">
+            <caption class="is-sr-only">Sucursales y terminales registradas</caption>
             <thead>
                 <tr>
-                    <th>Sucursal</th>
-                    <th>Terminal</th>
-                    <th>Estado</th>
-                    <th class="has-text-right">Punto de venta</th>
+                    <th scope="col">Sucursal</th>
+                    <th scope="col">Terminal</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="has-text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -287,18 +303,26 @@
                     <td>{s.codigoSucursal} — {s.nombreSucursal ?: 'Sin nombre'}</td>
                     <td>{s.codigoTerminal} — {s.nombreTerminal ?: 'Sin nombre'}</td>
                     <td>
-                        <span class="status-chip {#if s.activo}is-success{#else}is-warning{/if}">
+                        <span class="status-chip {#if s.activo}is-success{#else}is-neutral{/if}">
                             {#if s.activo}Activo{#else}Inactivo{/if}</span>
                     </td>
                     <td class="has-text-right">
                         {#if sucursalSeleccionadaId?? && s.id == sucursalSeleccionadaId}
                         <span class="status-chip is-neutral">En uso</span>
                         {#else}
-                        <span class="mercurius-text-muted is-size-7">Se elige arriba</span>
+                        <form class="is-inline" data-json-save
+                              hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/seleccionar"
+                              hx-on::after-request="if (event.detail.successful) window.location.reload()">
+                            <input type="hidden" name="id" value="{s.id}"/>
+                            <button class="button is-small" type="submit"
+                                    {#if !s.activo}disabled="disabled" title="Active esta terminal para usarla"{/if}>
+                                Usar</button>
+                        </form>
                         {/if}
-                        <form hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/activo"
+                        <form class="is-inline" data-json-save
+                              hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/activo"
                               hx-on::after-request="if (event.detail.successful) window.location.reload()"
-                              data-json-save>
+                              hx-confirm="{#if s.activo}¿Desactivar la terminal {s.codigoTerminal}? Dejará de poder emitir comprobantes.{#else}¿Activar la terminal {s.codigoTerminal}?{/if}">
                             <input type="hidden" name="id" value="{s.id}"/>
                             <input type="hidden" name="activo" value="{#if s.activo}false{#else}true{/if}"/>
                             <button class="button is-small" type="submit">
@@ -310,6 +334,10 @@
             </tbody>
         </table>
         </div>
+        <p class="help mercurius-text-muted">
+            «Usar» deja ese par como el punto de venta que emite. Una fila
+            inactiva no puede seleccionarse.
+        </p>
         {#else}
         <p class="help mercurius-text-muted">
             Todavía no hay sucursales registradas en esta configuración.
@@ -318,7 +346,7 @@
 
         <hr/>
 
-        <p class="title is-6">Registrar un punto de venta</p>
+        <h3 class="title is-6">Registrar un punto de venta</h3>
         <form hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales"
               hx-on::after-request="if (event.detail.successful) window.location.reload()"
               data-json-save>
@@ -363,18 +391,33 @@
         </form>
     </div>
     {/if}
+    {/if}
 
-    {! ── Single save form: every editable control lives inside ── !}
+    {! ── Single save form: every editable control lives inside. It renders in
+         BOTH modes so the backup scheduling fields can be saved from
+         /app/backups too.
+
+         KNOWN CONTRACT GAP (reported, not fixable from the template):
+         PUT /api/app/settings declares @Consumes(application/json) only,
+         while an hx-put on a form sends form-urlencoded. The request is
+         answered 415 until a form-urlencoded twin (with the *Presente
+         markers the checkboxes already emit) lands in SettingsResource. The
+         page's afterRequest handler surfaces that 415 explicitly instead of
+         reporting a generic network failure. ── !}
     <form id="ajustes-forma" data-json-save
           hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
-          hx-target="#ajustes-forma" hx-swap="outerHTML">
+          hx-target="#ajustes-forma" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
+          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); }">
 
         {! ── Grupo: correo (legacy wizard Correo step + rejection notifications) ── !}
+        {#if modo != 'backups'}
         <div class="box mb-5" data-group="correo">
-            <p class="title is-5">Correo y Notificaciones</p>
+            <h2 class="title is-5">Correo y notificaciones</h2>
             <div class="columns is-multiline">
                 <div class="column is-full">
-                    <p class="heading">Correo electrónico principal (solo lectura)</p>
+                    <p class="is-size-7 mercurius-text-muted">Correo electrónico principal (solo lectura)</p>
                     <p>{settings.correoElectronico ?: '—'}</p>
                     <p class="help mercurius-text-muted">
                         Por seguridad, las credenciales (correo, certificado .p12,
@@ -440,8 +483,8 @@
                         </div>
                         <p class="help mercurius-text-muted">
                             Define el servidor IMAP con el que se revisa la bandeja
-                            cada 15 minutos y el servidor SMTP con el que se envian
-                            facturas y avisos. Gmail es el valor por omision.
+                            cada 15 minutos y el servidor SMTP con el que se envían
+                            facturas y avisos. Gmail es el valor por omisión.
                         </p>
                     </div>
                 </div>
@@ -503,58 +546,75 @@
                         <div class="control">
                             <input id="proveedor-sistemas" class="input" type="text"
                                    name="proveedorSistemas"
-                                   maxlength="20"
-                                   placeholder="Identificacion del proveedor de sistemas"
+                                   maxlength="20" required="required"
+                                   aria-describedby="proveedor-sistemas-help"
+                                   placeholder="Identificación del proveedor de sistemas"
                                    value="{settings.provedor}"/>
                         </div>
-                        <p class="help mercurius-text-muted">
+                        <p class="help mercurius-text-muted" id="proveedor-sistemas-help">
                             Se emite como <code>&lt;ProveedorSistemas&gt;</code> en cada comprobante
-                            v4.4, y el esquema lo exige justo despues de <code>&lt;Clave&gt;</code>.
-                            Si se deja vacio, JAXB omite el elemento y el comprobante deja de validar
+                            v4.4, y el esquema lo exige justo después de <code>&lt;Clave&gt;</code>.
+                            Si se deja vacío, JAXB omite el elemento y el comprobante deja de validar
                             contra <code>FacturaElectronica_V4.4.xsd</code>; el error solo
-                            apareceria despues, al firmar. Maximo 20 caracteres.
+                            aparecería después, al firmar. Máximo 20 caracteres.
                         </p>
                     </div>
                 </div>
             </div>
         </div>
+        {/if}
 
         {! ── Backups mode: status card + trigger + scheduling + log (hidden on /aplicacion) ── !}
         {#if modo != 'aplicacion'}
         {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
-        <div id="backup-status-card">
-            <h2 class="title is-4">Respaldos de Base de Datos</h2>
+        <div id="backup-status-card" class="box mb-5">
+            <h2 class="title is-4">Estado de los respaldos</h2>
             <p class="subtitle is-6">Copias de seguridad programadas y bajo demanda</p>
-            <div class="level" style="justify-content:center;gap:2.5rem">
-                <div class="has-text-centered">
-                    <p class="heading">Estado</p>
-                    <span class="status-chip {#if backup.backupHabilitado}is-success{#else}is-danger{/if}" id="backup-estado">
+            <div class="columns is-multiline has-text-centered">
+                <div class="column">
+                    <p class="is-size-7 mercurius-text-muted">Estado</p>
+                    <span class="status-chip {#if backup.backupHabilitado}is-success{#else}is-warning{/if}" id="backup-estado">
                         {#if backup.backupHabilitado}Habilitado{#else}Deshabilitado{/if}</span>
                 </div>
-                <div class="has-text-centered">
-                    <p class="heading">Último backup</p>
-                    <p id="backup-ultimo-ejecutado">{#if backup.backupUltimoEjecutado??}{backup.backupUltimoEjecutado}{#else}Nunca{/if}</p>
+                <div class="column">
+                    <p class="is-size-7 mercurius-text-muted">Último respaldo</p>
+                    <p id="backup-ultimo-ejecutado">{#if backup.backupUltimoEjecutado??}{time:format(backup.backupUltimoEjecutado, 'dd/MM/yyyy HH:mm')}{#else}Nunca{/if}</p>
                 </div>
-                <div class="has-text-centered">
-                    <p class="heading">Motor pg_dump</p>
-                    <span class="status-chip {#if backup.mysqldumpResuelto}is-success{#else}is-warning{/if}">
-                        {#if backup.mysqldumpResuelto}Ruta resuelta{#else}Fallback (sin ruta concreta){/if}</span>
+                <div class="column">
+                    <p class="is-size-7 mercurius-text-muted">Herramienta de respaldo</p>
+                    {! SettingsPagesResource hard-codes mysqldumpResuelto=false
+                       (resolvePgDump is private), so a red/amber "no encontrada"
+                       here would be a false alarm on every render. This state is
+                       "not verifiable from this screen", not "broken". !}
+                    {#if backup.mysqldumpResuelto}
+                    <span class="status-chip is-success">Ruta configurada</span>
+                    {#else}
+                    <span class="status-chip is-neutral">No verificable</span>
+                    {/if}
                 </div>
             </div>
+            <p class="help mercurius-text-muted mt-3">
+                La herramienta se comprueba al ejecutar el respaldo; si falla,
+                el resultado llega como notificación.
+            </p>
         </div>
         <div class="box mb-5" data-group="backups">
-            <p class="title is-5">Respaldo manual</p>
+            <h2 class="title is-5">Respaldo manual</h2>
 
             <div class="field">
-                <button class="button is-success" type="button" data-json-save
+                {! Bordered, not is-success: green is a status hue, and the
+                   screen's one filled primary is the save action. !}
+                <button class="button" type="button" data-json-save
                         hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
+                        hx-confirm="¿Ejecutar un respaldo ahora? Puede tardar varios minutos y no se puede cancelar."
                         hx-on::before-request="this.classList.add('is-loading')"
                         hx-on::after-request="this.classList.remove('is-loading')">
-                    Ejecutar Backup Ahora</button>
+                    {#include _kit/icon name="download" /}
+                    <span>Ejecutar respaldo ahora</span></button>
                 <p class="help mercurius-text-muted">
-                    Ejecuta el mismo flujo del botón legacy; el resultado llega
-                    como notificación y actualiza la tarjeta de estado.
+                    Copia la base de datos completa en la ruta configurada. El
+                    resultado llega como notificación y actualiza la tarjeta de estado.
                 </p>
             </div>
 
@@ -567,13 +627,13 @@
                             <input type="hidden" name="backupHabilitadoPresente" value="1"/>
                             <input type="checkbox" name="backupHabilitado"
                                    {#if settings.backupHabilitado}checked{/if}/>
-                            Backup automático programado
+                            Respaldos automáticos programados
                         </label>
                     </div>
                 </div>
                 <div class="column is-half">
                     <div class="field">
-                        <label class="label" for="backup-hora">Hora del backup</label>
+                        <label class="label" for="backup-hora">Hora del respaldo</label>
                         <div class="control">
                             <input id="backup-hora" class="input" type="time"
                                    name="backupHora" value="{settings.backupHora}"/>
@@ -589,46 +649,53 @@
                                    min="1" max="365" step="1" name="backupRetencionDias"
                                    value="{settings.backupRetencionDias}"/>
                         </div>
-                        <p class="help mercurius-text-muted">Entre 1 y 365 días.</p>
+                        <p class="help mercurius-text-muted">Entre 1 y 365 días. Los respaldos más viejos se eliminan.</p>
                     </div>
                 </div>
                 <div class="column is-half">
                     <div class="field">
-                        <label class="label" for="backup-ruta">Ruta de backups</label>
-                    <div class="control">
-                        <input id="backup-ruta" class="input" type="text"
-                               name="backupRuta" value="{settings.backupRuta}"/>
-                    </div>
-                    <p class="help mercurius-text-muted">Carpeta del servidor. Vacío = se usa: {backupRutaEfectiva}</p>
+                        <label class="label" for="backup-ruta">Ruta de respaldos</label>
+                        <div class="control">
+                            <input id="backup-ruta" class="input" type="text"
+                                   name="backupRuta" aria-describedby="backup-ruta-help"
+                                   value="{settings.backupRuta}"/>
+                        </div>
+                        <p class="help mercurius-text-muted" id="backup-ruta-help">
+                            Carpeta del servidor. Si se deja vacía se usa:
+                            <span class="kit-code">{backupRutaEfectiva}</span>
+                        </p>
                     </div>
                 </div>
             </div>
 
             <hr/>
 
-            <p class="title is-5">Historial de Respaldos</p>
+            <h3 class="title is-6">Historial de respaldos</h3>
             <p class="subtitle is-6 mercurius-text-muted">
                 Archivos de respaldo generados en la ruta configurada.
             </p>
             {#if backupLog?? && backupLog.size() > 0}
             <div class="table-container">
-            <table class="table is-striped is-fullwidth">
+            <table class="table is-hoverable is-fullwidth">
+                <caption class="is-sr-only">Archivos de respaldo disponibles</caption>
                 <thead>
                     <tr>
-                        <th>Archivo</th>
-                        <th class="has-text-right">Tamaño</th>
-                        <th class="has-text-centered">Descarga</th>
+                        <th scope="col">Archivo</th>
+                        <th scope="col" class="num">Tamaño</th>
+                        <th scope="col" class="has-text-centered">Descarga</th>
                     </tr>
                 </thead>
                 <tbody>
                     {#for entrada in backupLog}
                     <tr>
-                        <td>{entrada.archivo}</td>
-                        <td class="has-text-right">{#if entrada.tamano??}{entrada.tamano}{#else}&mdash;{/if}</td>
+                        <td><span class="kit-code table-clamp" title="{entrada.archivo}">{entrada.archivo}</span></td>
+                        <td class="num">{#if entrada.tamano??}{entrada.tamano}{#else}&mdash;{/if}</td>
                         <td class="has-text-centered">
-                            <a class="button is-small is-info"
+                            <a class="button is-small"
+                               aria-label="Descargar {entrada.archivo}"
                                href="{config:['quarkus.http.root-path']}/api/app/settings/backup-descargar?archivo={entrada.archivo}">
-                                Descargar</a>
+                                {#include _kit/icon name="download" /}
+                                <span>Descargar</span></a>
                         </td>
                     </tr>
                     {/for}
@@ -636,177 +703,196 @@
             </table>
             </div>
             {#else}
-            <div class="box has-text-centered" style="padding:2.5rem 1.5rem">
-                <p class="title is-5">Aún no hay respaldos</p>
+            <div class="has-text-centered py-5">
+                <p class="mb-2">{#include _kit/icon name="download" size="large" /}</p>
+                <p class="has-text-weight-semibold mb-1">Aún no hay respaldos</p>
                 <p class="subtitle is-6 mercurius-text-muted">
-                    Los respaldos se guardan en:<br/>
-                    <code style="word-break:break-all">{backupRutaEfectiva}</code>
+                    Los respaldos se guardan en:
+                    <span class="kit-code" style="word-break:break-all">{backupRutaEfectiva}</span>
                 </p>
-                <button class="button is-success is-medium" type="button" data-json-save
+                <button class="button is-medium" type="button" data-json-save
                         hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
                         hx-on::before-request="this.classList.add('is-loading')"
                         hx-on::after-request="this.classList.remove('is-loading'); event.detail.successful && window.location.reload()">
-                    Crear mi primer respaldo</button>
-                <p class="help mercurius-text-muted mt-3">O configure la programación automática abajo.</p>
+                    {#include _kit/icon name="download" /}
+                    <span>Crear mi primer respaldo</span></button>
+                <p class="help mercurius-text-muted mt-3">O configure la programación automática arriba.</p>
             </div>
             {/if}
         </div>
         {/if}
 
+        {! Read-only / module-owned groups: settings-workflow mode only. !}
+        {#if modo != 'backups'}
         {! ── Grupo: general / negocio (read-only parity) ── !}
         <div class="box mb-5" data-group="general-negocio">
-            <p class="title is-5">General y Negocio</p>
+            <h2 class="title is-5">General y negocio</h2>
             <p class="subtitle is-6 mercurius-text-muted">
                 Datos del perfil y de tributación; edición solo lectura aquí
                 mientras su migración de flujo completa aterrice.
             </p>
             <div class="columns is-multiline">
-                <div class="column is-one-third"><p class="heading">Nombre del perfil</p><p>{settings.nombrePerfil ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Nombre completo</p><p>{settings.nombre ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Nombre del negocio</p><p>{settings.nombreNegocio ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Tipo de identificación</p><p>{settings.tipoIdentificacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Identificación</p><p>{settings.identificacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Razón social</p><p>{settings.razonSocial ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Proveedor de sistemas</p><p>{settings.provedor ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Código de actividad</p><p>{settings.codigoActividad ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Teléfono</p><p>{settings.telefono ?: '—'} {#if settings.codigoPais??}(+{settings.codigoPais}){/if}</p></div>
-                <div class="column is-one-third"><p class="heading">Fax</p><p>{settings.telefonoFax ?: '—'} {#if settings.codigoPaisFax??}(+{settings.codigoPaisFax}){/if}</p></div>
-                <div class="column is-one-third"><p class="heading">Correo de tributación</p><p>{settings.correoElectronicoTributacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Provincia</p><p>{settings.provincia ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Cantón</p><p>{settings.canton ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Distrito</p><p>{settings.distrito ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Barrio</p><p>{settings.barrio ?: '—'}</p></div>
-                <div class="column is-two-thirds"><p class="heading">Dirección completa</p><p>{settings.direccionCompleta ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Código sucursal</p><p>{settings.codigoSucursal ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Código terminal</p><p>{settings.codigoTerminal ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Tipo de documento</p><p>{settings.tipoDocumento ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Último consecutivo</p><p>{settings.ultimoConsecutivo ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="heading">Facturación vía Fides</p>
-                    <span class="status-chip {#if settings.useFides}is-success{#else}is-info{/if}">
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre del perfil</p><p>{settings.nombrePerfil ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre completo</p><p>{settings.nombre ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre del negocio</p><p>{settings.nombreNegocio ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Tipo de identificación</p><p>{settings.tipoIdentificacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Identificación</p><p>{settings.identificacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Razón social</p><p>{settings.razonSocial ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Proveedor de sistemas</p><p>{settings.provedor ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código de actividad</p><p>{settings.codigoActividad ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Teléfono</p><p>{settings.telefono ?: '—'} {#if settings.codigoPais??}(+{settings.codigoPais}){/if}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Fax</p><p>{settings.telefonoFax ?: '—'} {#if settings.codigoPaisFax??}(+{settings.codigoPaisFax}){/if}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Correo de tributación</p><p>{settings.correoElectronicoTributacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Provincia</p><p>{settings.provincia ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Cantón</p><p>{settings.canton ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Distrito</p><p>{settings.distrito ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Barrio</p><p>{settings.barrio ?: '—'}</p></div>
+                <div class="column is-two-thirds"><p class="is-size-7 mercurius-text-muted">Dirección completa</p><p>{settings.direccionCompleta ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código sucursal</p><p>{settings.codigoSucursal ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código terminal</p><p>{settings.codigoTerminal ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Tipo de documento</p>
+                    <p>{#if settings.tipoDocumento??}{#if settings.tipoDocumento == '01'}Factura electrónica (01){#else}{#if settings.tipoDocumento == '04'}Tiquete electrónico (04){#else}{settings.tipoDocumento}{/if}{/if}{#else}&mdash;{/if}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Último consecutivo</p><p>{settings.ultimoConsecutivo ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Facturación vía Fides</p>
+                    <span class="status-chip {#if settings.useFides}is-success{#else}is-neutral{/if}">
                         {#if settings.useFides}Activado{#else}Desactivado{/if}</span></div>
             </div>
         </div>
 
         {! ── Grupo: loyalty (read-only; writes belong to the Loyalty module) ── !}
         <div class="box mb-5" data-group="loyalty">
-            <p class="title is-5">Loyalty</p>
+            <h2 class="title is-5">Lealtad</h2>
             <div class="columns is-multiline">
                 <div class="column is-half">
-                    <p class="heading">Porcentaje de cashback</p>
+                    <p class="is-size-7 mercurius-text-muted">Porcentaje de cashback</p>
                     <p class="title is-4" data-field="cashbackPercentage">{settings.cashbackPercentage ?: '—'}{#if settings.cashbackPercentage??}%{/if}</p>
                 </div>
                 <div class="column is-half">
-                    <p class="heading">Meses de inactividad antes de expirar puntos</p>
+                    <p class="is-size-7 mercurius-text-muted">Meses de inactividad antes de expirar puntos</p>
                     <p class="title is-4" data-field="puntosInactivityMonths">{settings.puntosInactivityMonths ?: '—'}</p>
                 </div>
             </div>
             <p class="help mercurius-text-muted">
-                Estos valores se administran desde el módulo Loyalty; aquí son
+                Estos valores se administran desde el módulo Lealtad; aquí son
                 solo lectura.
             </p>
         </div>
 
         {! ── Grupo: umbrales de stock (snapshot informativo del motor T33) ── !}
         <div class="box mb-5" data-group="stock-umbrales">
-            <p class="title is-5">Umbrales de Stock</p>
+            <h2 class="title is-5">Umbrales de stock</h2>
             <p class="subtitle is-6 mercurius-text-muted">
                 Constantes del motor de alertas (solo lectura); la configuración
                 por artículo vive en su propia pantalla.
             </p>
             <div class="columns is-multiline">
-                <div class="column is-one-fifth"><p class="heading">Ventana de velocidad</p><p>30 días</p></div>
-                <div class="column is-one-fifth"><p class="heading">Plazo de entrega</p><p>3 días</p></div>
-                <div class="column is-one-fifth"><p class="heading">Stock de seguridad por defecto</p><p>7 días</p></div>
-                <div class="column is-one-fifth"><p class="heading">Respaldo de stock óptimo</p><p>14 días</p></div>
-                <div class="column is-one-fifth"><p class="heading">Buffer de reorden</p><p>30 días</p></div>
+                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Ventana de velocidad</p><p>30 días</p></div>
+                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Plazo de entrega</p><p>3 días</p></div>
+                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Stock de seguridad por defecto</p><p>7 días</p></div>
+                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Respaldo de stock óptimo</p><p>14 días</p></div>
+                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Margen de reorden</p><p>30 días</p></div>
             </div>
-            <a class="button is-link is-light"
+            <a class="button"
                href="{config:['quarkus.http.root-path']}/api/app/stock-alert-config/pagina">
-                Configurar umbrales por artículo</a>
+                {#include _kit/icon name="chart" /}
+                <span>Configurar umbrales por artículo</span></a>
         </div>
 
         {! ── Grupo: márgenes de ganancia (configuración global) ── !}
         <div class="box mb-5" data-group="margenes">
-            <p class="title is-5">Márgenes de Ganancia</p>
+            <h2 class="title is-5">Márgenes de ganancia</h2>
             <p class="subtitle is-6 mercurius-text-muted">
                 Configuración global de márgenes aplicada a todos los productos
                 según su tipo de refrigeración. Cada cambio crea un nuevo registro
                 en el historial.
             </p>
 
-            <form hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
-                  hx-target="#margen-resultado" hx-swap="innerHTML">
+            {! NOT a <form>: this block sits inside #ajustes-forma, and HTML
+               discards a nested form, so its submit used to fire the OUTER
+               settings request instead. The action is a button that posts the
+               three fields explicitly - same endpoint, same field names. !}
+            <div>
                 <div class="columns">
                     <div class="column is-one-third">
                         <div class="field">
-                            <label class="label" for="margen-base">Margen Base (%)</label>
+                            <label class="label" for="margen-base">Margen base (%)</label>
                             <div class="control">
                                 <input class="input" id="margen-base" type="number" step="0.01" min="0"
-                                       name="margenBase" required="required"
+                                       name="margenBase" required="required" inputmode="decimal"
                                        placeholder="25"
                                        value="{configuracionMargen.margenBase}"/>
                             </div>
-                            <p class="help">Aplicado a productos sin refrigeración.</p>
+                            <p class="help mercurius-text-muted">Aplicado a productos sin refrigeración.</p>
                         </div>
                     </div>
                     <div class="column is-one-third">
                         <div class="field">
-                            <label class="label" for="margen-refrigerado">Ajuste Refrigerado (% extra)</label>
+                            <label class="label" for="margen-refrigerado">Ajuste refrigerado (% extra)</label>
                             <div class="control">
                                 <input class="input" id="margen-refrigerado" type="number" step="0.01" min="0"
-                                       name="ajusteRefrigerado" required="required"
+                                       name="ajusteRefrigerado" required="required" inputmode="decimal"
                                        placeholder="5"
                                        value="{configuracionMargen.ajusteRefrigerado}"/>
                             </div>
-                            <p class="help">Sumado al margen base para productos refrigerados (2-8°C).</p>
+                            <p class="help mercurius-text-muted">Sumado al margen base para productos refrigerados (2-8 °C).</p>
                         </div>
                     </div>
                     <div class="column is-one-third">
                         <div class="field">
-                            <label class="label" for="margen-congelado">Ajuste Congelado (% extra)</label>
+                            <label class="label" for="margen-congelado">Ajuste congelado (% extra)</label>
                             <div class="control">
                                 <input class="input" id="margen-congelado" type="number" step="0.01" min="0"
-                                       name="ajusteCongelado" required="required"
+                                       name="ajusteCongelado" required="required" inputmode="decimal"
                                        placeholder="10"
                                        value="{configuracionMargen.ajusteCongelado}"/>
                             </div>
-                            <p class="help">Sumado al margen base para productos congelados (-18°C).</p>
+                            <p class="help mercurius-text-muted">Sumado al margen base para productos congelados (-18 °C).</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="field">
-                    <button class="button is-primary" type="submit">
-                        Guardar Configuración
+                    <button class="button" type="button" data-json-save
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
+                            hx-include="#margen-base, #margen-refrigerado, #margen-congelado"
+                            hx-target="#margen-resultado" hx-swap="innerHTML"
+                            hx-disabled-elt="this"
+                            hx-on::before-request="this.classList.add('is-loading')"
+                            hx-on::after-request="this.classList.remove('is-loading')">
+                        Guardar márgenes
                     </button>
+                    <p class="help mercurius-text-muted">
+                        Se aplica a los productos nuevos; los precios ya guardados no cambian.
+                    </p>
                 </div>
-            </form>
-            <div id="margen-resultado"></div>
+            </div>
+            <div id="margen-resultado" role="status" aria-live="polite"></div>
 
             {#if margenHistorial?? && margenHistorial.size() > 1}
             <hr/>
-            <p class="title is-6">Historial de Cambios</p>
+            <h3 class="title is-6">Historial de cambios</h3>
             <div class="table-container">
-                <table class="table is-striped is-fullwidth is-narrow">
+                <table class="table is-hoverable is-fullwidth is-narrow">
+                    <caption class="is-sr-only">Historial de márgenes de ganancia</caption>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Margen Base</th>
-                            <th>Ajuste Refrigerado</th>
-                            <th>Ajuste Congelado</th>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
+                            <th scope="col">ID</th>
+                            <th scope="col" class="num">Margen base</th>
+                            <th scope="col" class="num">Ajuste refrigerado</th>
+                            <th scope="col" class="num">Ajuste congelado</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Usuario</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#for c in margenHistorial}
                         <tr {#if c.id == configuracionMargen.id}class="is-selected"{/if}>
-                            <td>{c.id}</td>
-                            <td>{c.margenBase}%</td>
-                            <td>+{c.ajusteRefrigerado}%</td>
-                            <td>+{c.ajusteCongelado}%</td>
-                            <td>{c.fechaCreacion}</td>
+                            <td class="kit-code">{c.id}</td>
+                            <td class="num">{fmt:porcentaje(c.margenBase)}</td>
+                            <td class="num">+{fmt:porcentaje(c.ajusteRefrigerado)}</td>
+                            <td class="num">+{fmt:porcentaje(c.ajusteCongelado)}</td>
+                            <td>{#if c.fechaCreacion??}{time:format(c.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
                             <td>{#if c.usuario??}{c.usuario.username}{#else}&mdash;{/if}</td>
                         </tr>
                         {/for}
@@ -818,34 +904,59 @@
 
         {! ── Grupo: modo de prevalidación (informativo; sin setting respaldo aún) ── !}
         <div class="box mb-5" data-group="prevalidacion">
-            <p class="title is-5">Prevalidación de Cargas</p>
+            <h2 class="title is-5">Prevalidación de cargas</h2>
             <div class="field">
                 <label class="label" for="modo-prevalidacion">Modo de prevalidación</label>
                 <div class="control">
                     <div class="select">
-                        <select id="modo-prevalidacion" disabled>
+                        <select id="modo-prevalidacion" disabled
+                                aria-describedby="modo-prevalidacion-help">
                             <option value="siempre" selected>Siempre activa (comportamiento actual)</option>
                             <option value="solo-errores" disabled>Solo reportar errores (no disponible)</option>
                             <option value="apagada" disabled>Apagada (no disponible)</option>
                         </select>
                     </div>
                 </div>
-                <p class="help mercurius-text-muted">
+                <p class="help mercurius-text-muted" id="modo-prevalidacion-help">
                     Toda carga de facturas recibidas e inventarios ejecuta la
                     prevalidación XML antes de procesarse. Un modo configurable
                     requeriría un nuevo parámetro del sistema y llega en otra
-                    tarea; el control es informativo.
+                    tarea; el control es informativo y no se puede cambiar.
                 </p>
             </div>
         </div>
+        {/if}
 
         <div class="field">
-            <button class="button is-primary is-rounded" type="submit">Guardar Ajustes</button>
+            <button class="button is-primary" type="submit">Guardar ajustes</button>
+            <p class="help mercurius-text-muted">
+                Guarda los campos editables de esta pantalla. Cada guardado
+                confirma con una notificación.
+            </p>
         </div>
     </form>
-    {/if}
+
+    {! Styled confirm dialog for the backup / terminal hx-confirm actions. !}
+    {#include _kit/confirm /}
 
     <script>
+        {! dd/MM/yyyy HH:mm, matching the server-side time formatter. The API
+           answers ISO-8601, which is not what the rest of the app shows. !}
+        function fechaLegible(valor) {
+            var texto = String(valor);
+            if (texto.length < 16
+                    || texto.charAt(4) !== '-' || texto.charAt(7) !== '-'
+                    || (texto.charAt(10) !== 'T' && texto.charAt(10) !== ' ')) {
+                return texto;
+            }
+            var anio = texto.slice(0, 4);
+            var mes = texto.slice(5, 7);
+            var dia = texto.slice(8, 10);
+            var hora = texto.slice(11, 13);
+            var minuto = texto.slice(14, 16);
+            return dia + '/' + mes + '/' + anio + ' ' + hora + ':' + minuto;
+        }
+
         document.addEventListener('htmx:beforeSwap', function (evt) {
             var elt = evt.detail.requestConfig.elt;
             var xhr = evt.detail.xhr;
@@ -868,19 +979,23 @@
             try {
                 datos = JSON.parse(xhr.responseText);
             } catch (e) {
+                console.warn('Respuesta de ajustes no es JSON válido', e);
                 datos = null;
             }
             var url = elt.getAttribute('hx-post') || elt.getAttribute('hx-put') || '';
             var esTrigger = url.indexOf('backup-trigger') !== -1;
             var esSucursal = url.indexOf('/sucursales') !== -1;
+            var esMargen = url.indexOf('/margen') !== -1;
             var severidad = 'is-danger';
             var mensaje = 'No se pudo contactar al servidor';
             if (evt.detail.successful && datos && datos.data) {
                 severidad = 'is-success';
                 if (esTrigger) {
-                    mensaje = 'Backup completado correctamente';
+                    mensaje = 'Respaldo completado correctamente';
                 } else if (esSucursal) {
                     mensaje = 'Punto de venta actualizado';
+                } else if (esMargen) {
+                    mensaje = 'Márgenes actualizados';
                 } else {
                     mensaje = 'Configuración guardada';
                 }
@@ -888,20 +1003,26 @@
                 if (ultimo) {
                     var nodo = document.getElementById('backup-ultimo-ejecutado');
                     if (nodo) {
-                        nodo.textContent = String(ultimo).replace('T', ' ').slice(0, 16);
+                        nodo.textContent = fechaLegible(ultimo);
                     }
                 }
                 if (esTrigger) {
                     var estado = document.getElementById('backup-estado');
                     if (estado) {
-                        estado.textContent = 'Habilitado';
-                        estado.className = 'status-chip is-success';
+                        var habilitado = !!datos.data.backupHabilitado;
+                        estado.textContent = habilitado ? 'Habilitado' : 'Deshabilitado';
+                        estado.className = 'status-chip ' + (habilitado ? 'is-success' : 'is-warning');
                     }
                 }
             } else if (datos && datos.error && datos.error.message) {
                 mensaje = datos.error.message;
             } else if (evt.detail.successful) {
                 mensaje = 'Respuesta inesperada del servidor';
+            } else if (xhr.status === 415) {
+                // The PUT endpoint currently only accepts JSON while the form
+                // posts form-urlencoded. Surface the real cause instead of the
+                // generic "no se pudo contactar".
+                mensaje = 'El servidor rechazó el formato del formulario (415).';
             }
             var contenedor = document.getElementById('toast-container');
             if (!contenedor) {
@@ -909,12 +1030,12 @@
             }
             var toast = document.createElement('div');
             toast.className = 'notification ' + severidad;
-            toast.setAttribute('role', 'alert');
+            toast.setAttribute('role', severidad === 'is-danger' ? 'alert' : 'status');
             toast.setAttribute('data-toast', '');
             var cierre = document.createElement('button');
             cierre.className = 'delete';
             cierre.type = 'button';
-            cierre.setAttribute('aria-label', 'Cerrar notificacion');
+            cierre.setAttribute('aria-label', 'Cerrar notificación');
             cierre.addEventListener('click', function () {
                 toast.remove();
             });
@@ -924,16 +1045,6 @@
             setTimeout(function () {
                 toast.remove();
             }, 5000);
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var nodo = document.getElementById('backup-ultimo-ejecutado');
-            if (nodo) {
-                var texto = nodo.textContent.trim();
-                if (texto.indexOf('T') !== -1) {
-                    nodo.textContent = texto.replace('T', ' ').slice(0, 16);
-                }
-            }
         });
     </script>
 {/fragment}

@@ -194,11 +194,80 @@ function withScaleDefaults(options) {
 const registry = new Map();
 
 /**
+ * A chart's values are the data, and ZERO IS A VALUE.
+ *
+ * The previous version treated every all-zero series as "no data" and hid the
+ * canvas, so a day with confirmed zero sales looked like a broken query and
+ * the operator could not tell "nothing happened" from "the report failed".
+ * The honest treatment is the one the app already uses for a money column:
+ * zero is printed as 0. An all-zero series now draws its flat zero line; only a
+ * series with no numeric sample at all (empty array, or every point null) is an
+ * empty state.
+ */
+function numericValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    if (typeof value === 'object') {
+        // Chart.js point objects: { x, y } (scatter/line) or { y }.
+        if (value.y !== undefined && value.y !== null) {
+            return numericValue(value.y);
+        }
+        if (value.x !== undefined && value.x !== null) {
+            return numericValue(value.x);
+        }
+        return null;
+    }
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
+function hasData(config) {
+    return (config.datasets || []).some(function (dataset) {
+        return (dataset.data || []).some(function (value) {
+            return numericValue(value) !== null;
+        });
+    });
+}
+
+/**
+ * Show or clear the in-frame empty state. The message lives inside the
+ * .chart-body, so it occupies the same definite height as the canvas and
+ * cannot spill onto the next table (the defect the old markup had).
+ */
+function setEmptyState(canvas, empty, label) {
+    const body = canvas.closest('.chart-body');
+    if (!body) {
+        return;
+    }
+    canvas.hidden = empty;
+    let note = body.querySelector('.chart-empty');
+    if (!empty) {
+        if (note) {
+            note.remove();
+        }
+        return;
+    }
+    if (!note) {
+        note = document.createElement('p');
+        note.className = 'chart-empty';
+        // The canvas is hidden, so this text is the chart for assistive tech.
+        note.setAttribute('role', 'status');
+        body.appendChild(note);
+    }
+    note.textContent = label || 'Sin datos para el período';
+}
+
+/**
  * Create (or replace) a chart bound to a canvas id.
+ *
+ * Returns null when the canvas is absent OR when the config has no numeric
+ * sample, in which case the frame shows its empty state instead of a chart.
  *
  * @param {string} canvasId DOM id of the <canvas>
  * @param {object} config partial Chart.js config: type, labels, datasets, options
- * @returns {Chart|null} the chart instance, or null when the canvas is absent
+ * @param {string} [config.emptyLabel] optional empty-state copy
+ * @returns {Chart|null} the chart instance, or null
  */
 export function create(canvasId, config) {
     const canvas = document.getElementById(canvasId);
@@ -210,8 +279,27 @@ export function create(canvasId, config) {
         existing.destroy();
         registry.delete(canvasId);
     }
+
+    if (!hasData(config)) {
+        setEmptyState(canvas, true, config.emptyLabel);
+        return null;
+    }
+    setEmptyState(canvas, false);
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+        // Not silent: without a context there is no chart and the frame must
+        // say so instead of leaving an empty white rectangle.
+        console.error('[mercurius] 2D canvas context unavailable for chart "' + canvasId + '"');
+        setEmptyState(canvas, true, 'No se pudo dibujar el gráfico');
+        return null;
+    }
+
     const spec = Object.assign({}, config, { options: withScaleDefaults(config.options) });
-    const chart = new Chart(canvas.getContext('2d'), spec);
+    // emptyLabel is our copy, not a Chart.js option; handing an unknown key to
+    // the constructor is noise at best.
+    delete spec.emptyLabel;
+    const chart = new Chart(context, spec);
     registry.set(canvasId, chart);
     return chart;
 }

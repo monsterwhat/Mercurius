@@ -19,7 +19,7 @@
                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
-                           hx-target="#facturas-tabla-container" hx-swap="innerHTML"/>
+                           hx-target="#facturas-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
                 </div>
                     {/include}
 
@@ -36,9 +36,12 @@
                         <td>{f.user}</td>
                         <td>{#if f.encabezado??}{f.encabezado.condicionVenta}{/if}</td>
                         <td>{#if f.haciendaEstado??}{f.haciendaEstado}{#else}PENDIENTE{/if}</td>
-                        <td>₡{#if f.resumen?? && f.resumen.totalComprobante??}{f.resumen.totalComprobante}{#else}0{/if}</td>
+                        <td>{#if f.resumen?? && f.resumen.totalComprobante??}{fmt:moneda(f.resumen.totalComprobante)}{#else}&mdash;{/if}</td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No se encontraron facturas emitidas con esa búsqueda</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}

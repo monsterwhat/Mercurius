@@ -8,12 +8,27 @@
   that each table fragment hand-rolled.
 
   LAYOUT
-    [ filter-grid: auto-fit minmax(200px, 1fr) ]   [ filter-actions: right ]
+    <section class="filter-bar">            background / border / padding
+      <form class="filter-bar-form">        the flex row
+        [ filter-grid: auto-fit minmax(200px, 1fr) ]   [ filter-actions: right ]
+      </form>
+    </section>
     Wraps to a column at <=768px; the grid drops to 2 columns then 1.
 
+  FORM OWNERSHIP (the P0 this component used to have)
+    `{#actions}` used to render AFTER </form>, so a type="submit" placed there
+    had no form owner and did nothing: the filter trigger on the report boards
+    was a dead control. Both slots now render INSIDE the form. A caller may put
+    the submit in either one; the default slot keeps it in the grid, the actions
+    slot places it with the secondary links. Do not add a second <form> inside
+    an action slot (HTML does not allow nested forms) - the outer form already
+    owns the submit.
+
   PARAMS
-    id       String - OPTIONAL. DOM id; put it on the <form> so
-                       `hx-include="closest form"` works from any control.
+    id       String - OPTIONAL. DOM id. It lands on the <section> (the whole
+                       filter surface), which is what `hx-include="#filtros-x"`
+                       targets; `hx-include="closest form"` also works from any
+                       control because both slots now live inside the form.
     method   String - OPTIONAL. "get" (default) or "post".
     action   String - OPTIONAL. form action; only meaningful with method="post". A CONTEXT-PATH-RELATIVE URL: the deployment root is prepended HERE, like every other kit component.
     id_field String - OPTIONAL. DOM id of a hidden input that carries the
@@ -63,10 +78,12 @@
   .filter-actions buttons become full width at 480px.
 !}
 <section class="filter-bar"{#if id??} id="{id}"{/if}>
-    <form class="filter-grid" method="{method ?: 'get'}"{#if action??} action="{config:['quarkus.http.root-path']}{action}"{/if}>
-        {#insert}{/insert}
+    <form class="filter-bar-form" method="{method ?: 'get'}"{#if action??} action="{config:['quarkus.http.root-path']}{action}"{/if}>
+        <div class="filter-grid">
+            {#insert}{/insert}
+        </div>
+        <div class="filter-actions">
+            {#insert actions}{/insert}
+        </div>
     </form>
-    <div class="filter-actions">
-        {#insert actions}{/insert}
-    </div>
 </section>

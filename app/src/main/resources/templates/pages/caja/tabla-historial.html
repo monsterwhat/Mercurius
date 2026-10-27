@@ -22,23 +22,50 @@
     table sits inside ONE frame instead of two and the panel's title is a
     real <h2>.
   - The money columns are `num` cells: right-aligned with tabular figures.
+
+  ROUND 2
+  -------
+  - The Estado cell printed the raw database value ("abierto"/"cerrado") in a
+    saturated `tag is-success` / `tag is-danger` — white on Bulma success,
+    about 1.9:1, and English-language-looking lowercase to boot. It is a pale
+    status chip with the Spanish label now, and open/closed is not encoded as
+    success/failure: an open shift is in progress, not "good".
+  - A null difference printed a green em dash, because the server's
+    diferenciaClass is has-text-success unless the amount is negative. The
+    class is only applied when there IS a difference; a missing value is
+    muted. The table's own heading (the surface h2) names it for screen
+    readers, so no caption is injected inside the kit's tbody.
+  - The empty state is a muted sentence instead of a grey table cell.
 !}
 <div id="{modelo.id}">
-    {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for fila in modelo.filas}
             <tr>
-                <td>{#if fila.fechaApertura??}{fila.fechaApertura}{#else}&mdash;{/if}</td>
-                <td>{#if fila.fechaCierre??}{fila.fechaCierre}{#else}&mdash;{/if}</td>
-                <td class="num">{#if fila.montoInicial??}{fila.montoInicial}{#else}&mdash;{/if}</td>
-                <td class="num">{#if fila.efectivo??}{fila.efectivo}{#else}&mdash;{/if}</td>
-                <td class="num">{#if fila.sinpe??}{fila.sinpe}{#else}&mdash;{/if}</td>
-                <td class="num">{#if fila.tarjeta??}{fila.tarjeta}{#else}&mdash;{/if}</td>
-                <td class="num {fila.diferenciaClass}">{#if fila.diferencia??}{fila.diferencia}{#else}&mdash;{/if}</td>
-                <td class="has-text-centered"><span class="{fila.estadoClass}">{fila.estado}</span></td>
+                <td>{#if fila.fechaApertura??}{fila.fechaApertura}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td>{#if fila.fechaCierre??}{fila.fechaCierre}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td class="num">{#if fila.montoInicial??}{fila.montoInicial}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td class="num">{#if fila.efectivo??}{fila.efectivo}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td class="num">{#if fila.sinpe??}{fila.sinpe}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td class="num">{#if fila.tarjeta??}{fila.tarjeta}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                {#if fila.diferencia??}
+                <td class="num {fila.diferenciaClass}">{fila.diferencia}</td>
+                {#else}
+                <td class="num kit-empty">&mdash;</td>
+                {/if}
+                <td class="has-text-centered">
+                    {#if fila.estado??}
+                        {#if fila.estado == 'abierto'}<span class="status-chip is-info">Abierta</span>
+                        {#else}<span class="status-chip is-neutral">Cerrada</span>{/if}
+                    {#else}<span class="status-chip is-neutral">Sin estado</span>{/if}
+                </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No hay sesiones registradas</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    <span class="kit-empty">Todavía no hay cierres de caja registrados.</span>
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}

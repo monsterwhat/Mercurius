@@ -44,6 +44,21 @@
     and it lives in the page header's {#actions} slot.
   - The table sits in a _kit/surface: the board is one kind of panel from top
     to bottom.
+
+  ROUND 2
+  -------
+  - THE SEARCH FIELD NO LONGER LIVES INSIDE THE SWAPPED FRAGMENT. It used to
+    sit inside #tabla-plantillas, which the search itself replaces via
+    outerHTML on every debounced keystroke: the input was destroyed and
+    re-created under the cursor, so focus and caret were lost after the first
+    300ms pause. It renders here, above the swap target, and keeps focus.
+  - The field is labelled (it only had a placeholder, which is not a name) and
+    is type="search" with enterkeyhint, so the phone keyboard offers Buscar.
+  - hx-sync="this:replace" drops a stale in-flight response instead of letting
+    it overwrite the newer one.
+  - A visually hidden status line announces the result count after each swap;
+    a live-filtered table that changes silently is invisible to a screen
+    reader.
 !}
 {#include layout}
     {#title}Plantillas de Correo | Mercurius{/title}
@@ -69,8 +84,26 @@
             </div>
         </div>
 
+        <p id="plantillas-anuncio" class="is-sr-only" role="status" aria-live="polite"></p>
+
         {#include _kit/surface title="Listado de plantillas" }
             {#content}
+                {! Outside #tabla-plantillas on purpose: see ROUND 2 above. !}
+                <div class="field">
+                    <label class="label" for="plantillas-buscar">Buscar plantillas</label>
+                    <div class="control has-icons-left">
+                        <input class="input" id="plantillas-buscar" type="search" name="q"
+                               value="{#if tablaPlantillas.q??}{tablaPlantillas.q}{/if}"
+                               autocomplete="off" enterkeyhint="search"
+                               placeholder="Nombre, tipo o asunto"
+                               hx-get="{config:['quarkus.http.root-path']}{tablaPlantillas.baseUrl}"
+                               hx-trigger="keyup changed delay:300ms, search"
+                               hx-sync="this:replace"
+                               hx-target="#{tablaPlantillas.id}" hx-swap="outerHTML"/>
+                        <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
+                    </div>
+                </div>
+
                 {#include pages/correos/tabla-plantillas modelo=tablaPlantillas q=tablaPlantillas.q /}
             {/content}
         {/include}
@@ -86,23 +119,58 @@
     {! Bridge: row-level edit buttons open the shared edit modal; the swapped
        form's [data-kit-close] button closes it (same contract as T18). !}
     <script>
-        document.addEventListener('click', function (e) {
-            var opener = e.target.closest('[data-kit-open]');
-            if (opener) {
-                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
-                if (modal && window.Alpine) {
-                    Alpine.$data(modal).open = true;
+        (function () {
+            document.addEventListener('click', function (e) {
+                var opener = e.target.closest('[data-kit-open]');
+                if (opener) {
+                    var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                    if (modal && window.Alpine) {
+                        Alpine.$data(modal).open = true;
+                    }
+                    return;
                 }
-                return;
-            }
-            var closer = e.target.closest('[data-kit-close]');
-            if (closer) {
-                var root = closer.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
+                var closer = e.target.closest('[data-kit-close]');
+                if (closer) {
+                    var root = closer.closest('.kit-modal-root');
+                    if (root && window.Alpine) {
+                        Alpine.$data(root).open = false;
+                    }
                 }
-            }
-        });
+            });
+
+            {! The table is swapped by the search box and by the row actions, so
+               the result count only exists in the new DOM. Announce it. !}
+            document.body.addEventListener('htmx:afterSwap', function (e) {
+                var target = e.detail ? e.detail.target : null;
+                if (!target || target.id !== 'tabla-plantillas') {
+                    return;
+                }
+                var tabla = document.getElementById('tabla-plantillas');
+                var region = document.getElementById('plantillas-anuncio');
+                var total = tabla ? tabla.getAttribute('data-resultados') : null;
+                if (!region || total === null) {
+                    return;
+                }
+                region.textContent = total === '1'
+                    ? '1 plantilla encontrada.'
+                    : total + ' plantillas encontradas.';
+            });
+
+            {! On a rejected save the dialog body is re-rendered with the errors;
+               put the keyboard back on the first field the server flagged.
+               Scoped to the form itself: a search swap must not pull focus into
+               a closed dialog that happens to hold an old form. !}
+            document.body.addEventListener('htmx:afterSwap', function (e) {
+                var target = e.detail ? e.detail.target : null;
+                if (!target || target.id !== 'forma-plantilla') {
+                    return;
+                }
+                var invalido = document.querySelector('#forma-plantilla [aria-invalid="true"]');
+                if (invalido && typeof invalido.focus === 'function') {
+                    invalido.focus();
+                }
+            });
+        })();
     </script>
     {/body}
 {/include}

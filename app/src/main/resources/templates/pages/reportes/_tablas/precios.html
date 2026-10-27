@@ -18,6 +18,9 @@
             <td>{f.usuario}</td>
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin cambios de precio para los filtros seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

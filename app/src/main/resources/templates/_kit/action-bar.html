@@ -52,7 +52,7 @@
   Content-Disposition download works.
 !}
 <section class="action-bar"{#if id??} id="{id}"{/if}>
-    <div class="action-count" id="{id ? id + '-count' : ''}">
+    <div class="action-count"{#if id??} id="{id}-count"{/if}>
         {#insert left}
             {#if count??}<strong>{count}</strong> {countLabel ?: 'resultados'}{/if}
         {/insert}

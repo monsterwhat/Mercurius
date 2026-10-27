@@ -28,8 +28,31 @@
     of the settings form, so the swap replaces the whole surface.
   - The submit button is the screen's one filled primary; the copy is plain
     UTF-8 instead of an &oacute; entity.
+
+  ROUND 2
+  -------
+  - Each field states what the number actually does and which server guard
+    applies, so the operator is not guessing at a bare spinner. Both fields
+    are tied to that help with aria-describedby.
+  - An unset inactivity window used to render "0" inside a `min="1"` input:
+    the field looked filled and valid, and the browser then refused the submit
+    with its own bubble. It now renders empty, and empty means "leave the
+    stored value unchanged" (the server treats null as not-modified).
+  - inputmode="decimal" on both number inputs: a phone opens the numeric pad
+    instead of the full keyboard.
+  - The error is one alert (role="alert") under the fields. It is a
+    panel-level message from the server guard, so the inputs do not claim to
+    be individually invalid: the message names the field that failed, and
+    marking both would be a lie about the other one.
+  - hx-disabled-elt="this" on the submit: a double tap cannot send the PUT
+    twice, which is what the old button allowed on a slow connection.
+  - The success/error toast moved to the top level of the response. htmx only
+    processes out-of-band swaps on top-level elements, so a toast nested
+    inside the surface was silently dropped: a successful save looked like a
+    no-op.
 !}
-{#include _kit/surface id="panel-ajustes" title="Configuración del Programa"}
+{#include _kit/surface id="panel-ajustes" title="Configuración del Programa"
+     subtitle="Valores generales del programa de lealtad; se aplican a todos los clientes." }
     {#content}
     <form id="forma-ajustes"
           hx-put="{config:['quarkus.http.root-path']}/api/app/loyalty/settings/form"
@@ -41,8 +64,13 @@
                     <div class="control">
                         <input class="input {#if errorGeneral??}is-danger{/if}" id="ajustes-cashback"
                                type="number" name="cashbackPercentage" step="0.1" min="0"
+                               inputmode="decimal"
+                               aria-describedby="ajustes-cashback-ayuda"
                                value="{#if ajustes.cashbackPercentage??}{ajustes.cashbackPercentage}{/if}"/>
                     </div>
+                    <p class="help" id="ajustes-cashback-ayuda">
+                        Porcentaje del monto de cada compra que se convierte en puntos. Con 0% no se acumulan puntos.
+                    </p>
                 </div>
             </div>
             <div class="column is-one-third">
@@ -51,21 +79,30 @@
                     <div class="control">
                         <input class="input {#if errorGeneral??}is-danger{/if}" id="ajustes-meses"
                                type="number" name="puntosInactivityMonths" step="1" min="1"
-                               value="{#if ajustes.puntosInactivityMonths??}{ajustes.puntosInactivityMonths}{/if}"/>
+                               inputmode="numeric"
+                               aria-describedby="ajustes-meses-ayuda"
+                               value="{#if ajustes.puntosInactivityMonths??}{#if ajustes.puntosInactivityMonths > 0}{ajustes.puntosInactivityMonths}{/if}{/if}"/>
                     </div>
+                    <p class="help" id="ajustes-meses-ayuda">
+                        Meses sin compras antes de marcar los puntos como inactivos (mínimo 1). Déjelo vacío para conservar el valor actual.
+                    </p>
                 </div>
             </div>
         </div>
-        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        {#if errorGeneral??}<p class="help is-danger" role="alert">{errorGeneral}</p>{/if}
         <div class="field">
-            <button class="button is-primary" type="submit">Guardar Configuración</button>
+            <button class="button is-primary" type="submit" hx-disabled-elt="this">Guardar Configuración</button>
         </div>
     </form>
-
-    {#if toastMessage??}
-    <div hx-swap-oob="beforeend:#toast-container">
-        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
-    </div>
-    {/if}
     {/content}
 {/include}
+
+{#if toastMessage??}
+{! Top level of the response: htmx only processes out-of-band swaps on
+   top-level elements, so a toast nested inside the surface was dropped and a
+   successful save looked like a no-op. !}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}
+

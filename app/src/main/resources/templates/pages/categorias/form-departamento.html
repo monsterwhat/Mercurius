@@ -17,67 +17,77 @@
 !}
 <div id="forma-departamento">
     {#if modo == 'editar' && departamento??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
           hx-target="#forma-departamento" hx-swap="outerHTML">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos"
           hx-target="#forma-departamento" hx-swap="outerHTML">
     {/if}
         <div class="field">
             <label class="label" for="departamento-nombre">Nombre:</label>
             <div class="control">
                 <input class="input {#if errorNombre??}is-danger{/if}" id="departamento-nombre"
-                       name="nombre" required="required" autocomplete="off"
+                       name="nombre" required="required" autocomplete="off" maxlength="255"
                        value="{#if departamento??}{departamento.nombre}{/if}"/>
             </div>
-            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+            {#if errorNombre??}<p class="help is-danger has-text-danger" role="alert">{errorNombre}</p>{/if}
         </div>
+
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Contacto (opcional)</p>
+
         <div class="field">
             <label class="label" for="departamento-contactoNombre">Nombre Contacto:</label>
             <div class="control">
-                <input class="input" id="departamento-contactoNombre" name="contactoNombre" autocomplete="off"
+                <input class="input" id="departamento-contactoNombre" name="contactoNombre" autocomplete="name" maxlength="255"
                        value="{#if departamento??}{departamento.contactoNombre}{/if}"/>
             </div>
         </div>
         <div class="field">
-            <label class="label" for="departamento-contactoTelefono">Telefono Contacto:</label>
+            <label class="label" for="departamento-contactoTelefono">Teléfono de contacto:</label>
             <div class="control">
-                <input class="input" id="departamento-contactoTelefono" name="contactoTelefono" autocomplete="off"
+                <input class="input" id="departamento-contactoTelefono" name="contactoTelefono"
+                       type="tel" inputmode="tel" autocomplete="tel" maxlength="255"
                        value="{#if departamento??}{departamento.contactoTelefono}{/if}"/>
             </div>
         </div>
         <div class="field">
-            <label class="label" for="departamento-contactoEmail">Email Contacto:</label>
+            <label class="label" for="departamento-contactoEmail">Correo de contacto:</label>
             <div class="control">
-                <input class="input" type="email" id="departamento-contactoEmail" name="contactoEmail" autocomplete="off"
+                <input class="input" type="email" id="departamento-contactoEmail" name="contactoEmail"
+                       autocomplete="email" maxlength="255" spellcheck="false"
                        value="{#if departamento??}{departamento.contactoEmail}{/if}"/>
             </div>
         </div>
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Condiciones comerciales</p>
+
         <div class="columns">
             <div class="column">
                 <div class="field">
-                    <label class="label" for="departamento-plazoPagoDias">Plazo Pago (dias):</label>
+                    <label class="label" for="departamento-plazoPagoDias">Plazo de pago (días):</label>
                     <div class="control">
-                        <input class="input" type="number" min="0" step="1" id="departamento-plazoPagoDias"
+                        <input class="input" type="number" min="0" step="1" inputmode="numeric" id="departamento-plazoPagoDias"
                                name="plazoPagoDias" value="{#if departamento??}{departamento.plazoPagoDias}{/if}"/>
                     </div>
+                    <p class="help">Días de crédito que otorga el proveedor.</p>
                 </div>
             </div>
             <div class="column">
                 <div class="field">
-                    <label class="label" for="departamento-tiempoEntregaDias">Tiempo Entrega (dias):</label>
+                    <label class="label" for="departamento-tiempoEntregaDias">Tiempo de entrega (días):</label>
                     <div class="control">
-                        <input class="input" type="number" min="0" step="1" id="departamento-tiempoEntregaDias"
+                        <input class="input" type="number" min="0" step="1" inputmode="numeric" id="departamento-tiempoEntregaDias"
                                name="tiempoEntregaDias" value="{#if departamento??}{departamento.tiempoEntregaDias}{/if}"/>
                     </div>
+                    <p class="help">Días entre el pedido y la entrega.</p>
                 </div>
             </div>
         </div>
         <div class="field">
             <label class="label" for="departamento-notas">Notas:</label>
             <div class="control">
-                <textarea class="textarea" id="departamento-notas" name="notas" rows="3">{#if departamento??}{departamento.notas}{/if}</textarea>
+                <textarea class="textarea" id="departamento-notas" name="notas" rows="3" maxlength="500">{#if departamento??}{departamento.notas}{/if}</textarea>
             </div>
+            <p class="help">Opcional. Máximo 500 caracteres.</p>
         </div>
         <div class="field is-grouped is-grouped-right">
             <div class="control">
@@ -86,7 +96,7 @@
                 </button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>

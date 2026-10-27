@@ -35,7 +35,8 @@
 <div id="forma-revision">
     {#if sinPendientes}
     <div class="has-text-centered p-5">
-        <p class="has-text-grey">No hay artículos pendientes para procesar</p>
+        <p class="has-text-weight-semibold">No hay artículos pendientes para procesar</p>
+        <p class="help">Cuando llegue un artículo nuevo sin procesar, aparecerá aquí automáticamente.</p>
         <button class="button mt-3" type="button" data-kit-close>Cerrar</button>
     </div>
     {#else if articulo??}
@@ -77,28 +78,38 @@
             </div>
         </div>
 
-        {! Legacy recomendacionCabys card with click-to-copy !}
+        {! Legacy recomendacionCabys card: click-to-copy was a paragraph with an
+           onclick, so the keyboard could not copy it and nothing confirmed the
+           copy. The text is a read-only block and the copy action is a real
+           button with a polite status line. !}
         <div class="field">
-            <label class="label">Recomendación CABYS:</label>
-            <div class="control">
-                <p class="box is-shadowless" style="cursor:pointer;background:var(--bulma-scheme-main);margin-bottom:0"
-                   onclick="navigator.clipboard.writeText('{#if articulo.recomendacionCabys??}{articulo.recomendacionCabys}{/if}')">
-                    {#if articulo.recomendacionCabys??}{articulo.recomendacionCabys}{#else}&mdash;{/if}
+            <p class="label" id="revision-recomendacion-label">Recomendación CAByS:</p>
+            <div class="control" style="display:flex; gap:0.5rem; align-items:center">
+                <p class="box is-shadowless kit-code" id="revision-recomendacion"
+                   style="flex:1; min-width:0; overflow-wrap:anywhere; margin-bottom:0; background:var(--bulma-scheme-main)">
+                    {#if articulo.recomendacionCabys?? && articulo.recomendacionCabys != ''}{articulo.recomendacionCabys}{#else}&mdash;{/if}
                 </p>
-                <p class="help">Click para copiar al portapapeles</p>
+                {#if articulo.recomendacionCabys?? && articulo.recomendacionCabys != ''}
+                <button type="button" class="button is-small" data-copiar-recomendacion
+                        aria-label="Copiar la recomendación CAByS">Copiar</button>
+                {/if}
             </div>
+            {#if articulo.recomendacionCabys?? && articulo.recomendacionCabys != ''}
+            <p class="help">Copie la recomendación para buscarla en el catálogo CAByS.</p>
+            <p class="help" id="revision-copiado" role="status" aria-live="polite"></p>
+            {/if}
         </div>
 
         <div class="field">
-            <label class="label" for="revision-cabys">Código CABYS:</label>
+            <label class="label" for="revision-cabys">Código CAByS:</label>
             <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
-                <input class="input" id="revision-cabys" name="cabysCodigo" required="required"
-                       class="kit-code" placeholder="Seleccione un código del CABYS"
+                <input class="input kit-code" id="revision-cabys" name="cabysCodigo" required="required"
+                       placeholder="Seleccione un código del CAByS"
                        value="{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
-                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Seleccionar Código CABYS</button>
+                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Seleccionar Código CAByS</button>
             </div>
         </div>
 
@@ -160,42 +171,70 @@
                         <label class="label" for="revision-costo">Precio Costo sin IVA:</label>
                         <div class="control">
                             <input class="input" id="revision-costo" type="number" step="0.01" min="0"
+                                   inputmode="decimal"
                                    name="precioCostoSinIVA" placeholder="0.00" required="required"
+                                   aria-describedby="revision-costo-ayuda"
                                    value="{#if precio?? && precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if}"/>
                         </div>
                     </div>
                 </div>
                 <div class="column">
                     <div class="field">
-                        <label class="label">Margen Aplicado:</label>
+                        <label class="label" for="revision-margen-aplicado">Margen actual:</label>
                         <div class="control">
-                            <input class="input" id="revision-margen-aplicado" type="text" readonly
+                            <input class="input kit-figure" id="revision-margen-aplicado" type="text" readonly
+                                   aria-describedby="revision-costo-ayuda"
                                    placeholder="Calculado automáticamente"
-                                   value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if}"/>
+                                   value="{#if precio?? && precio.porcentajeUtilidad??}{fmt:porcentaje(precio.porcentajeUtilidad)}{/if}"/>
                         </div>
                     </div>
                 </div>
             </div>
-            <p class="help has-text-grey">
-                El precio con utilidad y el precio final con IVA se recalculan en el servidor
-                con la misma fórmula del diálogo legado (utilidad 4 decimales, redondeo hacia arriba).
+            <p class="help mercurius-text-muted" id="revision-costo-ayuda">
+                El margen se recalcula al procesar según el tipo de refrigeración; el servidor aplica
+                el precio con utilidad y el precio final con IVA.
             </p>
             {/content}
         {/include}
 
-        <div class="buttons is-centered mt-4">
-            <button class="button is-rounded" type="button"
+        <div class="buttons is-centered mt-4" style="position:sticky; bottom:0; padding:.75rem 0; background:var(--bulma-scheme-main); border-top:1px solid var(--bulma-border)">
+            <button class="button" type="button"
                     hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision/saltar"
                     hx-target="#forma-revision" hx-swap="outerHTML">
                 Saltar
             </button>
-            <button class="button is-primary is-medium is-rounded" type="submit">
+            <button class="button is-primary is-medium" type="submit">
                 {#if modoRapido}Guardar y Siguiente{#else}Procesar Artículo{/if}
             </button>
-            <button class="button" type="button" data-kit-close>Cerrar</button>
+            <button class="button" type="button" data-kit-close>Cancelar</button>
         </div>
     </form>
     {/if}
+
+    {! Copy bridge for the CAByS recommendation. Clipboard failures are
+       reported in the polite status line instead of failing silently. !}
+    <script>
+        (function () {
+            var boton = document.querySelector('#forma-revision [data-copiar-recomendacion]');
+            var texto = document.getElementById('revision-recomendacion');
+            var estado = document.getElementById('revision-copiado');
+            if (!boton || !texto || !estado) {
+                return;
+            }
+            boton.addEventListener('click', function () {
+                var valor = (texto.textContent || '').trim();
+                if (!valor) {
+                    return;
+                }
+                navigator.clipboard.writeText(valor).then(function () {
+                    estado.textContent = 'Copiado al portapapeles.';
+                }).catch(function (error) {
+                    console.warn('No se pudo copiar la recomendación CAByS', error);
+                    estado.textContent = 'No se pudo copiar. Seleccione el texto y use Ctrl+C.';
+                });
+            });
+        })();
+    </script>
 </div>
 
 {#if toastMessage??}

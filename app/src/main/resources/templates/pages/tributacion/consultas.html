@@ -33,38 +33,52 @@
                 <button type="button" class="button is-primary"
                         hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/enviar-pendientes"
                         hx-confirm="¿Enviar las facturas pendientes a Hacienda?"
+                        hx-disabled-elt="this"
                         {#if contadorPendientes == 0}disabled{/if}>
                     Enviar Facturas Pendientes
                 </button>
             {/actions}
         {/include}
 
-            <p class="has-text-centered">
+            <p class="has-text-centered mt-3">
+                <span class="is-size-7 mercurius-text-muted">Próximo envío programado</span><br/>
                 <span id="consultas-countdown"
                       class="kit-countdown kit-code"
+                      role="timer"
                       title="{proximoEnvioDisplay}"
                       hx-get="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/countdown"
                       hx-trigger="every 5s"
-                      hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
+                      hx-swap="outerHTML">{#if hasProximoEnvio}{proximoEnvioDisplay} &mdash; {countdownDisplay}{#else}No hay envíos programados{/if}</span>
             </p>
+            {#if contadorPendientes == 0}
+            <p class="help mercurius-text-muted has-text-centered">No hay facturas pendientes: el envío está deshabilitado.</p>
+            {/if}
 
             <div id="consultas-contadores">
             {#include _kit/view-tabs ariaLabel="Vistas de consultas"}
                 {#tabs}
                 <button type="button" class="view-tab" @click="tab = 'pendientes'"
-                        :class="{ 'is-active': tab === 'pendientes' }">
+                        :class="{ 'is-active': tab === 'pendientes' }"
+                        aria-controls="consultas-panel-pendientes"
+                        :aria-current="tab === 'pendientes' ? 'page' : 'false'">
                     Pendientes <span class="view-tab-count" data-contador="pendientes">{contadorPendientes}</span>
                 </button>
                 <button type="button" class="view-tab" @click="tab = 'aceptadas'"
-                        :class="{ 'is-active': tab === 'aceptadas' }">
+                        :class="{ 'is-active': tab === 'aceptadas' }"
+                        aria-controls="consultas-panel-aceptadas"
+                        :aria-current="tab === 'aceptadas' ? 'page' : 'false'">
                     Aceptadas <span class="view-tab-count" data-contador="aceptadas">{contadorAceptadas}</span>
                 </button>
                 <button type="button" class="view-tab" @click="tab = 'rechazadas'"
-                        :class="{ 'is-active': tab === 'rechazadas' }">
+                        :class="{ 'is-active': tab === 'rechazadas' }"
+                        aria-controls="consultas-panel-rechazadas"
+                        :aria-current="tab === 'rechazadas' ? 'page' : 'false'">
                     Rechazadas <span class="view-tab-count" data-contador="rechazadas">{contadorRechazadas}</span>
                 </button>
                 <button type="button" class="view-tab" @click="tab = 'mensajes'"
-                        :class="{ 'is-active': tab === 'mensajes' }">
+                        :class="{ 'is-active': tab === 'mensajes' }"
+                        aria-controls="consultas-panel-mensajes"
+                        :aria-current="tab === 'mensajes' ? 'page' : 'false'">
                     Mensajes <span class="view-tab-count" data-contador="mensajes">{contadorMensajes}</span>
                 </button>
                 {/tabs}
@@ -74,75 +88,95 @@
         <div id="consultas-tablas">
             {#fragment id=tabla}
 
-            <div x-show="tab === 'pendientes'">
+            <div id="consultas-panel-pendientes" role="region" aria-label="Facturas pendientes de envío"
+                 x-show="tab === 'pendientes'">
                 {#include _kit/data-table id="consultas-tabla-pendientes" baseUrl=baseUrlTabla
                      headers=headersConsulta}
                   {#rows}
                     {#for f in filasPendientes}
                     <tr data-row-key="{f.id}">
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
                         <td><span class="status-chip is-warning">Pendiente</span></td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas pendientes de envío.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Se muestran hasta 15 facturas de {contadorPendientes} pendientes.</p>
             </div>
 
-            <div x-show="tab === 'aceptadas'" style="display:none">
+            <div id="consultas-panel-aceptadas" role="region" aria-label="Facturas aceptadas"
+                 x-show="tab === 'aceptadas'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-aceptadas" baseUrl=baseUrlTabla
                      headers=headersConsulta}
                   {#rows}
                     {#for f in filasAceptadas}
                     <tr data-row-key="{f.id}">
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
                         <td><span class="status-chip is-success">Aceptada</span></td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas aceptadas.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Se muestran hasta 15 facturas de {contadorAceptadas} aceptadas.</p>
             </div>
 
-            <div x-show="tab === 'rechazadas'" style="display:none">
+            <div id="consultas-panel-rechazadas" role="region" aria-label="Facturas rechazadas"
+                 x-show="tab === 'rechazadas'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-rechazadas" baseUrl=baseUrlTabla
                      headers=headersRechazadas}
                   {#rows}
                     {#for f in filasRechazadas}
                     <tr data-row-key="{f.id}">
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="num">{f.intentos}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
-                        <td><span class="status-chip is-danger" title="Rechazado por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada — pendiente de re-emisión</span></td>
+                        <td><span class="status-chip is-danger" title="Rechazada por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada</span></td>
                         <td>
-                            <button type="button" class="button is-primary is-small"
+                            <button type="button" class="button is-small"
                                     title="Art. 19: se emite un comprobante nuevo que referencia el rechazado con el código 16. No corresponde nota de crédito."
                                     hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/{f.id}/corregir"
+                                    hx-disabled-elt="this"
                                     hx-confirm="¿Reemitir {f.consecutivo}? El comprobante rechazado no tiene validez fiscal (Art. 19): se emitirá uno nuevo que lo referencia con el código 16, sin nota de crédito.">
                                 Reemitir
                             </button>
                         </td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="9" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas rechazadas.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Se muestran hasta 15 facturas de {contadorRechazadas} rechazadas. El rechazo no tiene validez fiscal: reemita el comprobante.</p>
             </div>
 
-            <div x-show="tab === 'mensajes'" style="display:none">
+            <div id="consultas-panel-mensajes" role="region" aria-label="Mensajes Receptor pendientes"
+                 x-show="tab === 'mensajes'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-mensajes" baseUrl=baseUrlTabla
                      headers=headersMensajes}
                   {#rows}
                     {#for m in filasMensajes}
                     <tr data-row-key="{m.id}">
-                        <td class="is-family-monospace">{#if m.consecutivo??}{m.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if m.consecutivo??}{m.consecutivo}{#else}-{/if}</td>
                         <td>{#if m.emisor??}{m.emisor}{#else}-{/if}</td>
                         <td>{#if m.fechaEmision??}{time:format(m.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if m.estado??}{m.estado}{#else}Sin enviar{/if}</td>
@@ -150,11 +184,16 @@
                         <td class="has-text-centered">
                             <span class="tag {m.chipClass}" title="Días restantes: {m.diasRestantes}">{m.indicador}</span>
                         </td>
-                        <td class="num">₡{#if m.montoImpuesto??}{m.montoImpuesto}{#else}0{/if}</td>
+                        <td class="num">{#if m.montoImpuesto??}{fmt:moneda(m.montoImpuesto)}{#else}&mdash;{/if}</td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="7" class="has-text-centered">
+                        <p class="kit-empty">No hay Mensajes Receptor sin enviar.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">El contador de días restantes indica cuándo vence el plazo para enviar el Mensaje Receptor.</p>
             </div>
             {/fragment}
         </div>

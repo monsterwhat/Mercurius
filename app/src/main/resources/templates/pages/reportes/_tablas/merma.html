@@ -29,6 +29,9 @@
             {/if}
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin registros de merma para la sección y el rango seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

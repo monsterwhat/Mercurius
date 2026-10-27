@@ -37,24 +37,37 @@
     {#title}Gestión de Inventario | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem" x-data="{ tab: 'activos' }">
+    <section class="section" style="padding-top:1rem"
+             x-data="{ tab: (['activos','pendientes','procesados','inactivos'].includes(new URLSearchParams(location.search).get('tab')) ? new URLSearchParams(location.search).get('tab') : 'activos') }"
+             x-effect="history.replaceState(null, '', '?tab=' + tab)">
         {#include _kit/page-header title="Gestión de Inventario"
-             subtitle="Ajustes, movimientos y su estado" /}
+             subtitle="Ajustes, movimientos y su estado"}
+            {#actions}
+                {! kitPolling repaints this label once per second after the
+                   badges poll refreshes (ui-kit §8.3). It stays empty until
+                   the first refresh, so the screen never claims to be fresher
+                   than it is. !}
+                <span id="inventario-edad" class="action-count"></span>
+            {/actions}
+        {/include}
 
         {! The four counts are a TAB SWITCHER, and they are polled so an
            approval made on another screen shows up here without a reload. !}
         <div id="inventario-badges"
              hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/badges"
-             hx-trigger="every 30s" hx-swap="innerHTML">
+             hx-trigger="every 30s" hx-swap="innerHTML"
+             data-poll data-poll-age="#inventario-edad">
             {#include pages/inventario/badges badges=badges /}
         </div>
 
         {! ── Subir XML (subirFacturas.xhtml parity: uploadController → Parser).
             hx-encoding="multipart/form-data" POST with progress bar; the
             upload-resultado fragment surfaces parser errors. ── !}
-        {#include _kit/surface title="Subir Facturas Electrónicas" }
+        {#include _kit/surface title="Subir Facturas Electrónicas"
+             subtitle="Cada XML se valida por separado y genera movimientos pendientes de revisión" }
             {#content}
             <form id="inventario-upload-forma"
+                  data-upload-progress="#inventario-upload-progreso"
                   hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/upload"
                   hx-encoding="multipart/form-data"
                   hx-target="#inventario-upload-resultado" hx-swap="innerHTML">
@@ -62,15 +75,22 @@
                     <label class="label" for="inventario-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
                     <div class="control">
                         <input class="input" type="file" id="inventario-upload-archivos"
-                               name="files" accept=".xml" multiple required/>
+                               name="files" accept=".xml" multiple required
+                               aria-describedby="inventario-upload-ayuda"/>
                     </div>
+                    <p class="help" id="inventario-upload-ayuda">Puede seleccionar varios archivos .xml a la vez. El resultado de cada uno se muestra al terminar.</p>
                 </div>
-                <progress id="inventario-upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
+                {! Hidden until a request starts: an idle 0 % bar reads as "stuck". !}
+                <progress id="inventario-upload-progreso" class="progress is-primary"
+                          value="0" max="100" hidden
+                          aria-label="Progreso de la carga">0%</progress>
                 <div class="field">
-                    <button class="button is-primary" type="submit">Procesar Facturas</button>
+                    <button class="button is-primary" type="submit" hx-disabled-elt="this">Procesar Facturas</button>
                 </div>
             </form>
-            <div id="inventario-upload-resultado"></div>
+            {! role=status: the per-file result (and its errors) must be
+               announced, not just painted. !}
+            <div id="inventario-upload-resultado" role="status" aria-atomic="true"></div>
             {/content}
         {/include}
 
@@ -138,7 +158,7 @@
 
     {! Shared dialogs: revision body is filled per-row from the pendientes
        table; details body from any row's eye button. !}
-    {#include _kit/modal id="revision-ajuste" title="Revision de Movimiento" triggerClass="is-hidden"
+    {#include _kit/modal id="revision-ajuste" title="Revisión de movimiento" triggerClass="is-hidden"
          bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
     {#include _kit/modal id="detalles-ajuste" title="Detalles del Ajuste" triggerClass="is-hidden"
          bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
@@ -147,7 +167,9 @@
     {#include _kit/confirm /}
 
     {! Bridge: row-level buttons open the shared modals after htmx fills
-       their bodies (same documented recipe as T18). !}
+       their bodies (same documented recipe as T18). The focus move is local
+       because the shared data-kit-open bridge does not move focus into the
+       dialog, which leaves a keyboard user behind the modal. !}
     <script>
         document.addEventListener('click', function (e) {
             var opener = e.target.closest('[data-kit-open]');
@@ -155,7 +177,74 @@
                 var modal = document.getElementById(opener.getAttribute('data-kit-open'));
                 if (modal && window.Alpine) {
                     Alpine.$data(modal).open = true;
+                    var card = modal.querySelector('.modal-card');
+                    if (card) {
+                        window.setTimeout(function () { card.focus(); }, 0);
+                    }
                 }
+            }
+        });
+
+        {! Upload progress: the bar exists only while a request is running. !}
+        (function () {
+            var forma = document.getElementById('inventario-upload-forma');
+            var barra = document.getElementById('inventario-upload-progreso');
+            if (!forma || !barra) {
+                return;
+            }
+            forma.addEventListener('htmx:beforeRequest', function () {
+                barra.value = 0;
+                barra.textContent = '0%';
+                barra.hidden = false;
+            });
+            forma.addEventListener('htmx:afterRequest', function () {
+                barra.hidden = true;
+            });
+        })();
+
+        {! Keyboard: the dialog body is replaced on every swap (next
+           movement, validation failure), so focus would otherwise fall back
+           to the document. !}
+        ['crear-ajuste-body', 'revision-ajuste-body', 'rapido-inventario-body'].forEach(function (id) {
+            var contenedor = document.getElementById(id);
+            if (!contenedor) {
+                return;
+            }
+            contenedor.addEventListener('htmx:afterSwap', function (evt) {
+                {! Only the body's own swap: the article picker swaps a fragment
+                   INSIDE this body, and stealing focus there would pull the
+                   cursor out of the picker's search box. !}
+                if (evt.target !== contenedor) {
+                    return;
+                }
+                var campo = contenedor.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea, button');
+                if (campo) {
+                    campo.focus();
+                }
+            });
+        });
+
+        {! Pattern A error redisplay answers 400; htmx swaps 2xx only, so the
+           message and its out-of-band toast were discarded. Swap 4xx HTML
+           responses into this page's form/result targets. !}
+        document.body.addEventListener('htmx:beforeSwap', function (evt) {
+            var detalle = evt.detail;
+            if (!detalle || !detalle.xhr || !detalle.target) {
+                return;
+            }
+            var estado = detalle.xhr.status;
+            if (estado < 400 || estado >= 500) {
+                return;
+            }
+            var tipo = detalle.xhr.getResponseHeader('Content-Type') || '';
+            if (tipo.indexOf('text/html') === -1) {
+                return;
+            }
+            var destino = detalle.target.id || '';
+            if (destino === 'crear-ajuste-body' || destino === 'revision-ajuste-body'
+                    || destino === 'rapido-inventario-body' || destino === 'inventario-upload-resultado') {
+                detalle.shouldSwap = true;
+                detalle.isError = false;
             }
         });
     </script>

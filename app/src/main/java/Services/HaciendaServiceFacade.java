@@ -165,7 +165,7 @@ public class HaciendaServiceFacade {
         try {
             ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
-                return SubmitResult.error("No hay configuracion para enviar comprobante");
+                return SubmitResult.error("No hay configuración para enviar el comprobante");
             }
 
             FidesApiService.InvoiceData invoiceData = buildInvoiceData(comprobante, appSettings);
@@ -199,7 +199,7 @@ public class HaciendaServiceFacade {
                 return SubmitResult.accepted();
             } else {
                 return SubmitResult.rejected(fidesResp.errorMessage != null
-                        ? fidesResp.errorMessage : "Fides/Hacienda rechazo el comprobante");
+                        ? fidesResp.errorMessage : "Fides/Hacienda rechazó el comprobante");
             }
 
         } catch (RuntimeException e) {
@@ -302,7 +302,7 @@ public class HaciendaServiceFacade {
         try {
             ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
-                return SubmitResult.error("No hay configuracion de Hacienda");
+                return SubmitResult.error("No hay configuración de Hacienda");
             }
 
             String clave = comprobante.getHaciendaClave();
@@ -350,7 +350,7 @@ public class HaciendaServiceFacade {
                 return SubmitResult.accepted();
             } else {
                 return SubmitResult.rejected(apiResponse.errorMessage != null
-                        ? apiResponse.errorMessage : "Hacienda rechazo el comprobante");
+                        ? apiResponse.errorMessage : "Hacienda rechazó el comprobante");
             }
 
         } catch (RuntimeException e) {

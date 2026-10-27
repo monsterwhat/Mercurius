@@ -27,7 +27,7 @@ class EtiquetasResourceTest {
                 .body(containsString("data-kit-table"))
                 .body(containsString("reporte-etiquetas"))
                 .body(containsString("js-etiqueta-check"))
-                .body(containsString("Vista Previa de Etiquetas"));
+                .body(containsString("Generar Etiquetas"));
     }
 
     @Test

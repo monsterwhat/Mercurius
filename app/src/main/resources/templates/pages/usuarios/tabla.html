@@ -33,26 +33,38 @@
 {#include _kit/surface id=modelo.id}
     {#content}
     <div class="field">
+        <label class="label is-sr-only" for="{modelo.id}-q">Buscar usuarios</label>
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{q}" autocomplete="off"
-                   placeholder="Búsqueda general de todos los campos"
+            {! hx-preserve keeps the focused search box (and its caret) alive
+               across the 300ms type-ahead swaps of the whole surface. !}
+            <input class="input" type="text" name="q" value="{q}" id="{modelo.id}-q"
+                   autocomplete="off" spellcheck="false" enterkeyhint="search"
+                   placeholder="Buscar por usuario, correo, rol o estado"
+                   hx-preserve="true"
                    hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
-                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                   hx-target="#{modelo.id}" hx-swap="outerHTML" hx-sync="this:replace"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {! The table gets a suffixed id so the surface (the swap target) and the
+       table never share one document id. !}
+    {#include _kit/data-table id=(modelo.id + "-tabla") baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for usuario in modelo.filas}
             <tr>
                 <td class="kit-code">{usuario.id}</td>
-                <td style="font-weight:500">{usuario.username}</td>
-                <td>{#if usuario.email??}{usuario.email}{#else}&mdash;{/if}</td>
-                <td>{#if usuario.groupName??}{usuario.groupName}{#else}&mdash;{/if}</td>
+                <td style="font-weight:500">{#if usuario.username??}<span class="table-clamp" title="{usuario.username}">{usuario.username}</span>{#else}&mdash;{/if}</td>
+                <td>{#if usuario.email??}<span class="table-clamp" title="{usuario.email}">{usuario.email}</span>{#else}&mdash;{/if}</td>
+                {! groupName stores programmatic tokens ("[admin, facturacion]").
+                   They are rendered as their Spanish module names, never as the
+                   raw enum string the operator cannot read. !}
+                <td>{#if usuario.groupName??}<span class="table-clamp" title="{usuario.groupName}">{usuario.groupName.replace('[', '').replace(']', '').replace('facturacion', 'Facturación').replace('inventario', 'Inventarios').replace('tributacion', 'Tributación').replace('registro', 'Registros').replace('usuario', 'Usuarios').replace('admin', 'Administrativo')}</span>{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
-                    {#if usuario.status??}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
+                    {! Inactivo is a neutral state, not a failure: a red chip
+                       reads as an error on every disabled account. !}
+                    {#if usuario.status??}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-neutral">Inactivo</span>{/if}
                 </td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
@@ -64,16 +76,24 @@
                                 aria-haspopup="dialog" data-kit-open="editar-usuario"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/users/formularios/{usuario.id}"
                                 hx-target="#editar-usuario-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
-                        <button type="button" class="button is-small" title="Cambiar estado"
-                                aria-label="Cambiar estado"
+                        {! The confirm names the account and the consequence;
+                           "Cambiar estado" alone made the operator guess. !}
+                        <button type="button" class="button is-small"
+                                title="{#if usuario.status}Desactivar cuenta{#else}Activar cuenta{/if}"
+                                aria-label="{#if usuario.status}Desactivar cuenta{#else}Activar cuenta{/if}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}"
-                                hx-confirm="¿Cambiar el estado del usuario {usuario.username}?"
+                                hx-confirm="{#if usuario.status}¿Desactivar la cuenta de {usuario.username}? No podrá iniciar sesión.{#else}¿Activar la cuenta de {usuario.username}? Podrá iniciar sesión de nuevo.{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron usuarios con la critería proporcionada</td></tr>
+            <tr><td colspan="{modelo.columnas.size()}">
+                <div class="has-text-centered py-5">
+                    <p class="has-text-weight-semibold mb-1">No se encontraron usuarios</p>
+                    <p class="kit-empty">Revise el texto de búsqueda o el filtro de estado.</p>
+                </div>
+            </td></tr>
             {/for}
         {/rows}
     {/include}

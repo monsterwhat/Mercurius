@@ -19,7 +19,7 @@
     modelo.totalPages  Integer - ceil(total/size), computed server-side
     modelo.paginas     List    - pager window
     modelo.filtros     Map     - preserved params; reserved keys excluded
-    q                  String  - current search text (round-tripped into input)
+    q                  String  - current search text (drives the empty state)
     toastSeverity / toastMessage - optional OOB toast after row actions
 
   Columns mirror the legacy p:dataTable of secured/pages/Correos/Templates/
@@ -40,19 +40,23 @@
     of emoji glyphs. Only the destructive one keeps is-danger; the rest are
     bordered buttons, because the teal accent is the screen's one filled
     primary.
-!}
-<div id="{modelo.id}">
-    <div class="field">
-        <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
-                   placeholder="Busqueda general de todos los campos"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
-            <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
-        </div>
-    </div>
 
+  ROUND 2
+  -------
+  - The search field moved OUT of this fragment (it is in templates.html now):
+    it used to be inside the swap target, so every debounced search destroyed
+    the input the operator was typing in.
+  - `data-resultados` exposes the row count to the page's status region, which
+    announces it after a swap.
+  - Long template names and subjects are clamped to three lines with the full
+    value in `title`; unclamped they stretched the table to any width and
+    pushed the actions out of reach on a phone.
+  - The empty state distinguishes "no hay plantillas" from "la búsqueda no
+    encontró nada", names the term, and offers the way back.
+  - hx-disabled-elt="this" on the delete button: a double tap cannot fire two
+    DELETEs.
+!}
+<div id="{modelo.id}" data-resultados="{modelo.total}">
     {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for plantilla in modelo.filas}
@@ -60,34 +64,48 @@
                 <td class="has-text-centered">
                     {#if plantilla.estado}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
                 </td>
-                <td style="font-weight:500">{plantilla.nombre}</td>
+                <td style="font-weight:500">
+                    {#if plantilla.nombre??}<span class="table-clamp" title="{plantilla.nombre}">{plantilla.nombre}</span>{#else}<span class="kit-empty">&mdash;</span>{/if}
+                </td>
                 <td><span class="tag {plantilla.tipoBadge}">{plantilla.tipoLabel}</span></td>
-                <td>{#if plantilla.asunto??}{plantilla.asunto}{#else}&mdash;{/if}</td>
-                <td>{#if plantilla.fechaModificacion??}{plantilla.fechaModificacion}{#else}&mdash;{/if}</td>
+                <td>{#if plantilla.asunto??}<span class="table-clamp" title="{plantilla.asunto}">{plantilla.asunto}</span>{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td>{#if plantilla.fechaModificacion??}{plantilla.fechaModificacion}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small" title="Editar plantilla"
-                                aria-label="Editar plantilla"
+                                aria-label="Editar plantilla {plantilla.nombre}"
                                 aria-haspopup="dialog" data-kit-open="editar-plantilla"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/email-templates/formularios/{plantilla.id}"
                                 hx-target="#editar-plantilla-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small is-danger" title="Eliminar plantilla"
-                                aria-label="Eliminar plantilla"
+                                aria-label="Eliminar plantilla {plantilla.nombre}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/email-templates/{plantilla.id}"
                                 hx-confirm="¿Eliminar la plantilla {plantilla.nombre}? Esta acción no se puede deshacer."
+                                hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron plantillas con la criteria proporcionada</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    {#if q}
+                    <span class="kit-empty">No hay plantillas que coincidan con «{q}».</span>
+                    <a class="button is-small is-text mt-2" href="{config:['quarkus.http.root-path']}{modelo.baseUrl}">Ver todas las plantillas</a>
+                    {#else}
+                    <span class="kit-empty">Todavía no hay plantillas de correo. Cree la primera con «Crear Plantilla».</span>
+                    {/if}
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}
-
-    {#if toastMessage??}
-    <div hx-swap-oob="beforeend:#toast-container">
-        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
-    </div>
-    {/if}
 </div>
+
+{#if toastMessage??}
+{! Top level of the response: htmx only processes out-of-band swaps on
+   top-level elements, so a toast nested inside the swap root was dropped. !}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

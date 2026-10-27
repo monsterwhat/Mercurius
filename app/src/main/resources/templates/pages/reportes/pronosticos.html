@@ -68,9 +68,10 @@
                     </select>
                 </div>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Generar pronóstico</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Generar pronóstico</button>
+            </div>
         {/include}
 
 
@@ -87,6 +88,12 @@
 
         {#include pages/reportes/_tablas/pronosticos /}
 
+        {#if seccion != 'salud'}
+        <p class="help mercurius-text-muted mt-2">
+            Pase el cursor sobre el método, MASE o Sesgo para ver qué significan.
+        </p>
+        {/if}
+
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -97,49 +104,57 @@
             </form>
         </div>
 
-                {#include _kit/chart-card title="Demanda Pronosticada" subtitle=("Pronóstico a " + dias + " días") canvasId="grafica-pronosticos" height="360px"}
-
+                {#if seccion != 'salud'}
+        {#include _kit/chart-card title=chartTitle subtitle=chartSubtitle canvasId="grafica-pronosticos" height="360px"}
             {#chartBody}
-                <canvas id="grafica-pronosticos" width="900" height="320"
-                        data-root="{config:['quarkus.http.root-path']}"
-                        data-dias="{dias}">
+                <canvas id="grafica-pronosticos" role="img"
+                        aria-label="{chartSeriesLabel} por artículo para el horizonte elegido">
                     Su navegador no soporta canvas.
                 </canvas>
             {/chartBody}
         {/include}
-
-<script>
-(function () {
-    var canvas = document.getElementById('grafica-pronosticos');
-    if (!canvas) { return; }
-    var root = canvas.getAttribute('data-root');
-    var dias = canvas.getAttribute('data-dias');
-    var url = root + '/api/stock-forecast/bulk-forecast?days=' + encodeURIComponent(dias);
-    fetch(url, { credentials: 'same-origin' })
-        .then(function (respuesta) { return respuesta.json(); })
-        .then(function (datos) {
-            var etiquetas = [];
-            var valores = [];
-            (datos || []).slice(0, 12).forEach(function (pronostico) {
-                etiquetas.push(pronostico.articuloNombre);
-                valores.push(Number(pronostico.predictedSales));
-            });
-            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
-                // One hue for the data: --mercurius-chart-series-1, resolved
-                // through resolveColour() because a canvas cannot paint var().
-                var rootStyle = getComputedStyle(document.documentElement);
-                var seriesOne = window.MercuriusCharts.resolveColour(
-                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
-                window.MercuriusCharts.create('grafica-pronosticos', {
-                    type: 'bar',
-                    labels: etiquetas,
-                    datasets: [{ label: 'Demanda pronosticada', data: valores, backgroundColor: seriesOne }],
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                });
+        <p class="help mt-2" id="grafica-pronosticos-estado" role="status" aria-live="polite"></p>
+        <script type="application/json" id="datos-pronosticos">{chartJson.raw}</script>
+        <script>
+        (function () {
+        function init() {
+            var canvas = document.getElementById('grafica-pronosticos');
+            var dataNode = document.getElementById('datos-pronosticos');
+            if (!canvas || !dataNode) { return; }
+            var datos = [];
+            try {
+                datos = JSON.parse(dataNode.textContent || '[]');
+            } catch (error) {
+                console.warn('[reportes/pronosticos] Datos de gráfica inválidos.', error);
             }
-        })
-        .catch(function () { /* sin datos */ });
-})();
-</script>
+            var etiquetas = datos.map(function (d) { return d.label; });
+            var valores = datos.map(function (d) { return Number(d.value); });
+            var estado = document.getElementById('grafica-pronosticos-estado');
+            if (estado) {
+                estado.textContent = etiquetas.length === 0
+                    ? 'Sin datos para el horizonte elegido.' : '';
+            }
+            if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') {
+                if (estado) { estado.textContent = 'No se pudo cargar el gráfico.'; }
+                return;
+            }
+            var rootStyle = getComputedStyle(document.documentElement);
+            var seriesOne = window.MercuriusCharts.resolveColour(
+                rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
+            window.MercuriusCharts.create('grafica-pronosticos', {
+                type: 'bar',
+                labels: etiquetas,
+                datasets: [{ label: '{chartSeriesLabel}', data: valores, backgroundColor: seriesOne }],
+                options: { plugins: { legend: { display: false } } }
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        })();
+        </script>
+        {/if}
     {/body}
 {/include}

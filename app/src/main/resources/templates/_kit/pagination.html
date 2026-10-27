@@ -1,7 +1,7 @@
 {!
   _kit/pagination - Bulma pager for server-side paging (T16).
 
-  Renders a centered Bulma pagination bar (prev / page numbers / next).
+  Renders a centered Bulma pagination bar (first / prev / page numbers / next / last).
   Every link targets the SAME endpoint that rendered the current view,
   differing only in query params, so both full-page navigation and HTMX
   boosted navigation work. To boost it, wrap the include in an element
@@ -32,11 +32,13 @@
 !}
 {@java.lang.Integer page}
 {@java.lang.Integer totalPages}
-{@java.util.List<Integer> pages}
 {@java.lang.String baseUrl}
+{! pages stays undeclared: it is OPTIONAL and ??-guarded below. Declaring it
+   with {@...} made Qute fail rendering when a caller omitted the numbered
+   window, which is the exact case the `{#if pages??}` guard exists for. !}
 {! params stays undeclared: it is optional and ??-guarded below. !}
-<nav class="pagination is-centered is-small" role="navigation"
-     aria-label="paginacion" data-kit-pagination data-base-url="{baseUrl}">
+<nav class="pagination is-centered" role="navigation"
+     aria-label="Paginación" data-kit-pagination data-base-url="{baseUrl}">
 
     {#if page > 1}
     <a class="pagination-previous" rel="prev"
@@ -54,17 +56,27 @@
     <button class="pagination-next" type="button" disabled>Siguiente</button>
     {/if}
 
-    {#if pages??}
     <ul class="pagination-list">
+        {#if page > 1}
+        <li><a class="pagination-link" aria-label="Primera página" title="Primera página"
+               href="{config:['quarkus.http.root-path']}{baseUrl}?page=1{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&laquo;</a></li>
+        {/if}
+        {#if pages??}
         {#for num in pages}
             {#if num == page}
             <li><a class="pagination-link is-current" aria-current="page"
+                   aria-label="Página {num}, actual"
                    href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {#else}
             <li><a class="pagination-link"
+                   aria-label="Página {num}"
                    href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {/if}
         {/for}
+        {/if}
+        {#if page < totalPages}
+        <li><a class="pagination-link" aria-label="Última página" title="Última página"
+               href="{config:['quarkus.http.root-path']}{baseUrl}?page={totalPages}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&raquo;</a></li>
+        {/if}
     </ul>
-    {/if}
 </nav>

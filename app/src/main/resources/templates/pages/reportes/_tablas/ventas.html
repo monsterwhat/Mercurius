@@ -14,6 +14,11 @@
             <td>{f.montoTotalLinea}</td>
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">
+            {#if consultaCompleta}Sin ventas para el cajero y el rango seleccionados{#else}Seleccione un cajero y un rango de fechas para cargar el reporte{/if}
+        </td></tr>
+        {/if}
       {/rows}
     {/include}
     {#if consultaCompleta && totalGeneral??}

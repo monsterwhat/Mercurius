@@ -53,20 +53,22 @@
         {#include _kit/view-tabs ariaLabel="Vistas de categorías"}
             {#tabs}
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'familias' }"
-                    @click="tab = 'familias'">
+                    :aria-current="tab === 'familias' ? 'true' : 'false'"
+                    aria-controls="panel-familias" @click="tab = 'familias'">
                 <span>Familias</span>
-                <span class="view-tab-count">{familiaCount}</span>
+                <span class="view-tab-count">{fmt:numero(familiaCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'departamentos' }"
-                    @click="tab = 'departamentos'">
+                    :aria-current="tab === 'departamentos' ? 'true' : 'false'"
+                    aria-controls="panel-departamentos" @click="tab = 'departamentos'">
                 <span>Departamentos</span>
-                <span class="view-tab-count">{departamentoCount}</span>
+                <span class="view-tab-count">{fmt:numero(departamentoCount)}</span>
             </button>
             {/tabs}
         {/include}
 
         {! ── Familias ─────────────────────────────────────────────── !}
-        <div x-show="tab === 'familias'">
+        <div id="panel-familias" x-show="tab === 'familias'">
         {#include _kit/surface title="Familias"}
             {#actions}
                 {! The surface header is a flex row with space-between, so a
@@ -81,7 +83,8 @@
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
                         <input type="hidden" name="type" value="xlsx"/>
-                        <button class="button" type="submit">Exportar Excel</button>
+                        <button class="button" type="submit"
+                                aria-label="Exportar las familias a Excel">Exportar Excel</button>
                     </form>
                     {/if}
                 </div>
@@ -97,7 +100,7 @@
         </div>
 
         {! ── Departamentos ────────────────────────────────────────── !}
-        <div x-show="tab === 'departamentos'" style="display:none">
+        <div id="panel-departamentos" x-show="tab === 'departamentos'" style="display:none">
         {#include _kit/surface title="Departamentos"}
             {#actions}
                 <div class="buttons">
@@ -108,7 +111,8 @@
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>
                         <input type="hidden" name="type" value="xlsx"/>
-                        <button class="button" type="submit">Exportar Excel</button>
+                        <button class="button" type="submit"
+                                aria-label="Exportar los departamentos a Excel">Exportar Excel</button>
                     </form>
                     {/if}
                 </div>
@@ -127,11 +131,11 @@
             Parity with the legacy supplier scoreboard: precomputed chips/bars
             from renderFullPage (metricasFilas + totals). !}
         {#include _kit/surface title="Ranking de Rendimiento de Proveedores"
-             subtitle=("Proveedores: " + metricasTotalProveedores + " · Score promedio: " + metricasScorePromedio + " · Compras totales: " + metricasComprasTotales)}
+             subtitle=("Proveedores: " + metricasTotalProveedores + " · Score promedio: " + fmt:numero(metricasScorePromedio) + " · Compras totales: " + fmt:moneda(metricasComprasTotales))}
             {#content}
                 {#if metricasFilas?? && metricasFilas.size() > 0}
                 <div class="table-container">
-                <table class="table is-hoverable is-fullwidth">
+                <table class="table is-hoverable is-fullwidth" aria-label="Rendimiento de proveedores">
                     <thead>
                         <tr>
                             <th scope="col">Proveedor</th>
@@ -146,20 +150,22 @@
                     <tbody>
                         {#for fila in metricasFilas}
                         <tr>
-                            <td>{fila.proveedor}</td>
-                            <td class="num">{fila.score}</td>
-                            <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100">{fila.score}</progress></td>
+                            <td>{#if fila.proveedor??}<span class="table-clamp" title="{fila.proveedor}">{fila.proveedor}</span>{#else}&mdash;{/if}</td>
+                            <td class="num">{fmt:numero(fila.score)}</td>
+                            <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100"
+                                          aria-label="Rendimiento de {fila.proveedor}: {fmt:numero(fila.score)} de 100">{fmt:numero(fila.score)}</progress></td>
                             <td class="num">{fila.facturas}</td>
                             <td class="num">{fila.pagadas}</td>
-                            <td class="num">{fila.montoTotal}</td>
-                            <td class="num">{fila.onTime}</td>
+                            <td class="num">{fmt:moneda(fila.montoTotal)}</td>
+                            <td class="num">{fmt:porcentaje(fila.onTime)}</td>
                         </tr>
                         {/for}
                     </tbody>
                 </table>
                 </div>
                 {#else}
-                <p class="has-text-grey">Aún no hay métricas de proveedores.</p>
+                <p class="has-text-weight-semibold">Aún no hay métricas de proveedores</p>
+                <p class="help">Aparecen cuando existan compras registradas en el período.</p>
                 {/if}
             {/content}
         {/include}

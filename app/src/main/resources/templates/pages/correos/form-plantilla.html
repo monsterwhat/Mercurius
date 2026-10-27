@@ -30,6 +30,22 @@
     rendered in the app's one monospace class. They are one attribute now.
   - The placeholder help block was a blue (is-info) notification: a second
     accent family next to the teal primary. It is the neutral light one.
+
+  ROUND 2
+  -------
+  - The merge-field help was one run-on line joined by pipe characters. It is
+    now one entry per marker (code + what it renders), which is what the
+    operator actually reads while writing the HTML body, and the block is
+    tied to the textarea with aria-describedby.
+  - The subject field says it accepts the same markers; it previously showed
+    one in the placeholder with no explanation.
+  - Field errors carry their own id and aria-describedby, and every invalid
+    control carries aria-invalid, so the message is announced with the field
+    instead of floating under the form.
+  - hx-disabled-elt="this" on Guardar: the dialog used to allow a second POST
+    while the first was still in flight.
+  - Labels lose the trailing colon and use sentence case, like the rest of the
+    app's forms.
 !}
 <div id="forma-plantilla">
     {#if modo == 'editar' && plantilla??}
@@ -40,67 +56,75 @@
           hx-target="#forma-plantilla" hx-swap="outerHTML">
     {/if}
         <div class="field">
-            <label class="label" for="tpl-nombre">Nombre:</label>
+            <label class="label" for="tpl-nombre">Nombre</label>
             <div class="control">
                 <input class="input {#if errorNombre??}is-danger{/if}" id="tpl-nombre"
                        name="nombre" required="required" autocomplete="off"
+                       {#if errorNombre??}aria-invalid="true" aria-describedby="tpl-nombre-error"{/if}
                        value="{#if plantilla??}{plantilla.nombre}{/if}"/>
             </div>
-            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+            {#if errorNombre??}<p class="help is-danger" id="tpl-nombre-error">{errorNombre}</p>{/if}
         </div>
 
         <div class="field">
-            <label class="label" for="tpl-tipo">Tipo:</label>
+            <label class="label" for="tpl-tipo">Tipo</label>
             <div class="control">
                 <div class="select {#if errorTipo??}is-danger{/if} is-fullwidth">
-                    <select id="tpl-tipo" name="tipo" required="required">
-                        <option value="">-- Seleccionar --</option>
+                    <select id="tpl-tipo" name="tipo" required="required"
+                            {#if errorTipo??}aria-invalid="true" aria-describedby="tpl-tipo-error"{/if}>
+                        <option value="">Seleccione un tipo</option>
                         {#for opt in tipoOptions}
                         <option value="{opt.value}"{#if plantilla?? && plantilla.tipo == opt.value} selected{/if}>{opt.label}</option>
                         {/for}
                     </select>
                 </div>
             </div>
-            {#if errorTipo??}<p class="help is-danger">{errorTipo}</p>{/if}
+            {#if errorTipo??}<p class="help is-danger" id="tpl-tipo-error">{errorTipo}</p>{/if}
         </div>
 
         <div class="field">
-            <label class="label" for="tpl-asunto">Asunto por defecto:</label>
+            <label class="label" for="tpl-asunto">Asunto por defecto</label>
             <div class="control">
                 <input class="input" id="tpl-asunto" name="asunto" autocomplete="off"
-                       placeholder="Ej: Reporte Automatico - &#123;&#123;nombre&#125;&#125;"
+                       placeholder="Ej: Reporte automático - &#123;&#123;nombre&#125;&#125;"
+                       aria-describedby="tpl-asunto-ayuda"
                        value="{#if plantilla?? && plantilla.asunto??}{plantilla.asunto}{/if}"/>
             </div>
+            <p class="help" id="tpl-asunto-ayuda">Opcional. Acepta los mismos marcadores que el cuerpo.</p>
         </div>
 
         <div class="field">
-            <label class="label" for="tpl-cuerpo">Cuerpo HTML:</label>
+            <label class="label" for="tpl-cuerpo">Cuerpo HTML</label>
             <div class="control">
-                <textarea class="textarea kit-code" id="tpl-cuerpo" name="cuerpoHtml" rows="10" required="required"
-                          >{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
+                <textarea class="textarea kit-code" id="tpl-cuerpo" name="cuerpoHtml" rows="10"
+                          required="required" autocomplete="off" spellcheck="false"
+                          aria-describedby="tpl-cuerpo-ayuda">{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
             </div>
         </div>
 
-        <div class="notification is-light">
-            <p><strong>Placeholders disponibles:</strong></p>
-            <p class="kit-code is-size-7">
-                &#123;&#123;nombre&#125;&#125; - Nombre del reporte &#160;|&#160;
-                &#123;&#123;fecha&#125;&#125; - Fecha actual &#160;|&#160;
-                &#123;&#123;total&#125;&#125; - Total de registros &#160;|&#160;
-                &#123;&#123;tabla&#125;&#125; - Tabla de datos &#160;|&#160;
-                &#123;&#123;mensaje&#125;&#125; - Mensaje descriptivo &#160;|&#160;
-                &#123;&#123;_empresa&#125;&#125; - Nombre de la empresa
+        <div class="notification is-light" id="tpl-cuerpo-ayuda">
+            <p><strong>Marcadores disponibles</strong></p>
+            <p class="is-size-7 mercurius-text-muted">
+                El sistema los reemplaza al enviar el correo. Escríbalos tal cual, con dobles llaves.
             </p>
+            <div class="is-size-7">
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;nombre&#125;&#125;</code> Nombre del reporte</span>
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;fecha&#125;&#125;</code> Fecha del envío</span>
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;total&#125;&#125;</code> Total de registros</span>
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;tabla&#125;&#125;</code> Tabla con los datos</span>
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;mensaje&#125;&#125;</code> Mensaje descriptivo</span>
+                <span class="is-inline-block mr-4 mb-1"><code class="kit-code">&#123;&#123;_empresa&#125;&#125;</code> Nombre de la empresa</span>
+            </div>
         </div>
 
         <div class="field is-grouped is-grouped-right">
             <div class="control">
-                <button class="button is-primary" type="submit">
+                <button class="button is-primary" type="submit" hx-disabled-elt="this">
                     {#if modo == 'editar'}Actualizar Plantilla{#else}Crear Plantilla{/if}
                 </button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>

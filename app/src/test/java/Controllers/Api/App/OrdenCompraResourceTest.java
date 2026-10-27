@@ -670,7 +670,7 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .when().get(BASE + "/api/app/ordenes/" + id + "/cancelar")
                 .then()
                 .statusCode(200)
-                .body(containsString("¿Está seguro de cancelar la orden?"))
+                .body(containsString("¿Está seguro de cancelar la orden"))
                 .body(containsString("Motivo de cancelación"));
     }
 

@@ -9,40 +9,111 @@
     precios   List    - ArticuloPrecio history (newest last)
 
   WHAT CHANGED IN THE UI PASS
-    - The price and stock cells carry `num`: right-aligned, tabular figures.
+    - The identity of the record leads: name, then código and código de barra
+      as secondary metadata, instead of both being buried as two equal rows in
+      a key/value table.
+    - Stock is now a figure with a word next to it ("Sin stock", "Bajo el
+      óptimo") instead of a bare decimal. The old cell printed the raw double
+      ("12.0") and gave no cue that zero is a problem. The stock numbers use
+      fmt:numero, so they follow the app's es-CR convention.
+    - The price history was one cell of "costo / utilidad / final" separated by
+      slashes, so a missing value left an orphaned " / ". It is a proper table
+      with one column per figure, right-aligned and tabular, and an explicit
+      empty row. The definition table keeps only the descriptive fields.
+    - Every definition row uses <th scope="row"> so a screen reader pairs the
+      label with its value; the description wraps instead of widening the
+      modal.
 !}
 <div id="detalles-articulo-fragmento">
-    <table class="table is-fullwidth is-narrow">
-        <tbody>
-            <tr><th style="width:35%">Código</th><td>{articulo.codigo}</td></tr>
-            <tr><th>Código Barra</th><td class="kit-code">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Nombre</th><td style="font-weight:500">{articulo.nombre}</td></tr>
-            <tr><th>Descripción</th><td>{#if articulo.descripcion??}{articulo.descripcion}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Unidad de Medida</th><td>{#if articulo.unidadMedida??}{articulo.unidadMedida}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Unidad de Medida Comercial</th><td>{#if articulo.unidadMedidaComercial??}{articulo.unidadMedidaComercial}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Departamento</th><td>{#if articulo.departamento??}{articulo.departamento.nombre}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Familia</th><td>{#if articulo.familia??}{articulo.familia.nombre}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Código CABYS</th><td class="kit-code">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} - {articulo.codigoCabys.descripcion}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Tipo de Refrigeración</th><td>
-                {#if articulo.tipoRefrigeracion??}
-                    {#if articulo.tipoRefrigeracion == 'NINGUNA'}Sin refrigeración
-                    {#else if articulo.tipoRefrigeracion == 'REFRIGERADO'}Refrigerado (2-8°C)
-                    {#else if articulo.tipoRefrigeracion == 'CONGELADO'}Congelado (-18°C)
-                    {/if}
-                {#else}&mdash;{/if}
-            </td></tr>
-            {#for precio in precios}
-            <tr>
-                <th>Precio {precio_index + 1} (Costo / Utilidad / Final)</th>
-                <td class="num">{#if precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if} /
-                    {#if precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if} /
-                    <strong>{#if precio.precioFinal??}{precio.precioFinal}{/if}</strong></td>
-            </tr>
-            {/for}
-            <tr><th>Stock</th><td class="num" style="font-weight:600">{stock}</td></tr>
-            <tr><th>Creado por</th><td>{#if articulo.usuario??}{articulo.usuario.username}{#else}&mdash;{/if}</td></tr>
-        </tbody>
-    </table>
+    <div class="mb-4" style="display:flex; flex-wrap:wrap; gap:.75rem 1rem; justify-content:space-between; align-items:flex-start">
+        <div style="min-width:0">
+            <p class="is-size-5 has-text-weight-semibold" style="overflow-wrap:anywhere">{articulo.nombre}</p>
+            <p class="help" style="margin-bottom:0">
+                Código <span class="kit-code">{articulo.codigo}</span>
+                {#if articulo.codigoBarra??}
+                · Código de barra <span class="kit-code">{articulo.codigoBarra}</span>
+                {/if}
+            </p>
+        </div>
+        {! The current sale price is the number an operator opens this dialog to
+           check, so it is a figure at the top instead of the last row of a
+           history table. !}
+        <div style="text-align:right">
+            <p class="help" style="margin-bottom:0">Precio final</p>
+            <p class="is-size-4 has-text-weight-semibold kit-figure" style="margin-bottom:0">
+                {#if articulo.lastPrecioArticulo??}{fmt:moneda(articulo.lastPrecioArticulo)}{#else}&mdash;{/if}
+            </p>
+        </div>
+    </div>
+
+    <div class="columns is-mobile">
+        <div class="column">
+            <p class="help">Stock disponible</p>
+            <p class="is-size-4 has-text-weight-semibold kit-figure" style="margin-bottom:.25rem">{fmt:numero(stock)}</p>
+            {#if stock <= 0}
+            <span class="status-chip is-danger">Sin stock</span>
+            {#else if articulo.stockOptimo?? && stock < articulo.stockOptimo}
+            <span class="status-chip is-warning">Bajo el óptimo</span>
+            {/if}
+        </div>
+        <div class="column">
+            <p class="help">Stock óptimo</p>
+            <p class="is-size-4 has-text-weight-semibold kit-figure">{#if articulo.stockOptimo??}{fmt:numero(articulo.stockOptimo)}{#else}&mdash;{/if}</p>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table is-fullwidth is-narrow">
+            <colgroup>
+                <col style="width:35%">
+                <col>
+            </colgroup>
+            <tbody>
+                <tr><th scope="row">Descripción</th><td style="overflow-wrap:anywhere">{#if articulo.descripcion??}{articulo.descripcion}{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Unidad de Medida</th><td>{#if articulo.unidadMedida??}{articulo.unidadMedida}{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Unidad de Medida Comercial</th><td>{#if articulo.unidadMedidaComercial??}{articulo.unidadMedidaComercial}{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Departamento</th><td>{#if articulo.departamento??}{articulo.departamento.nombre}{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Familia</th><td>{#if articulo.familia??}{articulo.familia.nombre}{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Código CAByS</th><td class="kit-code">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} <span class="table-clamp" title="{articulo.codigoCabys.descripcion}">{articulo.codigoCabys.descripcion}</span>{#else}&mdash;{/if}</td></tr>
+                <tr><th scope="row">Tipo de Refrigeración</th><td>
+                    {#if articulo.tipoRefrigeracion??}
+                        {#if articulo.tipoRefrigeracion == 'NINGUNA'}Sin refrigeración
+                        {#else if articulo.tipoRefrigeracion == 'REFRIGERADO'}Refrigerado (2-8°C)
+                        {#else if articulo.tipoRefrigeracion == 'CONGELADO'}Congelado (-18°C)
+                        {/if}
+                    {#else}&mdash;{/if}
+                </td></tr>
+                <tr><th scope="row">Creado por</th><td>{#if articulo.usuario??}{articulo.usuario.username}{#else}&mdash;{/if}</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="has-text-weight-semibold mb-2">Historial de precios</p>
+    <div class="table-container">
+        <table class="table is-fullwidth is-narrow">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col" class="num">Costo sin IVA</th>
+                    <th scope="col" class="num">Utilidad</th>
+                    <th scope="col" class="num">Precio final</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#for precio in precios}
+                <tr>
+                    <td>{precio_index + 1}</td>
+                    <td class="num">{#if precio.precioCostoSinIVA??}{fmt:moneda(precio.precioCostoSinIVA)}{#else}&mdash;{/if}</td>
+                    <td class="num">{#if precio.porcentajeUtilidad??}{fmt:porcentaje(precio.porcentajeUtilidad)}{#else}&mdash;{/if}</td>
+                    <td class="num has-text-weight-semibold">{#if precio.precioFinal??}{fmt:moneda(precio.precioFinal)}{#else}&mdash;{/if}</td>
+                </tr>
+                {#else}
+                <tr><td colspan="4" class="has-text-centered mercurius-text-muted">Sin precios registrados</td></tr>
+                {/for}
+            </tbody>
+        </table>
+    </div>
+
     <div class="field is-grouped is-grouped-right">
         <div class="control">
             <button class="button" type="button" data-kit-close>Cerrar</button>

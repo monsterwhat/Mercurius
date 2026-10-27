@@ -16,6 +16,7 @@ import Services.DepartamentoService;
 import Services.LoginService;
 import Services.OrdenCompraService;
 import Utils.DiffUtils;
+import Utils.FormatoVista;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -40,8 +41,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -1249,9 +1248,9 @@ public class OrdenCompraResource {
 
     private static String formatoDinero(@Nullable BigDecimal valor) {
         if (valor == null) {
-            return "₡0.00";
+            return FormatoVista.moneda(BigDecimal.ZERO);
         }
-        return "₡" + new DecimalFormat("#,##0.00").format(valor.setScale(2, RoundingMode.HALF_UP));
+        return FormatoVista.moneda(valor);
     }
 
     @Nullable
@@ -1382,6 +1381,7 @@ public class OrdenCompraResource {
                 linea.put("cantidad", detalle.getCantidad());
                 linea.put("precio", detalle.getPrecioUnitario());
                 linea.put("subtotal", formatoDinero(detalle.getSubtotal()));
+                linea.put("subtotalNumero", detalle.getSubtotal());
                 lineas.add(linea);
             }
         }

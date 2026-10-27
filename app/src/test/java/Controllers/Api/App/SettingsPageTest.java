@@ -158,8 +158,8 @@ class SettingsPageTest extends AppBase {
         assertTrue(html.contains("x-data=\"{ paso: 0 }\""), "falta el estado Alpine del asistente");
         assertTrue(html.contains("Perfil"), "falta paso Perfil");
         assertTrue(html.contains("Logo"), "falta paso Logo");
-        assertTrue(html.contains("Tributacion"), "falta paso Tributacion");
-        assertTrue(html.contains("Confirmacion"), "falta paso Confirmacion");
+        assertTrue(html.contains("Tributación"), "falta paso Tributación");
+        assertTrue(html.contains("Confirmación"), "falta paso Confirmación");
         assertTrue(html.contains("hx-include=\"#ajustes-forma\""),
                 "el paso final debe enviar el mismo payload del formulario");
 

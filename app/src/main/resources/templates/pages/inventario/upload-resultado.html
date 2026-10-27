@@ -11,20 +11,41 @@
     toastSeverity / toastMessage (optional OOB toast)
 !}
 <div class="content">
+    {#if resultados.size() == 0}
+    {! The empty rail (no files sent, or the request failed before parsing):
+       the old fragment reported "0 procesado(s), 0 con error", which reads
+       like a completed run. !}
+    <div class="notification is-warning is-light">
+        <span class="icon is-small">{#include _kit/icon name="alert" /}</span>
+        <strong>No se recibió ningún archivo.</strong>
+        Seleccione al menos un XML de factura e intente de nuevo.
+    </div>
+    {#else}
     <p class="has-text-weight-semibold">
-        Resultado de la carga: {procesados} procesado(s), {fallidos} con error
+        {procesados} {#if procesados == 1}archivo procesado{#else}archivos procesados{/if}{#if fallidos > 0}, {fallidos} {#if fallidos == 1}con error{#else}con errores{/if}{/if}.
     </p>
     {#for resultado in resultados}
     {#if resultado.exito}
     <div class="notification is-success is-light" style="padding:0.75rem;margin-bottom:0.5rem">
-        <strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
+        <span class="icon is-small">{#include _kit/icon name="check" /}</span>
+        <span class="is-sr-only">Procesado: </span><strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
     </div>
     {#else}
-    <div class="notification is-danger" style="padding:0.75rem;margin-bottom:0.5rem">
-        <strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
+    <div class="notification is-danger is-light" style="padding:0.75rem;margin-bottom:0.5rem">
+        <span class="icon is-small">{#include _kit/icon name="alert" /}</span>
+        <span class="is-sr-only">Error: </span><strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
     </div>
     {/if}
     {/for}
+    {! Next action: what to do with what was just created. The board route is
+       the same one the navbar uses and it honours ?tab=, so this lands on
+       Pendientes with fresh server data. !}
+    <div class="buttons mt-4">
+        <a class="button" href="{config:['quarkus.http.root-path']}/app/inventarios?tab=pendientes">
+            Revisar movimientos pendientes
+        </a>
+    </div>
+    {/if}
 </div>
 
 {#if toastMessage??}

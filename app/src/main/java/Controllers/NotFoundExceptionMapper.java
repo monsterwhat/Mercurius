@@ -49,10 +49,12 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
                     .build();
         }
         boolean anonymous = identity == null || identity.isAnonymous();
+        // Deployment-relative targets: the container prepends the root path.
+        // A literal /Mercurius here was doubled by the container.
         if (anonymous) {
-            return Response.seeOther(URI.create("/Mercurius/login")).build();
+            return Response.seeOther(URI.create("/login")).build();
         }
-        return Response.seeOther(URI.create("/Mercurius/app")).build();
+        return Response.seeOther(URI.create("/app")).build();
     }
 
     @ServerExceptionMapper

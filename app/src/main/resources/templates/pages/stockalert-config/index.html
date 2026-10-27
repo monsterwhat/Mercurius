@@ -29,6 +29,20 @@
     - The row action that was `is-info` is a plain bordered button: one
       accent per screen.
     - The threshold columns carry `num`: right-aligned, tabular figures.
+
+  ROUND 2 — READ THIS BEFORE WIRING THE PAGE
+  ------------------------------------------
+  Nothing in this tree references this template: there is no @Location, no
+  @Path and no link pointing at pages/stockalert-config/index, and none of the
+  model keys below is produced anywhere. The LIVE stock-alert configuration
+  screen is pages/inventario/stock-alert-config.html (served by
+  StockAlertConfigResource). This file is kept consistent with that page, but
+  do NOT treat its model contract as an existing endpoint: it has to be
+  implemented before the template is routed.
+
+  Small corrections in this pass: the empty state was a grey sentence, the
+  sub-line under an article name used `has-text-grey` (a fixed mid-grey that
+  fails on the dark scheme) and the toggle/row buttons had no busy guard.
 !}
 {#include layout}
     {#title}Configuración de Alertas de Stock | Mercurius{/title}
@@ -71,9 +85,12 @@
                     <div class="control has-icons-left">
                         <input id="filtro-buscar" class="input" type="text"
                                name="q" value="{modelo.filtros.q ?: ''}"
+                               autocomplete="off" spellcheck="false" enterkeyhint="search"
                                placeholder="Nombre o código de artículo..."
+                               hx-preserve="true"
                                hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                                hx-trigger="keyup changed delay:300ms"
+                               hx-sync="this:replace"
                                hx-include="#filtros-stock-alert-config"
                                hx-target="#{modelo.id}" hx-swap="outerHTML"/>
                         <span class="icon is-left">
@@ -84,9 +101,10 @@
                 <div class="field">
                     <label class="label" for="filtro-estado">Estado</label>
                     <div class="select is-fullwidth">
-                        <select id="filtro-estado" name="estado"
+                        <select id="filtro-estado" name="estado" hx-preserve="true"
                                 hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                                hx-trigger="change" hx-include="#filtros-stock-alert-config"
+                                hx-trigger="change" hx-sync="this:replace"
+                                hx-include="#filtros-stock-alert-config"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">
                             <option value="">Todos</option>
                             <option value="activo" {#if modelo.filtros.estado == 'activo'}selected{/if}>Activo</option>
@@ -97,9 +115,10 @@
                 <div class="field">
                     <label class="label" for="filtro-tipo">Tipo</label>
                     <div class="select is-fullwidth">
-                        <select id="filtro-tipo" name="tipo"
+                        <select id="filtro-tipo" name="tipo" hx-preserve="true"
                                 hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                                hx-trigger="change" hx-include="#filtros-stock-alert-config"
+                                hx-trigger="change" hx-sync="this:replace"
+                                hx-include="#filtros-stock-alert-config"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">
                             <option value="">Todos</option>
                             <option value="articulo" {#if modelo.filtros.tipo == 'articulo'}selected{/if}>Artículo</option>
@@ -117,7 +136,7 @@
 
             {#include _kit/surface }
                 {#content}
-                {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+                {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
                   {#rows}
                     {#for fila in modelo.filas}
                     <tr>
@@ -125,7 +144,7 @@
                             <span class="status-chip is-neutral">{fila.tipo}</span>
                             {#if fila.tipo == 'Artículo'}
                             <span class="has-text-weight-semibold ml-1">{fila.articuloNombre}</span>
-                            <br/><span class="is-size-7 has-text-grey">Cód: {fila.articuloCodigo}</span>
+                            <br/><span class="is-size-7 mercurius-text-muted">Cód: {fila.articuloCodigo}</span>
                             {#else}
                             <span class="has-text-weight-semibold ml-1">{fila.categoriaNombre}</span>
                             {/if}
@@ -152,6 +171,7 @@
                                 <button type="button" class="button is-small is-danger"
                                         hx-post="{config:['quarkus.http.root-path']}/api/app/stock-alert-config/{fila.id}/toggle"
                                         hx-confirm="¿{#if fila.activo}Desactivar{#else}Activar{/if} la configuración de alerta para {fila.articuloNombre ?: fila.categoriaNombre}?"
+                                        hx-disabled-elt="this"
                                         hx-target="#{modelo.id}" hx-swap="outerHTML"
                                         aria-label="{#if fila.activo}Desactivar{#else}Activar{/if} configuración"
                                         title="{#if fila.activo}Desactivar{#else}Activar{/if}">
@@ -161,7 +181,7 @@
                         </td>
                     </tr>
                     {#else}
-                    <tr><td colspan="5" class="has-text-centered has-text-grey">No se encontraron configuraciones de alertas de stock</td></tr>
+                    <tr><td colspan="5" class="has-text-centered"><span class="kit-empty">No hay configuraciones de alerta que coincidan con el filtro.</span></td></tr>
                     {/for}
                   {/rows}
                 {/include}

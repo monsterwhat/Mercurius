@@ -22,157 +22,463 @@
 
   WHAT CHANGED IN THE UI PASS
   ---------------------------
-  - The title is the kit's _kit/page-header: a real <h1> with the scope in
-    the muted subtitle.
+  - The title is the kit's _kit/page-header: exactly one <h1>, with the scope
+    in the muted subtitle. The hub's single control - the client-side search -
+    lives in the header's {#actions} slot, so it reads as the page's toolbar
+    instead of a field floating above four cards.
   - The hub is ONE column of four groups. It used to be four is-one-quarter
-    columns whose cards started at four different heights (y = 193, 271, 375
-    and 453 - a 282px spread), so no two cards began on the same line.
-  - Each group is a _kit/surface, so the group title is a real <h2> and the
-    heading order of the page is h1 -> h2. They were <p class="title is-5">,
+    columns whose cards started at four different heights (a 282px spread), so
+    no two cards began on the same line.
+  - Each group is a .surface. The header is written out (the component has no
+    icon parameter) with the component's own classes, so the group keeps a
+    leading _kit/icon, a real <h2 class="surface-title">, a one-line
+    description and the number of reports in the group. The heading order of
+    the page is h1 -> h2. The group titles used to be <p class="title is-5">,
     which is not a heading at all, and at 20px/800 they read LOUDER than the
     page's own <h1>.
-  - The links are QUIET text links separated by a 1px rule, not thirty-two
-    filled buttons of the same weight (ui-kit 10.1: "A hub of report links is
-    a LIST, not twenty buttons: the links are quiet and the card titles carry
-    the structure"). The rule is drawn with the design token, so it follows
-    the colour scheme.
+  - The links are QUIET rows, not thirty-two filled buttons of the same weight
+    (ui-kit 10.1: "A hub of report links is a LIST, not twenty buttons: the
+    links are quiet and the card titles carry the structure"). Each row is a
+    .menu-list link: name in the normal ink, an optional one-line description
+    lifted from the link's own title attribute in the muted ink, and a muted
+    arrow that marks where the row goes. The rules between rows are drawn with
+    the design token, so they follow the colour scheme.
   - Every report, its href and its title attribute are unchanged.
+
+  WHY THE RULES ARE border-top AND NOT border-bottom
+  ---------------------------------------------------
+  The first row of a group carries no rule; every following row carries one
+  above it. With border-bottom, the last row of each group needed a manual
+  exception and the admin-only "Registros Internos" link left the exception on
+  the wrong row for non-admin users. border-top keeps a trailing rule out of
+  the card body no matter which row renders last.
 !}
 {#include layout}
     {#title}Reportes | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title="Reportes"
-             subtitle="Facturación, recibos, inventarios y usuarios" /}
+        {! Client-side filter: the hub is a list of links and the backend
+           exposes no search key, so the filtering happens in the browser over
+           the rendered labels. Alpine owns one string; each link and each
+           group is shown only while its own text matches. No request, no
+           backend key, and the hub still works as plain links with JS off.
+           The search matches the visible description too, which is why it is
+           labelled "Nombre o destino". !}
+        <div x-data="{ q: '',
+                normalizar(t) { return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); },
+                coincide(t) { return !this.q || this.normalizar(t).indexOf(this.normalizar(this.q)) !== -1; } }">
 
+            {#include _kit/page-header title="Reportes"
+                 subtitle="Informes de ventas, facturación, inventario y usuarios"}
+                {#actions}
+                <div class="field mb-0" role="search">
+                    <label class="label" for="reportes-buscar">Buscar reporte</label>
+                    {! The clear control stays mounted: it clears the query and
+                       returns focus to the field. Hiding it until the first
+                       keystroke used to grow the header and push the whole hub
+                       down mid-typing. !}
+                    <div class="is-flex is-align-items-center is-gap-2">
+                        <div class="control has-icons-left is-flex-grow-1">
+                            <input class="input" type="search" id="reportes-buscar"
+                                   x-model="q" x-ref="buscador"
+                                   autocomplete="off" spellcheck="false" enterkeyhint="search"
+                                   placeholder="Nombre o destino"
+                                   aria-controls="reportes-lista"
+                                   @keydown.escape="q = ''"/>
+                            <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
+                        </div>
+                        <div class="control">
+                            <button type="button" class="button"
+                                    @click="q = ''; $refs.buscador.focus()">Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+                {/actions}
+            {/include}
+
+            {! Live result count: a display:none region is not announced when it
+               appears, so the status line stays mounted (visually hidden) and
+               only its text changes. The visible empty state below is then
+               plain text instead of a second live region. !}
+            <p class="is-sr-only" role="status"
+               x-text="(() => { if (!q) return ''; var n = 0; Array.from($root.querySelectorAll('#reportes-lista li')).forEach(function (li) { if ($data.coincide(li.textContent)) n++; }); return n === 0 ? 'Ningún reporte coincide' : (n === 1 ? '1 resultado' : n + ' resultados'); })()"></p>
+
+            <div id="reportes-lista">
         {! ── Reportes de Facturación ─────────────────────────────────────── !}
-        {#include _kit/surface title="Reportes de Facturación"}
-            {#content}
+        <div data-reporte-grupo x-show="Array.from($el.querySelectorAll('li')).some(function (li) { return $data.coincide(li.textContent); })">
+        <section class="surface" aria-labelledby="reportes-grupo-facturacion">
+            <header class="surface-header">
+                <div class="is-flex is-align-items-center">
+                    <span class="icon mr-3 mercurius-text-muted">{#include _kit/icon name="chart" /}</span>
+                    <div>
+                        <h2 class="surface-title" id="reportes-grupo-facturacion">Reportes de Facturación</h2>
+                        <p class="surface-subtitle">Ventas, artículos e impuestos</p>
+                    </div>
+                </div>
+                <span class="tag is-rounded">10 informes</span>
+            </header>
+            <div class="surface-body">
                 <ul class="menu-list">
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Movimientos</span>
+                                <span class="is-size-7 mercurius-text-muted">Por rango de fechas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Facturación de Artículos</span>
+                                <span class="is-size-7 mercurius-text-muted">Ventas por artículo</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Ventas por Familia</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Ventas por Departamento</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Todas las Facturas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Tendencias de Ventas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">Ventas por Fecha Histórica</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Ventas por Fecha Histórica</span>
+                                <span class="is-size-7 mercurius-text-muted">Mismo día o mes, varios años</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Productos Destacados</span>
+                                <span class="is-size-7 mercurius-text-muted">Mejor rendimiento en ventas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Estacionalidad</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li>
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Resumen de Impuestos</span>
+                                <span class="is-size-7 mercurius-text-muted">Por período</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
                 </ul>
-            {/content}
-        {/include}
+            </div>
+        </section>
+        </div>
 
-        {! ── Reportes de Recibos ─────────────────────────────────────────── !}
-        {#include _kit/surface title="Reportes de Recibos"}
-            {#content}
+        {! ── Facturas y correo ──────────────────────────────────────────── !}
+        {! The group holds emitted invoices, received invoices and the email
+           reports; its old title named none of them. "Facturas y correo" is
+           what the six links actually are. !}
+        <div data-reporte-grupo x-show="Array.from($el.querySelectorAll('li')).some(function (li) { return $data.coincide(li.textContent); })">
+        <section class="surface" aria-labelledby="reportes-grupo-facturas">
+            <header class="surface-header">
+                <div class="is-flex is-align-items-center">
+                    <span class="icon mr-3 mercurius-text-muted">{#include _kit/icon name="send" /}</span>
+                    <div>
+                        <h2 class="surface-title" id="reportes-grupo-facturas">Facturas y correo</h2>
+                        <p class="surface-subtitle">Emitidas, recibidas y envíos programados</p>
+                    </div>
+                </div>
+                {#if inject:securityIdentity.hasRole('admin')}
+                <span class="tag is-rounded">6 informes</span>
+                {#else}
+                <span class="tag is-rounded">5 informes</span>
+                {/if}
+            </header>
+            <div class="surface-body">
                 <ul class="menu-list">
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/recibos" title="Lista completa de facturas emitidas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Facturas emitidas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Facturas recibidas pendientes de pago</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos" title="Recibos vencidos">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Facturas recibidas vencidas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/correos" title="Configuración de envío automático de reportes">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Reportes por Correo</span>
+                                <span class="is-size-7 mercurius-text-muted">Envío automático</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Plantillas de Correo</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
                     {#if inject:securityIdentity.hasRole('admin')}
-                    <li>
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/registros/log" title="Registros internos del sistema">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Registros Internos</span>
+                                <span class="is-size-7 mercurius-text-muted">Actividad del sistema</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
                     {/if}
                 </ul>
-            {/content}
-        {/include}
+            </div>
+        </section>
+        </div>
 
         {! ── Reportes de Inventarios ─────────────────────────────────────── !}
-        {#include _kit/surface title="Reportes de Inventarios"}
-            {#content}
+        <div data-reporte-grupo x-show="Array.from($el.querySelectorAll('li')).some(function (li) { return $data.coincide(li.textContent); })">
+        <section class="surface" aria-labelledby="reportes-grupo-inventario">
+            <header class="surface-header">
+                <div class="is-flex is-align-items-center">
+                    <span class="icon mr-3 mercurius-text-muted">{#include _kit/icon name="package" /}</span>
+                    <div>
+                        <h2 class="surface-title" id="reportes-grupo-inventario">Reportes de Inventarios</h2>
+                        <p class="surface-subtitle">Existencias, precios, mermas y compras</p>
+                    </div>
+                </div>
+                <span class="tag is-rounded">13 informes</span>
+            </header>
+            <div class="surface-body">
                 <ul class="menu-list">
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">Artículos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Artículos</span>
+                                <span class="is-size-7 mercurius-text-muted">Catálogo completo</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Resumen de Inventario</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por departamento">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Departamentos</span>
+                                <span class="is-size-7 mercurius-text-muted">Artículos por departamento</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por familia">Familias</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por familia">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Familias</span>
+                                <span class="is-size-7 mercurius-text-muted">Artículos por familia</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Inventarios</span>
+                                <span class="is-size-7 mercurius-text-muted">Historial de conteos</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Generar Etiquetas</span>
+                                <span class="is-size-7 mercurius-text-muted">Etiquetas de precio</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Márgenes de Utilidad</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Alertas de Stock</span>
+                                <span class="is-size-7 mercurius-text-muted">Stock bajo o agotado</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Pronósticos de Stock</span>
+                                <span class="is-size-7 mercurius-text-muted">Necesidades de reposición</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Mermas y Pérdidas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Histórico de precios</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/api/app/ordenes/table" title="Órdenes de compra a proveedores">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Órdenes de Compra</span>
+                                <span class="is-size-7 mercurius-text-muted">Compras a proveedores</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li>
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/categorias" title="Métricas de rendimiento de proveedores">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Métricas de proveedores</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
                 </ul>
-            {/content}
-        {/include}
+            </div>
+        </section>
+        </div>
 
         {! ── Reportes de Usuarios ─────────────────────────────────────────── !}
-        {#include _kit/surface title="Reportes de Usuarios"}
-            {#content}
+        <div data-reporte-grupo x-show="Array.from($el.querySelectorAll('li')).some(function (li) { return $data.coincide(li.textContent); })">
+        <section class="surface" aria-labelledby="reportes-grupo-usuarios">
+            <header class="surface-header">
+                <div class="is-flex is-align-items-center">
+                    <span class="icon mr-3 mercurius-text-muted">{#include _kit/icon name="user" /}</span>
+                    <div>
+                        <h2 class="surface-title" id="reportes-grupo-usuarios">Reportes de Usuarios</h2>
+                        <p class="surface-subtitle">Usuarios, clientes y programa de lealtad</p>
+                    </div>
+                </div>
+                <span class="tag is-rounded">3 informes</span>
+            </header>
+            <div class="surface-body">
                 <ul class="menu-list">
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/usuarios" title="Información detallada de usuarios del sistema">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Usuarios Detallados</span>
+                                <span class="is-size-7 mercurius-text-muted">Información de cada usuario</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li style="border-bottom:1px solid var(--mercurius-border)">
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Clientes</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
-                    <li>
-                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Puntos y Recompensas</span>
+                                <span class="is-size-7 mercurius-text-muted">Programa de lealtad</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
                     </li>
                 </ul>
-            {/content}
-        {/include}
+            </div>
+        </section>
+        </div>
+            </div>
+
+            {! Empty state: the groups are hidden client-side, so the page has to
+               say why the list is blank and offer the way back. The recovery
+               action is a real button, not a link, because it changes Alpine
+               state instead of navigating. !}
+            <div class="has-text-centered py-6"
+                 style="display:none; overflow-wrap:anywhere"
+                 x-show="q && !Array.from($root.querySelectorAll('#reportes-lista li')).some(function (li) { return $data.coincide(li.textContent); })">
+                <p class="has-text-weight-semibold">Ningún reporte coincide con «<span x-text="q"></span>»</p>
+                <p class="help">Busque por nombre del reporte o por su destino.</p>
+                <button type="button" class="button is-small mt-3"
+                        @click="q = ''; $refs.buscador.focus()">Limpiar búsqueda</button>
+            </div>
+        </div>
     {/body}
 {/include}

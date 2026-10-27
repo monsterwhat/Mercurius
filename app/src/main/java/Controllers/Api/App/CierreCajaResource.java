@@ -8,6 +8,7 @@ import Models.DTO.PagedResponse;
 import Models.Usuarios;
 import Services.CierreCajaService;
 import Services.LoginService;
+import Utils.FormatoVista;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -35,7 +36,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -103,7 +103,6 @@ public class CierreCajaResource {
 
     private static final String BASE_URL = "/api/app/caja";
     private static final String DATE_PATTERN = "dd/MM/yyyy HH:mm";
-    private static final String MONEY_SYMBOL = "\u20A1"; // colón
 
     @Nonnull
     @Inject
@@ -700,16 +699,13 @@ public class CierreCajaResource {
         return new SimpleDateFormat(DATE_PATTERN).format(date);
     }
 
-    /** Colón money with US-style grouping (deterministic across locales). */
+    /** Monto en colones con el formato único es-CR; null se mantiene null. */
     @Nullable
     private static String formatMoney(@Nullable BigDecimal value) {
         if (value == null) {
             return null;
         }
-        java.text.NumberFormat nf = java.text.NumberFormat.getNumberInstance(Locale.US);
-        nf.setMinimumFractionDigits(2);
-        nf.setMaximumFractionDigits(2);
-        return MONEY_SYMBOL + nf.format(value);
+        return FormatoVista.moneda(value);
     }
 
     @Nullable

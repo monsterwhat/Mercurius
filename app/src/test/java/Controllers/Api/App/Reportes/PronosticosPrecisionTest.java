@@ -142,19 +142,19 @@ class PronosticosPrecisionTest {
             String esperadoSesgo = sesgoLegible(fila.getSesgo());
 
             String filaPronosticos = filaDe(pagina(), articulo.nombre());
-            assertThat(filaPronosticos).contains("<td>" + esperadoMetodo + "</td>");
-            assertThat(filaPronosticos).contains("<td>" + esperadoMase + "</td>");
-            assertThat(filaPronosticos).contains("<td>" + esperadoSesgo + "</td>");
+            assertThat(filaPronosticos).contains(">" + esperadoMetodo + "<");
+            assertThat(filaPronosticos).contains(">" + esperadoMase + "<");
+            assertThat(filaPronosticos).contains(">" + esperadoSesgo + "<");
             assertThat(filaPronosticos).doesNotContain("sin evaluar");
 
             String filaReorden = filaDe(pagina("reorden"), articulo.nombre());
-            assertThat(filaReorden).contains("<td>" + esperadoMetodo + "</td>");
-            assertThat(filaReorden).contains("<td>" + esperadoSesgo + "</td>");
+            assertThat(filaReorden).contains(">" + esperadoMetodo + "<");
+            assertThat(filaReorden).contains(">" + esperadoSesgo + "<");
 
             String fragmento = fragmentoHx();
             assertThat(fragmento).contains("data-kit-table");
             assertThat(filaDe(fragmento, articulo.nombre()))
-                    .contains("<td>" + esperadoMetodo + "</td>");
+                    .contains(">" + esperadoMetodo + "<");
         } finally {
             limpiar(articulo);
         }
@@ -178,8 +178,8 @@ class PronosticosPrecisionTest {
             assertThat(leerPrecision(articulo.codigo())).isEmpty();
 
             String fila = filaDe(pagina(), articulo.nombre());
-            assertThat(fila).contains("<td>sin evaluar</td>");
-            assertThat(fila).contains("<td>-</td>");
+            assertThat(fila).contains(">sin evaluar<");
+            assertThat(fila).contains(">-<");
         } finally {
             limpiar(articulo);
         }
@@ -218,18 +218,18 @@ class PronosticosPrecisionTest {
 
             String html = pagina();
             assertThat(filaDe(html, subestimar.nombre()))
-                    .contains("<td>Media móvil</td>")
-                    .contains("<td>0.83</td>")
-                    .contains("<td>1.50 · tiende a subestimar</td>");
+                    .contains(">Media móvil<")
+                    .contains(">0.83<")
+                    .contains(">1.50 · tiende a subestimar<");
             assertThat(filaDe(html, sobrestimar.nombre()))
-                    .contains("<td>Suavizado exponencial</td>")
-                    .contains("<td>0.90</td>")
-                    .contains("<td>-2.25 · tiende a sobrestimar</td>");
+                    .contains(">Suavizado exponencial<")
+                    .contains(">0.90<")
+                    .contains(">-2.25 · tiende a sobrestimar<");
             assertThat(filaDe(html, calibrado.nombre()))
-                    .contains("<td>SBA (intermitente)</td>")
-                    .contains("<td>1.10</td>")
-                    .contains("<td>0.40 · calibrado</td>");
-            assertThat(filaDe(html, indefinido.nombre())).contains("<td>sin evaluar</td>");
+                    .contains(">SBA (intermitente)<")
+                    .contains(">1.10<")
+                    .contains(">0.40 · calibrado<");
+            assertThat(filaDe(html, indefinido.nombre())).contains(">sin evaluar<");
         } finally {
             limpiar(subestimar);
             limpiar(sobrestimar);

@@ -16,40 +16,60 @@
       accent (is-success).
 !}
 <div id="buscador-cabys-fragmento">
+    {! Search input outside the swapped results region: swapping the input's
+       own wrapper cleared the field mid-word. The endpoint still returns the
+       whole fragment; hx-select takes only #buscador-cabys-resultados. !}
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" autocomplete="off"
-                   placeholder="Buscar por descripción..."
+            <input class="input" type="search" id="buscador-cabys-q" name="q" autocomplete="off"
+                   placeholder="Buscar por descripción…"
+                   aria-label="Buscar código CAByS por descripción"
+                   enterkeyhint="search" spellcheck="false"
                    hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#buscador-cabys-fragmento" hx-swap="outerHTML"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-sync="this:replace"
+                   hx-target="#buscador-cabys-resultados" hx-swap="outerHTML"
+                   hx-select="#buscador-cabys-resultados"
                    hx-include="this"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    <table class="table is-hoverable is-fullwidth is-narrow">
+    <div id="buscador-cabys-resultados">
+    {#if resultados?? && resultados.size() > 0}
+    <p class="help mb-2">{resultados.size()} códigos · máximo 10 resultados</p>
+    {/if}
+
+    <div class="table-container">
+    <table class="table is-hoverable is-fullwidth is-narrow" aria-label="Códigos CAByS disponibles">
         <thead>
-            <tr><th>Código</th><th>Descripción</th><th class="num">Impuesto</th><th></th></tr>
+            <tr><th scope="col">Código</th><th scope="col">Descripción</th><th scope="col" class="num">Impuesto</th><th scope="col"><span class="is-sr-only">Acciones</span></th></tr>
         </thead>
         <tbody>
             {#for cabys in resultados}
             <tr>
                 <td class="kit-code">{cabys.codigo}</td>
-                <td>{#if cabys.descripcion??}{cabys.descripcion}{#else}&mdash;{/if}</td>
-                <td class="num">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
+                <td>{#if cabys.descripcion??}<span class="table-clamp" title="{cabys.descripcion}">{cabys.descripcion}</span>{#else}&mdash;{/if}</td>
+                <td class="num">{#if cabys.impuesto?? && cabys.impuesto != ''}{fmt:porcentaje(cabys.impuesto)}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
-                    <button type="button" class="button is-small is-primary"
+                    <button type="button" class="button is-small"
+                            aria-label="Seleccionar el código {cabys.codigo}"
                             data-kit-pick="{cabys.codigo}"
                             {#if cabys.impuesto??}data-kit-impuesto="{cabys.impuesto}"{/if}
                             {#if pickerId??}data-picker-id="{pickerId}"{/if}>Seleccionar</button>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="4" class="has-text-centered has-text-grey">No se encontraron códigos con los criterios proporcionados</td></tr>
+            <tr>
+                <td colspan="4" class="has-text-centered">
+                    <p class="has-text-weight-semibold">No se encontraron códigos CAByS</p>
+                    <p class="help">Escriba parte de la descripción del bien o servicio; por ejemplo, «arroz».</p>
+                </td>
+            </tr>
             {/for}
         </tbody>
     </table>
+    </div>
 
     {! Picker bridge: writes the chosen code into the requesting form's input
        and closes the shared buscador-cabys modal. !}
@@ -68,12 +88,18 @@
                         input.removeAttribute('data-impuesto');
                     }
                     input.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    console.warn('No hay un campo CAByS destino para el código ' + codigo);
                 }
                 var root = document.getElementById('buscador-cabys');
                 if (root && window.Alpine) {
                     Alpine.$data(root).open = false;
                 }
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 1].focus();
+                }
             });
         });
     </script>
+    </div>
 </div>

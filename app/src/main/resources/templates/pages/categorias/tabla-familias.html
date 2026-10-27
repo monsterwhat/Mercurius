@@ -28,26 +28,34 @@
 <div id="{modelo.id}"
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
     <input type="hidden" id="tab-familias" name="tab" value="familias"/>
+    {! Search input outside the swapped results region: see
+       articulos/tabla-articulos.html for the focus-loss explanation. !}
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
-                   placeholder="Buscar familias..."
+            <input class="input" type="search" id="buscar-familias" name="q"
+                   value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar familias…"
+                   aria-label="Buscar familias por nombre"
+                   enterkeyhint="search" spellcheck="false"
                    hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-include="#tab-familias"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-sync="this:replace"
+                   hx-target="#resultados-{modelo.id}" hx-swap="outerHTML"
+                   hx-select="#resultados-{modelo.id}"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
+    <div id="resultados-{modelo.id}">
     {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for familia in modelo.filas}
             <tr>
                 <td class="has-text-centered">
-                    {#if familia.status??}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
+                    {#if familia.status?? && familia.status}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-neutral">Inactiva</span>{/if}
                 </td>
-                <td style="font-weight:500">{familia.nombre}</td>
+                <td style="font-weight:500">{#if familia.nombre??}<span class="table-clamp" title="{familia.nombre}">{familia.nombre}</span>{#else}&mdash;{/if}</td>
                 <td>{#if familia.usuario??}{familia.usuario.username}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
@@ -69,19 +77,36 @@
                                 aria-haspopup="dialog" data-kit-open="editar-familia"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/familia/{familia.id}"
                                 hx-target="#editar-familia-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
-                        <button type="button" class="button is-small" title="Cambiar estado"
-                                aria-label="Cambiar estado"
+                        <button type="button" class="button is-small"
+                                title="{#if familia.status?? && familia.status}Desactivar familia{#else}Activar familia{/if}"
+                                aria-label="{#if familia.status?? && familia.status}Desactivar familia{#else}Activar familia{/if}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
-                                hx-confirm="¿Cambiar el estado de la familia {familia.nombre}?"
+                                hx-confirm="{#if familia.status?? && familia.status}¿Desactivar la familia {familia.nombre}?{#else}¿Activar la familia {familia.nombre}?{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron familias con los criterios proporcionados</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    {#if q??}
+                    <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
+                    <p class="help">Revise el nombre o limpie la búsqueda.</p>
+                    <button type="button" class="button is-small mt-2"
+                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-include="#tab-familias"
+                            hx-on::before-request="document.getElementById('buscar-familias').focus()"
+                            hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>
+                    {#else}
+                    <p class="has-text-weight-semibold">Todavía no hay familias</p>
+                    <p class="help">Use «Crear Familia» para agrupar artículos dentro de un departamento.</p>
+                    {/if}
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}
+    </div>
 
     {#if toastMessage??}
     <div hx-swap-oob="beforeend:#toast-container">

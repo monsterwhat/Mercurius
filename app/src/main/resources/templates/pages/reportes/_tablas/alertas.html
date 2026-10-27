@@ -13,22 +13,25 @@
             <td>{f.articulo}</td>
             <td>{f.codigoBarra}</td>
             <td>{f.cantidadSugerida}</td>
-            <td><span class="tag {#if f.prioridad == 'Urgente'}is-danger{#else}{#if f.prioridad == 'Alta'}is-warning{#else}is-info{/if}{/if}">{f.prioridad}</span></td>
+            <td><span class="status-chip {#if f.prioridad == 'Urgente'}is-danger{#else}{#if f.prioridad == 'Alta'}is-warning{#else}is-info{/if}{/if}">{f.prioridad}</span></td>
             <td>{f.costoTotalEstimado}</td>
             <td>{f.promedioVentasMensual}</td>
             <td>{f.fechaCreacion}</td>
             {#else}
-            <td><span class="tag {#if f.tipo == 'Sin Stock'}is-danger{#else}{#if f.tipo == 'Stock Bajo' || f.tipo == 'Sobrestock'}is-warning{#else}is-info{/if}{/if}">{f.tipo}</span></td>
+            <td><span class="status-chip {#if f.tipo == 'Sin Stock'}is-danger{#else}{#if f.tipo == 'Stock Bajo' || f.tipo == 'Sobrestock'}is-warning{#else}is-info{/if}{/if}">{f.tipo}</span></td>
             <td>{f.articulo}</td>
             <td>{f.codigoBarra}</td>
             <td>{f.cantidadActual}</td>
             <td>{f.cantidadMinima}</td>
             <td>{f.stockOptimo}</td>
             <td>{f.fechaCreacion}</td>
-            <td><span class="tag {#if f.estado == 'Activa'}is-warning{#else}{#if f.estado == 'Reconocida'}is-info{#else}is-success{/if}{/if}">{f.estado}</span></td>
+            <td><span class="status-chip {#if f.estado == 'Activa'}is-warning{#else}{#if f.estado == 'Reconocida'}is-info{#else}is-success{/if}{/if}">{f.estado}</span></td>
             {/if}
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin alertas para la sección y los filtros seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

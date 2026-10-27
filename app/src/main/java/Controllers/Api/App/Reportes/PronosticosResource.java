@@ -3,6 +3,7 @@ package Controllers.Api.App.Reportes;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -14,6 +15,8 @@ import java.util.Set;
 import Models.PrecisionPronostico;
 import Services.SeleccionMetodoService;
 import Services.StockForecastService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
@@ -56,8 +59,8 @@ import org.jboss.logging.Logger;
  * {@code pronosticos} y {@code reorden} añade tres columnas de solo lectura —
  * método elegido, MASE y sesgo — leídas de {@link PrecisionPronostico} (la
  * última corrida de backtesting) y de
- * {@link SeleccionMetodoService#metodoElegido(Long)}, que es la única fuente
- * de verdad de la elección. Un artículo sin filas de precisión se muestra
+ * {@link SeleccionMetodoService#mejorFila(java.util.List)}, que es la única
+ * fuente de verdad de la elección. Un artículo sin filas de precisión se muestra
  * como "sin evaluar", nunca como celda vacía ni como error: una columna de
  * exactitud no puede ser la razón por la que la página no carga.</p>
  */
@@ -67,6 +70,8 @@ import org.jboss.logging.Logger;
 public class PronosticosResource {
 
     private static final Logger LOG = Logger.getLogger(PronosticosResource.class);
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String BASE_URL = "/app/reportes/inventario/pronosticos";
 
@@ -79,10 +84,6 @@ public class PronosticosResource {
     @Inject
     @Nonnull
     StockForecastService stockForecastService;
-
-    @Inject
-    @Nonnull
-    SeleccionMetodoService seleccionMetodoService;
 
     @Inject
     @Nonnull
@@ -132,33 +133,29 @@ public class PronosticosResource {
                 .map(g -> g[1]).filter(s -> !s.isEmpty()).distinct().sorted().toList();
 
         List<Map<String, Object>> filas = new ArrayList<>();
+        StockForecastService.InventoryHealthReport salud = null;
         if ("pronosticos".equals(vista)) {
             List<StockForecastService.ProductForecast> pronosticos =
                     stockForecastService.generateBulkForecast(diasPronostico);
             if (pronosticos != null) {
-                Map<Long, Exactitud> exactitudes = exactitudPorArticulo(pronosticos);
                 for (StockForecastService.ProductForecast pronostico : pronosticos) {
-                    Exactitud acc = exactitud(pronostico, exactitudes);
                     String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
                     if (!coincide(grupo, deptoSel, familiaSel)) {
                         continue;
                     }
                     filas.add(Tablas.fila(
+                            "articuloCodigo", pronostico.articuloId(),
                             "articulo", pronostico.articuloNombre(),
                             "departamento", grupo[0],
                             "familia", grupo[1],
                             "stockActual", String.valueOf(pronostico.currentStock()),
                             "demandaEstimada", String.valueOf(pronostico.predictedSales()),
                             "diasRestantes", diasRestantes(pronostico),
-                            "recomendacion", recomendacion(pronostico),
-                            "metodoElegido", acc.metodo(),
-                            "mase", acc.mase(),
-                            "sesgo", acc.sesgo()));
+                            "recomendacion", recomendacion(pronostico)));
                 }
             }
         } else if ("salud".equals(vista)) {
-            StockForecastService.InventoryHealthReport salud =
-                    stockForecastService.getInventoryHealthReport();
+            salud = stockForecastService.getInventoryHealthReport();
             // The service report carries aggregate counters + critical item names.
             // Those rows are NAMES, not articles, so there is no key to join the
             // precision table on: this section stays accuracy-free on purpose.
@@ -180,9 +177,7 @@ public class PronosticosResource {
             List<StockForecastService.ProductForecast> pronosticos =
                     stockForecastService.generateBulkForecast(diasPronostico);
             if (pronosticos != null) {
-                Map<Long, Exactitud> exactitudes = exactitudPorArticulo(pronosticos);
                 for (StockForecastService.ProductForecast pronostico : pronosticos) {
-                    Exactitud acc = exactitud(pronostico, exactitudes);
                     String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
                     if (!coincide(grupo, deptoSel, familiaSel)) {
                         continue;
@@ -193,15 +188,13 @@ public class PronosticosResource {
                                     .setScale(0, java.math.RoundingMode.HALF_UP).intValue()
                             - pronostico.currentStock());
                     filas.add(Tablas.fila(
+                            "articuloCodigo", pronostico.articuloId(),
                             "articulo", pronostico.articuloNombre(),
                             "departamento", grupo[0],
                             "familia", grupo[1],
                             "stockActual", String.valueOf(pronostico.currentStock()),
                             "cantidadSugerida", String.valueOf(sugerido),
-                            "prioridad", recomendacion(pronostico),
-                            "metodoElegido", acc.metodo(),
-                            "mase", acc.mase(),
-                            "sesgo", acc.sesgo()));
+                            "prioridad", recomendacion(pronostico)));
                 }
             }
         }
@@ -210,14 +203,49 @@ public class PronosticosResource {
         long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
-        StockForecastService.InventoryHealthReport salud =
-                stockForecastService.getInventoryHealthReport();
+        // Accuracy is only rendered in the visible page. Loading it for the whole
+        // catalog was the 45-50 s step on the real database: the table shows ten
+        // rows, so ask the database for ten articles, not every article.
+        List<Map<String, Object>> paginaVisible = Tablas.paginaDe(filas, page, size);
+        if (!"salud".equals(vista)) {
+            Map<Long, Exactitud> exactitudes = exactitudPorArticulo(codigosDe(paginaVisible));
+            for (Map<String, Object> fila : paginaVisible) {
+                Exactitud acc = exactitudDe(fila, exactitudes);
+                fila.put("metodoElegido", acc.metodo());
+                fila.put("mase", acc.mase());
+                fila.put("sesgo", acc.sesgo());
+            }
+        }
+
+        if (salud == null) {
+            salud = stockForecastService.getInventoryHealthReport();
+        }
+
+        // The chart used to fetch /api/stock-forecast/bulk-forecast, which is a
+        // JWT-only public API and answered 401 to the session-authenticated UI.
+        // Render the chart dataset from the same rows the page already built.
+        List<Map<String, Object>> chartData = new ArrayList<>();
+        if (!"salud".equals(vista)) {
+            String chartKey = "reorden".equals(vista) ? "cantidadSugerida" : "demandaEstimada";
+            for (Map<String, Object> fila : filas) {
+                if (chartData.size() >= 12) {
+                    break;
+                }
+                Object valor = fila.get(chartKey);
+                if (valor == null) {
+                    continue;
+                }
+                chartData.add(Map.of(
+                        "label", String.valueOf(fila.get("articulo")),
+                        "value", String.valueOf(valor)));
+            }
+        }
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Pron\u00f3sticos de Inventario");
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas(vista));
-        model.put("filas", Tablas.paginaDe(filas, page, size));
+        model.put("filas", paginaVisible);
         model.put("sortKey", sort);
         model.put("sortDir", dir);
         model.put("page", Math.max(page, 1));
@@ -237,6 +265,13 @@ public class PronosticosResource {
         model.put("saludables", salud != null ? salud.optimal() : 0);
         model.put("stockBajo", salud != null ? salud.lowStock() : 0);
         model.put("sinStock", salud != null ? salud.outOfStock() : 0);
+        model.put("chartJson", toJson(chartData));
+        model.put("chartTitle", "reorden".equals(vista)
+                ? "Cantidad sugerida" : "Demanda pronosticada");
+        model.put("chartSubtitle", ("reorden".equals(vista)
+                ? "Reposición a " : "Pronóstico a ") + diasPronostico + " días");
+        model.put("chartSeriesLabel", "reorden".equals(vista)
+                ? "Unidades sugeridas" : "Demanda pronosticada");
 
         boolean fragmento = headers.getHeaderString("HX-Request") != null;
         Template plantilla = fragmento ? tabla : pagina;
@@ -244,6 +279,16 @@ public class PronosticosResource {
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
+    }
+
+    @Nonnull
+    private static String toJson(@Nonnull Object data) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            LOG.warn("Pronosticos: no se pudo serializar el conjunto de la gráfica", e);
+            return "[]";
+        }
     }
 
     @Nonnull
@@ -402,9 +447,12 @@ public class PronosticosResource {
     @Nonnull
     private static List<Map<String, Object>> columnasExactitud() {
         return List.of(
-                Map.of("label", "Método"),
-                Map.of("label", "MASE"),
-                Map.of("label", "Sesgo"));
+                Map.of("label", "Método",
+                        "help", "Método de pronóstico elegido por backtesting: el de menor MASE entre los elegibles."),
+                Map.of("label", "MASE",
+                        "help", "Error absoluto medio escalado. Menos de 1 es mejor que el pronóstico ingenuo; 1 es igual; más de 1 es peor."),
+                Map.of("label", "Sesgo",
+                        "help", "Error medio escalado. Positivo: se pronostica por debajo de la demanda real. Negativo: por encima. Cerca de 0 es mejor."));
     }
 
     // ------------------------------------------------------------------
@@ -428,25 +476,48 @@ public class PronosticosResource {
                         PronosticosResource.SIN_METRICA);
     }
 
-    /** Exactitud de un pronóstico, o el marcador "sin evaluar" si no hay datos. */
+    /** Exactitud de una fila visible, o el marcador "sin evaluar" si no hay datos. */
     @Nonnull
-    private static Exactitud exactitud(
-            @Nonnull StockForecastService.ProductForecast pronostico,
+    private static Exactitud exactitudDe(
+            @Nonnull Map<String, Object> fila,
             @Nonnull Map<Long, Exactitud> porArticulo) {
-        if (pronostico.articuloId() == null) {
-            return Exactitud.SIN_EVALUAR;
+        Object valor = fila.get("articuloCodigo");
+        if (valor instanceof Number numero) {
+            return porArticulo.getOrDefault(numero.longValue(), Exactitud.SIN_EVALUAR);
         }
-        return porArticulo.getOrDefault(pronostico.articuloId(), Exactitud.SIN_EVALUAR);
+        return Exactitud.SIN_EVALUAR;
+    }
+
+    /** Códigos de los artículos de la página visible (máximo `size`). */
+    @Nonnull
+    private static Set<Long> codigosDe(@Nonnull List<Map<String, Object>> filas) {
+        Set<Long> codigos = new LinkedHashSet<>();
+        for (Map<String, Object> fila : filas) {
+            Object valor = fila.get("articuloCodigo");
+            if (valor instanceof Number numero) {
+                codigos.add(numero.longValue());
+            } else if (valor != null) {
+                try {
+                    codigos.add(Long.valueOf(String.valueOf(valor)));
+                } catch (NumberFormatException e) {
+                    LOG.debugf("Pronosticos: código de artículo no numérico: %s", valor);
+                }
+            }
+        }
+        return codigos;
     }
 
     /**
-     * Lee la precisión de todos los artículos de la vista en UNA consulta y
+     * Lee la precisión de los artículos de la página visible en UNA consulta y
      * resuelve el método elegido de cada uno ya evaluado.
      *
-     * <p>La elección se delega a {@link SeleccionMetodoService#metodoElegido}:
-     * el desempate por simplicidad es regla del servicio y no se reimplementa
-     * aquí. Solo se pregunta por los artículos que tienen filas, de modo que el
-     * número de consultas no crece con el tamaño del catálogo.</p>
+     * <p>La elección se delega a
+     * {@link SeleccionMetodoService#mejorFila(java.util.List)}: el desempate por
+     * simplicidad es regla del servicio y no se reimplementa aquí.</p>
+     *
+     * <p>La consulta se limita a los artículos visibles (normalmente 10). La
+     * versión anterior pedía la precisión de todo el catálogo y con 1.160
+     * artículos convertía esta página en 45 segundos de espera.</p>
      *
      * <p>Si la lectura falla se registra y se degrada a "sin evaluar" para toda
      * la vista: la exactitud es información añadida y no puede ser el motivo de
@@ -454,17 +525,8 @@ public class PronosticosResource {
      */
     @Nonnull
     private Map<Long, Exactitud> exactitudPorArticulo(
-            @Nullable List<StockForecastService.ProductForecast> pronosticos) {
-        if (pronosticos == null || pronosticos.isEmpty()) {
-            return Map.of();
-        }
-        Set<Long> codigos = new LinkedHashSet<>();
-        for (StockForecastService.ProductForecast pronostico : pronosticos) {
-            if (pronostico.articuloId() != null) {
-                codigos.add(pronostico.articuloId());
-            }
-        }
-        if (codigos.isEmpty()) {
+            @Nullable Collection<Long> codigos) {
+        if (codigos == null || codigos.isEmpty()) {
             return Map.of();
         }
 
@@ -493,50 +555,18 @@ public class PronosticosResource {
 
         Map<Long, Exactitud> resultado = new HashMap<>();
         for (Map.Entry<Long, List<PrecisionPronostico>> articulo : porArticulo.entrySet()) {
-            Optional<String> elegido = metodoElegido(articulo.getKey());
-            if (elegido.isEmpty()) {
+            Optional<PrecisionPronostico> elegida =
+                    SeleccionMetodoService.mejorFila(articulo.getValue());
+            if (elegida.isEmpty()) {
                 continue;
             }
-            PrecisionPronostico fila = buscar(elegido.get(), articulo.getValue());
-            if (fila == null) {
-                // La eleccion y las filas se leyeron en la misma transaccion, asi que
-                // solo puede pasar si la corrida se modifico en medio: se degrada a
-                // "sin evaluar" en vez de fallar la fila entera.
-                LOG.warn("exactitudPorArticulo: el articulo " + articulo.getKey()
-                        + " quedo elegido el metodo " + elegido.get()
-                        + " sin fila de precision correspondiente; se mostrara 'sin evaluar'");
-                continue;
-            }
+            PrecisionPronostico fila = elegida.get();
             resultado.put(articulo.getKey(), new Exactitud(
-                    nombreMetodo(elegido.get()),
+                    nombreMetodo(fila.getMetodo()),
                     dosDecimales(fila.getMase()),
                     sesgoLegible(fila.getSesgo())));
         }
         return resultado;
-    }
-
-    /** {@code metodoElegido} envuelto: su fallo deja la fila en "sin evaluar". */
-    @Nonnull
-    private Optional<String> metodoElegido(@Nonnull Long codigoArticulo) {
-        try {
-            return seleccionMetodoService.metodoElegido(codigoArticulo);
-        } catch (RuntimeException e) {
-            LOG.warn("metodoElegido: la consulta del metodo elegido del articulo "
-                    + codigoArticulo + " fallo (" + e.getMessage()
-                    + "); se mostrara 'sin evaluar'", e);
-            return Optional.empty();
-        }
-    }
-
-    @Nonnull
-    private static PrecisionPronostico buscar(
-            @Nonnull String metodo, @Nonnull List<PrecisionPronostico> filas) {
-        for (PrecisionPronostico fila : filas) {
-            if (metodo.equals(fila.getMetodo())) {
-                return fila;
-            }
-        }
-        return null;
     }
 
     /**

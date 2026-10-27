@@ -12,7 +12,7 @@
             {#if seccion == 'departamento'}
             <td>{f.nombre}</td>
             <td>{f.ventas}</td>
-            <td>{f.porcentaje}%</td>
+            <td>{fmt:porcentaje(f.porcentaje)}</td>
             {#else}
             <td>{f.nombre}</td>
             <td>{f.cantidad}</td>
@@ -20,6 +20,9 @@
             {/if}
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin datos de rendimiento para la vista y el rango seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

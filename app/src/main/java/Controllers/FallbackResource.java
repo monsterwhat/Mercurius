@@ -84,9 +84,10 @@ public class FallbackResource {
             return Response.seeOther(URI.create("/login")).build();
         }
         // Signed-in operator on a stale link: bounce to the dashboard rather
-        // than render a dead end. Same contract as NotFoundExceptionMapper, so
-        // both not-found entry points answer identically.
-        return Response.seeOther(URI.create("/Mercurius/app")).build();
+        // than render a dead end. The target is deployment-relative: the
+        // container prepends the root path, so writing /Mercurius here became
+        // /Mercurius/Mercurius/app and looped forever.
+        return Response.seeOther(URI.create("/app")).build();
     }
 
     @GET

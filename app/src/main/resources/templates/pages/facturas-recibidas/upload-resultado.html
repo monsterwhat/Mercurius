@@ -13,23 +13,29 @@
 <div>
     {#if resultados?? && !resultados.isEmpty()}
     <div class="content mt-2">
+        <p class="mb-2 is-size-7 mercurius-text-muted">
+            {procesados} {#if procesados == 1}archivo procesado{#else}archivos procesados{/if}{#if fallidos??}{#if fallidos > 0}, {fallidos} con error{/if}{/if}.
+        </p>
         <ul style="margin:0">
             {#for resultado in resultados}
-            <li>
+            <li class="mb-1">
                 {#if resultado.exito}
                 <span class="status-chip is-success">Procesado</span>
                 {#else}
                 <span class="status-chip is-danger">Error</span>
                 {/if}
-                <strong>{resultado.fileName}</strong>
-                {#if resultado.mensaje??}— {resultado.mensaje}{/if}
+                <strong style="overflow-wrap:anywhere">{resultado.fileName}</strong>
+                {#if resultado.mensaje??}<span class="mercurius-text-muted">— {resultado.mensaje}</span>{/if}
             </li>
             {/for}
         </ul>
+        {#if fallidos??}{#if fallidos > 0}
+        <p class="help is-danger mt-2">Corrija los archivos con error y vuelva a cargarlos.</p>
+        {/if}{/if}
     </div>
     {#else}
     <div class="notification is-danger is-light" style="margin-bottom:0">
-        No se recibió ningún archivo para procesar.
+        No se recibió ningún archivo para procesar. Seleccione al menos un archivo .xml e intente de nuevo.
     </div>
     {/if}
 

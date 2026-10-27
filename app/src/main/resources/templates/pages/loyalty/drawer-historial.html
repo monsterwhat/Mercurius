@@ -34,6 +34,26 @@
   - The table lost its zebra striping (the ui-kit's rule for every table in
     the app) and its numeric columns carry `num`: right-aligned with tabular
     figures.
+
+  ROUND 2
+  -------
+  - Points hierarchy: the balance is the number the operator opened the drawer
+    for, so it is the only figure at .metric-value size, under a .metric-label
+    caption. Bulma's `.heading` (an uppercase tracked caption) and
+    `.title.is-4` (display size) are gone. The label keeps the noun capitals
+    the loyalty page test pins ("Puntos Acumulados").
+  - The Tipo cell printed the raw wire token (`earn`, `redeem`, `expire`) in
+    English. It renders the Spanish operation name now, and the wire token
+    stays in the row as `data-tipo` (the same idea as `data-row-key` on the
+    top table), so the operation a row represents is still machine-readable.
+  - Points and balance go through `fmt:numero`; a raw BigDecimal printed
+    "1250.00".
+  - The table had no `.table-container`, so at 360px it pushed the whole page
+    sideways instead of scrolling inside its own frame.
+  - The table gets a caption for screen readers, and the pager count says
+    "1 movimiento" instead of "1 movimientos".
+  - The empty state is a muted sentence instead of a grey table cell that read
+    like an error code.
  !}
 <div id="drawer-historial">
     {! ── Client summary card (LoyaltySummaryDTO + tier badge) ────────── !}
@@ -44,58 +64,67 @@
             </span>
         {/actions}
         {#content}
-            <p class="subtitle is-6">
+            <p class="is-size-7 mercurius-text-muted">
                 {#if resumen.lastPurchaseDate??}Última compra: {time:format(resumen.lastPurchaseDate, 'dd/MM/yyyy')}{#else}Sin compras registradas{/if}
             </p>
-            <div class="columns has-text-centered" style="margin-top:0.5rem;margin-bottom:0">
+            <div class="columns" style="margin-top:0.5rem;margin-bottom:0">
                 <div class="column">
-                    <p class="heading">Puntos Acumulados</p>
-                    <p class="title is-4" style="margin-bottom:0">{#if resumen.puntosAcumulados??}{resumen.puntosAcumulados}{#else}0{/if}</p>
+                    <p class="metric-label">Puntos Acumulados</p>
+                    <p class="metric-value kit-figure">{#if resumen.puntosAcumulados??}{fmt:numero(resumen.puntosAcumulados)}{#else}0{/if}</p>
                 </div>
                 <div class="column">
-                    <p class="heading">Estado de Puntos</p>
+                    <p class="metric-label">Estado de Puntos</p>
                     {#if resumen.statusPuntos == 'active'}<span class="status-chip is-success">Activo</span>
                     {#else if resumen.statusPuntos == 'inactive'}<span class="status-chip is-warning">Inactivo</span>
                     {#else if resumen.statusPuntos == 'expired'}<span class="status-chip is-danger">Expirado</span>
-                    {#else}<span class="tag">Sin estado</span>{/if}
+                    {#else}<span class="status-chip is-neutral">Sin estado</span>{/if}
                 </div>
             </div>
         {/content}
     {/include}
 
     {! ── Paginated points history (PuntosTransaccionDTO) ─────────────── !}
-    <table class="table is-hoverable is-fullwidth">
-        <thead>
-            <tr>
-                <th scope="col">Fecha</th>
-                <th scope="col">Tipo</th>
-                <th scope="col" class="num">Puntos</th>
-                <th scope="col" class="num">Saldo</th>
-            </tr>
-        </thead>
-        <tbody>
-            {#for t in filas}
-            <tr>
-                <td>{#if t.fechaCreacion??}{time:format(t.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
-                <td>
-                    <strong>{t.tipoTransaccion}</strong>
-                    {#if t.descripcion??}<br/><span class="is-size-7 has-text-grey">{t.descripcion}</span>{/if}
-                </td>
-                <td class="num has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
-                    {#if t.puntos??}{t.puntos}{#else}0{/if}
-                </td>
-                <td class="num has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}&mdash;{/if}</td>
-            </tr>
-            {#else}
-            <tr><td colspan="4" class="has-text-centered has-text-grey">No hay transacciones de puntos</td></tr>
-            {/for}
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table class="table is-hoverable is-fullwidth">
+            <caption class="is-sr-only">Movimientos de puntos de {resumen.clienteNombre}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col" class="num">Puntos</th>
+                    <th scope="col" class="num">Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#for t in filas}
+                <tr data-tipo="{t.tipoTransaccion}">
+                    <td>{#if t.fechaCreacion??}{time:format(t.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                    <td>
+                        <strong>
+                            {#if t.tipoTransaccion == 'earn'}Acumulación{#else if t.tipoTransaccion == 'redeem'}Canje{#else if t.tipoTransaccion == 'expire'}Expiración{#else}{t.tipoTransaccion ?: 'Movimiento'}{/if}
+                        </strong>
+                        {#if t.descripcion??}<br/><span class="is-size-7 mercurius-text-muted">{t.descripcion}</span>{/if}
+                    </td>
+                    <td class="num has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
+                        {#if t.puntos??}{fmt:numero(t.puntos)}{#else}0{/if}
+                    </td>
+                    <td class="num has-text-weight-bold">{#if t.saldoPuntos??}{fmt:numero(t.saldoPuntos)}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                </tr>
+                {#else}
+                <tr>
+                    <td colspan="4" class="has-text-centered">
+                        <span class="kit-empty">Este cliente todavía no tiene movimientos de puntos.</span>
+                    </td>
+                </tr>
+                {/for}
+            </tbody>
+        </table>
+    </div>
 
     {! ── Drawer-local pager (hx swaps keep the dialog open) ──────────── !}
     {#include _kit/action-bar}
         {#left}
-            <span>Página {paginaActual} de {totalPages} · {total} movimientos</span>
+            <span>Página {paginaActual} de {totalPages} · {total} {#if total == 1}movimiento{#else}movimientos{/if}</span>
         {/left}
         {#actions}
             {#if paginaAnterior >= 0}
@@ -116,7 +145,7 @@
     {/include}
 
     {! Close affordance for the shared kit modal bridge (index.html). !}
-    <div class="has-text-right">
-        <button type="button" class="button is-small" data-kit-close>Cerrar</button>
+    <div class="has-text-right mt-3">
+        <button type="button" class="button is-small" data-kit-close>Cerrar historial</button>
     </div>
 </div>

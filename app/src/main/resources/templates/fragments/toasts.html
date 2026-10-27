@@ -14,38 +14,13 @@
   page supplies a "toasts" key ({#if toasts??} safe expression), so pages
   without notifications pay nothing.
 
-  Auto-dismiss: tiny vanilla JS snippet (no Alpine state needed) removes
-  each notification after 5 seconds; the Bulma "delete" button dismisses
-  immediately. Braces stay on their own lines so Qute never parses them
-  as expressions.
+  Each item is the ONE toast component (_kit/toast-item). This file used to be
+  a second, hand-copied toast implementation: it gave every item role="alert"
+  (a burst of successes interrupted the screen reader), and its own
+  DOMContentLoaded script double-bound the dismiss button that _kit/toast-item
+  had already bound. Rendering the component here removes both defects and
+  keeps one definition of severity, role and lifetime.
 !}
 {#for toast in toasts}
-    <div class="notification {#if toast.severity == 'error'}is-danger{#else if toast.severity == 'warn'}is-warning{#else if toast.severity == 'success'}is-success{#else}is-info{/if}"
-         role="alert" data-toast>
-        <button class="delete" aria-label="Cerrar notificacion"></button>
-        {toast.message}
-    </div>
+    {#include _kit/toast-item severity=toast.severity message=toast.message /}
 {/for}
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var container = document.getElementById('toast-container');
-        if (!container) {
-            return;
-        }
-        var dismiss = function (el) {
-            el.remove();
-        };
-        container.querySelectorAll('.notification').forEach(function (el) {
-            var closeBtn = el.querySelector('.delete');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function () {
-                    dismiss(el);
-                });
-            }
-            setTimeout(function () {
-                dismiss(el);
-            }, 5000);
-        });
-    });
-</script>

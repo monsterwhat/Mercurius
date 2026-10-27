@@ -38,7 +38,9 @@
     (assertive) at the item level, which is correct for error/success outcomes
     but means a burst of toasts will interrupt - keep them one at a time.
     Every toast auto-dismisses after 5s and carries a .delete button
-    (aria-label="Cerrar notificacion").
+    (aria-label="Cerrar notificacion"). An ERROR is the exception: it stays
+    until dismissed, because a failure the operator may have to act on must
+    not vanish mid-sentence. The lifecycle lives in web/index.js (kitToasts).
 !}
 <div id="toast-container" aria-live="polite" aria-atomic="false"
      style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: min(22rem, calc(100vw - 2rem)); max-width: 22rem;">

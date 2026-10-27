@@ -20,7 +20,7 @@
                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
-                           hx-target="#correos-tabla-container" hx-swap="innerHTML"/>
+                           hx-target="#correos-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
                 </div>
                     {/include}
 
@@ -42,6 +42,9 @@
                         <td>{#if r.lastRun??}{time:format(r.lastRun, 'dd/MM/yyyy HH:mm')}{/if}</td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No hay reportes programados que coincidan con la búsqueda</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}

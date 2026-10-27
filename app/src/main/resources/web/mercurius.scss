@@ -243,7 +243,12 @@
     padding: var(--mercurius-space-5);
 }
 
+// The text column takes the free space and may shrink below its content
+// width; without flex-basis the actions kept their width and a long title
+// was squeezed into a column two words wide. `min-width: 0` is what lets the
+// h1 wrap instead of forcing the row wider than the viewport.
 .page-header-text {
+    flex: 1 1 22rem;
     min-width: 0;
 }
 
@@ -263,6 +268,12 @@
     font-size: 1.75rem;
     line-height: 1.2;
     margin-bottom: var(--mercurius-space-1);
+    // A title is often a composed identifier ("Facturas recibidas · agosto
+    // 2026"). `balance` keeps it from leaving one orphan word on the second
+    // line; `anywhere` is the escape hatch for a single long token, which
+    // would otherwise push the header wider than a 360px screen.
+    overflow-wrap: anywhere;
+    text-wrap: balance;
 }
 
 .page-header .page-subtitle {
@@ -275,6 +286,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--mercurius-space-2);
+    max-width: 100%;
+    min-width: 0;
 }
 
 // Compact: for dense boards where the header must not eat vertical space.
@@ -282,31 +295,42 @@
     padding: var(--mercurius-space-3) var(--mercurius-space-4);
 }
 
-.page-header-compact .page-header .page-title {
+// The selector used to be `.page-header-compact .page-header .page-title`,
+// which asks for a .page-header INSIDE the compact header - the same element
+// carries both classes, so the rule never matched and the compact title stayed
+// at 1.75rem.
+.page-header-compact .page-title {
     font-size: 1.5rem;
 }
 
 // Accent: a single semantic colour, never a module gradient.
+//
+// The ink follows the hue's own invert token instead of a hard-coded white.
+// White on the warning banner measured about 1.1:1 (the pale-yellow defect
+// this pass removed from the twelve module banners); --bulma-warning-invert
+// is the dark ink Bulma already picked for that fill, so the accent keeps its
+// hue and the title keeps its contrast in every accent.
 .page-header-accent {
     background: var(--mercurius-accent-primary);
     border-color: transparent;
-    color: #fff;
+    color: var(--bulma-primary-invert);
 }
 
 .page-header-accent .page-subtitle {
-    color: rgba(255, 255, 255, .85);
+    color: inherit;
+    opacity: .85;
 }
 
 .page-header-accent .page-title {
-    color: #fff;
+    color: inherit;
 }
 
-.page-header-accent.is-primary { background: var(--mercurius-accent-primary); }
-.page-header-accent.is-info { background: var(--mercurius-accent-info); }
-.page-header-accent.is-success { background: var(--mercurius-accent-success); }
-.page-header-accent.is-warning { background: var(--mercurius-accent-warning); }
-.page-header-accent.is-danger { background: var(--mercurius-accent-danger); }
-.page-header-accent.is-link { background: var(--mercurius-accent-link); }
+.page-header-accent.is-primary { background: var(--mercurius-accent-primary); color: var(--bulma-primary-invert); }
+.page-header-accent.is-info { background: var(--mercurius-accent-info); color: var(--bulma-info-invert); }
+.page-header-accent.is-success { background: var(--mercurius-accent-success); color: var(--bulma-success-invert); }
+.page-header-accent.is-warning { background: var(--mercurius-accent-warning); color: var(--bulma-warning-invert); }
+.page-header-accent.is-danger { background: var(--mercurius-accent-danger); color: var(--bulma-danger-invert); }
+.page-header-accent.is-link { background: var(--mercurius-accent-link); color: var(--bulma-link-invert); }
 
 .page-header-accent .button:not(.is-light):not(.is-white) {
     border-color: transparent;
@@ -330,6 +354,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--mercurius-space-1);
+    min-width: 0;
     padding: var(--mercurius-space-4);
     text-align: left;
     transition: border-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
@@ -347,6 +372,9 @@
     font-size: .75rem;
     font-weight: 500;
     order: 1;
+    // A label can be a composed key ("Pagado · tarjeta") and must break inside
+    // the card, not widen the grid track.
+    overflow-wrap: anywhere;
 }
 
 .metric-value {
@@ -354,6 +382,11 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     line-height: 1.2;
+    // Un monto de siete cifras con separadores no cabe en una tarjeta de
+    // 180px. Antes desbordaba la página (45px de scroll horizontal en
+    // /app/reportes/margenes); ahora parte en la tarjeta en vez de empujar
+    // el layout.
+    overflow-wrap: anywhere;
     order: 2;
 }
 
@@ -361,6 +394,7 @@
     color: var(--mercurius-text-muted);
     font-size: .75rem;
     order: 3;
+    overflow-wrap: anywhere;
 }
 
 .metric-card.is-interactive {
@@ -481,21 +515,31 @@ button.metric-card {
 // =============================================================================
 // 7. FilterBar / ActionBar
 // =============================================================================
+// .filter-bar is the SECTION (background, border, padding); .filter-bar-form
+// is the flex row inside it. The flex properties cannot sit on the section any
+// more because the form is the only thing that lays out the grid + actions, and
+// both slots must live inside that form (see _kit/filter-bar.html: a submit in
+// the old outside-the-form actions slot had no form owner).
 .filter-bar,
 .action-bar {
-    align-items: flex-end;
     background: var(--mercurius-surface);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-md);
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--mercurius-space-3);
-    justify-content: space-between;
     margin-bottom: var(--mercurius-space-4);
     padding: var(--mercurius-space-4);
 }
 
+.filter-bar-form,
+.action-bar {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-3);
+    justify-content: space-between;
+}
+
 .filter-grid {
+    align-items: end;
     display: grid;
     flex: 1 1 20rem;
     gap: var(--mercurius-space-3);
@@ -623,6 +667,26 @@ button.metric-card {
     display: block;
     height: 100% !important;
     width: 100% !important;
+}
+
+// `hidden` no basta: la regla de arriba fuerza display:block y el canvas
+// sigue pintando ejes 0.0-1.0 aunque no haya datos. El estado vacío oculta
+// el canvas de verdad y deja el texto dentro de la tarjeta (antes se
+// derramaba sobre la tabla siguiente).
+.chart-body > canvas[hidden] {
+    display: none !important;
+}
+
+// Estado vacío de un gráfico: en vez de dibujar un eje 0.0-1.0 sin series,
+// chart-config.js oculta el canvas y deja este texto en el mismo espacio.
+.chart-empty {
+    align-items: center;
+    color: var(--mercurius-text-muted);
+    display: flex;
+    font-size: .875rem;
+    height: 100%;
+    justify-content: center;
+    margin: 0;
 }
 
 .chart-card.is-tall { --chart-height: 420px; }
@@ -787,6 +851,43 @@ summary:focus-visible,
 // The exit stays instant: closing a dialog should feel like letting go of a
 // handle, not like watching a fade.
 // =============================================================================
+
+// The trigger + dialog wrapper. It used to carry `style="display:inline-block"`
+// in the template, which no stylesheet can override; at 480px the page-header
+// action column needs it to be a block so its button can be full width. The
+// declaration is identical, it just lives where the other layout rules live.
+.kit-modal-root {
+    display: inline-block;
+}
+
+// Confirm dialog ink (previously an inline <style> in _kit/confirm.html).
+// Scoped to the confirm modal; _kit/modal already inherits Bulma's scheme text.
+[data-kit-confirm-modal] .modal-card,
+[data-kit-confirm-modal] .modal-card-body p[data-kit-confirm-message] {
+    color: var(--bulma-text);
+}
+
+[data-kit-confirm-modal] .modal-card-foot .buttons {
+    gap: var(--mercurius-space-2);
+}
+
+// Inside a dialog the field error is the reason the dialog is still open. The
+// legacy `.help` rule paints help text in the muted ink, and it outranked
+// Bulma's `.help.is-danger` (equal specificity, declared earlier in the legacy
+// layer), so the message that explains a failed save was rendered as ordinary
+// grey hint text. Restore the semantic colour for the one case that matters.
+.modal-card-body .help.is-danger {
+    color: var(--bulma-danger);
+}
+
+.modal-card-body .help.is-warning {
+    color: var(--bulma-warning);
+}
+
+.modal-card-body .help.is-success {
+    color: var(--bulma-success);
+}
+
 .modal-card {
     opacity: 0;
     transform: scale(.96) translateY(8px);
@@ -826,17 +927,23 @@ summary:focus-visible,
     pointer-events: none;
 }
 
+// The toast is VISIBLE by default. It used to start at opacity 0 and depend on
+// web/index.js adding .is-visible, so a bundle that failed to load left every
+// server-rendered notification permanently invisible — a silent failure with
+// no error state at all. The entrance is now @starting-style, the same
+// progressive-enhancement trick the modal uses: browsers without support show
+// the toast immediately instead of never.
 .notification[data-toast] {
-    opacity: 0;
     pointer-events: auto;
-    transform: translateX(16px);
     transition: opacity var(--mercurius-dur-base) var(--mercurius-ease-out),
                 transform var(--mercurius-dur-base) var(--mercurius-ease-out);
 }
 
-.notification[data-toast].is-visible {
-    opacity: 1;
-    transform: translateX(0);
+@starting-style {
+    .notification[data-toast] {
+        opacity: 0;
+        transform: translateX(16px);
+    }
 }
 
 .notification[data-toast].is-leaving {
@@ -904,6 +1011,22 @@ input[type="file"]::file-selector-button:hover {
     box-shadow: none;
 }
 
+// Bulma's default button variables are the SCHEME colours, not the text
+// colours. That is fine for a filled button (scheme-main fill + invert ink),
+// but an outlined button inherits the same lightness for its text and border,
+// so `.button.is-outlined` with no semantic modifier is the page colour on the
+// page colour: 1.00:1. Give the neutral outlined button the text ink and the
+// shared border token; semantic outlined buttons keep their own variables.
+.button.is-outlined:not(.is-primary):not(.is-link):not(.is-info):not(.is-success):not(.is-warning):not(.is-danger):not(.is-white):not(.is-black):not(.is-light):not(.is-dark) {
+    border-color: var(--mercurius-border);
+    color: var(--bulma-text);
+}
+
+.button.is-outlined:not(.is-primary):not(.is-link):not(.is-info):not(.is-success):not(.is-warning):not(.is-danger):not(.is-white):not(.is-black):not(.is-light):not(.is-dark):hover {
+    border-color: var(--mercurius-text-muted);
+    color: var(--bulma-text-strong);
+}
+
 // Bulma's `has-text-grey` is a fixed mid-grey that does not flip with the
 // scheme, so on the dark ground every "secondary" label in the app drops to
 // about 2.5:1 - the footer, the subtitles and the empty states all vanish.
@@ -934,6 +1057,24 @@ input[type="file"]::file-selector-button:hover {
     opacity: 1;
 }
 
+// Bulma paints every disabled button at 50% opacity, which drops the label
+// below 3:1 on the light scheme. Keep the disabled cue, but keep the text
+// legible (the same treatment the pager already uses).
+// A disabled control has to read as unavailable, not merely faint. In the POS
+// the old 75% opacity left a teal primary button looking tappable. Use the
+// muted surface/ink tokens and keep the label legible; the cursor states why.
+.button[disabled],
+.button.is-disabled,
+:is(.button.is-primary, .button.is-link, .button.is-info, .button.is-success,
+    .button.is-warning, .button.is-danger)[disabled] {
+    background-color: var(--bulma-scheme-main-ter);
+    border-color: var(--mercurius-border);
+    box-shadow: none;
+    color: var(--mercurius-text-muted);
+    cursor: not-allowed;
+    opacity: 1;
+}
+
 // ── Pagination: the current page is a SELECTED ITEM, not a link ───────────
 // Bulma paints the current page in the link blue, which put a second hue in
 // the middle of a teal screen and made the pager look like a row of links
@@ -949,6 +1090,10 @@ input[type="file"]::file-selector-button:hover {
 .pagination-next,
 .pagination-link {
     box-shadow: none;
+    // 44px: the pager is the most-tapped control at the foot of a phone table,
+    // and Bulma's `is-small` variant brought the links down to about 28px.
+    min-height: 2.75rem;
+    min-width: 2.75rem;
 }
 
 .pagination-link.is-current,
@@ -1021,11 +1166,92 @@ fieldset[disabled] .select select::placeholder,
     font-weight: 500;
 }
 
+// Long free text inside a table cell (CAByS Categoría/Descripción): clamp it to
+// three lines so one row cannot push the rest of the table off the screen. The
+// full value stays reachable through the cell's title attribute.
+.table-clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    max-width: 48rem;
+    overflow-wrap: anywhere;
+}
+
+// A two-line clamp for a column where three lines would make every row tall.
+// Works alone or as a modifier on .table-clamp (declared after it, so the
+// line count wins).
+.table-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+// Hover help on a value or a header. The dotted underline is the affordance;
+// the native title carries the explanation (and remains readable by ATs that
+// surface title text).
+.kit-help {
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: .15em;
+}
+
+// ── Article picker (POS / facturas) ─────────────────────────────────────────
+// The typeahead box exists in the DOM before anything is typed, so an empty
+// rounded panel floated under the search field on first paint. `:empty` is the
+// honest state: no results yet, no box.
+.js-articulo-resultados:empty {
+    display: none;
+}
+
+// An article name is free text ("Cemento gris 50 kg ..."), and the suggestion
+// is a .button, which is a single-line control by default: the label was
+// clipped at the dropdown edge. Wrap it and keep it aligned like a list row.
+.js-articulo-opcion.button {
+    text-align: left;
+    white-space: normal;
+}
+
+// ── Sticky form actions ─────────────────────────────────────────────────────
+// A purchase-order form is taller than a phone; its primary action used to
+// scroll out of reach and the operator had to hunt for Guardar at the bottom
+// of a long form. Opt-in with .kit-form-actions on the action row.
+.kit-form-actions,
+.modal-card-body form > .field.is-grouped-right:last-of-type {
+    background: var(--mercurius-surface);
+    border-top: 1px solid var(--mercurius-border);
+    bottom: 0;
+    padding-block: var(--mercurius-space-3);
+    position: sticky;
+    z-index: 1;
+}
+
+// The generic "Cerrar" footer is removed by _kit/modal's footer sync when the
+// body owns its own form actions. Bulma gives .modal-card-foot a display
+// value, so the UA hidden rule alone can lose.
+.modal-card-foot[hidden] {
+    display: none;
+}
+
 // Secondary text that must hold 4.5:1 in BOTH schemes. Bulma's
 // `has-text-grey` is a fixed mid-grey that vanishes on the dark ground, and
 // its `has-text-...` scale is not scheme-aware; this is the token version.
+// Quiet link lists (the Reportes hub): one hairline between rows, drawn with
+// the scheme token, so a page does not need an inline border on every <li>.
+.menu-list > li + li {
+    border-top: 1px solid var(--mercurius-border);
+}
+
 .mercurius-text-muted {
     color: var(--mercurius-text-muted);
+}
+
+// A username or email does not need a 1,200px field. Keep profile inputs to a
+// comfortable reading measure; mobile still gets the full column.
+.perfil-input {
+    max-width: 32rem;
 }
 
 // A number that refreshes on its own: monospace so the digits do not jitter
@@ -1074,6 +1300,30 @@ h1.title.is-3 {
     position: sticky;
 }
 
+// A table with no rows still has to say so as a state, not as a broken
+// three-letter row: the message gets room and the secondary ink.
+.table td.kit-empty-cell {
+    color: var(--mercurius-text-muted);
+    padding: var(--mercurius-space-5) var(--mercurius-space-4);
+    text-align: center;
+}
+
+// ── Scroll affordance for a wide table ──────────────────────────────────────
+// Below 768px the table keeps its natural width and the CONTAINER scrolls, but
+// nothing told the operator more columns existed: a half-visible column reads
+// as clipped. web/index.js adds .is-scrollable when the frame really overflows
+// and .is-scrolled-end once the right edge is reached, so the hint never lies.
+// The container is focusable (tabindex="0" in _kit/data-table) so a keyboard
+// user can scroll it with the arrows, which is the WCAG 2.1.1 fix.
+.table-container {
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.table-container.is-scrollable:not(.is-scrolled-end) {
+    box-shadow: inset -1.25rem 0 1.25rem -1.25rem color-mix(in srgb, var(--bulma-text) 35%, transparent);
+}
+
 // =============================================================================
 // 21. Responsive
 // =============================================================================
@@ -1082,11 +1332,17 @@ h1.title.is-3 {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    // An odd number of cards otherwise leaves a half-width orphan on the last
+    // row at phone/tablet widths. Let the last card span the full row.
+    .metric-strip > :last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
     .filter-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .filter-bar,
+    .filter-bar-form,
     .action-bar {
         align-items: stretch;
         flex-direction: column;
@@ -1104,6 +1360,13 @@ h1.title.is-3 {
         padding: var(--mercurius-space-4);
     }
 
+    // `flex: 1 1 22rem` is a WIDTH basis in a row and a HEIGHT basis once the
+    // header flips to column: it reserved ~352px of dead air below every
+    // mobile page title. Let the text column size to its content.
+    .page-header-text {
+        flex: 0 1 auto;
+    }
+
     .page-header-actions {
         width: 100%;
     }
@@ -1112,7 +1375,36 @@ h1.title.is-3 {
         flex: 1 1 100%;
     }
 
-    .metric-strip,
+    // A dialog trigger usually arrives wrapped in .kit-modal-root, which is
+    // inline-block and therefore shrink-to-fit; the full-width button inside
+    // it stopped at the label width. The action column makes every wrapper a
+    // real row, so the primary action is the same size as the other buttons.
+    .page-header-actions .kit-modal-root,
+    .action-buttons .kit-modal-root {
+        display: block;
+        width: 100%;
+    }
+
+    .page-header-actions form {
+        width: 100%;
+    }
+
+    .page-header-actions .kit-modal-root > .button,
+    .action-buttons .kit-modal-root > .button {
+        width: 100%;
+    }
+
+    // Dos columnas también en teléfono: el dashboard tiene siete KPI y una
+    // sola columna lo convertía en una lista de 2.400px. Los valores largos
+    // parten dentro de la tarjeta por el overflow-wrap de .metric-value.
+    .metric-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric-value {
+        font-size: 1.25rem;
+    }
+
     .filter-grid {
         grid-template-columns: 1fr;
     }
@@ -1181,6 +1473,52 @@ button.navbar-link {
     display: inline-flex;
     font-size: .875rem;
     gap: .25rem;
+    min-width: 0;
+}
+
+// A username is arbitrary text supplied by the account, not by this design:
+// "administracion-sucursal-central" is a real value. It truncates inside the
+// bar instead of widening it, and keeps the full value in the title attribute
+// (set in fragments/navbar.html) plus the accessible name.
+.navbar-user-name {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// ── Current section ────────────────────────────────────────────────────────
+// The bar had no active state at all: every screen looked like "nowhere", and
+// the operator had to read the h1 to know which board they were on. The
+// current anchor carries aria-current="page" (set by the navbar script from
+// the real location, so the template keeps no copy of the route table); the
+// section that contains it gets .is-current so the dropdown header is marked
+// too. Selection is a rule under the label in the accent, the same vocabulary
+// the view tabs use - not a second fill.
+.navbar .navbar-item[aria-current="page"],
+.navbar .navbar-item.is-current {
+    color: var(--mercurius-accent-ink);
+    font-weight: 600;
+}
+
+.navbar .navbar-end > .navbar-item[aria-current="page"] {
+    box-shadow: inset 0 -2px 0 var(--bulma-primary);
+}
+
+.navbar .navbar-item.has-dropdown.is-current > .navbar-link {
+    color: var(--mercurius-accent-ink);
+}
+
+// At 1024-1280px the desktop bar carries eight entries plus the signed-in name
+// and a logout control. It used to stay on one line and push the document
+// wider than the viewport (horizontal page scroll is the one thing a 360px
+// review is guaranteed to catch). Wrapping keeps every entry visible and costs
+// one row only when it is actually needed.
+@media screen and (min-width: 1024px) {
+  .navbar .navbar-end {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 // ── Navbar en pantallas angostas ───────────────────────────────────────────
@@ -1193,6 +1531,27 @@ button.navbar-link {
   .navbar .navbar-menu .navbar-item,
   .navbar .navbar-menu .navbar-link {
     color: var(--bulma-text);
+  }
+
+  // The current section keeps the accent in the collapsible menu too: the
+  // neutral-colour rule above has the same specificity as the desktop current
+  // rule and is declared later, so it would otherwise repaint the active entry
+  // as ordinary text on every phone.
+  .navbar .navbar-menu .navbar-item[aria-current="page"],
+  .navbar .navbar-item.has-dropdown.is-current > .navbar-link {
+    color: var(--mercurius-accent-ink);
+  }
+
+  // In the collapsible menu there is a full row per entry, so the operator's
+  // name can wrap and be read in full instead of ellipsizing.
+  .navbar-user {
+    white-space: normal;
+  }
+
+  .navbar-user-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   // Bulma keeps desktop dropdown panels absolutely positioned and hidden until
@@ -1217,4 +1576,192 @@ button.navbar-link {
     background: var(--bulma-border);
     display: block;
   }
+}
+
+// ── POS: ayuda del cliente ───────────────────────────────────────────────────
+// El texto vivía en un .is-static con nowrap + ellipsis y en móvil se cortaba
+// a media frase ("Opcional — el cliente ..."), justo al lado del botón que
+// asigna el cliente. Ahora envuelve dentro de su control.
+.pos-cliente-hint {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+// =============================================================================
+// 33. Shell — skip link, scroll lock, mobile baseline
+// =============================================================================
+
+// The skip link is the first focusable element in the document. It stays
+// off-screen (translated above the viewport) until it takes focus, then lands
+// over the navbar. No layout is reserved for it, so an operator who never uses
+// it pays nothing.
+.skip-link {
+    background: var(--mercurius-surface);
+    border: 1px solid var(--bulma-primary);
+    border-radius: var(--mercurius-radius-sm);
+    color: var(--mercurius-accent-ink);
+    font-weight: 600;
+    left: var(--mercurius-space-4);
+    padding: var(--mercurius-space-2) var(--mercurius-space-4);
+    position: fixed;
+    top: var(--mercurius-space-4);
+    transform: translateY(calc(-100% - var(--mercurius-space-5)));
+    transition: transform var(--mercurius-dur-fast) var(--mercurius-ease-out);
+    z-index: 1100;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+// `<main tabindex="-1">` is the skip target, not a control. The global
+// [tabindex]:focus-visible ring would otherwise draw a 2px accent box around
+// the whole page after the skip link is used.
+main[tabindex="-1"]:focus,
+main[tabindex="-1"]:focus-visible {
+    outline: none;
+}
+
+// Scroll lock for an open dialog. A depth counter in _kit/modal keeps two
+// stacked dialogs (Tipo de cambio + Historial) from unlocking the page when the
+// inner one closes.
+body.kit-scroll-locked {
+    overflow: hidden;
+}
+
+// ── Mobile baseline ─────────────────────────────────────────────────────────
+// These are the platform tells that make a web app feel embedded: the tap
+// highlight flash, the double-tap zoom delay, and iOS zooming the whole page
+// into a sub-16px input and never zooming back out. Nothing here changes the
+// desktop rendering.
+html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+}
+
+a,
+button,
+[role="button"],
+summary {
+    touch-action: manipulation;
+}
+
+button,
+[role="button"],
+.navbar-burger {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (pointer: coarse) {
+    // 16px is the floor iOS Safari accepts without zooming the viewport.
+    .input,
+    .select select,
+    .textarea {
+        font-size: 1rem;
+    }
+
+    // A row-action icon is 28px in a dense table; on a finger it is a miss.
+    // The visual stays dense, the hit target grows.
+    .table .button.is-small {
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+    }
+
+    // Bulma's dismiss control is a 20px X on a 20px dark circle. Growing the
+    // button would grow the circle and the glyph with it, so the extra area is
+    // a transparent border: the button's box becomes 44px, while
+    // background-clip keeps the visible circle at the original 20px and the
+    // absolutely positioned X keeps its original containing block (the 20px
+    // padding box).
+    .modal-card-head .delete,
+    #toast-container .notification > .delete {
+        background-clip: content-box;
+        border: .75rem solid transparent;
+        height: 2.75rem;
+        max-height: none;
+        max-width: none;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        width: 2.75rem;
+    }
+
+    // The toast X is absolutely placed at 1rem/1rem; the transparent border
+    // would shift the visible circle by 12px, so the box is offset by exactly
+    // that amount. The target still reaches the corner.
+    #toast-container .notification > .delete {
+        inset-inline-end: var(--mercurius-space-1);
+        top: var(--mercurius-space-1);
+    }
+}
+
+// =============================================================================
+// 34. Error page (404) — one centred state, not a bare title
+// =============================================================================
+.error-page {
+    margin: var(--mercurius-space-6) auto;
+    max-width: 34rem;
+    padding: 0 var(--mercurius-space-3);
+    text-align: center;
+}
+
+.error-page-code {
+    color: var(--mercurius-text-muted);
+    font-size: 3rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin-bottom: var(--mercurius-space-3);
+}
+
+.error-page-text {
+    color: var(--mercurius-text-muted);
+    margin: 0 auto var(--mercurius-space-3);
+    max-width: 32rem;
+}
+
+.error-page-path {
+    margin-bottom: var(--mercurius-space-5);
+    overflow-wrap: anywhere;
+}
+
+@media screen and (max-width: 480px) {
+    .error-page-code {
+        font-size: 2.5rem;
+    }
+
+    .error-page .buttons {
+        flex-direction: column;
+    }
+
+    .error-page .buttons .button {
+        width: 100%;
+    }
+}
+
+// =============================================================================
+// 35. Login — pre-auth surface (no navbar, no layout include)
+// =============================================================================
+// 100svh, not Bulma's 100vh: on a phone the URL bar is visible on first paint,
+// so 100vh overflows by the height of that bar and the sign-in card is pushed
+// under the fold. `svh` is the smallest viewport, so the card is never cut off.
+.login-page .hero.is-fullheight {
+    min-height: 100svh;
+}
+
+.login-page .hero-body {
+    padding: var(--mercurius-space-5) var(--mercurius-space-4);
+}
+
+@media screen and (max-width: 480px) {
+    .login-page .hero-body {
+        padding: var(--mercurius-space-4) var(--mercurius-space-3);
+    }
+
+    .login-page .card-content {
+        padding: var(--mercurius-space-4);
+    }
 }

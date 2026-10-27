@@ -89,30 +89,31 @@
       `title is-3` to it (that would import .title's margins).
 
   RESPONSIVE
-    .metric-strip is auto-fit minmax(180px, 1fr): 4-5 across on desktop,
-    2 columns 481-768px, 1 column at 480px. No per-page rules.
+    .metric-strip is auto-fit minmax(180px, 1fr): 4-5 across on desktop and
+    2 columns at 480px (long values wrap inside the card via overflow-wrap).
+    No per-page rules.
 !}
 {@java.lang.String label}
 {@java.lang.Object value}
-{#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{config:['quarkus.http.root-path']}{href}"{#if id??} id="{id}"{/if}>
+{#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{config:['quarkus.http.root-path']}{href}"{#if id??} id="{id}"{/if}{#if active??}{#if active} aria-current="page"{/if}{/if}>
 <span class="metric-label">{label}</span>
-<span class="metric-value">{value}</span>
+<span class="metric-value">{#if value != null}{value}{#else}<span class="kit-empty">Sin dato</span>{/if}</span>
 {#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </a>
 {#else}{#if interactive??}{#if interactive}<button type="button" class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
-<span class="metric-value">{value}</span>
+<span class="metric-value">{#if value != null}{value}{#else}<span class="kit-empty">Sin dato</span>{/if}</span>
 {#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </button>
 {#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
-<span class="metric-value">{value}</span>
+<span class="metric-value">{#if value != null}{value}{#else}<span class="kit-empty">Sin dato</span>{/if}</span>
 {#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </div>
 {/if}
 {#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
-<span class="metric-value">{value}</span>
+<span class="metric-value">{#if value != null}{value}{#else}<span class="kit-empty">Sin dato</span>{/if}</span>
 {#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </div>
 {/if}{/if}

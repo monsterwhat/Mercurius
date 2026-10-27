@@ -58,12 +58,14 @@
                    it carries the app's accent. !}
                 {#if canImport}
                     <button type="button" class="button is-primary"
+                            data-cabys-import
+                            aria-describedby="cabys-estado"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/cabys/import"
                             hx-target="#tabla-cabys"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this"
                             hx-on::response-error="cabysImportFailed(event)"
-                            hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
+                            hx-confirm="¿Importar/actualizar el catálogo CAByS desde Hacienda? Esta operación puede tardar unos minutos.">
                         Importar/Actualizar Catálogo
                     </button>
                 {/if}
@@ -76,9 +78,17 @@
            button and the active state is the accent as TEXT on that same
            control. !}
         <div class="buttons are-small mb-3">
-            <span class="has-text-grey is-size-7" style="align-self:center">Columnas:</span>
-            <button type="button" class="button" data-col-toggle="2">Categoría</button>
-            <button type="button" class="button" data-col-toggle="3">Descripción</button>
+            <span class="mercurius-text-muted is-size-7" style="align-self:center">Columnas:</span>
+            <button type="button" class="button" data-col-toggle="2"
+                    aria-pressed="false" aria-controls="tabla-cabys"
+                    aria-label="Ocultar la columna Categoría">Categoría</button>
+            <button type="button" class="button" data-col-toggle="3"
+                    aria-pressed="false" aria-controls="tabla-cabys"
+                    aria-label="Ocultar la columna Descripción">Descripción</button>
+            {! Live status for search and import. It sits OUTSIDE the table swap, so
+               a swap cannot remove the region that is supposed to announce it. !}
+            <span id="cabys-estado" class="is-size-7 mercurius-text-muted" role="status"
+                  aria-live="polite" style="align-self:center; margin-left:auto"></span>
         </div>
 
         {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
@@ -88,13 +98,36 @@
     {#include _kit/confirm /}
 
     {! Column visibility toggles: hide long Categoría/Descripción columns.
-       State persists in localStorage and is reapplied after table swaps. !}
+       State persists in localStorage and is reapplied after table swaps.
+       `aria-pressed` reports the same state to assistive technology, because the
+       accent text alone is a colour-only signal. !}
     <script>
-        function cabysApplyHiddenCols() {
-            var ocultas = [];
+        function cabysEstado(texto) {
+            var el = document.getElementById('cabys-estado');
+            if (el) {
+                el.textContent = texto;
+            }
+        }
+
+        function cabysLeerOcultas() {
             try {
-                ocultas = JSON.parse(localStorage.getItem('cabys-hidden-cols') || '[]');
-            } catch (e) { /* ignore */ }
+                return JSON.parse(localStorage.getItem('cabys-hidden-cols') || '[]');
+            } catch (e) {
+                console.warn('No se pudo leer la selección de columnas CAByS', e);
+                return [];
+            }
+        }
+
+        function cabysGuardarOcultas(ocultas) {
+            try {
+                localStorage.setItem('cabys-hidden-cols', JSON.stringify(ocultas));
+            } catch (e) {
+                console.warn('No se pudo guardar la selección de columnas CAByS', e);
+            }
+        }
+
+        function cabysApplyHiddenCols() {
+            var ocultas = cabysLeerOcultas();
             document.querySelectorAll('#tabla-cabys table tr').forEach(function (fila) {
                 Array.prototype.forEach.call(fila.children, function (celda, idx) {
                     if (ocultas.indexOf(idx + 1) !== -1) {
@@ -106,50 +139,78 @@
             });
             document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
                 var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
-                if (ocultas.indexOf(col) !== -1) {
-                    btn.classList.add('has-text-primary');
-                } else {
-                    btn.classList.remove('has-text-primary');
-                }
+                var oculta = ocultas.indexOf(col) !== -1;
+                btn.setAttribute('aria-pressed', oculta ? 'true' : 'false');
+                btn.setAttribute('aria-label',
+                    (oculta ? 'Mostrar' : 'Ocultar') + ' la columna ' + btn.textContent.trim());
+                btn.classList.toggle('has-text-primary', oculta);
             });
         }
+
+        function cabysContar() {
+            var tabla = document.getElementById('tabla-cabys');
+            if (!tabla) {
+                return;
+            }
+            var filas = tabla.querySelectorAll('tbody tr');
+            var vacia = tabla.querySelector('tbody td[colspan]');
+            if (vacia || filas.length === 0) {
+                cabysEstado('Sin resultados');
+                return;
+            }
+            cabysEstado(filas.length === 1 ? '1 código visible' : filas.length + ' códigos visibles');
+        }
+
         document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
-                var ocultas = [];
-                try {
-                    ocultas = JSON.parse(localStorage.getItem('cabys-hidden-cols') || '[]');
-                } catch (e) { /* ignore */ }
+                var ocultas = cabysLeerOcultas();
                 var i = ocultas.indexOf(col);
                 if (i !== -1) {
                     ocultas.splice(i, 1);
                 } else {
                     ocultas.push(col);
                 }
-                try {
-                    localStorage.setItem('cabys-hidden-cols', JSON.stringify(ocultas));
-                } catch (e) { /* ignore */ }
+                cabysGuardarOcultas(ocultas);
                 cabysApplyHiddenCols();
             });
         });
-        document.body.addEventListener('htmx:afterSwap', function () { cabysApplyHiddenCols(); });
+
+        document.body.addEventListener('htmx:beforeRequest', function (evt) {
+            var origen = evt.detail ? evt.detail.elt : null;
+            if (!origen || !origen.getAttribute) {
+                return;
+            }
+            if (origen.id === 'buscar-cabys') {
+                cabysEstado('Buscando códigos…');
+            } else if (origen.hasAttribute('data-cabys-import')) {
+                cabysEstado('Importando el catálogo desde Hacienda. Puede tardar unos minutos…');
+            }
+        });
+        document.body.addEventListener('htmx:afterSwap', function () {
+            cabysApplyHiddenCols();
+            cabysContar();
+        });
         cabysApplyHiddenCols();
+        cabysContar();
     </script>
 
     {! Bridge: row-level edit buttons open the shared edit modal; the swapped
        form's [data-kit-close] button closes it (same contract as T18).
-       cabysImportFailed surfaces non-2xx import responses as a toast. !}
+       cabysImportFailed surfaces non-2xx import responses as a toast and in the
+       live status line. !}
     <script>
         function cabysImportFailed(evt) {
+            var status = evt && evt.detail && evt.detail.xhr ? evt.detail.xhr.status : '?';
+            cabysEstado('La importación falló (HTTP ' + status + '). Revise el registro del servidor.');
             var c = document.getElementById('toast-container');
             if (!c) {
                 return;
             }
-            var status = evt && evt.detail && evt.detail.xhr ? evt.detail.xhr.status : '?';
             var d = document.createElement('div');
             d.className = 'notification is-danger';
             d.setAttribute('role', 'alert');
-            d.textContent = 'Importación CABYS falló (HTTP ' + status + ') — revise logs/mercurius.log';
+            d.textContent = 'Importación CAByS falló (HTTP ' + status + '). Revise el registro del servidor.';
             c.appendChild(d);
             setTimeout(function () { d.remove(); }, 8000);
         }

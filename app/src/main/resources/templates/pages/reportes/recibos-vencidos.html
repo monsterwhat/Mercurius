@@ -8,10 +8,10 @@
   ported.
 !}
 {#include layout}
-    {#title}Recibos Vencidos | Mercurius{/title}
+    {#title}Facturas Recibidas Vencidas | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title="Recibos Vencidos" subtitle="Comprobantes recibidos con el plazo vencido" /}
+        {#include _kit/page-header title="Facturas Recibidas Vencidas" subtitle="Comprobantes recibidos con el plazo vencido" /}
 
         {! Un mismo buzon, dos estados: pendientes y vencidos comparten
            la busqueda. La pestana cambia de estado llevandola. !}
@@ -24,9 +24,9 @@
 
 
         <div class="notification">
-            Este reporte es de solo lectura. Para marcar como pagados, procesar o
-            activar/desactivar los recibos,
-            <a href="{config:['quarkus.http.root-path']}/app/recibos?bucket=vencidos">ir a Recibos</a>
+            Este reporte es de solo lectura. Para marcar como pagadas, procesar o
+            activar/desactivar las facturas recibidas,
+            <a href="{config:['quarkus.http.root-path']}/app/facturas-recibidas">Ir a facturas recibidas</a>
             (pestaña Vencidos).
         </div>
 
@@ -39,7 +39,7 @@
                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
-                           hx-target="#recibos-vencidos-tabla-container" hx-swap="innerHTML"/>
+                           hx-target="#recibos-vencidos-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
                 </div>
                     {/include}
 
@@ -61,9 +61,12 @@
                         <td>{#if f.encabezado?? && f.encabezado.emisor??}{f.encabezado.emisor.nombre}{/if}</td>
                         <td>{#if f.encabezado??}{f.encabezado.condicionVenta}{/if}</td>
                         <td class="num">{#if f.encabezado??}{f.encabezado.plazoCredito}{/if}</td>
-                        <td class="num">₡{#if f.resumen?? && f.resumen.totalComprobante??}{f.resumen.totalComprobante}{#else}0{/if}</td>
+                        <td class="num">{#if f.resumen?? && f.resumen.totalComprobante??}{fmt:moneda(f.resumen.totalComprobante)}{#else}&mdash;{/if}</td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No hay facturas recibidas vencidas</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}

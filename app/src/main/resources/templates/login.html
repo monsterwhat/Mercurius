@@ -27,8 +27,8 @@
     <!-- Web-bundler Qute tag: emits the hashed app js+css (Bulma included). -->
     {#bundle /}
 </head>
-<body>
-<section class="hero is-fullheight">
+<body class="login-page">
+<main id="contenido-principal" class="hero is-fullheight">
     <div class="hero-body">
         <div class="container">
             <div class="columns is-centered is-mobile">
@@ -41,14 +41,19 @@
                                         style="width: auto; height: 96px;">
                                     {#include fragments/logo-img /}
                                 </figure>
-                                <h1 class="title is-4">Mercurius</h1>
-                                <p class="subtitle is-6 has-text-grey">Inventario, facturación y Hacienda</p>
+                                {! The screen's name is the h1, not the product
+                                   name: a screen reader lands on "Iniciar
+                                   sesión" and knows what this page is for. The
+                                   brand stays in the logo and the line under
+                                   it. !}
+                                <h1 class="title is-4">Iniciar sesión</h1>
+                                <p class="subtitle is-6 has-text-grey">Mercurius &middot; Inventario, facturación y Hacienda</p>
                             </div>
 
                             {! Rendered only when Quarkus form auth redirects back to
                                {config:['quarkus.http.root-path']}/login?error after failed credentials. !}
                             {#if error}
-                            <div class="notification is-danger is-light" role="alert">
+                            <div class="notification is-danger is-light" role="alert" id="login-error">
                                 <strong>Usuario o contraseña incorrectos.</strong>
                                 Verifique sus datos e inténtelo de nuevo.
                             </div>
@@ -79,13 +84,15 @@
                                  con un actor interno con cuenta válida que
                                  engañe a otro usuario. Do NOT add a hidden csrf
                                  input here: nothing validates it. -->
-                            <form method="POST" action="j_security_check">
+                            <form method="POST" action="j_security_check"{#if error} aria-describedby="login-error"{/if}>
                                 <div class="field">
                                     <label class="label" for="j_username">Usuario</label>
                                     <div class="control">
                                         <input class="input" type="text" id="j_username"
                                                name="j_username" placeholder="Usuario"
-                                               autocomplete="username" required autofocus>
+                                               autocomplete="username" autocapitalize="none"
+                                               autocorrect="off" spellcheck="false"
+                                               enterkeyhint="next" required autofocus>
                                     </div>
                                 </div>
 
@@ -94,7 +101,8 @@
                                     <div class="control">
                                         <input class="input" type="password" id="j_password"
                                                name="j_password" placeholder="••••••••"
-                                               autocomplete="current-password" required>
+                                               autocomplete="current-password"
+                                               enterkeyhint="go" required>
                                     </div>
                                 </div>
 
@@ -117,6 +125,6 @@
             </div>
         </div>
     </div>
-</section>
+</main>
 </body>
 </html>

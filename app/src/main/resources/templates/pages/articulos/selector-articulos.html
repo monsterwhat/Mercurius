@@ -18,39 +18,67 @@
 <div id="selector-articulos-fragmento">
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
-                   placeholder="Buscar artículo..."
+            <input class="input" type="search" id="selector-articulos-q" name="q"
+                   value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar artículo…"
+                   aria-label="Buscar artículo por nombre o código"
+                   enterkeyhint="search" spellcheck="false"
                    hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#selector-articulos-fragmento" hx-swap="outerHTML"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-sync="this:replace"
+                   hx-target="#selector-articulos-resultados" hx-swap="outerHTML"
+                   hx-select="#selector-articulos-resultados"
                    hx-include="this"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    <table class="table is-hoverable is-fullwidth is-narrow">
+    {! Search input outside the swapped results region: the old self-swap
+       replaced the focused input mid-word (see tabla-articulos.html). !}
+    <div id="selector-articulos-resultados">
+    {#if resultados?? && resultados.size() > 0}
+    <p class="help mb-2">{resultados.size()} artículos · máximo 10 resultados</p>
+    {/if}
+
+    <div class="table-container">
+    <table class="table is-hoverable is-fullwidth is-narrow" aria-label="Artículos disponibles">
         <thead>
-            <tr><th>Nombre</th><th class="num">Precio</th><th class="has-text-centered">Cantidad</th><th></th></tr>
+            <tr><th scope="col">Nombre</th><th scope="col" class="num">Precio</th><th scope="col" class="has-text-centered">Cantidad</th><th scope="col"><span class="is-sr-only">Acciones</span></th></tr>
         </thead>
         <tbody>
             {#for articulo in resultados}
             <tr data-codigo="{articulo.codigo}" data-nombre="{articulo.nombre}">
-                <td style="font-weight:500">{articulo.nombre}</td>
-                <td class="num">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
+                <td style="font-weight:500">{#if articulo.nombre??}<span class="table-clamp" title="{articulo.nombre}">{articulo.nombre}</span>{#else}&mdash;{/if}</td>
+                <td class="num">{#if articulo.lastPrecioArticulo??}{fmt:moneda(articulo.lastPrecioArticulo)}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered" style="width:7rem">
                     <input class="input is-small" type="number" min="1" step="1" value="1"
+                           style="font-size:1rem; max-width:5.5rem"
+                           inputmode="numeric"
+                           aria-label="Cantidad de {articulo.nombre}"
                            data-cantidad="{articulo.codigo}"/>
                 </td>
                 <td class="has-text-centered">
-                    <button type="button" class="button is-small is-primary"
+                    <button type="button" class="button is-small"
+                            aria-label="Seleccionar {articulo.nombre}"
                             data-kit-pick-articulo="{articulo.codigo}">Seleccionar</button>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="4" class="has-text-centered has-text-grey">No se encontraron artículos</td></tr>
+            <tr>
+                <td colspan="4" class="has-text-centered">
+                    {#if q??}
+                    <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
+                    <p class="help">Busque por nombre o por código del artículo.</p>
+                    {#else}
+                    <p class="has-text-weight-semibold">Escriba para buscar un artículo</p>
+                    <p class="help">Solo aparecen artículos activos y procesados.</p>
+                    {/if}
+                </td>
+            </tr>
             {/for}
         </tbody>
     </table>
+    </div>
 
     {! Picker bridge: appends the chosen line to #forma-promocion and closes
        the shared selector modal. !}
@@ -79,13 +107,29 @@
                     var itemsBody = document.getElementById('promo-items-body');
                     if (itemsBody) {
                         var tr = document.createElement('tr');
+                        tr.setAttribute('data-codigo', codigo);
+                        tr.setAttribute('data-nombre', nombre);
                         var tdNombre = document.createElement('td');
-                        tdNombre.textContent = nombre;
+                        var spanNombre = document.createElement('span');
+                        spanNombre.className = 'table-clamp';
+                        spanNombre.title = nombre;
+                        spanNombre.textContent = nombre;
+                        tdNombre.appendChild(spanNombre);
                         var tdCantidad = document.createElement('td');
-                        tdCantidad.className = 'has-text-centered';
+                        tdCantidad.className = 'num';
                         tdCantidad.textContent = cantidad || '1';
+                        var tdAcciones = document.createElement('td');
+                        tdAcciones.className = 'has-text-centered';
+                        var quitar = document.createElement('button');
+                        quitar.type = 'button';
+                        quitar.className = 'button is-small';
+                        quitar.setAttribute('data-promo-remove', '');
+                        quitar.setAttribute('aria-label', 'Quitar ' + nombre + ' de la promoción');
+                        quitar.innerHTML = '<span class="mi-icon" data-icon="trash" aria-hidden="true"></span>';
+                        tdAcciones.appendChild(quitar);
                         tr.appendChild(tdNombre);
                         tr.appendChild(tdCantidad);
+                        tr.appendChild(tdAcciones);
                         itemsBody.appendChild(tr);
                     }
                 }
@@ -93,7 +137,18 @@
                 if (root && window.Alpine) {
                     Alpine.$data(root).open = false;
                 }
+                var estado = document.getElementById('promo-items-estado');
+                if (estado && form) {
+                    estado.textContent = 'Se agregó ' + nombre + ' a la promoción.';
+                }
+                var agregar = document.querySelector('#forma-promocion [data-kit-open="selector-articulo-promo"]');
+                if (!form) {
+                    console.warn('No se encontró el formulario de promoción para agregar el artículo ' + codigo);
+                } else if (agregar) {
+                    agregar.focus();
+                }
             });
         });
     </script>
+    </div>
 </div>

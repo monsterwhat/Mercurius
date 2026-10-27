@@ -104,9 +104,9 @@ public class UsuariosReportesResource {
 
     private static @Nonnull List<Map<String, Object>> columnas() {
         return List.of(
+                Map.of("label", "Estado", "key", "activo"),
                 Map.of("label", "Nombre de usuario", "key", "username"),
-                Map.of("label", "Permisos", "key", "permisos"),
-                Map.of("label", "Activo", "key", "activo"));
+                Map.of("label", "Permisos", "key", "permisos"));
     }
 
     /** Legacy globalFilterFunction coverage: username + groupName. */

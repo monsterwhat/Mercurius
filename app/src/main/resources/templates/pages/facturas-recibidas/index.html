@@ -39,21 +39,26 @@
             <form id="recibidas-upload-forma"
                   hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/upload"
                   hx-encoding="multipart/form-data"
-                  hx-target="#upload-resultado" hx-swap="innerHTML">
+                  hx-target="#upload-resultado" hx-swap="innerHTML"
+                  hx-disabled-elt="find button[type='submit']">
                 <div class="field">
                     <label class="label" for="recibidas-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
                     <div class="control">
                         <input class="input" type="file" id="recibidas-upload-archivos"
-                               name="files" accept=".xml" multiple required/>
+                               name="files" accept=".xml" multiple required
+                               aria-describedby="recibidas-upload-ayuda"/>
                     </div>
+                    <p id="recibidas-upload-ayuda" class="help mercurius-text-muted">
+                        Puede seleccionar varios archivos .xml a la vez. Cada archivo se procesa por separado.
+                    </p>
                 </div>
                 <progress id="upload-progreso" class="progress is-primary" value="0" max="100"
-                          aria-label="Progreso de la carga">0%</progress>
+                          aria-label="Progreso de la carga" hidden>0%</progress>
                 <div class="field">
                     <button class="button is-primary" type="submit">Procesar Facturas</button>
                 </div>
             </form>
-            <div id="upload-resultado"></div>
+            <div id="upload-resultado" role="status" aria-live="polite"></div>
             {/content}
         {/include}
 
@@ -70,23 +75,15 @@
     {#include _kit/confirm /}
 
     {! Bridge: row-level buttons open the shared modal after htmx fills its
-       body (same documented recipe as T18/T35). !}
-    <script>
-        document.addEventListener('click', function (e) {
-            var opener = e.target.closest('[data-kit-open]');
-            if (opener) {
-                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
-                if (modal && window.Alpine) {
-                    Alpine.$data(modal).open = true;
-                }
-            }
-        });
-    </script>
+       body. The delegated handler is installed once by web/index.js
+       (kitBridge, ui-kit §8.1), so this page must not copy it. !}
     {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
     <script>
         document.addEventListener('htmx:xhr:progress', function (evt) {
             var bar = document.getElementById('upload-progreso');
             if (bar && evt.detail.lengthComputable) {
+                // La barra no ocupa espacio hasta que hay una subida real.
+                bar.hidden = false;
                 bar.value = (evt.detail.loaded / evt.detail.total) * 100;
             }
         });

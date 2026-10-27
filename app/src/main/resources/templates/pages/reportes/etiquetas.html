@@ -10,9 +10,16 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title=titulo subtitle="Seleccione los artículos para generar etiquetas" /}
+        {#include _kit/page-header title=titulo subtitle="Seleccione los artículos para generar etiquetas"}
+            {#actions}
+            {! The screen's one action is printing, so it belongs in the header,
+               not in the fourth cell of the options row where it read as one
+               more setting. !}
+            <button type="button" class="button is-primary" id="btn-imprimir">Imprimir Etiquetas</button>
+            {/actions}
+        {/include}
 
-        {#include _kit/surface id="etiquetas-panel"}
+        {#include _kit/surface id="etiquetas-panel" title="Opciones de impresión"}
             {#content}
             <div class="columns is-multiline">
                 <div class="column is-3 field">
@@ -24,15 +31,14 @@
                     <input class="input" type="number" id="copias" min="1" max="10" value="1"/>
                 </div>
                 <div class="column is-3 field">
-                    <label class="label">Total Etiquetas</label>
+                    <p class="label">Total de etiquetas</p>
                     <p><strong><span id="total-etiquetas">0</span></strong> <span class="mercurius-text-muted">etiquetas</span></p>
                 </div>
                 <div class="column is-3 field">
-                    <label class="label">Acciones</label>
+                    <p class="label">Selección</p>
                     <div class="buttons">
                         <button type="button" class="button" id="btn-todos">Seleccionar Todos</button>
                         <button type="button" class="button" id="btn-limpiar">Limpiar</button>
-                        <button type="button" class="button is-primary" id="btn-imprimir">Imprimir Etiquetas</button>
                     </div>
                 </div>
             </div>
@@ -49,7 +55,12 @@
                 </form>
             </div>
 
-            {#include _kit/surface title="Vista Previa de Etiquetas"}
+            {/content}
+        {/include}
+
+        {! The preview was a _kit/surface nested inside the options surface: a
+           card inside a card. It is a sibling surface now. !}
+        {#include _kit/surface title="Vista previa de etiquetas"}
             {#content}
 
                     <div class="selection-info">
@@ -61,9 +72,6 @@
                     <p class="mercurius-text-muted" id="sin-seleccion">
                         Seleccione artículos de la tabla para ver la vista previa
                     </p>
-            {/content}
-        {/include}
-
             {/content}
         {/include}
         <script>
@@ -79,15 +87,22 @@
                 orden = [];
                 document.querySelectorAll('#reporte-etiquetas-tabla tbody tr').forEach(function (fila) {
                     var celdas = fila.querySelectorAll('td');
-                    if (celdas.length >= 4) {
-                        var codigo = celdas[0].textContent.trim();
+                    // Columna 0 is the selector checkbox; the catalog data
+                    // starts at the Código cell. Reading from index 0 put the
+                    // checkbox text (always empty) in the code and shifted every
+                    // other field by one, so the preview showed codes as names.
+                    if (celdas.length >= 5) {
+                        var codigo = celdas[1].textContent.trim();
+                        if (!codigo) {
+                            return;
+                        }
                         if (!catalogo[codigo]) {
                             orden.push(codigo);
                         }
                         catalogo[codigo] = {
-                            nombre: celdas[1].textContent.trim(),
-                            barra: celdas[2].textContent.trim(),
-                            precio: celdas[3].textContent.trim()
+                            nombre: celdas[2].textContent.trim(),
+                            barra: celdas[3].textContent.trim(),
+                            precio: celdas[4].textContent.trim()
                         };
                     }
                 });

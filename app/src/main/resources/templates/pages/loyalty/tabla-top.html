@@ -28,31 +28,56 @@
   - The points cell carries `num`: right-aligned with tabular figures. The
     column HEADER is built server-side (the headers map of _kit/data-table),
     so the matching "num" flag on the header is out of this template's reach.
+
+  ROUND 2
+  -------
+  - The points figure goes through `fmt:numero`: it is a BigDecimal, and the
+    raw print rendered "1500.00" where the rest of the app renders "1 500".
+  - A long client name could stretch the table to any width; it is clamped to
+    three lines with the full value in `title` (the .table-clamp pattern from
+    the articulos board).
+  - The icon was `refresh`, which reads as "reload the row". A history drawer
+    is a point in time, so it is `clock`.
+  - Each row button's accessible name carries the client's name: ten identical
+    "Ver historial" labels are indistinguishable to a screen reader.
+  - The empty state says what the screen is missing instead of reporting an
+    error-looking grey line.
+  - The panel and the table wrapper were both carrying id="loyalty-top-tabla"
+    (the surface took `id=modelo.id` and the kit table took it again), so the
+    document had two elements with one id. The panel drops its id; the table
+    wrapper keeps it.
 !}
-{#include _kit/surface id=modelo.id title="Top 10 Clientes con Puntos"}
+{#include _kit/surface title="Top 10 Clientes con Puntos"}
     {#content}
     {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for c in modelo.filas}
             <tr data-row-key="{c.clienteCode}">
-                <td style="font-weight:500">{c.clienteNombre}</td>
-                <td class="num has-text-weight-bold">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                <td style="font-weight:500">
+                    {#if c.clienteNombre??}<span class="table-clamp" title="{c.clienteNombre}">{c.clienteNombre}</span>{#else}<span class="kit-empty">&mdash;</span>{/if}
+                </td>
+                <td class="num has-text-weight-bold">{#if c.puntosAcumulados??}{fmt:numero(c.puntosAcumulados)}{#else}0{/if}</td>
                 <td>
                     <span class="tag" style="background-color:color-mix(in srgb, {c.tierColor} 20%, var(--bulma-scheme-main)); color:color-mix(in srgb, {c.tierColor} 30%, var(--bulma-text-strong))">
                         {#if c.tierColor == '#ffd700'}Oro{#else if c.tierColor == '#c0c0c0'}Plata{#else if c.tierColor == '#cd7f32'}Bronce{#else}Básico{/if}
                     </span>
                 </td>
-                <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{#else}&mdash;{/if}</td>
+                <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
                 <td class="has-text-centered">
-                    <button type="button" class="button is-small" title="Ver Historial"
-                            aria-label="Ver historial del cliente"
+                    <button type="button" class="button is-small"
+                            title="Ver historial de {c.clienteNombre}"
+                            aria-label="Ver historial de puntos de {c.clienteNombre}"
                             aria-haspopup="dialog" data-kit-open="historial-cliente"
                             hx-get="{config:['quarkus.http.root-path']}/api/app/loyalty/{c.clienteCode}/view"
-                            hx-target="#historial-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="refresh" /} Historial</button>
+                            hx-target="#historial-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="clock" /} Historial</button>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No hay clientes con puntos</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    <span class="kit-empty">Todavía no hay clientes con puntos acumulados. Los puntos aparecen cuando una factura se cobra con un cliente asociado.</span>
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}

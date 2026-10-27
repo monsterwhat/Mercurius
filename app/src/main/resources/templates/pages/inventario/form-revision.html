@@ -20,21 +20,21 @@
     <div class="columns">
         <div class="column">
             <div class="field">
-                <label class="label">Artículo:</label>
-                <p class="input is-static has-text-weight-semibold">{ajuste.articuloNombre}</p>
+                <p class="is-size-7 mercurius-text-muted">Artículo</p>
+                <p class="has-text-weight-semibold">{ajuste.articuloNombre}</p>
             </div>
         </div>
         <div class="column">
             <div class="field">
-                <label class="label">Código de barras:</label>
-                <p class="input is-static kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+                <p class="is-size-7 mercurius-text-muted">Código de barras</p>
+                <p class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
             </div>
         </div>
     </div>
 
     <div class="notification is-info is-light">
-        Cantidad recomendada por la factura:
-        <strong>{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</strong>
+        <p class="is-size-7 mercurius-text-muted">Cantidad recomendada por la factura</p>
+        <p class="is-size-4 has-text-weight-semibold kit-figure">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</p>
     </div>
 
     <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
@@ -42,13 +42,14 @@
         <div class="field">
             <label class="label" for="revision-cantidad">Cantidad *</label>
             <div class="control">
-                <input class="input" type="number" step="any" id="revision-cantidad"
-                       name="cantidad" value="{ajuste.cantidad}" required/>
+                <input class="input" type="number" step="any" inputmode="decimal"
+                       id="revision-cantidad" name="cantidad" value="{ajuste.cantidad}"
+                       aria-describedby="revision-cantidad-ayuda" required/>
             </div>
-            <p class="help">La cantidad no puede estar vacía</p>
+            <p class="help" id="revision-cantidad-ayuda">Confirme o corrija la cantidad antes de actualizar el inventario.</p>
         </div>
         <div class="buttons is-centered mt-4">
-            <button class="button is-primary is-medium" type="submit">Actualizar datos</button>
+            <button class="button is-primary is-medium" type="submit" hx-disabled-elt="this">Actualizar datos</button>
             <button class="button" type="button" data-kit-close>Cerrar</button>
         </div>
     </form>
@@ -57,6 +58,7 @@
 {#else}
 <div class="has-text-centered p-4">
     <p class="has-text-grey">No hay movimiento seleccionado</p>
+    <p class="is-size-7 mercurius-text-muted">Cierre este cuadro y elija un movimiento pendiente.</p>
 </div>
 {/if}
 

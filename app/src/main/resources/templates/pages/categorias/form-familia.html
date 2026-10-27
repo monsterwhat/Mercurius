@@ -16,20 +16,21 @@
 !}
 <div id="forma-familia">
     {#if modo == 'editar' && familia??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/familias"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/familias"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {/if}
         <div class="field">
             <label class="label" for="familia-nombre">Nombre:</label>
             <div class="control">
                 <input class="input {#if errorNombre??}is-danger{/if}" id="familia-nombre"
-                       name="nombre" required="required" autocomplete="off"
+                       name="nombre" required="required" autocomplete="off" maxlength="255"
                        value="{#if familia??}{familia.nombre}{/if}"/>
             </div>
-            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+            {#if errorNombre??}<p class="help is-danger has-text-danger" role="alert">{errorNombre}</p>{/if}
+            <p class="help">Nombre visible en el catálogo y en los filtros de inventario.</p>
         </div>
         <div class="field is-grouped is-grouped-right">
             <div class="control">
@@ -38,7 +39,7 @@
                 </button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>

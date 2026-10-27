@@ -236,6 +236,57 @@ public class InventarioService extends GService<Inventario> {
         }     
     }
 
+    // ── Páginas de la tabla ──────────────────────────────────────────────
+    // La página /app/inventarios solo pinta 20 filas por pestaña, pero pedía
+    // las listas completas y las recortaba en memoria. Con 673.326
+    // movimientos eso hidrataba dos veces el catálogo entero (con el
+    // artículo EAGER) para descartar 673.306 filas. Estas consultas dejan
+    // que PostgreSQL haga el LIMIT/OFFSET.
+
+    /** Página de movimientos activos, más recientes primero. */
+    public @Nullable List<Inventario> listEnabledPage(int first, int max) {
+        return page(
+                "SELECT a FROM Inventario a WHERE a.status = true ORDER BY a.codigo DESC",
+                first, max, "listEnabledPage");
+    }
+
+    /** Página de movimientos inactivos, más recientes primero. */
+    public @Nullable List<Inventario> listInactivosPage(int first, int max) {
+        return page(
+                "SELECT a FROM Inventario a WHERE a.status = false ORDER BY a.codigo DESC",
+                first, max, "listInactivosPage");
+    }
+
+    /** Página de movimientos activos sin procesar, más recientes primero. */
+    public @Nullable List<Inventario> listSinProcesarPage(int first, int max) {
+        return page(
+                "SELECT a FROM Inventario a WHERE a.status = true AND a.processed = false "
+                        + "ORDER BY a.codigo DESC",
+                first, max, "listSinProcesarPage");
+    }
+
+    /** Página de movimientos activos ya procesados, más recientes primero. */
+    public @Nullable List<Inventario> listActivosYProcesadosPage(int first, int max) {
+        return page(
+                "SELECT a FROM Inventario a WHERE a.status = true AND a.processed = true "
+                        + "ORDER BY a.codigo DESC",
+                first, max, "listActivosYProcesadosPage");
+    }
+
+    private @Nullable List<Inventario> page(@Nonnull String jpql, int first, int max,
+                                            @Nonnull String origen) {
+        try {
+            return em.createQuery(jpql, Inventario.class)
+                    .setFirstResult(Math.max(0, first))
+                    .setMaxResults(Math.max(1, max))
+                    .getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing page of inventario: " + e.getMessage()
+                    + " | source=InventarioService." + origen + "()");
+            return null;
+        }
+    }
+
     public List<Inventario> findByDateRangeAndUserId(Date startDate, Date endDate, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);

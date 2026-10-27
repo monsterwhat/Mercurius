@@ -2,18 +2,19 @@
   pages/reportes/_historial-puntos - points-history dialog body fragment (T20).
 
   Rendered standalone by LoyaltyReportesResource.historial() and swapped into
-  #loyalty-historial-body by the "Ver Historial" buttons of loyalty.html.
+  #loyalty-historial-body by the "Ver historial" buttons of loyalty.html.
   Mirrors the legacy pointsHistoryDialog table (loyaltyController.
   selectedCustomerPointsHistory).
 !}
 <div id="loyalty-historial-contenido">
-    <h3 class="title is-5">Historial de Puntos</h3>
     {#if cliente??}
     <p class="has-text-weight-bold mb-2">{cliente.name}</p>
     {/if}
-    <table class="table is-striped is-hoverable is-fullwidth" id="loyalty-historial-tabla">
+    <div class="table-container">
+    <table class="table is-hoverable is-fullwidth" id="loyalty-historial-tabla"
+           aria-label="Movimientos de puntos del cliente">
         <thead>
-            <tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Puntos</th><th>Saldo</th></tr>
+            <tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Descripción</th><th scope="col" class="num">Puntos</th><th scope="col" class="num">Saldo</th></tr>
         </thead>
         <tbody>
             {#for t in historial}
@@ -21,12 +22,16 @@
                 <td>{#if t.fechaCreacion??}{t.fechaCreacion}{/if}</td>
                 <td class="has-text-weight-bold">{t.tipoTransaccion}</td>
                 <td>{#if t.descripcion??}{t.descripcion}{/if}</td>
-                <td class="has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
-                    {#if t.puntos??}{t.puntos}{#else}0{/if}
+                <td class="num has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
+                    {#if t.puntos??}{fmt:numero(t.puntos)}{#else}0{/if}
                 </td>
-                <td class="has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}0{/if}</td>
+                <td class="num has-text-weight-bold">{#if t.saldoPuntos??}{fmt:numero(t.saldoPuntos)}{#else}0{/if}</td>
             </tr>
             {/for}
+            {#if historial.isEmpty()}
+            <tr><td colspan="5" class="kit-empty-cell">Este cliente todavía no tiene movimientos de puntos</td></tr>
+            {/if}
         </tbody>
     </table>
+    </div>
 </div>

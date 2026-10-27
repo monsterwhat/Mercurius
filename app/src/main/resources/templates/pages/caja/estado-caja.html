@@ -4,7 +4,7 @@
   Included by pages/caja/index.html AND re-rendered standalone by
   POST /api/app/caja/open/form and POST /api/app/caja/close/form — the HTMX
   twins delegate to the JSON guards, so failures come back as this fragment
-  redisplayed with the exact JSON-guard message plus an out-of-band toast
+  re-rendered with the exact JSON-guard message plus an out-of-band toast
   (docs/ui-kit.md §5 Pattern A).
 
   Model (set by CierreCajaResource; optional keys ??-guarded):
@@ -33,27 +33,41 @@
     header (the surface's {#actions} slot).
   - The session figure is a money readout, so it carries .kit-figure (the
     app's tabular-figures class outside a table).
+
+  ROUND 2
+  -------
+  - Hierarchy: the opening amount is the number this panel exists for, so it
+    is the only .metric-value readout; the date and the user drop to normal
+    weight under sentence-case .metric-label captions. Bulma's `.heading`
+    (uppercase, tracked) is gone from both.
+  - `.subtitle.is-5` was doing the job of a label on the date and the user,
+    which made three different kinds of fact look identical.
+  - The panel states what the close will be compared against, so the numbers
+    on the close form are not mysterious.
 !}
 {#if sesion}
 {#include _kit/surface title="Sesión Activa" }
     {#actions}
-        <span class="status-chip is-success">Abierta</span>
+        <span class="status-chip is-info">Abierta</span>
     {/actions}
     {#content}
-    <div class="columns">
+    <div class="columns" style="margin-bottom:0">
         <div class="column">
-            <p class="heading">Monto Inicial</p>
-            <p class="subtitle is-5 kit-figure">{sesion.montoInicial}</p>
+            <p class="metric-label">Monto inicial</p>
+            <p class="metric-value kit-figure">{#if sesion.montoInicial??}{sesion.montoInicial}{#else}&mdash;{/if}</p>
         </div>
         <div class="column">
-            <p class="heading">Fecha Apertura</p>
-            <p class="subtitle is-5">{sesion.fechaApertura}</p>
+            <p class="metric-label">Fecha de apertura</p>
+            <p class="is-size-6 has-text-weight-semibold">{#if sesion.fechaApertura??}{sesion.fechaApertura}{#else}&mdash;{/if}</p>
         </div>
         <div class="column">
-            <p class="heading">Usuario</p>
-            <p class="subtitle is-5">{sesion.usuarioUsername}</p>
+            <p class="metric-label">Usuario</p>
+            <p class="is-size-6 has-text-weight-semibold">{#if sesion.usuarioUsername??}{sesion.usuarioUsername}{#else}&mdash;{/if}</p>
         </div>
     </div>
+    <p class="help">
+        Al cerrar, el sistema compara lo contado con los montos esperados de la sesión y registra la diferencia en el historial.
+    </p>
     {/content}
 {/include}
 

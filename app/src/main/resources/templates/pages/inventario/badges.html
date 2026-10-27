@@ -12,21 +12,25 @@
 {#include _kit/view-tabs ariaLabel="Vistas de inventario"}
     {#tabs}
     <button type="button" class="view-tab" :class="{ 'is-active': tab === 'activos' }"
+            :aria-pressed="tab === 'activos'"
             @click="tab = 'activos'">
         <span>Activos</span>
         <span class="view-tab-count">{badges.activos}</span>
     </button>
     <button type="button" class="view-tab" :class="{ 'is-active': tab === 'pendientes' }"
+            :aria-pressed="tab === 'pendientes'"
             @click="tab = 'pendientes'">
         <span>Pendientes</span>
         <span class="view-tab-count">{badges.pendientes}</span>
     </button>
     <button type="button" class="view-tab" :class="{ 'is-active': tab === 'procesados' }"
+            :aria-pressed="tab === 'procesados'"
             @click="tab = 'procesados'">
         <span>Procesados</span>
         <span class="view-tab-count">{badges.procesados}</span>
     </button>
     <button type="button" class="view-tab" :class="{ 'is-active': tab === 'inactivos' }"
+            :aria-pressed="tab === 'inactivos'"
             @click="tab = 'inactivos'">
         <span>Inactivos</span>
         <span class="view-tab-count">{badges.inactivos}</span>

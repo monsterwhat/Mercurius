@@ -18,7 +18,7 @@
 
   PARAMS (all optional):
     id           String  - DOM id of the modal, default "kit-confirm".
-    title        String  - header text, default "Confirmar accion".
+    title        String  - header text, default "Confirmar acción".
     message      String  - fallback body text shown when the triggering
                            element has no hx-confirm value; normally the
                            question comes from evt.detail.question.
@@ -40,7 +40,7 @@
          aria-labelledby="{id ?: 'kit-confirm'}-title"
          aria-describedby="{id ?: 'kit-confirm'}-message" data-kit-trap>
         <header class="modal-card-head">
-            <p class="modal-card-title" id="{id ?: 'kit-confirm'}-title">{title ?: 'Confirmar accion'}</p>
+            <p class="modal-card-title" id="{id ?: 'kit-confirm'}-title">{title ?: 'Confirmar acción'}</p>
             <button class="delete" type="button" aria-label="Cerrar" data-kit-confirm-cancel></button>
         </header>
         <section class="modal-card-body">
@@ -48,13 +48,9 @@
         </section>
         <footer class="modal-card-foot">
             <div class="buttons">
-            {#if danger??}{#if danger}
-            <button class="button is-danger" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
-            {#else}
-            <button class="button is-primary" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
-            {/if}{#else}
-            <button class="button is-primary" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
-            {/if}
+            <button class="button {#if danger?? && danger}is-danger{#else}is-primary{/if}" type="button"
+                    data-kit-confirm-accept
+                    data-kit-confirm-default-danger="{#if danger?? && danger}true{#else}false{/if}">{confirmLabel ?: 'Confirmar'}</button>
             <button class="button" type="button" data-kit-confirm-cancel>{cancelLabel ?: 'Cancelar'}</button>
             </div>
         </footer>
@@ -62,37 +58,35 @@
 </div>
 
 {!
-  Scoped theme hardening: guarantee the dialog text stays legible in BOTH
-  Bulma schemes (light / prefers-color-scheme: dark). The modal card's own
-  background is var(--bulma-scheme-main); pinning text to the adaptive
-  --bulma-text family (instead of the page-level --bulma-text-title-l that
-  body inherits) prevents black-on-dark when the card bg goes dark.
+  Scoped theme hardening used to live in an inline <style> block here. It is
+  in web/mercurius.scss (section 30) now: a fragment can be swapped into a
+  page many times, and one stylesheet rule beats N copies of the same block.
+  The rule is unchanged - pin dialog text to the scheme-aware --bulma-text so
+  a page inheriting an invalid colour cannot make the card black-on-dark.
 !}
-<style>
-    [data-kit-confirm-modal] .modal-card,
-    [data-kit-confirm-modal] .modal-card-body p[data-kit-confirm-message] {
-        color: var(--bulma-text);
-    }
-    [data-kit-confirm-modal] .modal-card-foot .buttons {
-        gap: 0.5rem;
-    }
-</style>
 
 {!
   One-time global install: htmx:confirm interception + click/escape/focus
   handling. Braces after "{" keep whitespace so Qute leaves them alone.
+
+  Focus return and scroll lock match _kit/modal: a confirmation closes with
+  focus back on the control that asked, and the page behind the backdrop does
+  not scroll while the question is open.
 !}
 <script>
     if (!window.kitConfirmReady) {
         window.kitConfirmReady = true;
         var kitTrapTab = window.kitTrapTab || function (event, container) {
-            var focusables = container.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            var all = container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+            var focusables = Array.prototype.filter.call(all, function (el) {
+                return el.getClientRects().length > 0;
+            });
             if (focusables.length === 0) {
                 return;
             }
             var first = focusables[0];
             var last = focusables[focusables.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
+            if (event.shiftKey && (document.activeElement === first || document.activeElement === container)) {
                 event.preventDefault();
                 last.focus();
             } else if (!event.shiftKey && document.activeElement === last) {
@@ -101,12 +95,25 @@
             }
         };
         window.kitTrapTab = window.kitTrapTab || kitTrapTab;
+        if (!window.kitScrollLock) {
+            window.kitScrollDepth = 0;
+            window.kitScrollLock = function (lock) {
+                window.kitScrollDepth = Math.max(0, window.kitScrollDepth + (lock ? 1 : -1));
+                document.body.classList.toggle('kit-scroll-locked', window.kitScrollDepth > 0);
+            };
+        }
         var modal = document.getElementById('{id ?: 'kit-confirm'}');
         var pending = null;
+        var lastFocus = null;
         var closeModal = function () {
             modal.classList.remove('is-active');
             modal.setAttribute('aria-hidden', 'true');
             pending = null;
+            window.kitScrollLock(false);
+            if (lastFocus && lastFocus.isConnected && typeof lastFocus.focus === 'function') {
+                lastFocus.focus({ preventScroll: true });
+            }
+            lastFocus = null;
         };
         document.body.addEventListener('htmx:confirm', function (evt) {
             if (!evt.detail.question) {
@@ -114,10 +121,28 @@
             }
             evt.preventDefault();
             pending = evt;
+            lastFocus = document.activeElement;
+            if (!lastFocus || lastFocus === document.body || lastFocus === document.documentElement) {
+                lastFocus = evt.detail.elt || null;
+            }
             modal.querySelector('[data-kit-confirm-message]').textContent = evt.detail.question;
+            var accept = modal.querySelector('[data-kit-confirm-accept]');
+            var trigger = evt.detail.elt || null;
+            var triggerText = trigger
+                ? ((trigger.textContent || '') + ' ' + (trigger.getAttribute('title') || ''))
+                : '';
+            var destructive = /eliminar|elimina|desactivar|desactiva|archivar|archiva|rechazar|rechaza|cancelar|cancela|borrar|deshacer/i
+                .test((evt.detail.question || '') + ' ' + triggerText);
+            var danger = accept.getAttribute('data-kit-confirm-default-danger') === 'true'
+                || destructive
+                || (trigger && trigger.classList && trigger.classList.contains('is-danger'))
+                || (trigger && trigger.hasAttribute && trigger.hasAttribute('hx-delete'));
+            accept.classList.toggle('is-danger', danger);
+            accept.classList.toggle('is-primary', !danger);
             modal.classList.add('is-active');
             modal.removeAttribute('aria-hidden');
-            modal.querySelector('[data-kit-confirm-accept]').focus();
+            window.kitScrollLock(true);
+            accept.focus();
         });
         modal.addEventListener('click', function (evt) {
             var target = evt.target.closest('[data-kit-confirm-accept],[data-kit-confirm-cancel]');

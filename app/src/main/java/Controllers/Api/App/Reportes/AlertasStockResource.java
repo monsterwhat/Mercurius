@@ -303,7 +303,7 @@ public class AlertasStockResource {
                     Map.of("label", "Prioridad", "key", "prioridad"),
                     Map.of("label", "Costo Estimado", "key", "costoTotalEstimado"),
                     Map.of("label", "Promedio Ventas Mensual", "key", "promedioVentasMensual"),
-                    Map.of("label", "Fecha Creación", "key", "fechaCreacion"));
+                    Map.of("label", "Fecha de creación", "key", "fechaCreacion"));
         }
         return List.of(
                 Map.of("label", "Tipo", "key", "tipo"),
@@ -312,7 +312,7 @@ public class AlertasStockResource {
                 Map.of("label", "Stock Actual", "key", "cantidadActual"),
                 Map.of("label", "Stock Mínimo", "key", "cantidadMinima"),
                 Map.of("label", "Stock Óptimo", "key", "stockOptimo"),
-                Map.of("label", "Fecha Creación", "key", "fechaCreacion"),
+                Map.of("label", "Fecha de creación", "key", "fechaCreacion"),
                 Map.of("label", "Estado", "key", "estado"));
     }
 }

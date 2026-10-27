@@ -83,9 +83,9 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
                 .when().get(PAGE_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("Programa de Lealtad - Reportes"))
-                .body(containsString("Top Clientes por Puntos"))
-                .body(containsString("% Cashback"))
+                .body(containsString("Puntos y Recompensas"))
+                .body(containsString("Top clientes por puntos"))
+                .body(containsString("Cashback"))
                 .body(containsString("Meses inactividad"));
     }
 
@@ -108,7 +108,7 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
                     .when().get(PAGE_URL + "/" + cliente.getCode() + "/historial")
                     .then()
                     .statusCode(200)
-                    .body(containsString("Historial de Puntos"))
+                    .body(containsString("Movimientos de puntos del cliente"))
                     .body(containsString("IT-T20 historial seed"))
                     .body(containsString("earn"));
 

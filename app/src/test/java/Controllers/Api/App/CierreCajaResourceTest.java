@@ -394,7 +394,7 @@ class CierreCajaResourceTest {
                     .body(containsString("<html"))
                     .body(containsString("Control de Caja"))
                     .body(containsString("Sesión Activa"))
-                    .body(containsString("Cerrar Sesion"))
+                    .body(containsString("Cerrar Sesión"))
                     .body(containsString("hx-confirm"))
                     .body(containsString("Historial de Cierres"))
                     .body(containsString("data-kit-table"))

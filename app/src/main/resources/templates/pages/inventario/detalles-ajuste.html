@@ -15,19 +15,19 @@
     {#content}
     <table class="table is-fullwidth">
         <tbody>
-            <tr><th>Código</th><td>{ajuste.codigo}</td></tr>
-            <tr><th>Artículo</th><td>{#if ajuste.articuloNombre??}{ajuste.articuloNombre}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Código de barra</th><td class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Cantidad</th><td class="num">{#if ajuste.cantidad??}{ajuste.cantidad}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Unidades recomendadas</th><td class="num">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Tipo de movimiento</th><td>{#if ajuste.tipoMovimiento??}{ajuste.tipoMovimiento}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Fecha de movimiento</th><td>{#if ajuste.fechaMovimiento??}{ajuste.fechaMovimiento}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Usuario</th><td>{#if ajuste.usuarioUsername??}{ajuste.usuarioUsername}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Estado</th><td>
+            <tr><th scope="row">Código</th><td class="kit-figure">{ajuste.codigo}</td></tr>
+            <tr><th scope="row">Artículo</th><td>{#if ajuste.articuloNombre??}{ajuste.articuloNombre}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Código de barra</th><td class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Cantidad</th><td class="kit-figure">{#if ajuste.cantidad??}{ajuste.cantidad}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Unidades recomendadas</th><td class="kit-figure">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Tipo de movimiento</th><td>{#if ajuste.tipoMovimiento??}{ajuste.tipoMovimiento}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Fecha de movimiento</th><td>{#if ajuste.fechaMovimiento??}{time:format(ajuste.fechaMovimiento, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Usuario</th><td>{#if ajuste.usuarioUsername??}{ajuste.usuarioUsername}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Estado</th><td>
                 {#if ajuste.processed}<span class="status-chip is-success">Procesada</span>{#else}<span class="status-chip is-warning">Sin Procesar</span>{/if}
                 {#if ajuste.status??}<span class="status-chip is-neutral">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
             </td></tr>
-            <tr><th>Notas</th><td>{#if ajuste.notas??}{ajuste.notas}{#else}&mdash;{/if}</td></tr>
+            <tr><th scope="row">Notas</th><td>{#if ajuste.notas??}{ajuste.notas}{#else}&mdash;{/if}</td></tr>
         </tbody>
     </table>
     <div class="buttons is-centered">

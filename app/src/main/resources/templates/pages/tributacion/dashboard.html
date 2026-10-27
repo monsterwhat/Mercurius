@@ -36,70 +36,89 @@
                 {#actions}
                     <button type="button" class="button is-primary"
                             hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
-                            hx-target="#tributacion-kpis" hx-swap="innerHTML">
+                            hx-target="#tributacion-kpis" hx-swap="innerHTML"
+                            hx-disabled-elt="this">
                         Actualizar Dashboard
                     </button>
                 {/actions}
             {/include}
 
-            {! The six numbers are KPIs AND the switcher for the three views.
-               The kit metric include cannot take Alpine attributes, so this
-               is the component markup written out, exactly as the kit
-               documents for a bound card. !}
+            {! The six figures are KPIs and nothing else: a metric card that
+               also switched a panel was neither a filter nor a tab, and three
+               of them opened the same panel. The views are _kit/view-tabs
+               below, with the same words as the panel headings. !}
             <div class="metric-strip">
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'resumen' }"
-                        @click="tab = 'resumen'">
+                <div class="metric-card">
                     <span class="metric-label">Total Emitidos</span>
                     <span class="metric-value">{totalEmitidos}</span>
-                    <span class="metric-detail">{#if totalEmitidos == 0}Sin datos todavía{#else}Tasa de éxito: {tasaExito}%{/if}</span>
-                </button>
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'resumen' }"
-                        @click="tab = 'resumen'">
+                    <span class="metric-detail">{#if totalEmitidos == 0}Sin datos todavía{#else}Tasa de éxito: {fmt:porcentaje(tasaExito)}{/if}</span>
+                </div>
+                <div class="metric-card">
                     <span class="metric-label">Aceptados</span>
                     <span class="metric-value">{totalAceptados}</span>
-                    <span class="metric-detail">{montoAceptados}</span>
-                </button>
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'rechazados' }"
-                        @click="tab = 'rechazados'">
+                    <span class="metric-detail">Monto: {montoAceptados}</span>
+                </div>
+                <div class="metric-card">
                     <span class="metric-label">Rechazados</span>
                     <span class="metric-value">{totalRechazados}</span>
-                </button>
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'pendientes' }"
-                        @click="tab = 'pendientes'">
+                </div>
+                <div class="metric-card">
                     <span class="metric-label">Pendientes</span>
                     <span class="metric-value">{totalPendientes}</span>
-                    <span class="metric-detail">{montoPendientes}</span>
-                </button>
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'pendientes' }"
-                        @click="tab = 'pendientes'">
-                    <span class="metric-label">Enviados s/Respuesta</span>
+                    <span class="metric-detail">Monto: {montoPendientes}</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Enviados sin respuesta</span>
                     <span class="metric-value">{totalEnviadosSinRespuesta}</span>
-                </button>
-                <button type="button" class="metric-card is-interactive"
-                        :class="{ 'is-active': tab === 'resumen' }"
-                        @click="tab = 'resumen'">
-                    <span class="metric-label">Emitidos Hoy</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Emitidos hoy</span>
                     <span class="metric-value">{emitidosHoy}</span>
-                    <span class="metric-detail">{#include _kit/icon name="check" /} {aceptadosHoy} &nbsp;{#include _kit/icon name="close" /} {rechazadosHoy}</span>
-                </button>
+                    <span class="metric-detail">Aceptados {aceptadosHoy} &middot; Rechazados {rechazadosHoy}</span>
+                </div>
             </div>
 
-            <div x-show="tab === 'resumen'">
+            {#include _kit/view-tabs ariaLabel="Vistas del dashboard de Hacienda"}
+                {#tabs}
+                <button type="button" class="view-tab"
+                        :class="{ 'is-active': tab === 'resumen' }"
+                        aria-controls="panel-tributacion-resumen"
+                        :aria-current="tab === 'resumen' ? 'page' : 'false'"
+                        @click="tab = 'resumen'">
+                    <span>Resumen</span>
+                </button>
+                <button type="button" class="view-tab"
+                        :class="{ 'is-active': tab === 'pendientes' }"
+                        aria-controls="panel-tributacion-pendientes"
+                        :aria-current="tab === 'pendientes' ? 'page' : 'false'"
+                        @click="tab = 'pendientes'">
+                    <span>Pendientes de envío</span>
+                    <span class="view-tab-count">{totalPendientes}</span>
+                </button>
+                <button type="button" class="view-tab"
+                        :class="{ 'is-active': tab === 'rechazados' }"
+                        aria-controls="panel-tributacion-rechazados"
+                        :aria-current="tab === 'rechazados' ? 'page' : 'false'"
+                        @click="tab = 'rechazados'">
+                    <span>Rechazados recientes</span>
+                    <span class="view-tab-count">{totalRechazados}</span>
+                </button>
+                {/tabs}
+            {/include}
+
+            <div id="panel-tributacion-resumen" role="region" aria-label="Resumen de los últimos 7 días"
+                 x-show="tab === 'resumen'">
             <div class="box">
                 <h2 class="title is-5">Últimos 7 días</h2>
                 <div class="table-container">
-                <table class="table is-striped is-hoverable is-fullwidth">
+                <table class="table is-hoverable is-fullwidth">
+                    <caption class="is-sr-only">Facturas emitidas, aceptadas y tasa de aceptación de los últimos 7 días</caption>
                     <thead>
                         <tr>
-                            <th>Día</th>
-                            <th class="num">Emitidos</th>
-                            <th class="num">Aceptados</th>
-                            <th class="num">Tasa Aceptación</th>
+                            <th scope="col">Día</th>
+                            <th scope="col" class="num">Emitidos</th>
+                            <th scope="col" class="num">Aceptados</th>
+                            <th scope="col" class="num">Tasa Aceptación</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,17 +126,19 @@
                         <tr>
                             <td class="has-text-weight-semibold">{day.dia}</td>
                             <td class="num">{day.emitidos}</td>
-                            <td class="num has-text-success has-text-weight-semibold">{day.aceptados}</td>
-                            <td class="num">{day.tasa}%</td>
+                            <td class="num has-text-weight-semibold">{day.aceptados}</td>
+                            <td class="num">{#if day.emitidos == 0}<span class="kit-empty">&mdash;</span>{#else}{day.tasa}%{/if}</td>
                         </tr>
                         {/for}
                     </tbody>
                 </table>
                 </div>
+                <p class="help mercurius-text-muted">La tasa se muestra como &mdash; en los días sin facturas emitidas.</p>
             </div>
             </div>
 
-            <div x-show="tab === 'pendientes'" style="display:none">
+            <div id="panel-tributacion-pendientes" role="region" aria-label="Pendientes de envío"
+                 x-show="tab === 'pendientes'" style="display:none">
             <div class="box">
                 <h2 class="title is-5">
                     Pendientes de envío
@@ -128,19 +149,25 @@
                   {#rows}
                     {#for f in pendientesEnvio}
                     <tr>
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
                         <td><span class="status-chip is-warning">Pendiente</span></td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas pendientes de envío.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Se listan las pendientes más recientes.</p>
             </div>
             </div>
 
-            <div x-show="tab === 'rechazados'" style="display:none">
+            <div id="panel-tributacion-rechazados" role="region" aria-label="Rechazados recientes"
+                 x-show="tab === 'rechazados'" style="display:none">
             <div class="box">
                 <h2 class="title is-5">
                     Rechazados recientes
@@ -151,15 +178,20 @@
                   {#rows}
                     {#for f in rechazadosRecientes}
                     <tr>
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="num">{f.intentos}</td>
                         <td><span class="status-chip is-danger">Rechazado</span></td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas rechazadas.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Se listan los rechazos más recientes. Corrija y reemita desde Consultas.</p>
             </div>
             </div>
             {/fragment}

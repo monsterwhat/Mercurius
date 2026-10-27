@@ -480,7 +480,7 @@ public final class ReportExporter {
      */
     @Nonnull
     public static byte[] exportCorreosExcel(@Nonnull List<ReporteProgramado> reportes) throws IOException {
-        String[] headers = {"ID", "Perfil", "Correos", "Frecuencia", "Reportes", "Ultima Ejecucion", "Estado"};
+        String[] headers = {"ID", "Perfil", "Correos", "Frecuencia", "Reportes", "Última ejecución", "Estado"};
 
         List<Object[]> rows = new ArrayList<>(reportes.size());
         for (ReporteProgramado reporte : reportes) {
@@ -520,7 +520,7 @@ public final class ReportExporter {
             });
         }
 
-        return exportGenericExcel("Historico de Precios", headers, rows);
+        return exportGenericExcel("Histórico de precios", headers, rows);
     }
 
     /**
@@ -545,7 +545,7 @@ public final class ReportExporter {
     @Nonnull
     public static byte[] exportFacturasExcel(@Nonnull List<ComprobantesEmitidos> facturas, long total)
             throws IOException {
-        String[] headers = {"Numero Consecutivo", "Fecha", "Emisor", "Condicion Venta", "Estado Hacienda", "Total"};
+        String[] headers = {"Número consecutivo", "Fecha", "Emisor", "Condición de venta", "Estado Hacienda", "Total"};
 
         List<Object[]> rows = new ArrayList<>(facturas.size());
         for (ComprobantesEmitidos factura : facturas) {
@@ -577,7 +577,7 @@ public final class ReportExporter {
      */
     @Nonnull
     public static byte[] exportRecibosExcel(@Nonnull String titulo, @Nonnull List<ComprobantesRecibidos> recibos) throws IOException {
-        String[] headers = {"Numero Consecutivo", "Fecha", "Emisor", "Condicion Venta", "Plazo Credito", "Total"};
+        String[] headers = {"Número consecutivo", "Fecha", "Emisor", "Condición de venta", "Plazo crédito", "Total"};
 
         List<Object[]> rows = new ArrayList<>(recibos.size());
         for (ComprobantesRecibidos recibido : recibos) {

@@ -2,11 +2,14 @@ package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import Models.Inventario;
@@ -122,7 +125,7 @@ public class MermaResource {
                 for (Map.Entry<String, BigDecimal> entry : porCausa.entrySet()) {
                     filas.add(Tablas.fila(
                             "causa", etiquetaCausa(entry.getKey()),
-                            "total", Tablas.fmtNumero(entry.getValue()),
+                            "total", Tablas.fmtColones(entry.getValue()),
                             "porcentaje", porcentajeCausa(porCausa, totalMerma, entry.getKey())));
                 }
             }
@@ -131,7 +134,7 @@ public class MermaResource {
                 for (Map.Entry<String, BigDecimal> entry : porDepartamento.entrySet()) {
                     filas.add(Tablas.fila(
                             "departamento", entry.getKey(),
-                            "total", Tablas.fmtNumero(entry.getValue()),
+                            "total", Tablas.fmtColones(entry.getValue()),
                             "porcentaje", porcentajeCausa(porCausa, totalMerma, entry.getKey())));
                 }
             }
@@ -174,9 +177,9 @@ public class MermaResource {
         model.put("chartValues", chartValues);
         model.put("chartTitle", chartTitle);
         model.put("hayDatos", movimientos != null && !movimientos.isEmpty());
-        model.put("totalMerma", Tablas.fmtNumero(totalMerma));
-        model.put("porcentajeMerma", Tablas.fmtNumero(porcentajeMerma));
-        model.put("movimientoTotal", Tablas.fmtNumero(movimientoTotal));
+        model.put("totalMerma", Tablas.fmtColones(totalMerma));
+        model.put("porcentajeMerma", porcentaje(porcentajeMerma));
+        model.put("movimientoTotal", Tablas.fmtColones(movimientoTotal));
         model.put("registros", movimientos != null ? movimientos.size() : 0);
 
         boolean fragmento = headers.getHeaderString("HX-Request") != null;
@@ -219,13 +222,25 @@ public class MermaResource {
             @Nullable BigDecimal totalMerma, @Nullable String tipo) {
         if (porCausa == null || totalMerma == null
                 || totalMerma.compareTo(BigDecimal.ZERO) == 0) {
-            return "0.0";
+            return porcentaje(BigDecimal.ZERO);
         }
         BigDecimal causa = porCausa.getOrDefault(tipo, BigDecimal.ZERO);
-        return causa.abs()
+        return porcentaje(causa.abs()
                 .divide(totalMerma.abs(), 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(1, RoundingMode.HALF_UP).toPlainString();
+                .multiply(BigDecimal.valueOf(100)));
+    }
+
+    /**
+     * Porcentaje con una décima en convención es-CR (12,5). El signo {@code %}
+     * lo agrega la plantilla, por eso aquí no se incluye.
+     */
+    @Nonnull
+    private static String porcentaje(@Nullable BigDecimal valor) {
+        BigDecimal numero = valor != null ? valor : BigDecimal.ZERO;
+        DecimalFormat formato = new DecimalFormat("0.0",
+                DecimalFormatSymbols.getInstance(Locale.forLanguageTag("es-CR")));
+        formato.setRoundingMode(RoundingMode.HALF_UP);
+        return formato.format(numero);
     }
 
     @Nonnull

@@ -34,12 +34,12 @@
 !}
 <div id="forma-promocion">
     {#if modo == 'editar' && promocion??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '{#if promocion.fechaInicio??}{promocion.fechaInicio.format('yyyy-MM-dd')}{/if}',
                     fin: '{#if promocion.fechaFin??}{promocion.fechaFin.format('yyyy-MM-dd')}{/if}' }">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/promociones"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/promociones"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '', fin: '' }">
     {/if}
@@ -50,37 +50,48 @@
                        autocomplete="off" placeholder="Ej: Promoción Semana Santa"
                        value="{#if modo == 'editar' && promocion.nombre??}{promocion.nombre}{/if}"/>
             </div>
-            {#if errorMensaje??}<p class="help is-danger">{errorMensaje}</p>{/if}
+            {#if errorMensaje??}<p class="help is-danger has-text-danger" role="alert">{errorMensaje}</p>{/if}
         </div>
 
         {! Items table (legacy lista parity). Hidden itemCodigo/itemCantidad
            pairs are the stateless line store; the selector modal appends to
-           both the hidden inputs and the visible tbody. !}
+           both the hidden inputs and the visible tbody. The visible row order
+           and the hidden-input order must stay in step: the remove button
+           deletes the pair at the same index. !}
         <div class="field">
-            <label class="label">Artículos en la Promoción:</label>
-            <table class="table is-fullwidth is-narrow">
-                <thead>
-                    <tr><th>Artículo</th><th class="num">Cantidad</th></tr>
-                </thead>
-                <tbody id="promo-items-body">
-                    {#for item in items}
-                    <tr>
-                        <td>{#if item.articulo??}{item.articulo.nombre}{/if}</td>
-                        <td class="num">{item.cantidad}</td>
-                    </tr>
-                    {#else}
-                    <tr class="promo-items-empty"><td colspan="2" class="has-text-centered has-text-grey">No hay artículos en la promoción</td></tr>
-                    {/for}
-                </tbody>
-            </table>
+            <p class="label" id="promo-items-label">Artículos en la Promoción:</p>
+            <div class="table-container">
+                <table class="table is-fullwidth is-narrow" aria-labelledby="promo-items-label">
+                    <thead>
+                        <tr><th scope="col">Artículo</th><th scope="col" class="num">Cantidad</th><th scope="col"><span class="is-sr-only">Acciones</span></th></tr>
+                    </thead>
+                    <tbody id="promo-items-body">
+                        {#for item in items}
+                        <tr>
+                            <td>{#if item.articulo??}<span class="table-clamp" title="{item.articulo.nombre}">{item.articulo.nombre}</span>{/if}</td>
+                            <td class="num">{item.cantidad}</td>
+                            <td class="has-text-centered">
+                                <button type="button" class="button is-small" data-promo-remove
+                                        aria-label="Quitar {#if item.articulo??}{item.articulo.nombre}{/if} de la promoción">
+                                    {#include _kit/icon name="trash" /}
+                                </button>
+                            </td>
+                        </tr>
+                        {#else}
+                        <tr class="promo-items-empty"><td colspan="3" class="has-text-centered mercurius-text-muted">No hay artículos en la promoción</td></tr>
+                        {/for}
+                    </tbody>
+                </table>
+            </div>
             {#for item in items}
             <input type="hidden" name="itemCodigo" value="{#if item.articulo??}{item.articulo.codigo}{/if}"/>
             <input type="hidden" name="itemCantidad" value="{item.cantidad}"/>
             {/for}
-            <button type="button" class="button is-small"
+            <button type="button" class="button is-small mt-2"
                     aria-haspopup="dialog" data-kit-open="selector-articulo-promo"
                     hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
                     hx-target="#selector-articulo-promo-body" hx-swap="innerHTML">Agregar Producto</button>
+            <p id="promo-items-estado" class="is-sr-only" role="status" aria-live="polite"></p>
         </div>
 
         <div class="columns">
@@ -89,9 +100,10 @@
                     <label class="label" for="promo-descuento">Porcentaje de Descuento (%):</label>
                     <div class="control">
                         <input class="input" id="promo-descuento" type="number" step="0.01" min="0"
-                               name="descuento" required="required"
+                               inputmode="decimal" name="descuento" required="required"
                                value="{#if modo == 'editar' && promocion.descuento??}{promocion.descuento}{/if}"/>
                     </div>
+                    <p class="help">Porcentaje sobre el precio con utilidad. El cálculo lo limita a 100.</p>
                 </div>
             </div>
             <div class="column">
@@ -117,7 +129,8 @@
                 <div class="field">
                     <label class="label" for="promo-cantidad">Cantidad Limitada:</label>
                     <div class="control">
-                        <input class="input" id="promo-cantidad" type="number"
+                        <input class="input" id="promo-cantidad" type="number" step="1"
+                               inputmode="numeric"
                                name="cantidad" placeholder="-1 para ilimitadas"
                                value="{#if modo == 'editar' && promocion.cantidad??}{promocion.cantidad}{/if}"/>
                         <p class="help">Ingrese -1 para cantidades ilimitadas</p>
@@ -163,19 +176,33 @@
                 </div>
             </div>
         </div>
+        <p class="help">La promoción solo aplica dentro de este rango. Ambas fechas son obligatorias.</p>
 
-        {! Totals precomputed server-side (legacy totalListaCon* / TotalDescuentoEIVA) !}
+        {! Totals precomputed server-side (legacy totalListaCon* / TotalDescuentoEIVA).
+           They only refresh when the promotion is saved, so the note says so
+           instead of letting a stale total look live. !}
         {#include _kit/surface }
             {#content}
-            <div style="text-align:center">
-                <p class="is-size-7 has-text-grey">Total Sin IVA: &#8353; {totalConUtilidad}</p>
-                <p class="is-size-7 has-text-grey">Total Con IVA: &#8353; {totalConIVA}</p>
-                <p class="title is-5 has-text-success" style="margin-bottom:0">Total con Descuento e IVA: &#8353; {totalDescuentoEIVA}</p>
+            <div style="display:flex; flex-direction:column; gap:.25rem">
+                <div style="display:flex; justify-content:space-between; gap:1rem">
+                    <span class="is-size-7 mercurius-text-muted">Total sin IVA</span>
+                    <span class="kit-figure">{fmt:moneda(totalConUtilidad)}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:1rem">
+                    <span class="is-size-7 mercurius-text-muted">Total con IVA</span>
+                    <span class="kit-figure">{fmt:moneda(totalConIVA)}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:1rem; align-items:baseline">
+                    <span class="has-text-weight-semibold">Total con descuento e IVA</span>
+                    <span class="kit-figure is-size-5 has-text-weight-semibold">{fmt:moneda(totalDescuentoEIVA)}</span>
+                </div>
             </div>
+            <p class="help mt-2" style="margin-bottom:0">Los totales se recalculan al guardar la promoción.</p>
             {/content}
         {/include}
 
-        <div class="field is-grouped is-grouped-right">
+        <div class="field is-grouped is-grouped-right mt-4"
+             style="position:sticky; bottom:0; padding:.75rem 0; margin-bottom:0; background:var(--bulma-scheme-main); border-top:1px solid var(--bulma-border)">
             <div class="control">
                 <button class="button is-primary" type="submit"
                         :disabled="inicio && fin && fin < inicio">
@@ -183,10 +210,69 @@
                 </button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>
+
+    {! Remove-line bridge: the visible row order and the hidden itemCodigo /
+       itemCantidad order are parallel, so deleting the row at an index must
+       delete the hidden pair at the same index. !}
+    <script>
+        (function () {
+            var form = document.querySelector('#forma-promocion form');
+            var cuerpo = document.getElementById('promo-items-body');
+            if (!form || !cuerpo) {
+                return;
+            }
+            form.addEventListener('click', function (evento) {
+                var boton = evento.target.closest('[data-promo-remove]');
+                if (!boton) {
+                    return;
+                }
+                var fila = boton.closest('tr');
+                if (!fila) {
+                    return;
+                }
+                var indice = Array.prototype.indexOf.call(cuerpo.children, fila);
+                var nombreSpan = fila.querySelector('.table-clamp');
+                var siguiente = fila.nextElementSibling;
+                var codigos = form.querySelectorAll('input[name="itemCodigo"]');
+                var cantidades = form.querySelectorAll('input[name="itemCantidad"]');
+                if (codigos[indice]) {
+                    codigos[indice].remove();
+                }
+                if (cantidades[indice]) {
+                    cantidades[indice].remove();
+                }
+                fila.remove();
+                if (!cuerpo.querySelector('tr')) {
+                    var vacia = document.createElement('tr');
+                    vacia.className = 'promo-items-empty';
+                    var celda = document.createElement('td');
+                    celda.colSpan = 3;
+                    celda.className = 'has-text-centered mercurius-text-muted';
+                    celda.textContent = 'No hay artículos en la promoción';
+                    vacia.appendChild(celda);
+                    cuerpo.appendChild(vacia);
+                    siguiente = null;
+                }
+                var estado = document.getElementById('promo-items-estado');
+                if (estado) {
+                    estado.textContent = nombreSpan
+                        ? 'Se quitó ' + nombreSpan.textContent + ' de la promoción.'
+                        : 'Se quitó el artículo de la promoción.';
+                }
+                var destino = siguiente ? siguiente.querySelector('[data-promo-remove]') : null;
+                if (!destino) {
+                    destino = form.querySelector('[data-kit-open="selector-articulo-promo"]');
+                }
+                if (destino) {
+                    destino.focus();
+                }
+            });
+        })();
+    </script>
 </div>
 
 {#if toastMessage??}

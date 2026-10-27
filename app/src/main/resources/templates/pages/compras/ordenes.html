@@ -94,7 +94,9 @@
     {#include _kit/confirm /}
 
     {! Bridge: row-level buttons open the shared stage modals; swapped
-       fragments' [data-kit-close] buttons close them (same contract as T18/T21). !}
+       fragments' [data-kit-close] buttons close them (same contract as T18/T21).
+       Focus moves into the dialog because the shared bridge does not do it;
+       without it a keyboard user stays on the row behind the modal. !}
     <script>
         document.addEventListener('click', function (e) {
             var opener = e.target.closest('[data-kit-open]');
@@ -102,6 +104,10 @@
                 var modal = document.getElementById(opener.getAttribute('data-kit-open'));
                 if (modal && window.Alpine) {
                     Alpine.$data(modal).open = true;
+                    var card = modal.querySelector('.modal-card');
+                    if (card) {
+                        window.setTimeout(function () { card.focus(); }, 0);
+                    }
                 }
                 return;
             }
@@ -111,6 +117,49 @@
                 if (root && window.Alpine) {
                     Alpine.$data(root).open = false;
                 }
+            }
+        });
+
+        {! First field in a freshly opened stage dialog: without this the
+           focus stays on the modal card and a keyboard user has to Tab past
+           the header to reach the form. Only the body's own swap counts —
+           the form inside re-targets #forma-orden on a validation round trip. !}
+        ['editar-orden-body', 'estado-orden-body'].forEach(function (id) {
+            var contenedor = document.getElementById(id);
+            if (!contenedor) {
+                return;
+            }
+            contenedor.addEventListener('htmx:afterSwap', function (evt) {
+                if (evt.target !== contenedor) {
+                    return;
+                }
+                var campo = contenedor.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea, button');
+                if (campo) {
+                    campo.focus();
+                }
+            });
+        });
+
+        {! Pattern A redisplay answers 422; htmx swaps 2xx only, so the
+           validation message and its toast were discarded and the form just
+           sat there. Swap 4xx HTML back into the form it belongs to. !}
+        document.body.addEventListener('htmx:beforeSwap', function (evt) {
+            var detalle = evt.detail;
+            if (!detalle || !detalle.xhr || !detalle.target) {
+                return;
+            }
+            var estado = detalle.xhr.status;
+            if (estado < 400 || estado >= 500) {
+                return;
+            }
+            var tipo = detalle.xhr.getResponseHeader('Content-Type') || '';
+            if (tipo.indexOf('text/html') === -1) {
+                return;
+            }
+            var destino = detalle.target.id || '';
+            if (destino === 'forma-orden' || destino === 'forma-estado') {
+                detalle.shouldSwap = true;
+                detalle.isError = false;
             }
         });
 
@@ -136,6 +185,24 @@
             var resultados = fila.querySelector('.js-articulo-resultados');
             if (resultados) {
                 resultados.innerHTML = '';
+            }
+        });
+
+        {! Enter in the article typeahead accepts the first suggestion; it
+           must never submit/save the order implicitly. !}
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+            var campo = e.target.closest && e.target.closest('.js-articulo-nombre');
+            if (!campo) {
+                return;
+            }
+            e.preventDefault();
+            var fila = campo.closest('.orden-linea');
+            var primera = fila && fila.querySelector('.js-articulo-opcion');
+            if (primera) {
+                primera.click();
             }
         });
     </script>

@@ -18,7 +18,7 @@
             {#content}
             <form method="get"
                   action="{config:['quarkus.http.root-path']}/app/tributacion/declaracion">
-                <div class="field is-grouped">
+                <div class="field is-grouped is-grouped-multiline">
                     <div class="control">
                         <label class="label" for="declaracion-mes">Mes</label>
                         <div class="select">
@@ -45,6 +45,9 @@
                         <button class="button is-primary" type="submit">Calcular</button>
                     </div>
                 </div>
+                <p class="help mercurius-text-muted">
+                    El resumen y los detalles corresponden al período seleccionado; el resumen mensual cubre todo el año.
+                </p>
             </form>
             {/content}
         {/include}
@@ -53,28 +56,32 @@
             {#fragment id=resumen}
         {#include _kit/surface title="Resumen del Período"}
             {#content}
-                <div class="columns is-multiline has-text-centered">
-                    <div class="column is-3">
-                        <p class="heading">Total Ventas (Netas)</p>
-                        <p class="title is-4">{totalVentas}</p>
-                        <p class="is-size-7 mercurius-text-muted">{totalFacturasEmitidas} facturas</p>
+                {! The five figures are one KPI strip. The net IVA is the answer
+                   to "what do I owe?", so it carries the filing status in its
+                   own detail line instead of a bigger type size. !}
+                <div class="metric-strip">
+                    <div class="metric-card">
+                        <span class="metric-label">Total Ventas (Netas)</span>
+                        <span class="metric-value">{totalVentas}</span>
+                        <span class="metric-detail">{totalFacturasEmitidas} {#if totalFacturasEmitidas == 1}factura{#else}facturas{/if}</span>
                     </div>
-                    <div class="column is-3">
-                        <p class="heading">Total Compras (Netas)</p>
-                        <p class="title is-4">{totalCompras}</p>
-                        <p class="is-size-7 mercurius-text-muted">{totalFacturasRecibidas} facturas</p>
+                    <div class="metric-card">
+                        <span class="metric-label">Total Compras (Netas)</span>
+                        <span class="metric-value">{totalCompras}</span>
+                        <span class="metric-detail">{totalFacturasRecibidas} {#if totalFacturasRecibidas == 1}factura{#else}facturas{/if}</span>
                     </div>
-                    <div class="column is-2">
-                        <p class="heading">IVA Débito (Ventas)</p>
-                        <p class="title is-4">{ivaDebito}</p>
+                    <div class="metric-card">
+                        <span class="metric-label">IVA Débito (Ventas)</span>
+                        <span class="metric-value">{ivaDebito}</span>
                     </div>
-                    <div class="column is-2">
-                        <p class="heading">IVA Crédito (Compras)</p>
-                        <p class="title is-4">{ivaCredito}</p>
+                    <div class="metric-card">
+                        <span class="metric-label">IVA Crédito (Compras)</span>
+                        <span class="metric-value">{ivaCredito}</span>
                     </div>
-                    <div class="column is-2">
-                        <p class="heading">IVA Neto a Pagar</p>
-                        <p class="title is-4">{ivaNeto}</p>
+                    <div class="metric-card">
+                        <span class="metric-label">IVA Neto</span>
+                        <span class="metric-value">{ivaNeto}</span>
+                        <span class="metric-detail">{#if ivaNetoPositivo}A pagar al fisco{#else}Saldo a favor{/if}</span>
                     </div>
                 </div>
             {/content}
@@ -87,13 +94,21 @@
                   {#rows}
                     {#for fila in filasMensuales}
                     <tr data-row-key="{fila.periodo}">
-                        <td class="has-text-weight-semibold">{fila.periodo}</td>
-                        <td class="num">₡{fila.totalVentas}</td>
-                        <td class="num">₡{fila.totalImpuesto}</td>
+                        <td class="has-text-weight-semibold">
+                            {fila.periodo}
+                            {#if fila.periodo == periodo}<span class="status-chip is-info">Período actual</span>{/if}
+                        </td>
+                        <td class="num">{#if fila.totalVentas??}{fmt:moneda(fila.totalVentas)}{#else}&mdash;{/if}</td>
+                        <td class="num">{#if fila.totalImpuesto??}{fmt:moneda(fila.totalImpuesto)}{#else}&mdash;{/if}</td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="3" class="has-text-centered">
+                        <p class="kit-empty">No hay datos mensuales para este año.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
+                <p class="help mercurius-text-muted">Los meses sin facturas se muestran en ₡0,00.</p>
             {/content}
         {/include}
 
@@ -107,9 +122,13 @@
                         <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
-                        <td class="num">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
+                        <td class="num">{#if f.impuesto??}{fmt:moneda(f.impuesto)}{#else}&mdash;{/if}</td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas emitidas en este período.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}
@@ -127,9 +146,13 @@
                         <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if f.proveedor??}{f.proveedor}{#else}-{/if}</td>
-                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
-                        <td class="num">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>
+                        <td class="num">{#if f.total??}{fmt:moneda(f.total)}{#else}&mdash;{/if}</td>
+                        <td class="num">{#if f.impuesto??}{fmt:moneda(f.impuesto)}{#else}&mdash;{/if}</td>
                     </tr>
+                    {#else}
+                    <tr><td colspan="5" class="has-text-centered">
+                        <p class="kit-empty">No hay facturas recibidas en este período.</p>
+                    </td></tr>
                     {/for}
                   {/rows}
                 {/include}

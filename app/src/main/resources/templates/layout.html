@@ -38,13 +38,21 @@
 <body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'>
 
     {!
+      Skip link: the first thing the keyboard reaches, so an operator can jump
+      past the eight-entry navbar on every screen without tabbing through it.
+      It is visually hidden until focused; the target is <main> itself, which
+      is focusable programmatically (tabindex="-1") but not in the tab order.
+    !}
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
+
+    {!
       Navbar slot: pages may override; default is the shared role-gated navbar.
     !}
     {#insert navbar}
         {#include fragments/navbar /}
     {/insert}
 
-    <main class="section">
+    <main id="contenido-principal" class="section" tabindex="-1">
         <div class="container">
             {#insert body}{/insert}
         </div>

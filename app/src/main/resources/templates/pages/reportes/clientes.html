@@ -10,7 +10,16 @@
     {#title}Reportes de Clientes | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title="Reportes de Clientes" subtitle="Activos, inactivos y totales de la cartera" /}
+        {#include _kit/page-header title="Reportes de Clientes" subtitle="Activos, inactivos y totales de la cartera"}
+            {#actions}
+            {! The create dialog used to sit ABOVE the table, inside the HTMX
+               swap container: every search keystroke replaced it with the
+               table fragment and the button disappeared. It is the screen's
+               own action, so it lives in the header and survives the swap. !}
+            {#include _kit/modal id="crear-cliente" title="Nuevo Cliente" triggerLabel="Nuevo Cliente" triggerClass="is-primary"
+                 bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
+            {/actions}
+        {/include}
 
         <div class="metric-strip">
             {#include _kit/metric label="Clientes activos" value=activos /}
@@ -26,19 +35,13 @@
                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                        hx-trigger="keyup changed delay:300ms"
                        hx-include="closest form"
-                       hx-target="#clientes-tabla-container" hx-swap="innerHTML"/>
+                       hx-target="#clientes-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
             </div>
         {/include}
 
 
 
         <div id="clientes-tabla-container">
-            <div class="mb-3">
-                {#include _kit/modal id="crear-cliente" title="Nuevo Cliente" triggerLabel="Nuevo Cliente" triggerClass="is-primary"
-                     bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
-                {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerClass="is-hidden"
-                     bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
-            </div>
             {#fragment id=tabla}
                 {#include _kit/data-table id="clientes-tabla" baseUrl=baseUrl
                      headers=columnas sortKey=sortKey sortDir=sortDir
@@ -56,19 +59,27 @@
                         <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
                         <td>{#if c.taxpayer}Sí{#else}No{/if}</td>
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
-                        <td class="num">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td class="num">{#if c.puntosAcumulados??}{fmt:numero(c.puntosAcumulados)}{#else}0{/if}</td>
                         <td>
-                            <button type="button" class="button is-small" title="Editar cliente" aria-label="Editar cliente"
+                            <button type="button" class="button is-small" title="Editar cliente" aria-label="Editar cliente {c.name}"
                                     aria-haspopup="dialog" data-kit-open="editar-cliente"
                                     hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{c.code}"
                                     hx-target="#editar-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         </td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No se encontraron clientes con esa búsqueda</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}
         </div>
+
+        {! Row-driven dialog shell: it stays OUTSIDE the swap container so the
+           row edit buttons can still find it after a search swap. !}
+        {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerLabel="Editar Cliente" triggerClass="is-hidden"
+             bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">

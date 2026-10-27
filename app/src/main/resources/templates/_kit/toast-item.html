@@ -29,121 +29,23 @@
                       uppercase severities coming from ported services.
     message  String - auto-escaped by Qute (.html template).
 
-  BEHAVIOUR: the guarded script below registers ONCE (window flag) a
-  MutationObserver on #toast-container so dynamically swapped toasts get
-  the same dismiss button + 5s auto-dismiss as server-rendered ones.
-  Braces inside <script> always have whitespace/newline right after "{"
-  so Qute never parses them as expressions (house rule, see docs/ui-kit.md).
+  BEHAVIOUR lives in web/index.js (kitToasts), not in an inline script:
+    a MutationObserver on #toast-container binds every item, whether it was
+    server-rendered or appended by an hx-swap-oob response, and gives it the
+    dismiss button, the pause-on-focus countdown and the 5s auto-dismiss.
+    Keeping the lifecycle out of this template means a swapped toast cannot
+    install a second copy of the same script, and fragments/toasts.html can
+    render this component without a competing implementation.
+
+  A failure interrupts (role="alert"); everything else is announced politely
+  (role="status"). An error stays until it is dismissed: five seconds is not
+  enough to read a failure and decide what to do about it.
 !}
 {@java.lang.String severity}
 {@java.lang.String message}
 <div class="notification {#if severity == 'error' || severity == 'ERROR'}is-danger{#else if severity == 'warn' || severity == 'WARN' || severity == 'warning' || severity == 'WARNING'}is-warning{#else if severity == 'success' || severity == 'SUCCESS'}is-success{#else}is-info{/if}"
      role="{#if severity == 'error' || severity == 'ERROR'}alert{#else}status{/if}"
      data-toast data-toast-severity="{severity}">
-    <button class="delete" type="button" aria-label="Cerrar notificacion"></button>
+    <button class="delete" type="button" aria-label="Cerrar notificación"></button>
     {message}
 </div>
-
-{!
-  A failure interrupts (role="alert"); everything else is announced politely
-  (role="status"). The previous markup used role="alert" on EVERY toast, so a
-  burst of three success messages cut through whatever the screen reader was
-  already saying.
-!}
-<script>
-    if (!window.kitToastReady) {
-        window.kitToastReady = true;
-
-        var kitBindToast = function (el) {
-            if (el.dataset.toastBound) {
-                return;
-            }
-            el.dataset.toastBound = '1';
-
-            var remaining = 5000;
-            var startedAt = Date.now();
-            var timer = null;
-
-            // Exit: fade out to the right, then remove. The element is left
-            // in the DOM for the length of the transition, so the removal is
-            // not a jump-cut.
-            var dismiss = function () {
-                if (el.dataset.toastLeaving) {
-                    return;
-                }
-                el.dataset.toastLeaving = '1';
-                if (timer) {
-                    window.clearTimeout(timer);
-                    timer = null;
-                }
-                el.classList.remove('is-visible');
-                el.classList.add('is-leaving');
-                window.setTimeout(function () {
-                    el.remove();
-                }, 180);
-            };
-
-            // The countdown pauses while the pointer or the keyboard is on the
-            // toast. A notification the operator is reading must not vanish
-            // because they reached for it.
-            var pause = function () {
-                if (timer) {
-                    window.clearTimeout(timer);
-                    timer = null;
-                    remaining = Math.max(1000, remaining - (Date.now() - startedAt));
-                }
-            };
-
-            var resume = function () {
-                if (timer || el.dataset.toastLeaving) {
-                    return;
-                }
-                startedAt = Date.now();
-                timer = window.setTimeout(dismiss, remaining);
-            };
-
-            var closeBtn = el.querySelector('.delete');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', dismiss);
-            }
-
-            el.addEventListener('mouseenter', pause);
-            el.addEventListener('mouseleave', resume);
-            el.addEventListener('focusin', pause);
-            el.addEventListener('focusout', resume);
-
-            // Entrance: the element is already in the DOM (server render or
-            // an htmx out-of-band swap), so its first computed style is the
-            // hidden one. A forced reflow commits that style, and the class
-            // added on the next frame has a previous state to transition from.
-            void el.offsetWidth;
-            window.requestAnimationFrame(function () {
-                el.classList.add('is-visible');
-            });
-
-            resume();
-        };
-
-        var kitAttachToasts = function () {
-            var container = document.getElementById('toast-container');
-            if (!container) {
-                return;
-            }
-            container.querySelectorAll('.notification').forEach(kitBindToast);
-            new MutationObserver(function (mutations) {
-                mutations.forEach(function (m) {
-                    m.addedNodes.forEach(function (n) {
-                        if (n.nodeType === 1 && n.classList.contains('notification')) {
-                            kitBindToast(n);
-                        }
-                    });
-                });
-            }).observe(container, { childList: true });
-        };
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', kitAttachToasts);
-        } else {
-            kitAttachToasts();
-        }
-    }
-</script>

@@ -33,25 +33,47 @@
   - The Total column is a `num` cell: right-aligned with tabular figures.
 !}
 <div id="{modelo.id}">
+    {! Preserved filters, so searching inside a filtered board does not
+       silently reset estado (the metric cards above are the filter state). !}
+    <div id="filtros-{modelo.id}">
+        {#if modelo.filtros??}
+        {#for f in modelo.filtros.entrySet()}
+        {#if f.key != 'q'}
+        <input type="hidden" name="{f.key}" value="{f.value}"/>
+        {/if}
+        {/for}
+        {/if}
+    </div>
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{q}" autocomplete="off"
+            <input class="input" type="search" id="buscar-{modelo.id}" name="q"
+                   hx-preserve="true"
+                   value="{#if q??}{q}{/if}" autocomplete="off" spellcheck="false"
                    placeholder="Buscar órdenes..."
+                   aria-label="Buscar órdenes por número, proveedor o estado"
+                   enterkeyhint="search"
                    hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                   hx-trigger="keyup changed delay:300ms"
+                   hx-include="#filtros-{modelo.id}"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-sync="this:replace"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {! The table container gets its own id: the wrapper above already carries
+       modelo.id (the hx-target), and two elements with the same id is invalid
+       HTML and makes #tabla-ordenes ambiguous. !}
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for fila in modelo.filas}
             <tr>
-                <td style="font-weight:600">{fila.numeroOrden}</td>
-                <td>{#if fila.proveedorNombre??}{fila.proveedorNombre}{#else}&mdash;{/if}</td>
+                <td class="kit-code" style="font-weight:600">{fila.numeroOrden}</td>
+                <td>
+                    {#if fila.proveedorNombre??}<span class="table-clamp" title="{fila.proveedorNombre}">{fila.proveedorNombre}</span>{#else}&mdash;{/if}
+                </td>
                 <td>{#if fila.fecha??}{fila.fecha}{#else}&mdash;{/if}</td>
-                <td>{#if fila.entrega??}{fila.entrega}{#else}<span style="color:#999">&ndash;</span>{/if}</td>
+                <td>{#if fila.entrega??}{fila.entrega}{#else}<span class="mercurius-text-muted">&ndash;</span>{/if}</td>
                 <td class="has-text-centered">
                     <span class="tag {fila.estadoClass}">{fila.estado}</span>
                 </td>
@@ -59,36 +81,46 @@
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small" title="Ver detalles"
-                                aria-label="Ver detalles"
+                                aria-label="Ver detalles de la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="detalle-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/detalle"
                                 hx-target="#detalle-orden-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {#if fila.puedeEditar}
                         <button type="button" class="button is-small" title="Editar orden"
-                                aria-label="Editar orden"
+                                aria-label="Editar la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="editar-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/formularios/{fila.id}"
                                 hx-target="#editar-orden-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         {/if}
                         {#if fila.puedeCambiarEstado}
                         <button type="button" class="button is-small" title="Cambiar estado"
-                                aria-label="Cambiar estado"
+                                aria-label="Cambiar el estado de la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="estado-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/estado"
                                 hx-target="#estado-orden-body" hx-swap="innerHTML">{#include _kit/icon name="arrow-right" /}</button>
                         {/if}
                         {#if fila.puedeEliminar}
-                        <button type="button" class="button is-small is-danger" title="Eliminar orden"
-                                aria-label="Eliminar orden"
+                        <button type="button" class="button is-small is-danger" title="Archivar orden"
+                                aria-label="Archivar la orden {fila.numeroOrden}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}"
-                                hx-confirm="¿Está seguro de eliminar esta orden?"
+                                hx-confirm="¿Archivar la orden {fila.numeroOrden}? Dejará de aparecer en el listado y no se puede deshacer."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                         {/if}
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron órdenes de compra</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    {#if q??}{#if q}
+                    <span class="mercurius-text-muted">Sin coincidencias para «{q}».</span><br/>
+                    <span class="is-size-7 mercurius-text-muted">Pruebe con otro número de orden o proveedor.</span>
+                    {#else}
+                    <span class="mercurius-text-muted">Todavía no hay órdenes de compra.</span><br/>
+                    <span class="is-size-7 mercurius-text-muted">Cree la primera con «Nueva Orden».</span>
+                    {/if}{/if}
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}

@@ -251,14 +251,32 @@ public class SeleccionMetodoService {
                 .setParameter("codigo", codigoArticulo)
                 .getResultList();
 
-        if (filas.isEmpty()) {
+        return mejorFila(filas).map(PrecisionPronostico::getMetodo);
+    }
+
+    /**
+     * Fila ganadora entre las precisiones ya cargadas de un artículo: menor
+     * MASE, y ante empate el método más simple según {@link #ORDEN_SIMPLICIDAD}.
+     *
+     * <p>Existe para que una vista que ya trajo todas las filas de varios
+     * artículos en una sola consulta pueda elegir sin volver a preguntar por
+     * cada uno. La regla de desempate vive aquí y no en el llamador: si cambia,
+     * la página y el servicio cambian juntos.</p>
+     *
+     * @param filas filas de precisión de UN artículo (pueden incluir MASE nulo)
+     * @return la fila elegida, o vacío si ninguna tiene MASE definido
+     */
+    @Nonnull
+    public static Optional<PrecisionPronostico> mejorFila(
+            @Nullable List<PrecisionPronostico> filas) {
+        if (filas == null || filas.isEmpty()) {
             return Optional.empty();
         }
         return filas.stream()
+                .filter(fila -> fila.getMase() != null)
                 .min(Comparator.comparingDouble(PrecisionPronostico::getMase)
                         .thenComparingInt(fila -> posicionSimplicidad(fila.getMetodo()))
-                        .thenComparing(PrecisionPronostico::getMetodo))
-                .map(PrecisionPronostico::getMetodo);
+                        .thenComparing(PrecisionPronostico::getMetodo));
     }
 
     /**

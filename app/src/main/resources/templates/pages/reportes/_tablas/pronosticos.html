@@ -25,7 +25,7 @@
             <td>{f.familia}</td>
             <td>{f.stockActual}</td>
             <td>{f.cantidadSugerida}</td>
-            <td><span class="tag {#if f.prioridad == 'Comprar'}is-danger{#else}{#if f.prioridad == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.prioridad}</span></td>
+            <td><span class="status-chip {#if f.prioridad == 'Comprar'}is-danger{#else}{#if f.prioridad == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.prioridad}</span></td>
             {#else}
             <td>{f.articulo}</td>
             <td>{f.departamento}</td>
@@ -33,14 +33,17 @@
             <td>{f.stockActual}</td>
             <td>{f.demandaEstimada}</td>
             <td>{f.diasRestantes}</td>
-            <td><span class="tag {#if f.recomendacion == 'Comprar'}is-danger{#else}{#if f.recomendacion == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.recomendacion}</span></td>
+            <td><span class="status-chip {#if f.recomendacion == 'Comprar'}is-danger{#else}{#if f.recomendacion == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.recomendacion}</span></td>
             {/if}
-            <td>{f.metodoElegido}</td>
-            <td>{f.mase}</td>
-            <td>{f.sesgo}</td>
+            <td class="kit-help" title="{#if f.metodoElegido == 'Estacional ingenuo'}Repite la demanda del mismo día de la semana de hace 7 días; útil cuando las ventas siguen un patrón semanal.{#else if f.metodoElegido == 'Suavizado exponencial'}Promedia la historia dando más peso a los días recientes; no proyecta tendencia.{#else if f.metodoElegido == 'Ingenuo'}Repite la última demanda observada; es la referencia contra la que se mide el resto.{#else if f.metodoElegido == 'Media móvil'}Promedia los últimos 28 días disponibles; el pronóstico es plano.{#else if f.metodoElegido == 'Holt amortiguado'}Suaviza nivel y tendencia, frenando la tendencia en horizontes largos.{#else if f.metodoElegido == 'Holt-Winters'}Añade estacionalidad semanal al suavizado; requiere al menos 28 días de historia.{#else if f.metodoElegido == 'SBA (intermitente)'}Método para demanda intermitente: separa la frecuencia y el tamaño de los pedidos.{#else}No hay backtesting suficiente para elegir un método.{/if}">{f.metodoElegido}</td>
+            <td class="kit-help" title="Error absoluto medio escalado. Menos de 1 es mejor que el pronóstico ingenuo; 1 es igual; más de 1 es peor.">{f.mase}</td>
+            <td class="kit-help" title="Error medio escalado. Positivo: se pronostica por debajo de la demanda real. Negativo: por encima. Cerca de 0 es mejor.">{f.sesgo}</td>
             {/if}
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin artículos para la sección y los filtros seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

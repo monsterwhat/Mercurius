@@ -1,0 +1,21 @@
+{!
+  pages/tipo-cambio/index - standalone Tipo de Cambio page.
+
+  The module is still opened as a modal from the shared navbar, but a direct
+  GET /app/tipo-cambio used to return the modal body alone: an unstyled
+  fragment with no navigation and no h1. This wrapper gives the same fragment
+  a page shell when the request is not an HTMX swap. The fragment's update
+  targets #tc-contenido so it works inside the modal and on this page.
+!}
+{#include layout}
+    {#title}Tipo de cambio | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        {#include _kit/page-header title="Tipo de cambio"
+             subtitle="Tasa vigente del BCCR y registros manuales" /}
+
+        {#include pages/tipo-cambio/fragment /}
+    </section>
+    {/body}
+{/include}

@@ -21,22 +21,25 @@
           hx-target="#crear-ajuste-body" hx-swap="innerHTML">
         <div class="field">
             <label class="label" for="ajuste-articulo-display">Artículo *</label>
-            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
+            <div class="control" style="display:flex; gap:0.5rem">
                 <input class="input" id="ajuste-articulo-display" type="text" readonly
+                       aria-required="true"
+                       aria-describedby="ajuste-articulo-ayuda"
                        placeholder="Busque y seleccione un artículo"/>
                 <button type="button" class="button"
-                        aria-haspopup="dialog" data-kit-open="selector-articulo-ajuste"
+                        aria-haspopup="dialog" aria-label="Buscar artículo"
+                        data-kit-open="selector-articulo-ajuste"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/ajuste/articulos"
                         hx-target="#selector-articulo-ajuste-body" hx-swap="innerHTML">Buscar</button>
             </div>
             <input type="hidden" id="ajuste-articulo-id" name="articuloId"/>
-            <p class="help">Busque por nombre o código y seleccione el artículo del ajuste.</p>
+            <p class="help" id="ajuste-articulo-ayuda">Busque por nombre o código y seleccione el artículo del ajuste.</p>
         </div>
         <div class="field">
             <label class="label" for="ajuste-cantidad">Cantidad *</label>
             <div class="control">
-                <input class="input" type="number" step="any" id="ajuste-cantidad"
-                       name="cantidad" required/>
+                <input class="input" type="number" step="any" inputmode="decimal"
+                       id="ajuste-cantidad" name="cantidad" required/>
             </div>
         </div>
         <div class="field" x-data="{ tipo: '', customTipo: '', get custom() { return this.tipo === '__custom__'; } }">
@@ -56,7 +59,9 @@
                 </div>
             </div>
             <div class="control" style="margin-top:0.5rem" x-show="custom">
-                <input class="input" type="text" x-model="customTipo"
+                <input class="input" type="text" id="ajuste-tipo-custom" x-model="customTipo"
+                       maxlength="120" :required="custom"
+                       aria-label="Tipo de movimiento personalizado"
                        placeholder="Escriba el tipo de movimiento personalizado"/>
             </div>
             <input type="hidden" name="tipoMovimiento"
@@ -70,7 +75,7 @@
             </div>
         </div>
         <div class="buttons is-centered">
-            <button class="button is-primary" type="submit">Crear Ajuste</button>
+            <button class="button is-primary" type="submit" hx-disabled-elt="this">Crear Ajuste</button>
             <button class="button" type="button" data-kit-close>Cancelar</button>
         </div>
     </form>

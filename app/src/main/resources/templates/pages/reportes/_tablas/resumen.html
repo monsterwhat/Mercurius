@@ -19,6 +19,9 @@
             <td>{f.precio}</td>
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin artículos para la vista y los filtros seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

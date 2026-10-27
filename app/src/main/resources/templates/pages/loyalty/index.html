@@ -32,6 +32,13 @@
     the panels read louder than the screen's own name.
   - Both panels are _kit/surfaces now (settings + top-10), so each carries a
     real <h2> under the page's <h1>.
+
+  ROUND 2
+  -------
+  - The history drawer loads asynchronously into the modal body and the pager
+    swaps it in place. Neither said anything to a screen reader: the dialog
+    opened on an empty body and the new content simply appeared. A polite
+    status region now announces the load and each page change.
 !}
 {#include layout}
     {#title}Programa de Lealtad | Mercurius{/title}
@@ -44,6 +51,11 @@
            h1 of the screen. !}
         {#include _kit/page-header title="Programa de Lealtad"
              subtitle="Configuración del programa y clientes con más puntos" /}
+
+        {! Async status: the drawer body and its pager are swapped by htmx, and
+           a swap is silent to a screen reader. The bridge script below keeps
+           this line in step with what just arrived. !}
+        <p id="loyalty-anuncio" class="is-sr-only" role="status" aria-live="polite"></p>
 
         {! Settings panel — legacy "Configuración del Programa" !}
         {#include pages/loyalty/panel-ajustes ajustes=ajustes /}
@@ -60,23 +72,49 @@
     {! Bridge: row-level history buttons open the shared drawer modal; the
        swapped fragment's [data-kit-close] button closes it (T18 contract). !}
     <script>
-        document.addEventListener('click', function (e) {
-            var opener = e.target.closest('[data-kit-open]');
-            if (opener) {
-                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
-                if (modal && window.Alpine) {
-                    Alpine.$data(modal).open = true;
-                }
-                return;
-            }
-            var closer = e.target.closest('[data-kit-close]');
-            if (closer) {
-                var root = closer.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
+        (function () {
+            var anuncio = document.getElementById('loyalty-anuncio');
+            function announce(texto) {
+                if (anuncio) {
+                    anuncio.textContent = texto;
                 }
             }
-        });
+
+            document.addEventListener('click', function (e) {
+                var opener = e.target.closest('[data-kit-open]');
+                if (opener) {
+                    var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                    if (modal && window.Alpine) {
+                        Alpine.$data(modal).open = true;
+                    }
+                    if (opener.getAttribute('data-kit-open') === 'historial-cliente') {
+                        announce('Cargando historial de puntos.');
+                    }
+                    return;
+                }
+                var closer = e.target.closest('[data-kit-close]');
+                if (closer) {
+                    var root = closer.closest('.kit-modal-root');
+                    if (root && window.Alpine) {
+                        Alpine.$data(root).open = false;
+                    }
+                }
+            });
+
+            document.body.addEventListener('htmx:afterSwap', function (e) {
+                var target = e.detail ? e.detail.target : null;
+                if (!target || !target.id) {
+                    return;
+                }
+                if (target.id === 'historial-cliente-body') {
+                    announce('Historial de puntos cargado.');
+                    return;
+                }
+                if (target.id === 'drawer-historial') {
+                    announce('Página del historial actualizada.');
+                }
+            });
+        })();
     </script>
     {/body}
 {/include}

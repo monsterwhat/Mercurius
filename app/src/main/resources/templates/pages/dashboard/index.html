@@ -52,31 +52,62 @@
         {/include}
 
         {#if esKpi}
-        {! One strip, one answer, one colour. The period is in the label, so
-           no legend is needed to read what a number means. !}
+        {! One strip, one answer, one colour - and one row that divides evenly.
+           Seven cards in one auto-fit strip left a single orphan card on the
+           second row at desktop and at 2-column mobile widths. The strip now
+           answers the screen's question first (what happened TODAY) and puts
+           the comparison periods in a second row. !}
         <div class="metric-strip">
+            {! A zero change is not growth: "+0.0% vs ayer" reads as a signal
+               on a day with no sales. The word replaces the number only when
+               the backend reports exactly zero, so real growth keeps its sign. !}
+            {#if crecimientoDiario == '+0.0%' || crecimientoDiario == '0%'}
+            {#include _kit/metric label="Ventas hoy" value=ventasHoy
+                 detail="Sin cambio" detailSuffix="vs ayer" /}
+            {#else}
             {#include _kit/metric label="Ventas hoy" value=ventasHoy
                  detail=crecimientoDiario detailSuffix="vs ayer" /}
+            {/if}
+            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
+            {#include _kit/metric label="Artículos vendidos hoy" value=articulosVendidos /}
+        </div>
+        <div class="metric-strip mt-4">
             {#include _kit/metric label="Ventas ayer" value=ventasAyer /}
             {#include _kit/metric label="Esta semana" value=ventasSemana /}
-            {#include _kit/metric label="Ultimos 30 dias" value=ventasMes /}
-            {#include _kit/metric label="Ticket promedio (30 dias)" value=ticketPromedio /}
-            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
-            {#include _kit/metric label="Articulos vendidos hoy" value=articulosVendidos /}
+            {#include _kit/metric label="Últimos 30 días" value=ventasMes /}
+            {#include _kit/metric label="Ticket promedio (30 días)" value=ticketPromedio /}
         </div>
 
         <div id="panel-graficas" class="columns is-variable is-4 mt-5"
              data-root="{config:['quarkus.http.root-path']}"
              data-base="{config:['quarkus.http.root-path']}/app/dashboard/data">
             <div class="column is-12-tablet is-6-desktop">
+                {! A canvas is opaque to a screen reader, so the chart carries a
+                   descriptive name and a text description of what the two series
+                   are. The factory hides the canvas and prints "Sin datos para el
+                   período" when every value is zero (web/chart-config.js). !}
                 {#include _kit/chart-card title="Ventas por hora"
-                     subtitle="Colones y transacciones por hora"
-                     canvasId="grafica-ventas-hora" /}
+                     subtitle="Colones y transacciones por hora"}
+                    {#chartBody}
+                    <canvas id="grafica-ventas-hora" role="img"
+                            aria-label="Ventas en colones y transacciones por hora del día">
+                        Su navegador no soporta canvas.
+                    </canvas>
+                    <p class="is-sr-only">Cada barra es la venta en colones de una hora del día; la línea es el número de transacciones de esa misma hora.</p>
+                    {/chartBody}
+                {/include}
             </div>
             <div class="column is-12-tablet is-6-desktop">
                 {#include _kit/chart-card title="Tendencia semanal"
-                     subtitle="Colones por dia, ultimos 7 dias"
-                     canvasId="grafica-tendencia-semanal" /}
+                     subtitle="Colones por día, últimos 7 días"}
+                    {#chartBody}
+                    <canvas id="grafica-tendencia-semanal" role="img"
+                            aria-label="Ventas diarias en colones de los últimos siete días">
+                        Su navegador no soporta canvas.
+                    </canvas>
+                    <p class="is-sr-only">Línea de ventas diarias en colones para cada uno de los últimos siete días.</p>
+                    {/chartBody}
+                {/include}
             </div>
         </div>
 
@@ -120,8 +151,19 @@
                     }
                     return await respuesta.json();
                 } catch (error) {
+                    console.warn('[dashboard] No se pudo cargar ' + clave
+                        + '; se usa el respaldo local.', error);
                     const nodo = document.getElementById(respaldoId);
-                    return nodo ? JSON.parse(nodo.textContent || '[]') : [];
+                    if (!nodo) {
+                        return [];
+                    }
+                    try {
+                        return JSON.parse(nodo.textContent || '[]');
+                    } catch (parseError) {
+                        console.warn('[dashboard] El respaldo de ' + clave
+                            + ' no es JSON válido.', parseError);
+                        return [];
+                    }
                 }
             }
 
@@ -223,16 +265,19 @@
         {! The old layout nested three boxes inside a fourth box. A box inside
            a box is a card inside a card: the inner frame carries no
            information and makes the numbers look like they belong to
-           something else. One strip, three numbers. !}
+           something else. Two numbers in one strip; the last-transaction
+           summary is a sentence ("Factura 001… a las 10:12" or "No hay
+           transacciones hoy"), not a KPI value at 1.5rem, so it reads as a
+           line of context instead of a four-line tile. !}
         <div class="metric-strip">
             {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
-            {#include _kit/metric label="Articulos vendidos" value=articulosVendidos /}
-            {#include _kit/metric label="Ultima transaccion" value=ultimaTransaccion /}
+            {#include _kit/metric label="Artículos vendidos" value=articulosVendidos /}
         </div>
+        <p class="mt-3">{ultimaTransaccion}</p>
         {/if}
 
         {#if esInventario}
-        {#include _kit/surface title="Productos mas vendidos (7 dias)"}
+        {#include _kit/surface title="Productos más vendidos (7 días)"}
             {#content}
             <div class="table-container">
             <table class="table is-hoverable is-fullwidth">
@@ -246,13 +291,13 @@
                 <tbody>
                     {#for prod in topProductos}
                     <tr>
-                        <td>{prod.nombre}</td>
+                        <td class="table-clamp-2" title="{prod.nombre}">{prod.nombre}</td>
                         <td class="num">{prod.unidades}</td>
                         <td class="num">{prod.ingresos}</td>
                     </tr>
                     {/for}
                     {#if topProductos.isEmpty()}
-                    <tr><td colspan="3" class="has-text-centered has-text-grey">No hay datos de ventas disponibles</td></tr>
+                    <tr><td colspan="3" class="kit-empty-cell">Todavía no hay ventas registradas en los últimos 7 días</td></tr>
                     {/if}
                 </tbody>
             </table>

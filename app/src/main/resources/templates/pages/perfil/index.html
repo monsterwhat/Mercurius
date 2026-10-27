@@ -22,12 +22,17 @@
   - The four panels are _kit/surfaces. The three forms took their heading from
     a <h2 class="title is-5">, which is display type at 20px/800 - louder than
     the screen's own name. A surface title is a real <h2> at 1.25rem/600.
-  - The first panel (the account summary) had NO heading, so its surface
-    carries no title either: the content is kept exactly as it was.
+  - The first panel (the account summary) now carries a title too, so the
+    section has an accessible name and the page keeps one heading outline.
   - The submit buttons were `is-link`, which is Bulma's blue - a SECOND accent
     next to the app's teal. They are `is-primary` now, one filled primary per
     panel, so the only accent on the screen is the app's teal.
   - The labels are proper Spanish: "electrónico", "contraseña".
+  - The read-only field captions are sentence-case muted text instead of
+    Bulma's uppercase tracked .heading labels.
+  - Each change form says what the current value is, and the password form
+    states that the current password is required, so the operator does not
+    discover the rule only after a failed submit.
  !}
 {#include layout}
     {#title}Mi Perfil | Mercurius{/title}
@@ -38,24 +43,26 @@
              subtitle="Datos de la cuenta y cambio de credenciales" /}
 
         {! ── Datos del usuario ───────────────────────────────────── !}
-        {#include _kit/surface}
+        {#include _kit/surface title="Datos de la cuenta"}
             {#content}
             <div class="columns is-multiline">
                 <div class="column is-3">
-                    <p class="heading">Nombre de usuario</p>
+                    <p class="is-size-7 mercurius-text-muted">Nombre de usuario</p>
                     <p class="title is-5" id="perfil-username">{usuario.username}</p>
                 </div>
                 <div class="column is-3">
-                    <p class="heading">Correo electrónico</p>
+                    <p class="is-size-7 mercurius-text-muted">Correo electrónico</p>
                     <p class="title is-5" id="perfil-email">{#if usuario.email??}{usuario.email}{#else}&mdash;{/if}</p>
                 </div>
                 <div class="column is-3">
-                    <p class="heading">Grupo</p>
-                    <p class="title is-5">{usuario.groupName}</p>
+                    <p class="is-size-7 mercurius-text-muted">Grupo</p>
+                    {! groupName stores programmatic tokens ("[admin, facturacion]").
+                       Show the module names, never the raw enum string. !}
+                    <p class="title is-5">{#if usuario.groupName??}{usuario.groupName.replace('[', '').replace(']', '').replace('facturacion', 'Facturación').replace('inventario', 'Inventarios').replace('tributacion', 'Tributación').replace('registro', 'Registros').replace('usuario', 'Usuarios').replace('admin', 'Administrativo')}{#else}&mdash;{/if}</p>
                 </div>
                 <div class="column is-3">
-                    <p class="heading">Estado</p>
-                    <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}</p>
+                    <p class="is-size-7 mercurius-text-muted">Estado</p>
+                    <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-neutral">Inactivo</span>{/if}</p>
                 </div>
             </div>
             {/content}
@@ -70,8 +77,13 @@
                 <div class="field">
                     <label class="label" for="nuevoNombre">Nuevo nombre de usuario</label>
                     <div class="control">
-                        <input class="input" type="text" id="nuevoNombre" name="nuevoNombre" required/>
+                        <input class="input perfil-input" type="text" id="nuevoNombre" name="nuevoNombre"
+                               autocomplete="username" required
+                               aria-describedby="nuevoNombre-help"/>
                     </div>
+                    <p class="help mercurius-text-muted" id="nuevoNombre-help">
+                        Actual: {usuario.username}
+                    </p>
                 </div>
                 <button class="button is-primary" type="submit">Actualizar nombre</button>
             </form>
@@ -87,8 +99,13 @@
                 <div class="field">
                     <label class="label" for="nuevoEmail">Nuevo correo electrónico</label>
                     <div class="control">
-                        <input class="input" type="email" id="nuevoEmail" name="nuevoEmail" required/>
+                        <input class="input perfil-input" type="email" id="nuevoEmail" name="nuevoEmail"
+                               autocomplete="email" required
+                               aria-describedby="nuevoEmail-help"/>
                     </div>
+                    <p class="help mercurius-text-muted" id="nuevoEmail-help">
+                        Actual: {#if usuario.email??}{usuario.email}{#else}sin correo registrado{/if}
+                    </p>
                 </div>
                 <button class="button is-primary" type="submit">Actualizar correo</button>
             </form>
@@ -101,31 +118,42 @@
             <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/password"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
+                <p class="help mercurius-text-muted mb-4">
+                    Por seguridad debe escribir su contraseña actual. La nueva
+                    contraseña debe ser igual en los dos últimos campos.
+                </p>
                 <div class="field">
                     <label class="label" for="currentPassword">Contraseña actual</label>
                     <div class="control">
-                        <input class="input" type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password"/>
+                        <input class="input perfil-input" type="password" id="currentPassword" name="currentPassword"
+                               required autocomplete="current-password" aria-describedby="password-help"/>
                     </div>
                 </div>
                 <div class="field">
                     <label class="label" for="newPassword">Nueva contraseña</label>
                     <div class="control">
-                        <input class="input" type="password" id="newPassword" name="newPassword" required autocomplete="new-password"/>
+                        <input class="input perfil-input" type="password" id="newPassword" name="newPassword"
+                               required autocomplete="new-password" aria-describedby="password-help"/>
                     </div>
                 </div>
                 <div class="field">
                     <label class="label" for="confirmPassword">Confirmar nueva contraseña</label>
                     <div class="control">
-                        <input class="input" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password"/>
+                        <input class="input perfil-input" type="password" id="confirmPassword" name="confirmPassword"
+                               required autocomplete="new-password" aria-describedby="password-help"/>
                     </div>
+                    <p class="help mercurius-text-muted" id="password-help">
+                        Si las dos contraseñas nuevas no coinciden, el cambio no se aplica.
+                    </p>
                 </div>
                 <button class="button is-primary" type="submit">Actualizar contraseña</button>
             </form>
             {/content}
         {/include}
 
-        {! HTMX swap target for non-OOB responses (kept empty; guard failures are OOB toasts) !}
-        <div id="perfil-resultado"></div>
+        {! HTMX swap target for non-OOB responses. Guard failures arrive as OOB
+           toasts; the live region also covers a plain-text fallback. !}
+        <div id="perfil-resultado" role="status" aria-live="polite"></div>
     </section>
     {/body}
 {/include}

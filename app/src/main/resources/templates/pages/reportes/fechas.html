@@ -6,7 +6,7 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title="Movimientos por fecha" subtitle="Movimientos de artículos por rango de fechas" /}
+        {#include _kit/page-header title=titulo subtitle="Movimientos de artículos por rango de fechas" /}
 
         {#include _kit/filter-bar id="filtros-fechas" method="get"}
                 <div class="field">
@@ -35,7 +35,6 @@
                     <div class="control">
                         <button class="button is-primary" type="submit">Cargar Reportes</button>
                     </div>
-                </div>
                     {/include}
 
         {! One family, four cuts: Por cajero, Por fecha, Por departamento

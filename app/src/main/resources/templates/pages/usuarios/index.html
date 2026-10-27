@@ -29,12 +29,11 @@
   WHAT CHANGED IN THE UI PASS
   ---------------------------
   - The "Crear Usuario" dialog is the screen's own action, so it lives in the
-    page, BELOW the table it creates.
+    page header's {#actions} slot instead of below the table it creates.
   - The three counts are _kit/metric cards with an href (they are FILTERS,
-    not tabs). NOTE: their href is a quoted include parameter, so the
-    {config:['quarkus.http.root-path']} inside it is literal text, not an
-    expression - the filter links do not resolve the deployment root. The
-    migration contract forbids changing an href, so it is left as it is.
+    not tabs). _kit/metric prepends the deployment root itself, so these
+    /app/usuarios?estado=... hrefs are context-relative and resolve under
+    the deployment root.
 !}
 {#include layout}
     {#title}Usuarios del Sistema | Mercurius{/title}

@@ -17,8 +17,12 @@
 
   Classic POS closing order lives here (it cannot move to factura-body.html:
   every mutation above re-renders this fragment, so totals and actions must be
-  re-rendered with it or they would go stale): Descuento -> I.V.A. -> TOTAL
+  re-rendered with it or they would go stale): Descuento -> IVA -> TOTAL
   (plus the puntos row), then Cancelar before Facturar.
+
+  The rows table scrolls inside its own viewport; the totals, the payment
+  trigger and the two closing actions sit OUTSIDE it, so a long sale can never
+  push "Facturar" out of reach behind a scrollbar.
 
   Model ("panel" bound key, Map):
     items            List  - {codigo,nombre,cantidad,precioEfectivo,totalLinea,promo,precioPersonalizado}
@@ -37,7 +41,8 @@
 <div id="cart-panel" class="box" data-pos-cart-panel{#if panel.oob} hx-swap-oob="true"{/if}>
     {#if panel.mensaje??}
     <div class="notification {#if panel.mensaje.severity == 'error'}is-danger{#else if panel.mensaje.severity == 'warn'}is-warning{#else if panel.mensaje.severity == 'success'}is-success{#else}is-info{/if}"
-            style="padding:0.5rem 0.75rem" role="status">
+            style="padding:0.5rem 0.75rem"
+            role="{#if panel.mensaje.severity == 'error'}alert{#else}status{/if}">
         {#if panel.mensaje.summary??}<strong>{panel.mensaje.summary}</strong>{/if}
         {#if panel.mensaje.detail??}<span> {panel.mensaje.detail}</span>{/if}
     </div>
@@ -46,7 +51,7 @@
     <div class="level is-mobile" style="margin-bottom:0.5rem">
         <div class="level-left">
             <div>
-                <p class="heading" style="margin-bottom:0">Venta de</p>
+                <p class="is-size-7 mercurius-text-muted" style="margin-bottom:0">Venta de</p>
                 {#if panel.clienteCode??}
                 <p class="has-text-weight-semibold">{panel.clienteName}
                     <span class="status-chip is-neutral">{panel.clientePuntos} pts</span></p>
@@ -68,53 +73,70 @@
     </div>
 
     {#if panel.vacio}
-    <p class="has-text-centered has-text-grey" style="padding:2rem 0">
-        El carrito está vacío &mdash; escanee un código de barras para comenzar.
-    </p>
+    <div class="has-text-centered mercurius-text-muted" style="padding:1.5rem 0">
+        <p>{#include _kit/icon name="cart" size="large" /}</p>
+        <p class="has-text-weight-semibold">El carrito está vacío</p>
+        <p class="is-size-7">Escanee un código de barras o use &laquo;Buscar&raquo; para
+            agregar el primer artículo.</p>
+    </div>
     {#else}
-    <div class="table-container">
-    <table class="table is-striped is-narrow is-fullwidth" style="margin-bottom:0.5rem">
+    {! Only the rows scroll. The totals and the closing actions stay put, so
+       they are visible the moment the last item is scanned. !}
+    <div class="table-container" style="max-height:24rem;overflow-y:auto">
+    <table class="table is-hoverable is-narrow is-fullwidth" style="margin-bottom:0.5rem">
         <thead>
-        <tr><th>Artículo</th><th class="has-text-centered">Cant.</th>
-            <th class="has-text-right">Precio</th><th class="has-text-right">Total</th><th></th></tr>
+        <tr>
+            <th scope="col">Artículo</th>
+            <th scope="col" class="has-text-centered">Cant.</th>
+            <th scope="col" class="num">Precio</th>
+            <th scope="col" class="num">Total</th>
+            <th scope="col"><span class="is-sr-only">Acciones</span></th>
+        </tr>
         </thead>
         <tbody>
         {#for item in panel.items}
         <tr data-codigo="{item.codigo}">
             <td>
-                {item.nombre}
+                <span class="table-clamp" title="{item.nombre}">{item.nombre}</span>
                 {#if item.promo}<span class="status-chip is-success">Promo</span>{/if}
                 {#if item.precioPersonalizado}<span class="status-chip is-warning">Precio autorizado</span>{/if}
             </td>
             <td class="has-text-centered" style="white-space:nowrap">
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="-1"/>
-                    <button type="button" class="button is-small" aria-label="Restar uno"
+                    <button type="button" class="button is-small" aria-label="Restar uno de {item.nombre}"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
-                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">&minus;</button>
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
+                            hx-disabled-elt="this">&minus;</button>
                 </form>
-                <form class="is-inline" style="display:inline">
+                {! The quantity form owns the request so Enter applies the value
+                   instead of falling through to a native GET submit (which
+                   reloaded the whole till). !}
+                <form class="is-inline" style="display:inline"
+                      hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-set-form"
+                      hx-trigger="change, submit"
+                      hx-target="#cart-panel" hx-swap="outerHTML">
                     <input type="number" name="cantidad" step="any" min="0"
                            value="{item.cantidad}" class="input is-small has-text-centered"
-                           aria-label="Cantidad del artículo" style="width:4.5rem"
-                           hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-set-form"
-                           hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
-                           hx-trigger="change"/>
+                           aria-label="Cantidad de {item.nombre}" style="width:4.5rem"/>
                 </form>
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="1"/>
-                    <button type="button" class="button is-small" aria-label="Sumar uno"
+                    <button type="button" class="button is-small" aria-label="Sumar uno de {item.nombre}"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
-                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">+</button>
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
+                            hx-disabled-elt="this">+</button>
                 </form>
             </td>
-            <td class="has-text-right">{item.precioEfectivo}</td>
-            <td class="has-text-right has-text-weight-semibold">{item.totalLinea}</td>
+            <td class="num">{fmt:moneda(item.precioEfectivo)}</td>
+            <td class="num has-text-weight-semibold">{fmt:moneda(item.totalLinea)}</td>
             <td class="has-text-centered">
-                <button type="button" class="button is-small is-danger" aria-label="Quitar artículo"
+                <button type="button" class="button is-small is-danger is-outlined"
+                        aria-label="Quitar {item.nombre} del carrito"
                         title="Quitar del carrito"
                         hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/remove-form"
-                        hx-target="#cart-panel" hx-swap="outerHTML">&times;</button>
+                        hx-target="#cart-panel" hx-swap="outerHTML"
+                        hx-disabled-elt="this">{#include _kit/icon name="trash" /}</button>
             </td>
         </tr>
         {/for}
@@ -122,64 +144,93 @@
     </table>
     </div>
 
-    {! Classic closing sequence: Descuento -> I.V.A. -> (puntos) -> TOTAL
+    {! Classic closing sequence: Descuento -> IVA -> (puntos) -> TOTAL
        (the TOTAL row is the level block right below, id #pos-total-carrito).
        The redundant "Subtotal" row is gone: it repeated totalCarrito, which
        the TOTAL row already shows. !}
     <table class="table is-narrow is-fullwidth is-borderless">
         <tbody>
-        <tr><td>Descuento</td><td class="has-text-right">{panel.totalDescuento}</td></tr>
-        <tr><td>I.V.A.</td><td class="has-text-right">{panel.totalImpuesto}</td></tr>
+        <tr><th scope="row" class="has-text-weight-normal">Descuento</th>
+            <td class="num">{fmt:moneda(panel.totalDescuento)}</td></tr>
+        <tr><th scope="row" class="has-text-weight-normal">IVA</th>
+            <td class="num">{fmt:moneda(panel.totalImpuesto)}</td></tr>
         {#if panel.descuentoPuntos?? && panel.descuentoPuntos > 0}
-        <tr><td>Puntos redimidos</td><td class="has-text-right">&minus;{panel.descuentoPuntos}</td></tr>
+        <tr><th scope="row" class="has-text-weight-normal">Puntos redimidos</th>
+            <td class="num">&minus;{fmt:moneda(panel.descuentoPuntos)}</td></tr>
+        {/if}
+        {! Staged payments are already on the session (the payment dialog wrote
+           them); showing the received amount here closes the loop without
+           reopening the dialog. The VUELTO is deliberately not repeated: the
+           session only recomputes it when the dialog posts, so adding an item
+           afterwards would leave a wrong change figure on the cart. !}
+        {#if panel.totalPagado?? && panel.totalPagado > 0}
+        <tr><th scope="row" class="has-text-weight-normal">Pagado</th>
+            <td class="num">{fmt:moneda(panel.totalPagado)}</td></tr>
         {/if}
         </tbody>
     </table>
     {/if}
 
     {#if panel.clienteCode??}
-    <form id="forma-puntos" class="field has-addons" style="margin-bottom:0.5rem">
+    {! The "quitar" control is deliberately NOT a nested form: the browser
+       drops a form element that sits inside another form, which left both the
+       typed points and the hidden 0 in the request (duplicate puntosARedimir).
+       A hidden input outside the group is the one value hx-include picks for
+       the reset. !}
+    <form id="forma-puntos" class="field has-addons" style="margin-bottom:0.5rem"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form"
+          hx-target="#cart-panel" hx-swap="outerHTML"
+          hx-disabled-elt="#btn-aplicar-puntos">
         <div class="control">
             <input class="input is-small" type="number" min="0" step="1" name="puntosARedimir"
-                   id="puntos-input" placeholder="Puntos a redimir" autocomplete="off"/>
+                   id="puntos-input" placeholder="Puntos a redimir" autocomplete="off"
+                   aria-label="Puntos a redimir" aria-describedby="puntos-preview"/>
         </div>
         <div class="control">
-            <button type="button" class="button is-small is-link"
-                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="#forma-puntos"
-                    hx-target="#cart-panel" hx-swap="outerHTML">Aplicar puntos</button>
+            <button type="submit" id="btn-aplicar-puntos"
+                    class="button is-small">Aplicar puntos</button>
         </div>
         <div class="control">
-            <form style="display:inline">
-                <input type="hidden" name="puntosARedimir" value="0"/>
-                <button type="button" class="button is-small"
-                        hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="closest form"
-                        hx-target="#cart-panel" hx-swap="outerHTML">Quitar</button>
-            </form>
+            <button type="button" class="button is-small"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="#puntos-quitar"
+                    hx-target="#cart-panel" hx-swap="outerHTML"
+                    hx-disabled-elt="this">Quitar puntos</button>
         </div>
     </form>
-    <p class="help" id="puntos-preview" data-puntos-preview>&nbsp;</p>
+    <input type="hidden" id="puntos-quitar" name="puntosARedimir" value="0"/>
+    <p class="help" id="puntos-preview" data-puntos-preview aria-live="polite">&nbsp;</p>
     {/if}
 
+    {! Closing block: payment, TOTAL, then the two actions. `pos-cierre` is the
+       hook for the mobile sticky treatment (position:sticky;bottom:0 + an
+       opaque scheme background at <=768px), which belongs in the shared
+       stylesheet, not in this fragment. !}
+    <div class="pos-cierre">
     <div class="field is-grouped" style="margin-bottom:0.25rem">
         <p class="control is-expanded">
-            <button type="button" id="btn-abrir-pagos" class="button is-fullwidth"
-                    aria-haspopup="dialog" data-kit-open="modal-pago">Pagos / Vuelto</button>
+            <button type="button" id="btn-abrir-pagos" class="button is-medium is-fullwidth"
+                    aria-haspopup="dialog" data-kit-open="modal-pago"{#if panel.vacio} disabled{/if}
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/pos/payment-dialog"
+                    hx-target="#modal-pago-body" hx-swap="innerHTML">{#include _kit/icon name="money" /} Pagos y vuelto</button>
         </p>
     </div>
     <div class="level is-mobile" style="margin-bottom:0.5rem">
-        <div class="level-left"><p class="heading" style="margin-bottom:0">TOTAL</p></div>
+        <div class="level-left"><p class="has-text-weight-semibold" style="margin-bottom:0">Total a pagar</p></div>
         <div class="level-right"><p class="title is-3" style="margin-bottom:0"
-                id="pos-total-carrito">{panel.totalCarrito}</p></div>
+                id="pos-total-carrito">{fmt:moneda(panel.totalCarrito)}</p></div>
     </div>
 
     <div class="buttons" style="margin-bottom:0">
-        <button type="button" id="btn-cancelar" class="button is-danger"
+        <button type="button" id="btn-cancelar" class="button is-medium is-danger is-outlined"
                 hx-post="{config:['quarkus.http.root-path']}/api/app/pos/cancel-form"
                 hx-confirm="¿Cancelar la venta actual?"
-                hx-target="#cart-panel" hx-swap="outerHTML">Cancelar venta</button>
-        <button type="button" id="btn-facturar" class="button is-primary"
+                hx-target="#cart-panel" hx-swap="outerHTML"
+                hx-disabled-elt="this">Cancelar venta</button>
+        <button type="button" id="btn-facturar" class="button is-medium is-primary"{#if panel.vacio} disabled{/if}
                 hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
                 hx-include="#forma-tipo-documento"
-                hx-target="#facturar-resultado" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>
+                hx-target="#facturar-resultado" hx-swap="innerHTML"
+                hx-disabled-elt="this">{#include _kit/icon name="file" /} Facturar</button>
+    </div>
     </div>
 </div>

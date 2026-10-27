@@ -22,6 +22,16 @@
   - "Abrir Sesion" was a filled green (is-success) button with a lock
     emoji; the app's teal is the only accent, so it is the one filled
     primary, and the glyph is a kit icon.
+
+  ROUND 2
+  -------
+  - The amount says what it is for: the cash the shift starts with. The label
+    alone ("Monto Inicial") did not distinguish it from the counted amounts on
+    the close form.
+  - The error is announced (role="alert") and tied to the field.
+  - hx-disabled-elt="this": a double tap used to open two shifts (the open
+    path deliberately has no server guard against an already-open session, so
+    the client is the only thing that can stop it).
 !}
 {#include _kit/surface id="panel-abrir-caja" title="Abrir Sesión de Caja" }
     {#content}
@@ -35,14 +45,19 @@
                     <div class="control">
                         <input class="input {#if errorGeneral??}is-danger{/if}" id="montoApertura"
                                type="number" name="montoApertura" step="0.01" min="0"
-                               inputmode="decimal" required/>
+                               inputmode="decimal" autocomplete="off" required
+                               aria-describedby="montoApertura-ayuda{#if errorGeneral??} montoApertura-error{/if}"
+                               {#if errorGeneral??}aria-invalid="true"{/if}/>
                     </div>
-                    {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+                    <p class="help" id="montoApertura-ayuda">
+                        Efectivo con el que empieza el turno. Debe ser mayor que cero.
+                    </p>
+                    {#if errorGeneral??}<p class="help is-danger" id="montoApertura-error" role="alert">{errorGeneral}</p>{/if}
                 </div>
             </div>
         </div>
         <div class="field">
-            <button class="button is-primary" type="submit">{#include _kit/icon name="lock" /} Abrir Sesión</button>
+            <button class="button is-primary" type="submit" hx-disabled-elt="this">{#include _kit/icon name="lock" /} Abrir Sesión</button>
         </div>
     </form>
     {/content}

@@ -39,12 +39,17 @@
 !}
 <div id="forma-orden">
     {#if modo == 'editar' && orden??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}"
           hx-target="#forma-orden" hx-swap="outerHTML">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/ordenes"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/ordenes"
           hx-target="#forma-orden" hx-swap="outerHTML">
     {/if}
+        {! Pattern A: this fragment is re-rendered with errorGeneral, announced
+           here, above the fields it refers to. !}
+        {#if errorGeneral??}
+        <div class="notification is-danger is-light" role="alert">{errorGeneral}</div>
+        {/if}
         {#if modo == 'editar' && orden??}
         <div class="columns">
             <div class="column">
@@ -103,7 +108,18 @@
         </div>
 
         <hr/>
-        <h3 class="title is-6">Artículos de la Orden</h3>
+        <h2 class="title is-6">Artículos de la Orden</h2>
+
+        {! Column legend for the line editor. The inputs carry their own
+           aria-label, so this row is for the eye; it hides below 768px where
+           the row wraps. !}
+        <div class="field is-grouped is-size-7 mercurius-text-muted is-hidden-mobile mb-1">
+            <div class="control is-expanded" style="min-width:14rem">Artículo</div>
+            <div class="control" style="width:7rem;text-align:center">Cantidad</div>
+            <div class="control" style="width:8rem;text-align:center">Precio unit. (₡)</div>
+            <div class="control" style="width:8rem;text-align:right">Subtotal</div>
+            <div class="control" style="width:2.25rem"></div>
+        </div>
 
         <div id="lineas-lista">
             {#if modo == 'editar'}
@@ -112,26 +128,30 @@
                 <input type="hidden" name="articuloCodigo" value="{#if linea.codigo??}{linea.codigo}{/if}"/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                           aria-label="Artículo de la línea"
                            placeholder="Buscar artículo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
+                           hx-sync="this:replace"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
-                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>
+                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30;left:0;right:0;max-height:14rem;overflow-y:auto"></div>
                 </div>
                 <div class="control">
                     <input class="input js-cantidad" type="number" name="cantidad" min="0.0001" step="0.0001"
+                           inputmode="decimal" aria-label="Cantidad de la línea"
                            placeholder="0" style="width:7rem;text-align:center" value="{linea.cantidad}"/>
                 </div>
                 <div class="control">
                     <input class="input js-precio" type="number" name="precioUnitario" min="0" step="0.0001"
-                           placeholder="0.00" style="width:8rem;text-align:center" value="{linea.precio}"/>
+                           inputmode="decimal" aria-label="Precio unitario de la línea en colones"
+                           placeholder="0.00" style="width:8rem;text-align:center" value="{#if linea.precio??}{linea.precio}{/if}"/>
                 </div>
                 <div class="control">
-                    <span class="js-subtotal" style="font-weight:600">{linea.subtotal}</span>
+                    <span class="is-sr-only">Subtotal de la línea: </span><span class="js-subtotal kit-figure" style="font-weight:600" data-subtotal="{#if linea.subtotalNumero??}{linea.subtotalNumero}{/if}">{linea.subtotal}</span>
                 </div>
                 <div class="control">
                     <button class="button is-danger is-small" type="button" title="Eliminar artículo"
-                            aria-label="Eliminar artículo"
+                            aria-label="Eliminar artículo de la línea"
                             data-quitar-linea>{#include _kit/icon name="close" /}</button>
                 </div>
             </div>
@@ -139,31 +159,40 @@
             {/if}
         </div>
 
+        {! Shown while the order has no lines (a new order starts empty, and
+           the last line can be removed). Toggled by the line editor below. !}
+        <p id="lineas-vacio" class="is-size-7 mercurius-text-muted"
+           {#if lineas.size() > 0}hidden{/if}>Aún no hay artículos en la orden. Use «Agregar Artículo» para empezar.</p>
+
         <template id="linea-plantilla">
             <div class="orden-linea field is-grouped mb-2" style="align-items:flex-end;flex-wrap:wrap">
                 <input type="hidden" name="articuloCodigo" value=""/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                           aria-label="Artículo de la línea"
                            placeholder="Buscar artículo..."
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
+                           hx-sync="this:replace"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
-                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>
+                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30;left:0;right:0;max-height:14rem;overflow-y:auto"></div>
                 </div>
                 <div class="control">
                     <input class="input js-cantidad" type="number" name="cantidad" min="0.0001" step="0.0001"
+                           inputmode="decimal" aria-label="Cantidad de la línea"
                            placeholder="0" style="width:7rem;text-align:center"/>
                 </div>
                 <div class="control">
                     <input class="input js-precio" type="number" name="precioUnitario" min="0" step="0.0001"
+                           inputmode="decimal" aria-label="Precio unitario de la línea en colones"
                            placeholder="0.00" style="width:8rem;text-align:center"/>
                 </div>
                 <div class="control">
-                    <span class="js-subtotal" style="font-weight:600">₡0.00</span>
+                    <span class="is-sr-only">Subtotal de la línea: </span><span class="js-subtotal kit-figure" style="font-weight:600" data-subtotal="0">₡0,00</span>
                 </div>
                 <div class="control">
                     <button class="button is-danger is-small" type="button" title="Eliminar artículo"
-                            aria-label="Eliminar artículo"
+                            aria-label="Eliminar artículo de la línea"
                             data-quitar-linea>{#include _kit/icon name="close" /}</button>
                 </div>
             </div>
@@ -175,17 +204,16 @@
 
         <div class="columns is-vcentered mt-3">
             <div class="column has-text-right">
-                <span class="title is-5">Total Estimado: </span>
-                <span class="title is-4" id="total-estimado">
-                    {#if modo == 'editar' && orden??}{#if orden.totalEstimado??}₡{orden.totalEstimado}{#else}₡0.00{/if}{#else}₡0.00{/if}
-                </span>
+                <span class="is-size-7 mercurius-text-muted">Total Estimado</span>
+                <p class="is-size-4 has-text-weight-semibold kit-figure" id="total-estimado">
+                    {#if modo == 'editar' && orden??}{#if orden.totalEstimado??}{fmt:moneda(orden.totalEstimado)}{#else}₡0,00{/if}{#else}₡0,00{/if}
+                </p>
             </div>
         </div>
 
-        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
         <div class="field is-grouped is-grouped-centered mt-4">
             <div class="control">
-                <button class="button is-primary" type="submit">
+                <button class="button is-primary" type="submit" hx-disabled-elt="this">
                     {#if modo == 'editar'}Guardar Cambios{#else}Guardar Orden{/if}
                 </button>
             </div>
@@ -204,6 +232,14 @@
 !}
 <script>
     (function () {
+        {! One delegated handler set per page: this fragment is re-rendered on
+           every validation failure, and htmx executes the script each time.
+           Without the guard each re-render stacked another click listener, so
+           one "Agregar Artículo" click added N rows. !}
+        if (window.ordenLineasReady) {
+            return;
+        }
+        window.ordenLineasReady = true;
         function filas() {
             return document.querySelectorAll('#forma-orden .orden-linea');
         }
@@ -214,26 +250,43 @@
             }
             return n;
         }
+        var formatoMoneda = new Intl.NumberFormat('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        function moneda(valor) {
+            return '₡' + formatoMoneda.format(valor);
+        }
         function recalcular(fila) {
             var cantidad = fila.querySelector('.js-cantidad');
             var precio = fila.querySelector('.js-precio');
             var subtotal = fila.querySelector('.js-subtotal');
             if (cantidad && precio && subtotal) {
                 var total = numero(cantidad.value) * numero(precio.value);
-                subtotal.textContent = '₡' + total.toFixed(2);
+                subtotal.textContent = moneda(total);
+                subtotal.dataset.subtotal = total.toFixed(2);
             }
             var granTotal = 0;
             filas().forEach(function (actual) {
                 var s = actual.querySelector('.js-subtotal');
                 if (s) {
-                    granTotal += numero((s.textContent || '').replace('₡', '').replace(/,/g, ''));
+                    granTotal += numero(s.dataset.subtotal || '0');
                 }
             });
             var salida = document.getElementById('total-estimado');
             if (salida) {
-                salida.textContent = '₡' + granTotal.toFixed(2);
+                salida.textContent = moneda(granTotal);
             }
         }
+        {! Empty state: a new order starts with no lines, and the last one can
+           be removed, so the editor must say what is missing. !}
+        function actualizarVacio() {
+            var aviso = document.getElementById('lineas-vacio');
+            if (aviso) {
+                aviso.hidden = filas().length > 0;
+            }
+        }
+        actualizarVacio();
         document.addEventListener('input', function (e) {
             var fila = e.target.closest('.orden-linea');
             if (fila && (e.target.classList.contains('js-cantidad') || e.target.classList.contains('js-precio'))) {
@@ -246,6 +299,7 @@
                 if (fila) {
                     fila.remove();
                     recalcular(document.createElement('div'));
+                    actualizarVacio();
                 }
                 return;
             }
@@ -255,6 +309,12 @@
                 var lista = document.getElementById('lineas-lista');
                 if (plantilla && lista) {
                     lista.appendChild(plantilla.content.cloneNode(true));
+                    actualizarVacio();
+                    var nueva = lista.lastElementChild;
+                    var campo = nueva ? nueva.querySelector('.js-articulo-nombre') : null;
+                    if (campo) {
+                        campo.focus();
+                    }
                 }
             }
         });

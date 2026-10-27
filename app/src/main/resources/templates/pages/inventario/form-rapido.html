@@ -18,27 +18,27 @@
     <div class="columns">
         <div class="column">
             <div class="field">
-                <label class="label">Artículo:</label>
-                <p class="input is-static">{ajuste.articuloNombre}</p>
+                <p class="is-size-7 mercurius-text-muted">Artículo</p>
+                <p class="has-text-weight-semibold">{ajuste.articuloNombre}</p>
             </div>
         </div>
         <div class="column">
             <div class="field">
-                <label class="label">Código de Barras:</label>
-                <p class="input is-static kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+                <p class="is-size-7 mercurius-text-muted">Código de barras</p>
+                <p class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
             </div>
         </div>
     </div>
 
     <div class="notification is-warning is-light">
-        <div class="columns is-mobile has-text-centered">
-            <div class="column">
-                <p class="has-text-grey is-size-7">Factura</p>
-                <p class="title is-5">{ajuste.cantidad}</p>
+        <div class="columns is-mobile is-variable is-2 mb-0">
+            <div class="column has-text-centered">
+                <p class="is-size-7 mercurius-text-muted">Cantidad en la factura</p>
+                <p class="is-size-4 has-text-weight-semibold kit-figure">{ajuste.cantidad}</p>
             </div>
-            <div class="column">
-                <p class="has-text-grey is-size-7">Recomendada</p>
-                <p class="title is-5">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</p>
+            <div class="column has-text-centered">
+                <p class="is-size-7 mercurius-text-muted">Cantidad recomendada</p>
+                <p class="is-size-4 has-text-weight-semibold kit-figure">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</p>
             </div>
         </div>
     </div>
@@ -49,9 +49,11 @@
         <div class="field">
             <label class="label" for="rapido-cantidad">Cantidad real *</label>
             <div class="control">
-                <input class="input" type="number" step="any" id="rapido-cantidad"
-                       name="cantidad" value="{ajuste.cantidad}" required/>
+                <input class="input" type="number" step="any" inputmode="decimal"
+                       id="rapido-cantidad" name="cantidad" value="{ajuste.cantidad}"
+                       aria-describedby="rapido-cantidad-ayuda" required/>
             </div>
+            <p class="help" id="rapido-cantidad-ayuda">Esta cantidad se aplica al inventario al procesar el movimiento.</p>
         </div>
         <div class="field">
             <label class="label" for="rapido-notas">Notas del movimiento</label>
@@ -62,7 +64,7 @@
             </div>
         </div>
         <div class="buttons is-centered mt-4">
-            <button class="button is-primary is-medium" type="submit">Procesar y Siguiente</button>
+            <button class="button is-primary is-medium" type="submit" hx-disabled-elt="this">Procesar y Siguiente</button>
             <button class="button" type="button"
                     hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/omitir"
                     hx-target="#rapido-inventario-body" hx-swap="innerHTML">Omitir</button>
@@ -74,6 +76,7 @@
 {#else}
 <div class="has-text-centered p-5">
     <p class="has-text-grey">No hay movimientos pendientes para procesar</p>
+    <p class="is-size-7 mercurius-text-muted">Los nuevos XML cargados aparecerán aquí.</p>
     <button class="button is-primary is-rounded mt-3" type="button" data-kit-close>Cerrar</button>
 </div>
 {/if}

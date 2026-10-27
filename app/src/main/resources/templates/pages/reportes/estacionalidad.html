@@ -32,9 +32,10 @@
                 <label class="label" for="estacionalidad-fin">Fecha Fin</label>
                 <input class="input" type="date" id="estacionalidad-fin" name="fin" value="{filtroFin}"/>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Actualizar</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Actualizar</button>
+            </div>
         {/include}
 
 
@@ -43,23 +44,34 @@
            SeasonalityService JSON (monthly trend, day-of-week, department,
            family) once chart infrastructure lands. !}
 
+        {! A chart with no rows is not a chart: the card only renders when its
+           list has data. An empty four-card grid was four 260px boxes of
+           nothing above the tables that already said "Sin registros". !}
         <div class="columns is-multiline mb-4">
+            {#if mensual != null && !mensual.isEmpty()}
             <div class="column is-half">
                 {#include _kit/chart-card title="Tendencia Mensual de Ventas" canvasId="estacionalidad-mensual-chart" height="260px"}
         {/include}
             </div>
+            {/if}
+            {#if dias != null && !dias.isEmpty()}
             <div class="column is-half">
                 {#include _kit/chart-card title="Ventas por Día de la Semana" canvasId="estacionalidad-dias-chart" height="260px"}
         {/include}
             </div>
+            {/if}
+            {#if departamentos != null && !departamentos.isEmpty()}
             <div class="column is-half">
                 {#include _kit/chart-card title="Ventas por Departamento" canvasId="estacionalidad-departamentos-chart" height="260px"}
         {/include}
             </div>
+            {/if}
+            {#if familias != null && !familias.isEmpty()}
             <div class="column is-half">
                 {#include _kit/chart-card title="Ventas por Familia" canvasId="estacionalidad-familias-chart" height="260px"}
         {/include}
             </div>
+            {/if}
         </div>
 
         <div id="estacionalidad-tabla-container">
@@ -68,14 +80,14 @@
                     <div class="column is-half">
         {#include _kit/surface title="Tendencia Mensual de Ventas"}
             {#content}
-                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-mensual">
-                                <thead><tr><th>Mes</th><th>Total Ventas</th></tr></thead>
+                            <table class="table is-hoverable is-fullwidth" id="estacionalidad-mensual">
+                                <thead><tr><th scope="col">Mes</th><th scope="col" class="num">Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if mensual == null || mensual.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="kit-empty-cell">Sin registros</td></tr>
                                     {#else}
                                     {#for m in mensual}
-                                    <tr data-row-key="{m.mes}"><td>{m.mes}</td><td class="num">₡{m.total}</td></tr>
+                                    <tr data-row-key="{m.mes}"><td>{m.mes}</td><td class="num">{fmt:moneda(m.total)}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
@@ -86,12 +98,16 @@
                     <div class="column is-half">
         {#include _kit/surface title="Ventas por Día de la Semana"}
             {#content}
-                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-dias">
-                                <thead><tr><th>Día</th><th>Total Ventas</th></tr></thead>
+                            <table class="table is-hoverable is-fullwidth" id="estacionalidad-dias">
+                                <thead><tr><th scope="col">Día</th><th scope="col" class="num">Total Ventas</th></tr></thead>
                                 <tbody>
+                                    {#if dias == null || dias.isEmpty()}
+                                    <tr><td colspan="2" class="kit-empty-cell">Sin registros</td></tr>
+                                    {#else}
                                     {#for d in dias}
-                                    <tr data-row-key="{d.dia}"><td>{d.dia}</td><td class="num">₡{d.total}</td></tr>
+                                    <tr data-row-key="{d.dia}"><td>{d.dia}</td><td class="num">{fmt:moneda(d.total)}</td></tr>
                                     {/for}
+                                    {/if}
                                 </tbody>
                             </table>
             {/content}
@@ -100,14 +116,14 @@
                     <div class="column is-half">
         {#include _kit/surface title="Ventas por Departamento"}
             {#content}
-                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-departamentos">
-                                <thead><tr><th>Departamento</th><th>Total Ventas</th></tr></thead>
+                            <table class="table is-hoverable is-fullwidth" id="estacionalidad-departamentos">
+                                <thead><tr><th scope="col">Departamento</th><th scope="col" class="num">Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if departamentos == null || departamentos.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="kit-empty-cell">Sin registros</td></tr>
                                     {#else}
                                     {#for d in departamentos}
-                                    <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td class="num">₡{d.total}</td></tr>
+                                    <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td class="num">{fmt:moneda(d.total)}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
@@ -118,14 +134,14 @@
                     <div class="column is-half">
         {#include _kit/surface title="Ventas por Familia"}
             {#content}
-                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-familias">
-                                <thead><tr><th>Familia</th><th>Total Ventas</th></tr></thead>
+                            <table class="table is-hoverable is-fullwidth" id="estacionalidad-familias">
+                                <thead><tr><th scope="col">Familia</th><th scope="col" class="num">Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if familias == null || familias.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="kit-empty-cell">Sin registros</td></tr>
                                     {#else}
                                     {#for f in familias}
-                                    <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td class="num">₡{f.total}</td></tr>
+                                    <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td class="num">{fmt:moneda(f.total)}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
@@ -137,14 +153,14 @@
 
         {#include _kit/surface title="Datos Diarios"}
             {#content}
-                    <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-diarios">
-                        <thead><tr><th>Fecha</th><th>Total Ventas</th></tr></thead>
+                    <table class="table is-hoverable is-fullwidth" id="estacionalidad-diarios">
+                        <thead><tr><th scope="col">Fecha</th><th scope="col" class="num">Total Ventas</th></tr></thead>
                         <tbody>
                             {#if diarios == null || diarios.isEmpty()}
-                            <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                            <tr><td colspan="2" class="kit-empty-cell">Sin registros</td></tr>
                             {#else}
                             {#for row in diarios}
-                            <tr data-row-key="{row.fecha}"><td>{row.fecha}</td><td class="num">₡{row.total}</td></tr>
+                            <tr data-row-key="{row.fecha}"><td>{time:format(row.fecha, 'dd/MM/yyyy')}</td><td class="num">{fmt:moneda(row.total)}</td></tr>
                             {/for}
                             {/if}
                         </tbody>

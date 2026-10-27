@@ -17,8 +17,8 @@
           hx-target="#forma-cancelar" hx-swap="outerHTML">
         <div class="columns is-multiline">
             <div class="column is-12">
-                <p class="heading">¿Está seguro de cancelar la orden?</p>
-                <p class="title is-5">{orden.numeroOrden}</p>
+                <p class="is-size-6 has-text-weight-semibold">¿Está seguro de cancelar la orden {orden.numeroOrden}?</p>
+                <p class="is-size-7 mercurius-text-muted">La orden quedará cancelada y no admitirá más cambios de estado. Esta acción no se puede deshacer.</p>
             </div>
             <div class="column is-12">
                 <div class="field">
@@ -27,12 +27,13 @@
                         <textarea class="textarea" id="orden-motivo" name="motivo" rows="3"
                                   placeholder="Ingrese el motivo de la cancelación...">{motivo}</textarea>
                     </div>
+                    <p class="help">Opcional. Queda registrado en la orden.</p>
                 </div>
             </div>
         </div>
 
         <div class="buttons is-centered mt-4">
-            <button class="button is-danger" type="submit">{#include _kit/icon name="check" /} Confirmar Cancelación</button>
+            <button class="button is-danger" type="submit" hx-disabled-elt="this">{#include _kit/icon name="check" /} Confirmar Cancelación</button>
             <button class="button" type="button" data-kit-close>Volver</button>
         </div>
     </form>

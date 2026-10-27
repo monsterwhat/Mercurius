@@ -56,30 +56,37 @@
            answers "how much is waiting for me" belongs on the switcher. !}
         {#include _kit/view-tabs ariaLabel="Vistas de artículos"}
             {#tabs}
+            {! aria-current marks the selected view for assistive technology: the
+               colour rule under the label is only the visual half of the state. !}
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'activos' }"
+                    :aria-current="tab === 'activos' ? 'true' : 'false'"
                     aria-controls="panel-activos" @click="tab = 'activos'">
                 <span>Activos</span>
-                <span class="view-tab-count">{activosCount}</span>
+                <span class="view-tab-count">{fmt:numero(activosCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'inactivos' }"
+                    :aria-current="tab === 'inactivos' ? 'true' : 'false'"
                     aria-controls="panel-inactivos" @click="tab = 'inactivos'">
                 <span>Inactivos</span>
-                <span class="view-tab-count">{inactivosCount}</span>
+                <span class="view-tab-count">{fmt:numero(inactivosCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'catalogo' }"
+                    :aria-current="tab === 'catalogo' ? 'true' : 'false'"
                     aria-controls="panel-catalogo" @click="tab = 'catalogo'">
                 <span>Catálogo</span>
-                <span class="view-tab-count">{catalogoCount}</span>
+                <span class="view-tab-count">{fmt:numero(catalogoCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'pendientes' }"
+                    :aria-current="tab === 'pendientes' ? 'true' : 'false'"
                     aria-controls="panel-pendientes" @click="tab = 'pendientes'">
                 <span>Pendientes</span>
-                <span class="view-tab-count">{pendientesCount}</span>
+                <span class="view-tab-count">{fmt:numero(pendientesCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'promociones' }"
+                    :aria-current="tab === 'promociones' ? 'true' : 'false'"
                     aria-controls="panel-promociones" @click="tab = 'promociones'">
                 <span>Promociones</span>
-                <span class="view-tab-count">{promocionesCount}</span>
+                <span class="view-tab-count">{fmt:numero(promocionesCount)}</span>
             </button>
             {/tabs}
         {/include}
@@ -97,7 +104,8 @@
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="activos"/>
-                            <button class="button" type="submit">Exportar Excel</button>
+                            <button class="button" type="submit"
+                                    aria-label="Exportar los artículos activos a Excel">Exportar Excel</button>
                         </form>
                         {/if}
                     </div>
@@ -121,7 +129,8 @@
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="inactivos"/>
-                        <button class="button" type="submit">Exportar Excel</button>
+                        <button class="button" type="submit"
+                                aria-label="Exportar los artículos inactivos a Excel">Exportar Excel</button>
                     </form>
                     {/if}
                 {/actions}
@@ -141,7 +150,8 @@
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="catalogo"/>
-                        <button class="button" type="submit">Exportar Excel</button>
+                        <button class="button" type="submit"
+                                aria-label="Exportar el catálogo de artículos a Excel">Exportar Excel</button>
                     </form>
                     {/if}
                 {/actions}
@@ -171,7 +181,8 @@
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="pendientes"/>
-                            <button class="button" type="submit">Exportar Excel</button>
+                            <button class="button" type="submit"
+                                    aria-label="Exportar los artículos pendientes a Excel">Exportar Excel</button>
                         </form>
                         {/if}
                     </div>
@@ -197,7 +208,8 @@
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>
-                            <button class="button" type="submit">Exportar Excel</button>
+                            <button class="button" type="submit"
+                                    aria-label="Exportar las promociones a Excel">Exportar Excel</button>
                         </form>
                         {/if}
                     </div>
@@ -217,7 +229,7 @@
         {! Shared read-only details dialog (verDetalles port) and CAByS picker !}
         {#include _kit/modal id="detalles-articulo" title="Detalles del Artículo" triggerClass="is-hidden"
              bodyUrl="/api/app/articulos/table?tab=activos" /}
-        {#include _kit/modal id="buscador-cabys" title="Seleccionar Código CABYS" triggerClass="is-hidden"
+        {#include _kit/modal id="buscador-cabys" title="Seleccionar Código CAByS" triggerClass="is-hidden"
              bodyUrl="/api/app/articulos/cabys?q=" /}
     </section>
 

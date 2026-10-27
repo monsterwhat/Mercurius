@@ -42,8 +42,8 @@ class UsuariosReportesPageTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString("Gestión de Usuarios"))
-                .body(containsString("Activos"))
-                .body(containsString("Inactivos"))
+                .body(containsString("Usuarios activos"))
+                .body(containsString("Usuarios inactivos"))
                 .body(containsString("data-kit-table"));
     }
 

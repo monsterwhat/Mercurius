@@ -427,7 +427,7 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
                 .when().get(PAGES)
                 .then()
                 .statusCode(200)
-                .body(containsString("Devoluciones y Notas de Credito"))
+                .body(containsString("Devoluciones y Notas de Crédito"))
                 .body(containsString("data-kit-table"))
                 .body(containsString("id=\"historial-tbody\""))
                 .body(containsString("Buscar Factura"));

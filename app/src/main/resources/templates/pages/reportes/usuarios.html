@@ -9,33 +9,31 @@
     {#title}Gestión de Usuarios | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3 has-text-centered">Gestión de Usuarios</h1>
+        {! The page used the pre-kit header: a centred <h1 class="title is-3">
+           plus two .box blocks with <p class="title is-4"> numbers, which are
+           not headings and were two different visual languages from every
+           other report. It is the kit header + one metric strip + one filter
+           surface now. !}
+        {#include _kit/page-header title="Gestión de Usuarios"
+             subtitle="Cuentas, permisos y estado de cada usuario" /}
 
-        <div class="columns is-multiline has-text-centered box">
-            <div class="column">
-                <p class="heading">Activos</p>
-                <p class="title is-4">{activos}</p>
-            </div>
-            <div class="column">
-                <p class="heading">Inactivos</p>
-                <p class="title is-4">{inactivos}</p>
-            </div>
+        <div class="metric-strip">
+            {#include _kit/metric label="Usuarios activos" value=activos /}
+            {#include _kit/metric label="Usuarios inactivos" value=inactivos /}
         </div>
 
-        <div class="box">
-            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="usuarios-filtros">
-                <div class="field">
-                    <label class="label" for="usuarios-q">Búsqueda general</label>
-                    <input class="input" type="text" id="usuarios-q" name="q"
-                           value="{#if filtros.q??}{filtros.q}{/if}"
-                           placeholder="Nombre de usuario, permisos…"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
-                           hx-trigger="keyup changed delay:300ms"
-                           hx-include="closest form"
-                           hx-target="#usuarios-tabla-container" hx-swap="innerHTML"/>
-                </div>
-            </form>
-        </div>
+        {#include _kit/filter-bar id="usuarios-filtros" method="get" action=baseUrl}
+            <div class="field">
+                <label class="label" for="usuarios-q">Búsqueda general</label>
+                <input class="input" type="text" id="usuarios-q" name="q"
+                       value="{#if filtros.q??}{filtros.q}{/if}"
+                       placeholder="Nombre de usuario, permisos…"
+                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-include="closest form"
+                       hx-target="#usuarios-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
+            </div>
+        {/include}
 
         <div id="usuarios-tabla-container">
             {#fragment id=tabla}
@@ -50,9 +48,11 @@
                         </td>
                         <td>{u.username}</td>
                         <td>{u.groupName}</td>
-                        <td>{#if u.status?? && u.status}Sí{#else}No{/if}</td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No se encontraron usuarios con esa búsqueda</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}

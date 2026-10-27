@@ -5,6 +5,7 @@ import Services.TipoCambioService;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -13,8 +14,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +64,9 @@ public class TipoCambioPageResource {
     /** Cap for the historial modal table. */
     private static final int HISTORIAL_LIMIT = 20;
 
+    /** dd/MM/yyyy for the rate date: the ISO form of a LocalDateTime is not readable. */
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     @Nonnull
     @Inject
     TipoCambioService tipoCambioService;
@@ -69,16 +76,24 @@ public class TipoCambioPageResource {
     @Inject
     Template tipoCambioPage;
 
+    @Nonnull
+    @Location("pages/tipo-cambio/index")
+    @Inject
+    Template tipoCambioIndex;
+
     /**
      * Renders the dialog-only fragment with the current BCCR rate (also the
      * body served for {@code POST /actualizar}).
      */
     @GET
-    @Operation(summary = "Render the Tipo de Cambio dialog fragment")
-    public Response page() {
+    @Operation(summary = "Render the Tipo de Cambio page (fragment when requested by HTMX)")
+    public Response page(@HeaderParam("HX-Request") String hxRequest) {
         Map<String, Object> model = new LinkedHashMap<>();
         model.putAll(tipoCambioModel());
-        String html = tipoCambioPage.data(model).render();
+        if (hxRequest != null && !hxRequest.isBlank()) {
+            return renderFragment(model);
+        }
+        String html = tipoCambioIndex.data(model).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
@@ -92,7 +107,7 @@ public class TipoCambioPageResource {
     @Path("/fragment")
     @Operation(summary = "Render the Tipo de Cambio dialog fragment (alias)")
     public Response fragment() {
-        return page();
+        return renderFragment(tipoCambioModel());
     }
 
     /**
@@ -111,10 +126,7 @@ public class TipoCambioPageResource {
             model.put("errorMensaje", "No se pudo actualizar desde BCCR; se muestra la tasa vigente.");
         }
         model.putAll(tipoCambioModel());
-        String html = tipoCambioPage.data(model).render();
-        return Response.ok(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
-                .build();
+        return renderFragment(model);
     }
 
     /**
@@ -140,10 +152,7 @@ public class TipoCambioPageResource {
             model.put("errorMensaje", "Tasa inválida: ingrese valores numéricos mayores que cero.");
         }
         model.putAll(tipoCambioModel());
-        String html = tipoCambioPage.data(model).render();
-        return Response.ok(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
-                .build();
+        return renderFragment(model);
     }
 
     /**
@@ -160,7 +169,7 @@ public class TipoCambioPageResource {
             for (int i = todos.size() - 1; i >= desde; i--) {
                 TipoCambio tc = todos.get(i);
                 Map<String, Object> fila = new LinkedHashMap<>();
-                fila.put("fecha", tc.getFecha() != null ? tc.getFecha().toString() : "—");
+                fila.put("fecha", fmtFecha(tc.getFecha()));
                 fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
                 fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
                 fila.put("origen", Boolean.TRUE.equals(tc.getManual()) ? "Manual" : "BCCR");
@@ -170,6 +179,14 @@ public class TipoCambioPageResource {
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("filas", filas);
         String html = historialTemplate.data(model).render();
+        return Response.ok(html)
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
+                .build();
+    }
+
+    @Nonnull
+    private Response renderFragment(@Nonnull Map<String, Object> model) {
+        String html = tipoCambioPage.data(model).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
@@ -192,7 +209,7 @@ public class TipoCambioPageResource {
         model.put("disponible", tc != null);
         model.put("venta", tc != null ? TipoCambioService.displayRate(tc.getValorVenta()) : null);
         model.put("compra", tc != null ? TipoCambioService.displayRate(tc.getValorCompra()) : null);
-        model.put("fecha", tc != null && tc.getFecha() != null ? tc.getFecha().toString() : null);
+        model.put("fecha", tc != null ? fmtFecha(tc.getFecha()) : null);
         model.put("manual", tc != null && Boolean.TRUE.equals(tc.getManual()));
         return model;
     }
@@ -201,4 +218,13 @@ public class TipoCambioPageResource {
     @Location("pages/tipo-cambio/historial")
     @Inject
     Template historialTemplate;
+
+    /** dd/MM/yyyy for the rate date; the ISO form of a LocalDateTime is unreadable. */
+    @Nonnull
+    private static String fmtFecha(@Nullable LocalDateTime fecha) {
+        if (fecha == null) {
+            return "—";
+        }
+        return FECHA.format(fecha);
+    }
 }

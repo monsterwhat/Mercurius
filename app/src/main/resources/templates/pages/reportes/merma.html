@@ -41,30 +41,19 @@
                     <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
                 </div>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Actualizar</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Actualizar</button>
+            </div>
         {/include}
-        {#if !hayDatos}
-        <p class="mercurius-text-muted">
-            No se encontraron movimientos de merma en el período seleccionado.
+        {#if chartValues.isEmpty()}
+        <p class="mercurius-text-muted" role="status">
+            No hay datos de merma para el período y la sección seleccionados.
         </p>
-        {/if}
-
-
-
-
-        </div>
-
-        {! The three section switches below used to be big coloured buttons
-           that repeated the metric strip above (Por Causa = % de merma, Por
-           Departamento = Movimiento total, Detalle = Total mermas). The
-           strip already switches the seccion, so the duplicates are gone. !}
-
-
-
+        {#else}
         {#include _kit/chart-card title=chartTitle subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-merma" height="320px"}
         {/include}
+        {/if}
 
         <script>
         (function () {
@@ -81,7 +70,8 @@
                     type: 'bar',
                     labels: labels,
                     datasets: [{ label: 'Merma', data: values, backgroundColor: seriesOne }],
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    // One series: the card title names it, so no legend.
+                    options: { plugins: { legend: { display: false } } }
                 });
             }
         })();

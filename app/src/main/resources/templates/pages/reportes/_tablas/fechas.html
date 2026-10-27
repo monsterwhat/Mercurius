@@ -18,6 +18,11 @@
             <td>{f.notas}</td>
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">
+            {#if consultaCompleta}Sin movimientos para el usuario y el rango seleccionados{#else}Seleccione un usuario y un rango de fechas para cargar el reporte{/if}
+        </td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

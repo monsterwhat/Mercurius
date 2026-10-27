@@ -1,7 +1,6 @@
 package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -11,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import Utils.FormatoVista;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
@@ -28,16 +28,6 @@ final class Tablas {
 
     /** Reserved query keys emitted by _kit/data-table itself (never filters). */
     static final List<String> RESERVED_KEYS = List.of("page", "size", "sort", "dir");
-
-    private static final DecimalFormat COLONES =
-            new DecimalFormat("\u00A4#,##0.00");
-    static {
-        // Legacy f:convertNumber type="currency" currencySymbol="₡" rendering.
-        java.text.DecimalFormatSymbols symbols =
-                new java.text.DecimalFormatSymbols(java.util.Locale.ROOT);
-        symbols.setCurrencySymbol("\u20A1");
-        COLONES.setDecimalFormatSymbols(symbols);
-    }
 
     private Tablas() {
     }
@@ -130,7 +120,21 @@ final class Tablas {
             if (text.isEmpty()) {
                 return NULO;
             }
-            String limpio = text.replace(",", "").replace("\u20A1", "");
+            String limpio = text.replace("\u20A1", "")
+                    .replace("\u00A0", "").replace("\u202F", "").replace(" ", "");
+            // Los montos salen de FormatoVista en es-CR ("₡1.234,56" o
+            // "₡1 234,56") y los conteos de fmtNumero en formato inglés
+            // ("1,234.50"): el último separador decide cuál es el decimal y
+            // el otro se descarta como agrupación.
+            int ultimaComa = limpio.lastIndexOf(',');
+            int ultimoPunto = limpio.lastIndexOf('.');
+            if (ultimaComa >= 0 && ultimoPunto >= 0) {
+                limpio = ultimaComa > ultimoPunto
+                        ? limpio.replace(".", "").replace(',', '.')
+                        : limpio.replace(",", "");
+            } else if (ultimaComa >= 0) {
+                limpio = limpio.replace(',', '.');
+            }
             try {
                 return new ValorOrden(new BigDecimal(limpio), null);
             } catch (NumberFormatException e) {
@@ -219,13 +223,13 @@ final class Tablas {
         return new java.text.SimpleDateFormat("dd/MM/yyyy").format(date);
     }
 
-    /** ₡ #,##0.00 (legacy f:convertNumber type="currency" currencySymbol="₡"). */
+    /** ₡ #,##0,00 en es-CR (formato único de la aplicación). */
     @Nonnull
     static String fmtColones(@Nullable BigDecimal monto) {
         if (monto == null) {
             return "-";
         }
-        return COLONES.format(monto);
+        return FormatoVista.moneda(monto);
     }
 
     /** Plain #,##0.00 (legacy f:convertNumber pattern="#,##0.00"). */

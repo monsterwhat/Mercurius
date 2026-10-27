@@ -27,45 +27,60 @@
 !}
 <div id="forma-articulo">
     {#if modo == 'editar' && articulo??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/articulos"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {/if}
+        {#if errorMensaje??}
+        <div class="notification is-danger is-light" role="alert">{errorMensaje}</div>
+        {/if}
+
+        {! Three visual groups: identity, classification, inventory. The form is
+           long enough that an unbroken column of fields hides the fact that the
+           last two inputs are optional stock planning data. !}
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Identificación</p>
+
         <div class="field">
             <label class="label" for="articulo-nombre">Nombre del Artículo:</label>
             <div class="control">
                 <input class="input" id="articulo-nombre" name="nombre" required="required"
-                       autocomplete="off" placeholder="Ingrese el nombre del artículo"
+                       autocomplete="off" maxlength="255" placeholder="Ingrese el nombre del artículo"
+                       aria-describedby="articulo-nombre-ayuda"
                        value="{#if articulo??}{articulo.nombre}{/if}"/>
             </div>
+            <p class="help" id="articulo-nombre-ayuda">Nombre comercial que verá el operador en el punto de venta.</p>
         </div>
 
         {! CAByS picker: search modal fills the hidden input (legacy
            assignCabysToSelectedArticulo parity). Edit mode shows the current
            code; the picker button hx-loads the suggestion fragment. !}
         <div class="field">
-            <label class="label" for="articulo-cabys">Código CABYS:</label>
+            <label class="label" for="articulo-cabys">Código CAByS:</label>
             <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
-                <input class="input" id="articulo-cabys" name="cabysCodigo" class="kit-code"
-                       placeholder="Seleccione un código del CABYS"
+                <input class="input kit-code" id="articulo-cabys" name="cabysCodigo"
+                       placeholder="Seleccione un código del CAByS"
+                       aria-describedby="articulo-cabys-ayuda"
                        value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
             </div>
+            <p class="help" id="articulo-cabys-ayuda">Requerido para facturar electrónicamente.</p>
         </div>
 
         <div class="field">
             <label class="label" for="articulo-codigo-barra">Código de Barras:</label>
             <div class="control">
-                <input class="input" id="articulo-codigo-barra" name="codigoBarra" required="required"
-                       autocomplete="off" placeholder="Ingrese el código de barras"
+                <input class="input kit-code" id="articulo-codigo-barra" name="codigoBarra" required="required"
+                       autocomplete="off" maxlength="255" inputmode="numeric" spellcheck="false"
+                       placeholder="Ingrese el código de barras"
+                       aria-describedby="articulo-codigo-barra-ayuda"
                        value="{#if articulo??}{articulo.codigoBarra}{/if}"/>
             </div>
-            {#if errorMensaje??}<p class="help is-danger">{errorMensaje}</p>{/if}
+            <p class="help" id="articulo-codigo-barra-ayuda">Escanéelo o escríbalo tal como aparece en el empaque. No se puede repetir.</p>
         </div>
 
         <div class="field">
@@ -75,7 +90,11 @@
                           rows="3" maxlength="500"
                           placeholder="Descripción del artículo (opcional)">{#if articulo??}{articulo.descripcion}{/if}</textarea>
             </div>
+            <p class="help">Opcional. Máximo 500 caracteres.</p>
         </div>
+
+        <hr class="my-4">
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Clasificación</p>
 
         <div class="columns">
             <div class="column">
@@ -130,6 +149,7 @@
                                 data-action="create-departamento" title="Crear departamento"
                                 aria-label="Crear departamento">{#include _kit/icon name="plus" /}</button>
                     </div>
+                    <p class="help">Agrupa el catálogo y los reportes por departamento.</p>
                 </div>
             </div>
             <div class="column">
@@ -149,6 +169,7 @@
                                 data-action="create-familia" title="Crear familia"
                                 aria-label="Crear familia">{#include _kit/icon name="plus" /}</button>
                     </div>
+                    <p class="help">El botón + crea una familia sin cerrar este formulario.</p>
                 </div>
             </div>
         </div>
@@ -172,12 +193,16 @@
             </div>
         </div>
 
+        <hr class="my-4">
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Inventario</p>
+
         <div class="columns">
             <div class="column">
                 <div class="field">
                     <label class="label" for="articulo-stock-optimo">Stock Óptimo:</label>
                     <div class="control">
-                        <input class="input" id="articulo-stock-optimo" type="number" min="0"
+                        <input class="input" id="articulo-stock-optimo" type="number" min="0" step="1"
+                               inputmode="numeric"
                                name="stockOptimo"
                                value="{#if modo == 'editar' && articulo.stockOptimo??}{articulo.stockOptimo}{/if}"/>
                     </div>
@@ -187,19 +212,28 @@
                 <div class="field">
                     <label class="label" for="articulo-stock-seguridad">Días Stock Seguridad:</label>
                     <div class="control">
-                        <input class="input" id="articulo-stock-seguridad" type="number" min="0"
+                        <input class="input" id="articulo-stock-seguridad" type="number" min="0" step="1"
+                               inputmode="numeric"
                                name="diasStockSeguridad"
                                value="{#if modo == 'editar' && articulo.diasStockSeguridad??}{articulo.diasStockSeguridad}{/if}"/>
                     </div>
                 </div>
             </div>
         </div>
+        <p class="help mb-4">Ambos son opcionales: alimentan las alertas de reposición del inventario.</p>
 
-        <div class="field is-grouped is-grouped-right">
+        {! The action row is sticky inside the scrolling dialog body: the form is
+           taller than a phone viewport, and Cancelar/Guardar used to require
+           scrolling past every field. !}
+        <div class="field is-grouped is-grouped-right mt-4"
+             style="position:sticky; bottom:0; padding:.75rem 0; margin-bottom:0; background:var(--bulma-scheme-main); border-top:1px solid var(--bulma-border)">
             <div class="control">
                 <button class="button is-primary" type="submit">
                     {#if modo == 'editar'}Guardar cambios{#else}Crear Artículo{/if}
                 </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>
@@ -214,7 +248,9 @@
                 if (raw) {
                     try {
                         headers = JSON.parse(raw);
-                    } catch (e) { /* ignore */ }
+                    } catch (e) {
+                        console.warn('No se pudieron leer los encabezados HTMX del body', e);
+                    }
                 }
                 return headers;
             }

@@ -17,7 +17,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,13 +88,24 @@ public class InventariosPagesResource {
 
     private Map<String, Object> model() {
         Map<String, Object> model = new LinkedHashMap<>();
-        model.put("tablaActivos", tableModel(TAB_ACTIVOS));
-        model.put("tablaInactivos", tableModel(TAB_INACTIVOS));
-        model.put("tablaProcesados", tableModel(TAB_PROCESADOS));
-        model.put("tablaPendientes", tableModel(TAB_PENDIENTES));
-        model.put("badges", badgeModel());
+        Map<String, Object> badges = badgeModel();
+        model.put("tablaActivos", tableModel(TAB_ACTIVOS, totalDe(badges, TAB_ACTIVOS)));
+        model.put("tablaInactivos", tableModel(TAB_INACTIVOS, totalDe(badges, TAB_INACTIVOS)));
+        model.put("tablaProcesados", tableModel(TAB_PROCESADOS, totalDe(badges, TAB_PROCESADOS)));
+        model.put("tablaPendientes", tableModel(TAB_PENDIENTES, totalDe(badges, TAB_PENDIENTES)));
+        model.put("badges", badges);
         model.put("isAdmin", isAdmin());
         return model;
+    }
+
+    /** Total de una pestaña a partir de los contadores ya calculados. */
+    private static long totalDe(@Nonnull Map<String, Object> badges, @Nonnull String tab) {
+        return switch (tab) {
+            case TAB_INACTIVOS -> ((Number) badges.get("inactivos")).longValue();
+            case TAB_PROCESADOS -> ((Number) badges.get("procesados")).longValue();
+            case TAB_PENDIENTES -> ((Number) badges.get("pendientes")).longValue();
+            default -> ((Number) badges.get("activos")).longValue();
+        };
     }
 
     /** Badge counts (legacy stat cards + Procesados counter expression). */
@@ -116,18 +126,16 @@ public class InventariosPagesResource {
      * filas, sortKey, sortDir, page, size, total, totalPages, paginas,
      * filtros, q. Service-query dispatch per tab matches the API twin.
      */
-    private Map<String, Object> tableModel(@Nonnull String tab) {
-        List<Inventario> all = switch (tab) {
-            case TAB_INACTIVOS -> orEmpty(inventarioService.listAllInactivos());
-            case TAB_PROCESADOS -> orEmpty(inventarioService.listAllActivosYProcesados());
-            case TAB_PENDIENTES -> orEmpty(inventarioService.listAllSinProcesar());
-            default -> orEmpty(inventarioService.ListAllEnabled());
-        };
-        long total = all.size();
+    private Map<String, Object> tableModel(@Nonnull String tab, long total) {
+        // Solo la página visible: antes se traían las 673.326 filas de cada
+        // pestaña para quedarse con 20. El LIMIT lo hace PostgreSQL.
+        List<Inventario> filas = orEmpty(switch (tab) {
+            case TAB_INACTIVOS -> inventarioService.listInactivosPage(0, PAGE_SIZE);
+            case TAB_PROCESADOS -> inventarioService.listActivosYProcesadosPage(0, PAGE_SIZE);
+            case TAB_PENDIENTES -> inventarioService.listSinProcesarPage(0, PAGE_SIZE);
+            default -> inventarioService.listEnabledPage(0, PAGE_SIZE);
+        });
         int totalPages = (int) Math.max(1L, (total + PAGE_SIZE - 1) / PAGE_SIZE);
-        int from = Math.min(0, (int) total);
-        int to = Math.min(from + PAGE_SIZE, (int) total);
-        List<Inventario> filas = all.subList(from, to);
 
         // Column definitions mirror the legacy per-tab p:column sets; null
         // key ⇒ non-sortable (docs/ui-kit.md §3.1).

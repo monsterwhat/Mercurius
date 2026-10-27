@@ -25,6 +25,19 @@
     title is a real <h2>.
   - "Cerrar Sesion" keeps is-danger (it closes the shift and books a
     difference), but the lock emoji is a kit icon now.
+
+  ROUND 2
+  -------
+  - The form now says what the numbers are compared against and that an empty
+    field is recorded as 0 — the legacy close math turns null into ZERO, so an
+    untouched field is a real, persisted amount, not "unknown". The confirm
+    dialog repeats it, because that is the last moment before the shift closes.
+  - The three money fields share one help line (aria-describedby) instead of
+    three identical notes, and open the decimal keyboard on a phone.
+  - hx-disabled-elt="this" on Cerrar Sesión: a double tap used to fire two
+    closes, and the second one hits "No hay una sesión de caja abierta".
+  - The notes field has an example placeholder so it is clear what belongs
+    there.
 !}
 {#include _kit/surface id="panel-cerrar-caja" title="Cerrar Sesión" }
     {#content}
@@ -38,7 +51,8 @@
                     <div class="control">
                         <input class="input" id="montoContadoEfectivo"
                                type="number" name="montoContadoEfectivo" step="0.01" min="0"
-                               inputmode="decimal"/>
+                               inputmode="decimal" autocomplete="off"
+                               aria-describedby="cierre-ayuda"/>
                     </div>
                 </div>
             </div>
@@ -48,7 +62,8 @@
                     <div class="control">
                         <input class="input" id="montoContadoSinpe"
                                type="number" name="montoContadoSinpe" step="0.01" min="0"
-                               inputmode="decimal"/>
+                               inputmode="decimal" autocomplete="off"
+                               aria-describedby="cierre-ayuda"/>
                     </div>
                 </div>
             </div>
@@ -58,21 +73,26 @@
                     <div class="control">
                         <input class="input" id="montoContadoTarjeta"
                                type="number" name="montoContadoTarjeta" step="0.01" min="0"
-                               inputmode="decimal"/>
+                               inputmode="decimal" autocomplete="off"
+                               aria-describedby="cierre-ayuda"/>
                     </div>
                 </div>
             </div>
         </div>
+        <p class="help" id="cierre-ayuda">
+            La diferencia se calcula contra los montos esperados de la sesión. Un campo vacío se registra como ₡0.
+        </p>
         <div class="field">
             <label class="label" for="notasCierre">Notas</label>
             <div class="control">
-                <textarea class="textarea" id="notasCierre" name="notas" rows="2"></textarea>
+                <textarea class="textarea" id="notasCierre" name="notas" rows="2"
+                          autocomplete="off" placeholder="Ej: faltante en efectivo, cambio de turno"></textarea>
             </div>
         </div>
-        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        {#if errorGeneral??}<p class="help is-danger" role="alert">{errorGeneral}</p>{/if}
         <div class="field">
-            <button class="button is-danger" type="submit"
-                    hx-confirm="&iquest;Cerrar la sesi&oacute;n de caja? La diferencia calculada entre lo contado y lo esperado quedar&aacute; registrada en el historial.">{#include _kit/icon name="lock" /} Cerrar Sesión</button>
+            <button class="button is-danger" type="submit" hx-disabled-elt="this"
+                    hx-confirm="&iquest;Cerrar la sesi&oacute;n de caja? La diferencia entre lo contado y lo esperado quedar&aacute; registrada en el historial. Los campos vac&iacute;os cuentan como &#8353;0.">{#include _kit/icon name="lock" /} Cerrar Sesión</button>
         </div>
     </form>
     {/content}

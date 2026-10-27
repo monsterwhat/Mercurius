@@ -40,6 +40,11 @@
                        (caller owns iteration AND its empty-state).
     sortKey     String - OPTIONAL currently sorted column key.
     sortDir     String - OPTIONAL current direction, "asc"|"desc".
+    label       String - OPTIONAL accessible name for the scroll region;
+                       default "Tabla de resultados". Pass a specific name when
+                       a page renders more than one table.
+    emptyLabel  String - OPTIONAL empty-state text for rowFragment mode;
+                       default "Sin registros".
     page        Integer - OPTIONAL current 1-based page (footer/pager).
     size        Integer - OPTIONAL page size, echoed into links.
     total       Long    - OPTIONAL total row count, shown in the footer.
@@ -55,6 +60,14 @@
    the active column for screen readers. The ▲/▼ glyph is aria-hidden: the
    sort state is announced by aria-sort, not by a shape.
 
+  SLOTS
+    {#caption} - OPTIONAL. Rendered inside <table> before the header row, for
+                 a visible <caption> describing the dataset. A <caption> is the
+                 table's accessible name; supply it when the surrounding
+                 surface title does not already name the data.
+    {#rows} - the body rows (caller owns iteration AND its empty state). When
+              rowFragment mode is used this slot renders its own empty row.
+
   ZEBRA STRIPING IS GONE
     The table used to carry Bulma's `is-striped`. Banded rows make a dense
     table louder than its data and hide where one record ends and the next
@@ -68,13 +81,16 @@
 {! Only id/baseUrl/headers are declared: the remaining parameters are
    OPTIONAL per the data contract above, and {@...} declarations make Qute
    fail rendering when a caller omits them. Optional usages are ??-guarded. !}
-<div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}">
+<div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}"
+     role="region" tabindex="0"
+     aria-label="{#if label??}{label}{#else}Tabla de resultados{/if}">
     <table class="table is-hoverable is-fullwidth">
+        {#insert caption}{/insert}
         <thead>
             <tr>
                 {#for col in headers}
                     {#if col.key??}
-                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.key == sortKey}{#if sortDir == 'desc'} aria-sort="descending"{#else} aria-sort="ascending"{/if}{/if}>
+                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.key == sortKey}{#if sortDir == 'desc'} aria-sort="descending"{#else} aria-sort="ascending"{/if}{#else} aria-sort="none"{/if}>
                         <!--
                           W2 (root-path normalization): the deployment root is read
                           from configuration via {config:['quarkus.http.root-path']},
@@ -89,11 +105,10 @@
                           deployment context. Pinned by RootPathNormalizationTest.
                         -->
                         <a href="{config:['quarkus.http.root-path']}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
-                           title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}</a>
-                        {#if col.key == sortKey}{#if sortDir == 'desc'}<span aria-hidden="true">▼</span>{#else}<span aria-hidden="true">▲</span>{/if}{/if}
+                           title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}{#if col.key == sortKey}<span class="kit-sort" aria-hidden="true">{#if sortDir == 'desc'}▼{#else}▲{/if}</span>{/if}</a>
                     </th>
                     {#else}
-                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}>{col.label}</th>
+                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.help??} class="kit-help" title="{col.help}"{/if}>{col.label}</th>
                     {/if}
                 {/for}
             </tr>
@@ -103,7 +118,7 @@
                 {#for row in rows}
                     {#include _id=rowFragment item=row rowIndex=row_index /}
                 {#else}
-                    <tr><td colspan="{headers.size()}" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                    <tr><td colspan="{headers.size()}" class="kit-empty-cell">{#if emptyLabel??}{emptyLabel}{#else}Sin registros{/if}</td></tr>
                 {/for}
             {#else}
                 {#insert rows}{/insert}
@@ -115,12 +130,27 @@
                 <td colspan="{headers.size()}">
                     <div class="level">
                         <div class="level-left">
-                            <span class="has-text-grey">
+                            <span class="mercurius-text-muted">
                                 {#if page??}Página {page} de {totalPages}{#if total??} · {total} registros{/if}{#else}{#if total??}{total} registros{/if}{/if}
                             </span>
                         </div>
                         <div class="level-right">
-                            {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl /}
+                            {! size/params are optional at this include's call site,
+                               so they are forwarded only when present: a bare
+                               size=size would fail to resolve on the callers that
+                               never pass it. The pager silently dropped the page
+                               size and every active filter before this. !}
+                            {#if params??}
+                                {#if size??}
+                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size params=params /}
+                                {#else}
+                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl params=params /}
+                                {/if}
+                            {#else if size??}
+                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size /}
+                            {#else}
+                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl /}
+                            {/if}
                         </div>
                     </div>
                 </td>

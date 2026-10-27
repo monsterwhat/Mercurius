@@ -48,16 +48,20 @@
         </div>
 
         {! ── Navigation Cards ───────────────────────────────────── !}
-        <div class="columns is-multiline">
+        {! The four destinations are navigation, not a grid of decorative
+           cards: one <nav> names the set, and each entry is a _kit/surface
+           so the hub uses the same panel as every other screen. !}
+        <nav class="columns is-multiline" aria-label="Secciones de Gestión Tributaria">
             <div class="column is-4">
-                <div class="box">
+                {#include _kit/surface}
+                    {#content}
                     <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="gauge" /}</span>
                             <span>Dashboard</span>
                         </span>
                     </h2>
-                    <p class="has-text-grey mb-4">
+                    <p class="mercurius-text-muted mb-4">
                         Vista general del estado de facturación electrónica: KPIs, últimos 7 días,
                         pendientes de envío y rechazados recientes.
                     </p>
@@ -65,18 +69,20 @@
                        href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard">
                         Ir al Dashboard
                     </a>
-                </div>
+                    {/content}
+                {/include}
             </div>
 
             <div class="column is-4">
-                <div class="box">
+                {#include _kit/surface}
+                    {#content}
                     <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="search" /}</span>
                             <span>Consultas de Facturas</span>
                         </span>
                     </h2>
-                    <p class="has-text-grey mb-4">
+                    <p class="mercurius-text-muted mb-4">
                         Consulta el estado de facturas pendientes, aceptadas y rechazadas.
                         Envío programado y corrección de facturas rechazadas por Hacienda.
                     </p>
@@ -84,18 +90,20 @@
                        href="{config:['quarkus.http.root-path']}/app/tributacion/consultas">
                         Ir a Consultas
                     </a>
-                </div>
+                    {/content}
+                {/include}
             </div>
 
             <div class="column is-4">
-                <div class="box">
+                {#include _kit/surface}
+                    {#content}
                     <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="file" /}</span>
                             <span>Declaración IVA (D-104)</span>
                         </span>
                     </h2>
-                    <p class="has-text-grey mb-4">
+                    <p class="mercurius-text-muted mb-4">
                         Cálculo de la declaración mensual de IVA. Resumen de ventas y compras
                         por período, débito y crédito fiscal.
                     </p>
@@ -103,18 +111,20 @@
                        href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion">
                         Ir a Declaración
                     </a>
-                </div>
+                    {/content}
+                {/include}
             </div>
 
             <div class="column is-4">
-                <div class="box">
+                {#include _kit/surface}
+                    {#content}
                     <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="barcode" /}</span>
                             <span>Catálogo CAByS</span>
                         </span>
                     </h2>
-                    <p class="has-text-grey mb-4">
+                    <p class="mercurius-text-muted mb-4">
                         Consulta y gestión del catálogo de Bienes y Servicios de Hacienda.
                         Búsqueda por código o descripción.
                     </p>
@@ -122,9 +132,10 @@
                        href="{config:['quarkus.http.root-path']}/app/cabys">
                         Ir a CAByS
                     </a>
-                </div>
+                    {/content}
+                {/include}
             </div>
-        </div>
+        </nav>
     </section>
     {/body}
 {/include}

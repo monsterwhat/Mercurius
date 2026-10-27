@@ -36,9 +36,10 @@
                     <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
                 </div>
             </div>
-            {#actions}
-            <button class="button is-primary" type="submit">Cargar Datos</button>
-            {/actions}
+            {! Primary submit in the form grid; the actions slot is for secondary links. !}
+            <div class="control">
+                <button class="button is-primary" type="submit">Cargar Datos</button>
+            </div>
         {/include}
 
 
@@ -69,13 +70,15 @@
                 {#include _kit/chart-card title="Ventas por Departamento" subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-rendimiento" height="360px"}
 
             {#chartBody}
-                <canvas id="grafica-rendimiento" width="900" height="320"
+                <canvas id="grafica-rendimiento" role="img"
+                        aria-label="Ventas por departamento en colones del período seleccionado"
                         data-root="{config:['quarkus.http.root-path']}"
                         data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
                     Su navegador no soporta canvas.
                 </canvas>
             {/chartBody}
         {/include}
+        <p class="help mt-2" id="grafica-rendimiento-estado" role="status" aria-live="polite">Cargando datos…</p>
 
 <script>
 (function () {
@@ -93,14 +96,24 @@
         }
     }
     fetch(url, { credentials: 'same-origin' })
-        .then(function (respuesta) { return respuesta.json(); })
+        .then(function (respuesta) {
+            if (!respuesta.ok) {
+                throw new Error('HTTP ' + respuesta.status);
+            }
+            return respuesta.json();
+        })
         .then(function (datos) {
             var etiquetas = [];
             var valores = [];
-            Object.keys(datos).forEach(function (clave) {
+            Object.keys(datos || {}).forEach(function (clave) {
                 etiquetas.push(clave);
                 valores.push(Number(datos[clave]));
             });
+            var estado = document.getElementById('grafica-rendimiento-estado');
+            if (estado) {
+                estado.textContent = etiquetas.length === 0
+                    ? 'Sin ventas por departamento en el período seleccionado.' : '';
+            }
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
                 // One hue for the data: --mercurius-chart-series-1, resolved
                 // through resolveColour() because a canvas cannot paint var().
@@ -111,11 +124,18 @@
                     type: 'bar',
                     labels: etiquetas,
                     datasets: [{ label: 'Ventas por departamento', data: valores, backgroundColor: seriesOne }],
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    // One series: the card title names it, so no legend.
+                    options: { plugins: { legend: { display: false } } }
                 });
             }
         })
-        .catch(function () { /* sin datos */ });
+        .catch(function (error) {
+            console.warn('[reportes/rendimiento] No se pudo cargar la serie por departamento.', error);
+            var estado = document.getElementById('grafica-rendimiento-estado');
+            if (estado) {
+                estado.textContent = 'No se pudieron cargar los datos. Vuelva a intentarlo.';
+            }
+        });
 })();
 </script>
     {/body}

@@ -26,7 +26,7 @@ class PronosticosResourceTest {
                 .body(containsString("data-kit-table"))
                 .body(containsString("reporte-pronosticos"))
                 .body(containsString("grafica-pronosticos"))
-                .body(containsString("/api/stock-forecast/bulk-forecast"));
+                .body(containsString("datos-pronosticos"));
     }
 
     @Test

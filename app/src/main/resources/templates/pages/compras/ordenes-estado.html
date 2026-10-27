@@ -26,13 +26,20 @@
           hx-target="#forma-estado" hx-swap="outerHTML">
         <div class="columns is-multiline">
             <div class="column is-12">
-                <p class="heading">Orden</p>
-                <p class="title is-5">{orden.numeroOrden}</p>
+                <p class="is-size-7 mercurius-text-muted">Orden</p>
+                <p class="has-text-weight-semibold kit-code">{orden.numeroOrden}</p>
             </div>
             <div class="column is-6">
-                <p class="heading">Estado Actual</p>
-                <p class="title is-5"><span class="tag {estadoClass}">{orden.estado}</span></p>
+                <p class="is-size-7 mercurius-text-muted">Estado Actual</p>
+                <p><span class="tag {estadoClass}">{orden.estado}</span></p>
             </div>
+            {#if objetivos.size() == 0}
+            <div class="column is-6">
+                <div class="notification is-warning is-light">
+                    Esta orden no admite más transiciones de estado.
+                </div>
+            </div>
+            {#else}
             <div class="column is-6">
                 <div class="field">
                     <label class="label" for="orden-nuevo-estado">Nuevo Estado</label>
@@ -46,17 +53,19 @@
                             </select>
                         </div>
                     </div>
-                    {#if objetivos.size() == 0}
-                    <p class="help is-warning">Esta orden no admite más transiciones de estado.</p>
-                    {/if}
                 </div>
             </div>
+            {/if}
         </div>
 
-        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        {#if errorGeneral??}
+        <div class="notification is-danger is-light" role="alert">{errorGeneral}</div>
+        {/if}
         <div class="buttons is-centered mt-4">
-            <button class="button is-primary" type="submit">{#include _kit/icon name="check" /} Confirmar Cambio</button>
-            <button class="button" type="button" data-kit-close>Cancelar</button>
+            {#if objetivos.size() != 0}
+            <button class="button is-primary" type="submit" hx-disabled-elt="this">{#include _kit/icon name="check" /} Confirmar Cambio</button>
+            {/if}
+            <button class="button" type="button" data-kit-close>{#if objetivos.size() == 0}Cerrar{#else}Cancelar{/if}</button>
         </div>
     </form>
 </div>

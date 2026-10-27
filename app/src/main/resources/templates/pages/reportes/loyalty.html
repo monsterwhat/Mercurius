@@ -6,53 +6,69 @@
   Expiración" button is a mutation owned by T25 — NOT ported here.
 !}
 {#include layout}
-    {#title}Programa de Lealtad - Reportes | Mercurius{/title}
+    {#title}Puntos y Recompensas | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title="Programa de Lealtad - Reportes" subtitle="Puntos acumulados y redenciones por cliente" /}
+        {#include _kit/page-header title="Puntos y Recompensas" subtitle="Puntos acumulados y redenciones por cliente" /}
 
         <div class="metric-strip">
-            {#include _kit/metric label="Clientes con puntos" value=topClientes.size() /}
-            {#include _kit/metric label="% Cashback" value=(cashbackPercentage.toString() + "%") /}
+            {! The service returns the TOP 10 customers, not every customer with
+               points, so the card counts that list and says so. A real
+               "clientes con puntos" KPI needs a backend count. !}
+            {#include _kit/metric label="Clientes en el top" value=topClientes.size() detail="máximo 10" /}
+            {#include _kit/metric label="Cashback" value=fmt:porcentaje(cashbackPercentage) /}
             {#include _kit/metric label="Meses inactividad" value=puntosInactivityMonths /}
         </div>
-        <h2 class="title is-5">Top Clientes por Puntos</h2>
-        <div class="table-container" id="loyalty-top-tabla">
-            <table class="table is-striped is-hoverable is-fullwidth">
-                <thead>
-                    <tr><th>Nombre</th><th>Correo</th><th>Cédula</th><th>Puntos Acumulados</th><th>Última Compra</th><th>Estado Puntos</th><th>Historial</th></tr>
-                </thead>
-                <tbody>
-                    {#if topClientes == null || topClientes.isEmpty()}
-                    <tr><td colspan="7" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
-                    {#else}
-                    {#for c in topClientes}
-                    <tr data-row-key="{c.code}">
-                        <td>{c.name}</td>
-                        <td>{#if c.email??}{c.email}{/if}</td>
-                        <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
-                        <td class="num">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
-                        <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
-                        <td>
-                            {#if c.statusPuntos == 'active'}<span class="status-chip is-success">{c.statusPuntos}</span>
-                            {#else if c.statusPuntos == 'inactive'}<span class="status-chip is-warning">{c.statusPuntos}</span>
-                            {#else if c.statusPuntos??}<span class="status-chip is-danger">{c.statusPuntos}</span>
-                            {#else}<span class="status-chip is-neutral">Sin estado</span>{/if}
-                        </td>
-                        <td>
-                            <button type="button" class="button is-small"
-                                    hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
-                                    hx-target="#loyalty-historial-body"
-                                    onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
-                        </td>
-                    </tr>
-                    {/for}
-                    {/if}
-                </tbody>
-            </table>
-        </div>
 
-        <h2 class="title is-5 mt-5">Todos los Clientes</h2>
+        {#include _kit/surface title="Top clientes por puntos"}
+            {#content}
+            <div class="table-container" id="loyalty-top-tabla">
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Correo</th>
+                            <th scope="col">Cédula</th>
+                            <th scope="col" class="num">Puntos acumulados</th>
+                            <th scope="col">Última compra</th>
+                            <th scope="col">Estado de puntos</th>
+                            <th scope="col">Historial</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#if topClientes == null || topClientes.isEmpty()}
+                        <tr><td colspan="7" class="kit-empty-cell">Todavía no hay clientes con puntos acumulados</td></tr>
+                        {#else}
+                        {#for c in topClientes}
+                        <tr data-row-key="{c.code}">
+                            <td>{c.name}</td>
+                            <td>{#if c.email??}{c.email}{/if}</td>
+                            <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
+                            <td class="num">{fmt:numero(c.puntosAcumulados)}</td>
+                            <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
+                            <td>
+                                <span class="status-chip {#if c.statusPuntos == 'active'}is-success{#else if c.statusPuntos == 'inactive'}is-warning{#else if c.statusPuntos??}is-danger{#else}is-neutral{/if}">
+                                    {#if c.statusPuntos == 'active'}Activo{#else if c.statusPuntos == 'inactive'}Inactivo{#else if c.statusPuntos == 'expired'}Vencido{#else if c.statusPuntos??}{c.statusPuntos}{#else}Sin estado{/if}
+                                </span>
+                            </td>
+                            <td>
+                                <button type="button" class="button is-small"
+                                        aria-haspopup="dialog" data-kit-open="loyalty-historial"
+                                        aria-label="Ver historial de {c.name}"
+                                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
+                                        hx-target="#loyalty-historial-body"
+                                        hx-swap="innerHTML">Ver historial</button>
+                            </td>
+                        </tr>
+                        {/for}
+                        {/if}
+                    </tbody>
+                </table>
+            </div>
+            {/content}
+        {/include}
+
+        <h2 class="surface-title mt-5">Todos los Clientes</h2>
 
         {#include _kit/filter-bar id="loyalty-filtros" method="get"}
             <div class="field">
@@ -63,7 +79,7 @@
                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                        hx-trigger="keyup changed delay:300ms"
                        hx-include="closest form"
-                       hx-target="#loyalty-tabla-container" hx-swap="innerHTML"/>
+                       hx-target="#loyalty-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
             </div>
         {/include}
 
@@ -80,38 +96,36 @@
                         <td>{c.name}</td>
                         <td>{#if c.email??}{c.email}{/if}</td>
                         <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
-                        <td class="num">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td class="num">{#if c.puntosAcumulados??}{fmt:numero(c.puntosAcumulados)}{#else}0{/if}</td>
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
                             <button type="button" class="button is-small"
+                                    aria-haspopup="dialog" data-kit-open="loyalty-historial"
+                                    aria-label="Ver historial de {c.name}"
                                     hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
-                                    onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
+                                    hx-swap="innerHTML">Ver historial</button>
                         </td>
                     </tr>
                     {/for}
+                    {#if rows.isEmpty()}
+                    <tr><td colspan="{columnas.size()}" class="kit-empty-cell">No se encontraron clientes con esa búsqueda</td></tr>
+                    {/if}
                   {/rows}
                 {/include}
             {/fragment}
         </div>
 
-        <div class="modal" id="loyalty-historial-modal" role="dialog" aria-modal="true" aria-labelledby="loyalty-historial-title">
-            <div class="modal-background" onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')"></div>
-            <div class="modal-card">
-                <header class="modal-card-head">
-                    <p class="modal-card-title" id="loyalty-historial-title">Historial de Puntos</p>
-                    <button class="delete" type="button" aria-label="Cerrar"
-                            onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')"></button>
-                </header>
-                <section class="modal-card-body" id="loyalty-historial-body">
-                    {! Filled by hx-get .../{codigo}/historial !}
-                </section>
-                <footer class="modal-card-foot">
-                    <button type="button" class="button"
-                            onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')">Cerrar</button>
-                </footer>
-            </div>
-        </div>
+        {! The hand-rolled modal had no Escape handling and no focus trap. It is
+           the kit dialog now; the row buttons keep their hx-get and open it by
+           id, so the fragment still lands in #loyalty-historial-body. !}
+        {#include _kit/modal id="loyalty-historial" title="Historial de Puntos"
+             triggerLabel="Historial" triggerClass="is-hidden"
+             bodyUrl=baseUrl}
+            {#footer}
+            <button type="button" class="button" @click="open = false">Cerrar</button>
+            {/footer}
+        {/include}
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>

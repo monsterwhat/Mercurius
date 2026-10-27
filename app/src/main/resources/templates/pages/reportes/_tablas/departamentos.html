@@ -14,6 +14,9 @@
             <td>{f.porcentaje}</td>
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin ventas por departamento en el rango seleccionado</td></tr>
+        {/if}
       {/rows}
     {/include}
     {#if consultaCompleta && totalGeneral??}

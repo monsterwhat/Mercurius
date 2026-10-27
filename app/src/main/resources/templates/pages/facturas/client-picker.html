@@ -17,9 +17,12 @@
     <div class="field">
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
+                   id="client-picker-q" hx-preserve="true" aria-label="Buscar cliente por nombre o cédula"
+                   spellcheck="false" autocapitalize="off"
                    placeholder="Buscar cliente por nombre..."
                    hx-get="{config:['quarkus.http.root-path']}/api/app/pos/client-picker"
                    hx-trigger="keyup changed delay:250ms"
+                   hx-sync="this:replace"
                    hx-target="#client-picker-fragmento" hx-swap="outerHTML"
                    hx-include="this"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
@@ -27,37 +30,74 @@
     </div>
 
     <div class="table-container">
-    <table class="table is-striped is-hoverable is-narrow is-fullwidth">
+    <table class="table is-hoverable is-narrow is-fullwidth" aria-label="Clientes encontrados">
         <thead>
-        <tr><th>Nombre</th><th>Cédula</th><th class="has-text-centered">Puntos</th><th></th></tr>
+        <tr><th scope="col">Nombre</th><th scope="col">Cédula</th>
+            <th scope="col" class="has-text-centered">Puntos</th>
+            <th scope="col"><span class="is-sr-only">Acciones</span></th></tr>
         </thead>
         <tbody>
         {#for hit in picker.resultados}
         <tr data-cliente-code="{hit.code}">
-            <td style="font-weight:500">{hit.name}</td>
-            <td>{#if hit.idNumber??}{hit.idNumber}{#else}&mdash;{/if}</td>
+            <td><span class="table-clamp has-text-weight-medium" title="{hit.name}">{hit.name}</span></td>
+            <td>{#if hit.idNumber??}{hit.idNumber}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
             <td class="has-text-centered">{#if hit.puntosAcumulados??}{hit.puntosAcumulados}{#else}0{/if}</td>
             <td class="has-text-centered">
                 <form style="display:inline">
                     <input type="hidden" name="clientCode" value="{hit.code}"/>
                     <button type="button" class="button is-small is-primary js-pick-cliente"
+                            aria-label="Seleccionar a {hit.name}"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/pos/client-select-form"
-                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
+                            hx-disabled-elt="this">
                         Seleccionar</button>
                 </form>
             </td>
         </tr>
         {#else}
-        <tr><td colspan="4" class="has-text-centered has-text-grey">
-            Sin coincidencias &mdash; escriba para buscar clientes</td></tr>
+        <tr><td colspan="4" class="kit-empty-cell">
+            Sin coincidencias &mdash; pruebe con otro nombre o cédula</td></tr>
         {/for}
         </tbody>
     </table>
     </div>
 
-    {! Bridge: after the panel swap request leaves, close the hosting kit modal
-       (same Alpine contract as pages/clientes/index.html data-kit-close). !}
     <script>
+        (function () {
+            var campo = document.getElementById('client-picker-q');
+            if (!campo) {
+                return;
+            }
+            // Searching state: Bulma draws the spinner on the .control, and the
+            // result count that follows is announced through #pos-anuncio.
+            var control = campo.parentElement;
+            var quitarCarga = function () {
+                control.classList.remove('is-loading');
+            };
+            campo.addEventListener('htmx:beforeRequest', function () {
+                control.classList.add('is-loading');
+            });
+            ['htmx:afterRequest', 'htmx:responseError', 'htmx:sendError', 'htmx:timeout']
+                .forEach(function (evento) {
+                    campo.addEventListener(evento, quitarCarga);
+                });
+            // The whole fragment is replaced on every keystroke, so the search
+            // field has to take the caret back or typing stops after 250ms.
+            campo.focus();
+            campo.setSelectionRange(campo.value.length, campo.value.length);
+            // Announce the result count politely; the table itself is replaced
+            // and cannot be a live region.
+            var anuncio = document.getElementById('pos-anuncio');
+            if (anuncio) {
+                var total = document.querySelectorAll('#client-picker-fragmento tbody tr[data-cliente-code]').length;
+                anuncio.textContent = total === 0
+                    ? 'Sin clientes que coincidan'
+                    : total + (total === 1 ? ' cliente encontrado' : ' clientes encontrados');
+            }
+        })();
+        // Bridge: after the panel swap request leaves, close the hosting kit
+        // modal (same Alpine contract as pages/clientes/index.html
+        // data-kit-close).
         document.querySelectorAll('#client-picker-fragmento .js-pick-cliente').forEach(function (button) {
             button.addEventListener('click', function () {
                 var root = button.closest('.kit-modal-root');

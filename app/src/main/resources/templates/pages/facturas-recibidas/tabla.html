@@ -26,9 +26,13 @@
                 <label class="label is-small" for="recibidas-cubeta">Bandeja</label>
                 <div class="control">
                     <div class="select">
+                        {! hx-preserve keeps the chosen bucket (and its focus) when
+                           the whole table wrapper comes back from the server. !}
                         <select id="recibidas-cubeta" name="bucket"
                                 hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                                hx-trigger="change" hx-target="#{modelo.id}" hx-swap="outerHTML">
+                                hx-trigger="change" hx-target="#{modelo.id}" hx-swap="outerHTML"
+                                hx-include="#recibidas-busqueda"
+                                hx-preserve="true">
                             <option value="todas" {#if modelo.bucket eq 'todas'}selected{/if}>Todas</option>
                             <option value="activas" {#if modelo.bucket eq 'activas'}selected{/if}>Activas</option>
                             <option value="pagadas" {#if modelo.bucket eq 'pagadas'}selected{/if}>Pagadas</option>
@@ -42,12 +46,15 @@
             <div class="field is-expanded">
                 <label class="label is-small" for="recibidas-busqueda">Buscar</label>
                 <div class="control has-icons-left">
+                    {! hx-preserve keeps the focused search box (and its caret)
+                       alive across the 300 ms type-ahead swaps of the wrapper. !}
                     <input class="input" type="text" id="recibidas-busqueda" name="q"
                            value="{#if q??}{q}{/if}" autocomplete="off"
                            placeholder="Buscar por emisor, consecutivo, actividad..."
                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
                            hx-trigger="keyup changed delay:300ms"
-                           hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                           hx-target="#{modelo.id}" hx-swap="outerHTML"
+                           hx-preserve="true" hx-sync="this:replace"/>
                     <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
                 </div>
             </div>
@@ -59,47 +66,77 @@
             {#for factura in modelo.filas}
             <tr>
                 <td class="kit-code">{#if factura.consecutivo??}{factura.consecutivo}{#else}&mdash;{/if}</td>
-                <td>{#if factura.fechaEmision??}{factura.fechaEmision}{#else}&mdash;{/if}</td>
+                <td>{#if factura.fechaEmision??}{time:format(factura.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
                 <td>{#if factura.emisorNombre??}{factura.emisorNombre}{#else}&mdash;{/if}</td>
                 <td>
-                    {#if factura.haciendaMensajeReceptorEstado??}
-                    <span class="tag {factura.haciendaMensajeReceptorEstado eq 'ACEPTADO' ? 'is-success' : 'is-danger'}">{factura.haciendaMensajeReceptorEstado}</span>
-                    {#else}
-                    <span class="status-chip is-neutral">Sin MR</span>
-                    {/if}
-                    {#if factura.paid}<span class="status-chip is-info">Pagada</span>{/if}
-                    {#if factura.processed}<span class="status-chip is-success">Procesada</span>{/if}
+                    <div class="is-flex is-flex-wrap-wrap" style="gap:0.25rem">
+                        {#if modelo.bucket eq 'vencidas'}<span class="status-chip is-danger" title="Crédito vencido y todavía sin pagar">Pago vencido</span>{/if}
+                        {#if factura.haciendaMensajeReceptorEstado??}
+                        {#if factura.haciendaMensajeReceptorEstado eq 'ACEPTADO'}
+                        <span class="status-chip is-success" title="Mensaje Receptor aceptado">Aceptado</span>
+                        {#else if factura.haciendaMensajeReceptorEstado eq 'RECHAZADO'}
+                        <span class="status-chip is-danger" title="Mensaje Receptor rechazado">Rechazado</span>
+                        {#else if factura.haciendaMensajeReceptorEstado eq 'PROCESANDO'}
+                        <span class="status-chip is-info" title="Mensaje Receptor en proceso">Procesando</span>
+                        {#else}
+                        <span class="status-chip is-neutral" title="Estado del Mensaje Receptor">{factura.haciendaMensajeReceptorEstado}</span>
+                        {/if}
+                        {#else}
+                        <span class="status-chip is-neutral" title="Todavía no se ha enviado el Mensaje Receptor">Sin enviar</span>
+                        {#if factura.mensajeReceptorLimite??}
+                        <span class="status-chip is-warning"
+                              title="Fecha límite para enviar el Mensaje Receptor">
+                            Límite: {time:format(factura.mensajeReceptorLimite, 'dd/MM/yyyy')}
+                        </span>
+                        {/if}
+                        {/if}
+                        {#if factura.paid}<span class="status-chip is-success">Pagada</span>{/if}
+                        {#if factura.processed}<span class="status-chip is-info">Procesada</span>{/if}
+                    </div>
                 </td>
-                <td class="num" style="font-weight:600">{#if factura.totalComprobante??}&#8362;{factura.totalComprobante}{#else}&mdash;{/if}</td>
-                <td class="num">{#if factura.totalImpuesto??}&#8362;{factura.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td class="num" style="font-weight:600">{fmt:moneda(factura.totalComprobante)}</td>
+                <td class="num">{fmt:moneda(factura.totalImpuesto)}</td>
                 <td class="has-text-centered">
-                    <div style="display:flex;gap:0.25rem;justify-content:center;align-items:center">
+                    <div style="display:flex;gap:0.25rem;justify-content:center;align-items:center;flex-wrap:wrap">
                         {#if !factura.processed && factura.status}
-                        <button type="button" class="button is-small is-success" title="Procesar factura: crea los artículos y los movimientos de inventario"
+                        <button type="button" class="button is-small is-outlined"
+                                title="Procesar factura: crea los artículos y los movimientos de inventario"
                                 hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/procesar"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-disabled-elt="this"
                                 hx-confirm="¿Procesar la factura? Se crearán los artículos y los movimientos de inventario.">Procesar</button>
                         {/if}
                         {#if !factura.paid && factura.status}
-                        <button type="button" class="button is-small is-info" title="Marcar como pagada"
+                        <button type="button" class="button is-small is-outlined" title="Marcar como pagada"
                                 hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/pagar"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-disabled-elt="this"
                                 hx-confirm="¿Marcar la factura como pagada?">Pagar</button>
                         {/if}
-                        <button type="button" class="button is-small {factura.status ? 'is-warning' : 'is-success'}"
+                        <button type="button" class="button is-small is-outlined"
                                 title="Activar o desactivar la factura"
                                 hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/toggle"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-disabled-elt="this"
                                 hx-confirm="¿{factura.status ? 'Desactivar' : 'Activar'} la factura?">{factura.status ? 'Desactivar' : 'Activar'}</button>
-                        <button type="button" class="button is-small is-link" title="Revisar detalle"
+                        <button type="button" class="button is-small is-outlined" title="Revisar el detalle de la factura"
+                                aria-label="Revisar el detalle de la factura {#if factura.consecutivo??}{factura.consecutivo}{#else}{factura.id}{/if}"
                                 aria-haspopup="dialog" data-kit-open="detalle-factura"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}"
-                                hx-target="#detalle-factura-body" hx-swap="innerHTML">&#128065;</button>
+                                hx-target="#detalle-factura-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron facturas recibidas con los criterios proporcionados</td></tr>
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                <p class="kit-empty">No se encontraron facturas recibidas{#if q??}{#if !q.isEmpty()} para &laquo;{q}&raquo;{/if}{/if} en esta bandeja.</p>
+                {#if q??}{#if !q.isEmpty()}
+                <a class="button is-small mt-2"
+                   href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar b&uacute;squeda</a>
+                {/if}{/if}
+            </td></tr>
             {/for}
         {/rows}
     {/include}

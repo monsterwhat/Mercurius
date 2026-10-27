@@ -32,19 +32,24 @@
     of emoji glyphs. Only the destructive one keeps is-danger; the rest are
     bordered buttons, because the teal accent is the screen's one filled
     primary.
-!}
-<div id="{modelo.id}">
-    <div class="field">
-        <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
-                   placeholder="Búsqueda general de todos los campos"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
-            <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
-        </div>
-    </div>
 
+  ROUND 2
+  -------
+  - The search field moved OUT of this fragment (it is in reportes.html now):
+    it used to be inside the swap target, so every debounced search destroyed
+    the input the operator was typing in.
+  - `data-resultados` exposes the row count to the page's status region.
+  - The toggle button says which way it will switch ("Habilitar" vs
+    "Deshabilitar") in its aria-label and title; "Habilitar/Deshabilitar" is
+    not an action name and it was the same string on every row.
+  - Long report names and recipient lists are clamped to three lines with the
+    full value in `title`, so one row cannot push the actions out of reach.
+  - The empty state distinguishes "no hay reportes" from "la búsqueda no
+    encontró nada", names the term, and offers the way back.
+  - hx-disabled-elt="this" on toggle and delete: a double tap cannot fire the
+    same mutation twice.
+!}
+<div id="{modelo.id}" data-resultados="{modelo.total}">
     {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for reporte in modelo.filas}
@@ -52,41 +57,57 @@
                 <td class="has-text-centered">
                     {#if reporte.estado}<span class="status-chip is-success">Habilitado</span>{#else}<span class="status-chip is-danger">Deshabilitado</span>{/if}
                 </td>
-                <td style="font-weight:500">{reporte.perfil}</td>
-                <td>{#if reporte.correos??}{reporte.correos}{#else}&mdash;{/if}</td>
-                <td>{#if reporte.frecuencia??}{reporte.frecuencia}{#else}&mdash;{/if}</td>
-                <td>{#if reporte.reportes??}{reporte.reportes}{#else}&mdash;{/if}</td>
+                <td style="font-weight:500">
+                    {#if reporte.perfil??}<span class="table-clamp" title="{reporte.perfil}">{reporte.perfil}</span>{#else}<span class="kit-empty">&mdash;</span>{/if}
+                </td>
+                <td>{#if reporte.correos??}<span class="table-clamp" title="{reporte.correos}">{reporte.correos}</span>{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td>{#if reporte.frecuencia??}{reporte.frecuencia}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
+                <td>{#if reporte.reportes??}{reporte.reportes}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small" title="Editar reporte programado"
-                                aria-label="Editar reporte programado"
+                                aria-label="Editar reporte programado {reporte.perfil}"
                                 aria-haspopup="dialog" data-kit-open="editar-reporte"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/reportes-programados/formularios/{reporte.id}"
                                 hx-target="#editar-reporte-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
-                        <button type="button" class="button is-small" title="Habilitar/Deshabilitar"
-                                aria-label="Habilitar/Deshabilitar"
+                        <button type="button" class="button is-small"
+                                title="{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} reporte programado"
+                                aria-label="{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} reporte programado {reporte.perfil}"
                                 hx-put="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}/toggle"
-                                hx-confirm="¿Cambiar el estado del reporte programado {reporte.perfil}?"
+                                hx-confirm="¿{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} el reporte programado {reporte.perfil}?"
+                                hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                         {#if isAdmin??}{#if isAdmin}
                         <button type="button" class="button is-small is-danger" title="Eliminar reporte programado"
-                                aria-label="Eliminar reporte programado"
+                                aria-label="Eliminar reporte programado {reporte.perfil}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}"
                                 hx-confirm="¿Eliminar el reporte programado {reporte.perfil}? Esta acción no se puede deshacer."
+                                hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                         {/if}{/if}
                     </div>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron reportes con la critería proporcionada</td></tr>
+            <tr>
+                <td colspan="{modelo.columnas.size()}" class="has-text-centered">
+                    {#if q}
+                    <span class="kit-empty">No hay reportes que coincidan con «{q}».</span>
+                    <a class="button is-small is-text mt-2" href="{config:['quarkus.http.root-path']}{modelo.baseUrl}">Ver todos los reportes</a>
+                    {#else}
+                    <span class="kit-empty">Todavía no hay reportes programados. Cree el primero con «Crear Reporte Programado».</span>
+                    {/if}
+                </td>
+            </tr>
             {/for}
         {/rows}
     {/include}
-
-    {#if toastMessage??}
-    <div hx-swap-oob="beforeend:#toast-container">
-        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
-    </div>
-    {/if}
 </div>
+
+{#if toastMessage??}
+{! Top level of the response: htmx only processes out-of-band swaps on
+   top-level elements, so a toast nested inside the swap root was dropped. !}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

@@ -31,18 +31,23 @@
   so it has no second place to get a root wrong. Pinned by
   RootPathNormalizationTest.
 !}
-<nav class="navbar" role="navigation" aria-label="Navegacion principal">
+<nav class="navbar" role="navigation" aria-label="Navegación principal">
     <div class="navbar-brand">
         <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app" data-planned-route="/app">
             {#include fragments/logo-img alt="Mercurius" style="width:28px;height:28px;" /}
             <span class="ml-2 has-text-weight-bold">Mercurius</span>
         </a>
-        <a role="button" class="navbar-burger" data-target="navbarMenu"
-           aria-label="Abrir menu" aria-expanded="false" tabindex="0">
+        {! The burger is a real <button>, not an <a role="button">: an anchor
+           with no href is not a control, and the old markup needed a manual
+           Enter/Space handler to imitate one. A button answers both keys for
+           free, announces itself as a button, and keeps Bulma's .navbar-burger
+           styling. aria-controls ties it to the menu it toggles. !}
+        <button type="button" class="navbar-burger" data-target="navbarMenu"
+                aria-label="Abrir menú" aria-controls="navbarMenu" aria-expanded="false">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
-        </a>
+        </button>
     </div>
 
     <div id="navbarMenu" class="navbar-menu">
@@ -69,6 +74,13 @@
                    data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
                    aria-haspopup="dialog">Nueva Factura</a>
             </div>
+            {! Caja and Loyalty are full pages at the API table routes (they
+               render the page shell on a non-HTMX GET). They had no navbar
+               entry at all; the boards were only reachable from the dashboard. !}
+            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/caja/table"
+               data-planned-route="/api/app/caja/table">Caja</a>
+            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/loyalty/table"
+               data-planned-route="/api/app/loyalty/table">Lealtad</a>
             {/if}
 
             {!
@@ -88,14 +100,14 @@
             {#if inject:securityIdentity.hasRole('inventario')}
             <div class="navbar-item has-dropdown is-hoverable">
                 <button type="button" class="navbar-link"
-                        aria-haspopup="true" aria-expanded="false">Articulos</button>
+                        aria-haspopup="true" aria-expanded="false">Artículos</button>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/articulos" data-planned-route="/app/articulos">Articulos</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/categorias" data-planned-route="/app/categorias">Categorias</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/articulos" data-planned-route="/app/articulos">Artículos</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/categorias" data-planned-route="/app/categorias">Categorías</a>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/inventarios" data-planned-route="/app/inventarios">Inventarios</a>
                     <hr class="navbar-divider"/>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" data-planned-route="/app/inventarios/alertas">Alertas de Stock</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" data-planned-route="/app/inventarios/mermas">Mermas y Perdidas</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" data-planned-route="/app/inventarios/mermas">Mermas y Pérdidas</a>
                 </div>
             </div>
             {/if}
@@ -107,6 +119,12 @@
                         aria-haspopup="true" aria-expanded="false">Usuarios</button>
                 <div class="navbar-dropdown">
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios">Usuarios</a>
+                    {! The clientes board is a PAGE at GET /api/app/clientes (it
+                       renders pages/clientes/index.html when the request is not
+                       an HX-Request). The old href pointed at
+                       /api/app/clientes/table, which returns the bare tbody
+                       fragment: the operator landed on a table with no layout,
+                       no navigation and no way back. !}
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/clientes/table" data-planned-route="/api/app/clientes/table">Clientes</a>
                 </div>
             </div>
@@ -116,7 +134,7 @@
             {#if inject:securityIdentity.hasRole('tributacion')}
             <div class="navbar-item has-dropdown is-hoverable">
                 <button type="button" class="navbar-link"
-                        aria-haspopup="true" aria-expanded="false">Tributacion</button>
+                        aria-haspopup="true" aria-expanded="false">Tributación</button>
                 <div class="navbar-dropdown">
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard" data-planned-route="/app/tributacion/dashboard">Dashboard Hacienda</a>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/tributacion/consultas" data-planned-route="/app/tributacion/consultas">Consultas</a>
@@ -140,14 +158,14 @@
             {! token: admin - legacy: "Ajustes" dropdown !}
             {#if inject:securityIdentity.hasRole('admin')}
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">Ajustes</a>
+                <button type="button" class="navbar-link" aria-haspopup="true" aria-expanded="false">Ajustes</button>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/correos/reportes" data-planned-route="/app/correos/reportes">Menu de Correos</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/correos/reportes" data-planned-route="/app/correos/reportes">Menú de correos</a>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" data-planned-route="/app/correos/plantillas">Plantillas</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/aplicacion" data-planned-route="/app/aplicacion">Menu de Aplicacion</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/backups" data-planned-route="/app/backups">Backups</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/aplicacion" data-planned-route="/app/aplicacion">Menú de aplicación</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/backups" data-planned-route="/app/backups">Respaldos</a>
                     <hr class="navbar-divider"/>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/registros/log" data-planned-route="/app/registros/log">Log de Actividades</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/registros/log" data-planned-route="/app/registros/log">Registro de actividades</a>
                 </div>
             </div>
             {/if}
@@ -164,7 +182,7 @@
             <div class="navbar-item">
                 <span class="navbar-user">
                     {#include _kit/icon name="user" /}
-                    <span class="ml-1">{inject:securityIdentity.username}</span>
+                    <span class="navbar-user-name ml-1" title="{inject:securityIdentity.username}">{inject:securityIdentity.username}</span>
                 </span>
             </div>
             {/if}
@@ -173,7 +191,7 @@
             <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/perfil" data-planned-route="/app/perfil">Perfil</a>
 
             {!
-              legacy: "Cerrar Session" inside the profile dialog. Real POST to the
+              legacy: "Cerrar Sesión" inside the profile dialog. Real POST to the
               T13 endpoint; works without JavaScript unlike the JSF commandLink.
 
               It used to be a filled red pill in the top bar. Signing out is not
@@ -184,7 +202,7 @@
             <div class="navbar-item">
                 <form method="post" action="{config:['quarkus.http.root-path']}/api/app/auth/logout">
                     <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
-                    <button type="submit" class="button is-small">Cerrar Session</button>
+                    <button type="submit" class="button is-small">Cerrar sesión</button>
                 </form>
             </div>
 
@@ -245,18 +263,14 @@
         var burger = document.querySelector('.navbar-burger');
         var menu = document.getElementById('navbarMenu');
         if (burger && menu) {
+            // A real <button> already turns Enter and Space into a click, so
+            // this handler is the whole toggle; the old anchor needed a
+            // separate keydown imitation that would now fire twice.
             burger.addEventListener('click', function () {
                 var active = burger.classList.toggle('is-active');
                 menu.classList.toggle('is-active', active);
                 burger.setAttribute('aria-expanded', active ? 'true' : 'false');
-            });
-            // The burger is an anchor, so Enter does not fire a click by
-            // itself. One keydown handler covers both it and the dropdowns.
-            burger.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    burger.click();
-                }
+                burger.setAttribute('aria-label', active ? 'Cerrar menú' : 'Abrir menú');
             });
         }
 
@@ -274,10 +288,15 @@
                 e.preventDefault();
                 setOpen(!item.classList.contains('is-active'));
             });
-            // Escape closes the open menu and returns focus to its header.
-            trigger.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
+            // Escape closes the open menu from the header OR from one of its
+            // links, and puts focus back on the header. Listening on the item
+            // covers both: the trigger handler only worked while the trigger
+            // itself had focus.
+            item.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && item.classList.contains('is-active')) {
+                    e.stopPropagation();
                     setOpen(false);
+                    trigger.focus();
                 }
             });
         });
@@ -295,5 +314,46 @@
                 }
             });
         });
+
+        // ── Where am I ──────────────────────────────────────────────────────
+        // The bar carried no current-section state. This marks it from the real
+        // location instead of a second copy of the route table inside the
+        // template: exact path wins; otherwise the longest link that is a
+        // proper path prefix (/app/articulos matches /app/articulos/123).
+        // Anchors get aria-current="page", their dropdown section gets
+        // .is-current so the closed header still names where the user is.
+        var current = window.location.pathname.replace(/\/+$/, '') || '/';
+        var links = Array.prototype.slice.call(
+            document.querySelectorAll('.navbar-menu a.navbar-item[href]')
+        );
+        var match = function (path) {
+            return path === current;
+        };
+        var candidates = links.filter(function (link) {
+            if (link.target === '_blank') {
+                return false;
+            }
+            return match(link.pathname.replace(/\/+$/, '') || '/');
+        });
+        if (!candidates.length) {
+            candidates = links.filter(function (link) {
+                if (link.target === '_blank') {
+                    return false;
+                }
+                var path = link.pathname.replace(/\/+$/, '') || '/';
+                return path !== '/' && current.indexOf(path + '/') === 0;
+            });
+        }
+        if (candidates.length) {
+            var best = candidates.reduce(function (a, b) {
+                return b.pathname.length > a.pathname.length ? b : a;
+            });
+            best.setAttribute('aria-current', 'page');
+            best.classList.add('is-current');
+            var section = best.closest('.navbar-item.has-dropdown');
+            if (section) {
+                section.classList.add('is-current');
+            }
+        }
     });
 </script>

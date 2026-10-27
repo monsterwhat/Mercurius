@@ -51,7 +51,28 @@ function kitBridge() {
         if (opener) {
             var modal = document.getElementById(opener.getAttribute('data-kit-open'));
             if (modal && window.Alpine) {
+                // Remember the control that asked, so the dialog can return
+                // focus to it even in browsers that do not focus a button on
+                // mouse click (Safari). _kit/modal's x-init reads this as a
+                // fallback.
+                window.mercuriusLastOpener = opener;
                 Alpine.$data(modal).open = true;
+                // A trigger rendered by _kit/modal focuses the card in its own
+                // @click, but a row button that only carries data-kit-open
+                // never touches it: the dialog opened with focus still on the
+                // page behind the overlay. Next tick is when Alpine has
+                // applied .is-active and the card is displayable.
+                var card = modal.querySelector('.modal-card');
+                if (card) {
+                    var focusCard = function () {
+                        card.focus({ preventScroll: true });
+                    };
+                    if (typeof window.Alpine.nextTick === 'function') {
+                        window.Alpine.nextTick(focusCard);
+                    } else {
+                        window.setTimeout(focusCard, 30);
+                    }
+                }
             }
             return;
         }
@@ -119,6 +140,26 @@ function kitUploadProgress() {
             setBusy(form, false);
         }
     };
+
+    // The busy state was only ever RELEASED: setBusy(form, true) did not exist
+    // anywhere in this helper, so an upload never showed is-loading, the button
+    // stayed enabled and a second click could post the same file again.
+    document.body.addEventListener('htmx:beforeRequest', function (evt) {
+        var elt = evt.detail.elt;
+        if (!elt || !elt.closest) {
+            return;
+        }
+        var form = elt.tagName === 'FORM' ? elt : elt.closest('form');
+        if (!form || !findBar(form)) {
+            return;
+        }
+        var bar = findBar(form);
+        if (bar && bar.tagName === 'PROGRESS') {
+            bar.value = 0;
+            bar.setAttribute('aria-busy', 'true');
+        }
+        setBusy(form, true);
+    });
 
     document.body.addEventListener('htmx:xhr:progress', function (evt) {
         var bar = findBar(evt.detail.elt);
@@ -294,6 +335,298 @@ function kitPopup() {
     });
 }
 
+/**
+ * kitToasts() — the ONE toast lifecycle.
+ *
+ * The markup lives in _kit/toast-item; this helper binds every
+ * `.notification[data-toast]` that appears inside #toast-container, whether it
+ * was server-rendered or appended by an hx-swap-oob response. It registers a
+ * MutationObserver once, so a swapped toast never installs a second copy of
+ * the same script (the previous inline version in the template did).
+ *
+ * Lifetime: 5s for a success/info/warning, indefinite for an error. A failure
+ * is the one message the operator may have to read twice and act on; making it
+ * disappear mid-sentence is a silent failure of its own. The countdown pauses
+ * while the pointer or the keyboard is on the toast.
+ */
+function kitToasts() {
+    if (window.mercuriusToastsReady) {
+        return;
+    }
+    window.mercuriusToastsReady = true;
+
+    var bind = function (el) {
+        if (el.dataset.toastBound) {
+            return;
+        }
+        el.dataset.toastBound = '1';
+
+        var remaining = 5000;
+        var startedAt = Date.now();
+        var timer = null;
+        var severity = (el.getAttribute('data-toast-severity') || '').toLowerCase();
+        // A failure is the one message the operator may have to read twice and
+        // act on; it stays until dismissed. The pause/resume handlers must not
+        // restart its countdown on mouseleave either.
+        var persistent = severity === 'error';
+
+        var dismiss = function () {
+            if (el.dataset.toastLeaving) {
+                return;
+            }
+            el.dataset.toastLeaving = '1';
+            if (timer) {
+                window.clearTimeout(timer);
+                timer = null;
+            }
+            el.classList.add('is-leaving');
+            window.setTimeout(function () {
+                el.remove();
+            }, 180);
+        };
+
+        var pause = function () {
+            if (timer) {
+                window.clearTimeout(timer);
+                timer = null;
+                remaining = Math.max(1000, remaining - (Date.now() - startedAt));
+            }
+        };
+
+        var resume = function () {
+            if (persistent || timer || el.dataset.toastLeaving) {
+                return;
+            }
+            startedAt = Date.now();
+            timer = window.setTimeout(dismiss, remaining);
+        };
+
+        var closeBtn = el.querySelector('.delete');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', dismiss);
+        }
+
+        el.addEventListener('mouseenter', pause);
+        el.addEventListener('mouseleave', resume);
+        el.addEventListener('focusin', pause);
+        el.addEventListener('focusout', resume);
+
+        if (persistent) {
+            return;
+        }
+        resume();
+    };
+
+    var attach = function () {
+        var container = document.getElementById('toast-container');
+        if (!container) {
+            return;
+        }
+        Array.prototype.forEach.call(
+            container.querySelectorAll('.notification[data-toast]'),
+            bind
+        );
+        new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                Array.prototype.forEach.call(mutation.addedNodes, function (node) {
+                    if (node.nodeType === 1 && node.classList.contains('notification')) {
+                        bind(node);
+                    }
+                });
+            });
+        }).observe(container, { childList: true });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
+    }
+}
+
+/**
+ * kitTableScroll() — the scroll affordance for a wide data table.
+ *
+ * Below 768px `_kit/data-table` keeps its natural width and the CONTAINER
+ * scrolls. Nothing used to indicate that more columns existed, so a clipped
+ * column read as a broken table. This stamps `is-scrollable` on a frame that
+ * really overflows and `is-scrolled-end` once its right edge is reached; the
+ * stylesheet draws the edge shadow only while both are true, so the hint never
+ * lies and disappears when the table fits.
+ *
+ * The frame is already focusable (tabindex="0" in the template) for keyboard
+ * scrolling; this helper does not change focus.
+ */
+function kitTableScroll() {
+    if (window.mercuriusTableScrollReady) {
+        return;
+    }
+    window.mercuriusTableScrollReady = true;
+
+    var paint = function (frame) {
+        var overflow = frame.scrollWidth - frame.clientWidth - frame.scrollLeft;
+        frame.classList.toggle('is-scrollable', frame.scrollWidth > frame.clientWidth + 1);
+        frame.classList.toggle('is-scrolled-end', overflow <= 1);
+    };
+
+    var scan = function () {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.table-container[data-kit-table]'),
+            function (frame) {
+                paint(frame);
+                if (!frame.dataset.kitScrollObserved && typeof ResizeObserver === 'function') {
+                    frame.dataset.kitScrollObserved = '1';
+                    new ResizeObserver(function () {
+                        paint(frame);
+                    }).observe(frame);
+                }
+            }
+        );
+    };
+
+    // Scroll does not bubble; capture it at the document so every frame (and
+    // every frame swapped in later) is covered by one listener.
+    document.addEventListener('scroll', function (event) {
+        var frame = event.target;
+        if (frame && frame.matches && frame.matches('.table-container[data-kit-table]')) {
+            paint(frame);
+        }
+    }, true);
+
+    window.addEventListener('resize', scan);
+    document.body.addEventListener('htmx:afterSwap', scan);
+    document.body.addEventListener('htmx:afterSettle', scan);
+    scan();
+}
+
+/**
+ * mercuriusNotify() — the one place JS creates a toast.
+ *
+ * The markup mirrors _kit/toast-item (notification + delete + data-toast), so
+ * the shared lifecycle in kitToasts binds it exactly like a server-rendered
+ * one. The severity token is the same lowercase vocabulary as the templates.
+ * Returns false when there is no toast container, and logs the message so a
+ * failure is never invisible.
+ */
+function mercuriusNotify(message, severity) {
+    var container = document.getElementById('toast-container');
+    if (!container) {
+        console.error('[mercurius] ' + message);
+        return false;
+    }
+    var kind = 'is-danger';
+    if (severity === 'success') {
+        kind = 'is-success';
+    } else if (severity === 'warning' || severity === 'warn') {
+        kind = 'is-warning';
+    } else if (severity === 'info') {
+        kind = 'is-info';
+    }
+    var toast = document.createElement('div');
+    toast.className = 'notification ' + kind;
+    toast.setAttribute('role', kind === 'is-danger' ? 'alert' : 'status');
+    toast.setAttribute('data-toast', '');
+    toast.setAttribute('data-toast-severity', kind === 'is-danger' ? 'error' : severity || 'info');
+    var close = document.createElement('button');
+    close.className = 'delete';
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Cerrar notificación');
+    toast.appendChild(close);
+    toast.appendChild(document.createTextNode(message));
+    container.appendChild(toast);
+    return true;
+}
+
+window.mercuriusNotify = mercuriusNotify;
+
+/**
+ * kitHtmlErrorSwap() — let a 4xx HTML response render.
+ *
+ * htmx 2 only swaps 2xx by default. Several resources answer 400/422 with an
+ * HTML validation fragment (inventario failureWithToast, compras
+ * redisplayForm / redisplayEstado) plus an out-of-band toast, so the operator
+ * saw nothing at all: the form was not re-rendered and the error vanished.
+ * This handler flips shouldSwap for a 4xx whose body really is HTML and clears
+ * isError so htmx does not ALSO fire the generic transport toast in
+ * kitHttpErrors (the fragment carries the precise message).
+ *
+ * A JSON 4xx is deliberately left alone: it has no markup to swap, and the
+ * generic toast is the only feedback it can give.
+ */
+function kitHtmlErrorSwap() {
+    if (window.mercuriusHtmlErrorSwapReady) {
+        return;
+    }
+    window.mercuriusHtmlErrorSwapReady = true;
+
+    document.body.addEventListener('htmx:beforeSwap', function (evt) {
+        var detail = evt.detail;
+        var xhr = detail.xhr;
+        if (!xhr || xhr.status < 400 || xhr.status >= 500) {
+            return;
+        }
+        var contentType = xhr.getResponseHeader('Content-Type') || '';
+        if (!/text\/html/i.test(contentType)) {
+            return;
+        }
+        detail.shouldSwap = true;
+        detail.isError = false;
+    });
+}
+
+/**
+ * kitHttpErrors() — one visible failure state for every HTMX request.
+ *
+ * A failed filter, an expired dialog body or a save that never reached the
+ * server used to do nothing at all: htmx logs to the console, the page stays
+ * exactly as it was, and the operator cannot tell a slow request from a broken
+ * one. This listener turns the three transport failures into the same styled
+ * toast the rest of the app uses, and keeps the console error for diagnosis.
+ *
+ * No business message is invented: the copy names the failure class, not a
+ * cause it cannot know. A 4xx whose body is an HTML validation fragment is
+ * swapped by kitHtmlErrorSwap instead and carries its own precise toast; a 5xx
+ * or a JSON error never swaps, so this is the only feedback the operator gets.
+ */
+function kitHttpErrors() {
+    if (window.mercuriusHttpErrorsReady) {
+        return;
+    }
+    window.mercuriusHttpErrorsReady = true;
+
+    var last = { message: '', at: 0 };
+
+    var notify = function (message) {
+        var now = Date.now();
+        if (message === last.message && now - last.at < 4000) {
+            return;
+        }
+        last = { message: message, at: now };
+        mercuriusNotify(message, 'error');
+    };
+
+    var statusText = function (evt) {
+        var xhr = evt.detail && evt.detail.xhr;
+        return xhr && xhr.status ? ' (error ' + xhr.status + ')' : '';
+    };
+
+    document.body.addEventListener('htmx:responseError', function (evt) {
+        var message = 'No se pudo completar la operación' + statusText(evt) + '. Intente de nuevo.';
+        console.error('[mercurius] HTMX response error', evt.detail && evt.detail.xhr && evt.detail.xhr.status);
+        notify(message);
+    });
+
+    document.body.addEventListener('htmx:sendError', function (evt) {
+        console.error('[mercurius] HTMX send error', evt.detail);
+        notify('No hay conexión con el servidor. Verifique la red e intente de nuevo.');
+    });
+
+    document.body.addEventListener('htmx:timeout', function (evt) {
+        console.error('[mercurius] HTMX timeout', evt.detail);
+        notify('La operación tardó demasiado. Intente de nuevo.');
+    });
+}
+
 function boot() {
     applyChartDefaults();
     installIconHydration();
@@ -301,6 +634,10 @@ function boot() {
     kitUploadProgress();
     kitPolling();
     kitPopup();
+    kitToasts();
+    kitTableScroll();
+    kitHtmlErrorSwap();
+    kitHttpErrors();
 }
 
 if (document.readyState === 'loading') {

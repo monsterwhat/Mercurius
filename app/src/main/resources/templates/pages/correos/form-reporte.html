@@ -28,6 +28,22 @@
   ---------------------------
   - The report labels carry their accents again ("Facturación", "Artículos").
     The checkbox VALUES are untouched: they are the legacy wire keys.
+
+  ROUND 2
+  -------
+  - The two checkbox groups were a bare <label> followed by floating
+    checkboxes: no group name for a screen reader, no spacing between the
+    options, and a 24px tap target. They are named groups (role="group" +
+    aria-labelledby) whose options wrap with real spacing.
+  - Frequency now explains what it controls: the scheduler evaluates each
+    marked interval and sends when it comes due, and more than one can be
+    marked. The form previously offered four words with no meaning.
+  - The recipients field says what a valid line looks like and opens the email
+    keyboard on a phone; the placeholder was the only hint.
+  - Field errors are tied to the control they belong to (aria-describedby +
+    aria-invalid) instead of sitting loose under the group.
+  - hx-disabled-elt="this" on Guardar: the dialog used to allow a second POST
+    while the first was in flight.
 !}
 <div id="forma-reporte">
     {#if modo == 'editar' && reporte??}
@@ -38,86 +54,92 @@
           hx-target="#forma-reporte" hx-swap="outerHTML">
     {/if}
         <div class="field">
-            <label class="label" for="reporte-perfil">Nombre:</label>
+            <label class="label" for="reporte-perfil">Nombre</label>
             <div class="control">
                 <input class="input {#if errorPerfil??}is-danger{/if}" id="reporte-perfil"
                        name="perfil" required="required" autocomplete="off"
+                       {#if errorPerfil??}aria-invalid="true" aria-describedby="reporte-perfil-error"{/if}
                        value="{#if reporte?? && reporte.perfil??}{reporte.perfil}{/if}"/>
             </div>
-            {#if errorPerfil??}<p class="help is-danger">{errorPerfil}</p>{/if}
+            {#if errorPerfil??}<p class="help is-danger" id="reporte-perfil-error">{errorPerfil}</p>{/if}
         </div>
 
-        <div class="field">
-            <label class="label">Frecuencia:</label>
-            <div class="control {#if errorFrecuencia??}has-text-danger{/if}">
-                <label class="checkbox">
-                    <input type="checkbox" name="frecuencia" value="Diario"
-                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Diario')}checked{/if}/> Diario
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" name="frecuencia" value="Semanal"
-                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Semanal')}checked{/if}/> Semanal
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" name="frecuencia" value="Quincenal"
-                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Quincenal')}checked{/if}/> Quincenal
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" name="frecuencia" value="Mensual"
-                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Mensual')}checked{/if}/> Mensual
-                </label>
-            </div>
-            {#if errorFrecuencia??}<p class="help is-danger">{errorFrecuencia}</p>{/if}
-        </div>
-
-        <div class="field">
-            <label class="label">Reportes:</label>
+        <div class="field" role="group" aria-labelledby="reporte-frecuencia-titulo"
+             aria-describedby="reporte-frecuencia-ayuda{#if errorFrecuencia??} reporte-frecuencia-error{/if}">
+            <p class="label" id="reporte-frecuencia-titulo">Frecuencia</p>
             <div class="control">
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
+                    <input type="checkbox" name="frecuencia" value="Diario"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Diario')}checked {/if}/> Diario
+                </label>
+                <label class="checkbox is-inline-block mr-4 mb-2">
+                    <input type="checkbox" name="frecuencia" value="Semanal"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Semanal')}checked {/if}/> Semanal
+                </label>
+                <label class="checkbox is-inline-block mr-4 mb-2">
+                    <input type="checkbox" name="frecuencia" value="Quincenal"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Quincenal')}checked {/if}/> Quincenal
+                </label>
+                <label class="checkbox is-inline-block mr-4 mb-2">
+                    <input type="checkbox" name="frecuencia" value="Mensual"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Mensual')}checked {/if}/> Mensual
+                </label>
+            </div>
+            <p class="help" id="reporte-frecuencia-ayuda">
+                El sistema evalúa el reporte y lo envía cuando se cumple cada intervalo marcado. Puede marcar más de uno.
+            </p>
+            {#if errorFrecuencia??}<p class="help is-danger" id="reporte-frecuencia-error">{errorFrecuencia}</p>{/if}
+        </div>
+
+        <div class="field" role="group" aria-labelledby="reporte-reportes-titulo">
+            <p class="label" id="reporte-reportes-titulo">Reportes</p>
+            <div class="control">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="MOVIMIENTOS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('MOVIMIENTOS')}checked{/if}/> Movimientos
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('MOVIMIENTOS')}checked {/if}/> Movimientos
                 </label>
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="FACTURACION"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FACTURACION')}checked{/if}/> Facturación
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FACTURACION')}checked {/if}/> Facturación
                 </label>
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="ARTICULOS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('ARTICULOS')}checked{/if}/> Artículos
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('ARTICULOS')}checked {/if}/> Artículos
                 </label>
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="DEPARTAMENTOS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('DEPARTAMENTOS')}checked{/if}/> Departamentos
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('DEPARTAMENTOS')}checked {/if}/> Departamentos
                 </label>
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="FAMILIAS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FAMILIAS')}checked{/if}/> Familias
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FAMILIAS')}checked {/if}/> Familias
                 </label>
-                <label class="checkbox">
+                <label class="checkbox is-inline-block mr-4 mb-2">
                     <input type="checkbox" name="reportes" value="INVENTARIOS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('INVENTARIOS')}checked{/if}/> Inventarios
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('INVENTARIOS')}checked {/if}/> Inventarios
                 </label>
             </div>
         </div>
 
         <div class="field">
-            <label class="label" for="reporte-correos">Correos:</label>
+            <label class="label" for="reporte-correos">Correos de destino</label>
             <div class="control">
                 <textarea class="textarea" id="reporte-correos" name="correos" rows="3"
-                          placeholder="un correo por línea"
-                          autocomplete="off">{#if correosTexto??}{correosTexto}{/if}</textarea>
+                          placeholder="compras@empresa.cr"
+                          autocomplete="off" inputmode="email" autocapitalize="none"
+                          spellcheck="false" aria-describedby="reporte-correos-ayuda">{#if correosTexto??}{correosTexto}{/if}</textarea>
             </div>
-            <p class="help has-text-grey">Un destinatario por línea.</p>
+            <p class="help" id="reporte-correos-ayuda">Un destinatario por línea, con el formato nombre@dominio.com.</p>
         </div>
 
         <div class="field is-grouped is-grouped-right">
             <div class="control">
-                <button class="button is-primary" type="submit">
+                <button class="button is-primary" type="submit" hx-disabled-elt="this">
                     {#if modo == 'editar'}Actualizar Reporte{#else}Crear Reporte Programado{/if}
                 </button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>

@@ -33,24 +33,27 @@
                         </select>
                     </div>
                 </div>
-                <div class="column is-full field">
-                    <label class="label">Elementos (marque los que desea, vacío = top 8)</label>
+                <div class="column is-full field" role="group" aria-labelledby="elementos-label">
+                    <span class="label" id="elementos-label">Elementos (marque los que desea, vacío = top 8)</span>
                     <div class="control">
-                        <input class="input" type="search" id="busqueda-elementos" placeholder="Buscar..."/>
+                        <input class="input" type="search" id="busqueda-elementos"
+                               aria-label="Buscar elemento" placeholder="Buscar..."/>
                     </div>
-                    <div style="max-height:320px; overflow:auto; margin-top:0.5rem; border:1px solid #ddd; border-radius:4px;">
-                        <table class="table is-fullwidth is-striped">
+                    <div class="table-container" style="max-height:320px; overflow:auto; margin-top:0.5rem;">
+                        <table class="table is-fullwidth">
                             <thead>
                                 <tr>
-                                    <th style="width:48px;">Sel.</th>
-                                    <th>Nombre</th>
+                                    <th style="width:48px;" scope="col">Sel.</th>
+                                    <th scope="col">Nombre</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-elementos">
                                 {#for o in opciones}
                                 <tr>
                                     <td>
-                                        <input type="checkbox" name="items" value="{o}" {#if itemsSeleccionados.contains(o)}checked{/if}/>
+                                        <input type="checkbox" name="items" value="{o}"
+                                               aria-label="Incluir {o}"
+                                               {#if itemsSeleccionados.contains(o)}checked{/if}/>
                                     </td>
                                     <td>{o}</td>
                                 </tr>
@@ -76,43 +79,44 @@
                 <div class="control">
                     <button class="button is-primary" type="submit">Cargar</button>
                 </div>
-            </div>
         {/include}
 
-        {#include _kit/surface title="Histórico de ventas para {filtros.dia}/{filtros.mes}"}
-            {#content}
-            <div style="width:100%; overflow-x:auto;">
-                <canvas id="grafica-fecha-historica" width="960" height="360"
-                        data-root="{config:['quarkus.http.root-path']}"
-                        data-mes="{filtros.mes}" data-dia="{filtros.dia}" data-anos="{filtros.anos}"
-                        data-dimension="{filtros.dimension}" data-items="{filtros.items}"
-                        style="max-width:100%; height:auto; display:block;">
-                    Su navegador no soporta canvas.
-                </canvas>
-            </div>
-            <p class="help" id="historica-estado">Cargando datos...</p>
-            {/content}
+        {! The chart is a _kit/chart-card, not a hand-rolled surface: the card
+           owns the definite height, the accessible name and the factory's
+           "Sin datos para el período" state. !}
+        {#include _kit/chart-card title=("Histórico de ventas del " + filtros.dia + "/" + filtros.mes)
+             subtitle="Mismo día o mes a través de los últimos años"}
+            {#chartBody}
+            <canvas id="grafica-fecha-historica" role="img"
+                    aria-label="Ventas del mismo día o mes a través de los últimos años"
+                    data-root="{config:['quarkus.http.root-path']}"
+                    data-mes="{filtros.mes}" data-dia="{filtros.dia}" data-anos="{filtros.anos}"
+                    data-dimension="{filtros.dimension}" data-items="{filtros.items}">
+                Su navegador no soporta canvas.
+            </canvas>
+            {/chartBody}
         {/include}
+        <p class="help mt-2" id="historica-estado" role="status" aria-live="polite">Cargando datos…</p>
 
         {#include _kit/surface title="Resumen por año"}
             {#content}
             <div class="table-container">
-                <table class="table is-fullwidth is-striped">
+                <table class="table is-fullwidth">
                     <thead>
                         <tr>
-                            <th>Año</th>
-                            <th class="num">Ventas</th>
-                            <th class="num">Transacciones</th>
+                            <th scope="col">Año</th>
+                            <th scope="col" class="num">Ventas</th>
+                            <th scope="col" class="num">Transacciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#if resumenAnual == null || resumenAnual.isEmpty()}
-                        <tr><td colspan="3" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                        <tr><td colspan="3" class="kit-empty-cell">Sin registros</td></tr>
                         {#else}
                         {#for r in resumenAnual}
                         <tr>
                             <td>{r.anio}</td>
-                            <td class="num">{r.total}</td>
+                            <td class="num">{fmt:moneda(r.total)}</td>
                             <td class="num">{r.transacciones}</td>
                         </tr>
                         {/for}
@@ -126,22 +130,22 @@
         {#include _kit/surface title="Elementos seleccionados / top por monto histórico"}
             {#content}
             <div class="table-container">
-                <table class="table is-fullwidth is-striped">
+                <table class="table is-fullwidth">
                     <thead>
                         <tr>
-                            <th>Elemento</th>
-                            <th class="num">Total histórico</th>
-                            <th>Valores por año</th>
+                            <th scope="col">Elemento</th>
+                            <th scope="col" class="num">Total histórico</th>
+                            <th scope="col">Valores por año</th>
                         </tr>
                     </thead>
                     <tbody id="historica-productos">
                         {#if productosResultado == null || productosResultado.isEmpty()}
-                        <tr><td colspan="3" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
+                        <tr><td colspan="3" class="kit-empty-cell">Sin registros</td></tr>
                         {#else}
                         {#for p in productosResultado}
                         <tr>
                             <td>{p.nombre}</td>
-                            <td class="num">{p.total}</td>
+                            <td class="num">{fmt:moneda(p.total)}</td>
                             <td>{p.detalle}</td>
                         </tr>
                         {/for}
@@ -177,11 +181,21 @@
             var url = root + '/api/sales-trend/same-date-history?' + params.toString();
 
             fetch(url, { credentials: 'same-origin' })
-                .then(function (r) { return r.json(); })
+                .then(function (r) {
+                    if (!r.ok) {
+                        throw new Error('HTTP ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(function (datos) {
-                    document.getElementById('historica-estado').textContent =
-                        'Mostrando ' + (datos.years ? datos.years.length : 0) + ' años para ' + datos.day + '/' + datos.month + '.';
+                    datos = datos || {};
+                    var estado = document.getElementById('historica-estado');
                     var etiquetas = datos.years || [];
+                    if (estado) {
+                        estado.textContent = etiquetas.length === 0
+                            ? 'Sin historial para ' + dia + '/' + mes + '.'
+                            : 'Mostrando ' + etiquetas.length + ' años para ' + dia + '/' + mes + '.';
+                    }
                     // One hue for every line: Total in the accent, each product
                     // as a lightness step of the same hue (darker = further down
                     // the list). A canvas cannot paint var(), so the hue comes
@@ -190,9 +204,11 @@
                     var tonoH = (rootStyle.getPropertyValue('--bulma-primary-h') || '174').trim();
                     var tonoS = (rootStyle.getPropertyValue('--bulma-primary-s') || '100%').trim();
                     function tono(i) { return 'hsla(' + tonoH + ',' + tonoS + ',' + Math.max(28, 78 - i * 7) + '%,1)'; }
-                    var datasets = [{ label: 'Total', data: datos.totalSales || [], borderColor: window.MercuriusCharts.resolveColour(rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2'), tension: 0.2, fill: false }];
+                    // Straight segments: a smoothed curve invents values
+                    // between the yearly totals it was given.
+                    var datasets = [{ label: 'Total', data: datos.totalSales || [], borderColor: window.MercuriusCharts.resolveColour(rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2'), tension: 0, fill: false }];
                     (datos.products || []).forEach(function (p, i) {
-                        datasets.push({ label: p.productName, data: p.yearlySales || [], borderColor: tono(i), tension: 0.2, fill: false });
+                        datasets.push({ label: p.productName, data: p.yearlySales || [], borderColor: tono(i), tension: 0, fill: false });
                     });
                     if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
                         window.MercuriusCharts.create('grafica-fecha-historica', {
@@ -200,15 +216,17 @@
                             labels: etiquetas,
                             datasets: datasets,
                             options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
                                 plugins: { legend: { position: 'bottom' } }
                             }
                         });
                     }
                 })
-                .catch(function (e) {
-                    document.getElementById('historica-estado').textContent = 'No se pudieron cargar los datos.';
+                .catch(function (error) {
+                    console.warn('[reportes/ventas-fecha-historica] No se pudo cargar el histórico.', error);
+                    var estado = document.getElementById('historica-estado');
+                    if (estado) {
+                        estado.textContent = 'No se pudieron cargar los datos. Vuelva a intentarlo.';
+                    }
                 });
         })();
         </script>

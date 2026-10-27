@@ -653,7 +653,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body(containsString("Pagos registrados"))
                 .body(containsString("id=\"dialog-total-pagado\""))
-                .body(containsString("1356"))
+                .body(containsString(Utils.FormatoVista.moneda(1356)))
                 .body(containsString("Vuelto"));
 
         authed(session)

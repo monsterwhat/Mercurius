@@ -7,7 +7,7 @@
   Classic "Emitir Factura" vertical sequence, in this order:
     1. _kit/page-header: "Crear Factura - {usuario}" (left-aligned, the only
        h1 on the screen) + the labelled tipo de cambio on the right
-    2. Tipo de Factura + Cliente row
+    2. Tipo de factura + Cliente row
     3. Cantidad + código de barras row (scan form)
     4. scrollable cart (pages/facturas/cart-panel include)
     5. facturar outcome (#facturar-resultado)
@@ -37,14 +37,16 @@
        The tipo de cambio is the one live reference value on the till, so it
        sits on the right of the header - with a LABEL. "$1 = ¢457.54" on its
        own was a bare numeric pair reading as the screen's subtitle. !}
-    {#include _kit/page-header title=("Crear Factura - " + usuario)}
+    {! Compact: the till is a working surface, so the header gives its
+       vertical space back to the cart instead of shouting the screen name. !}
+    {#include _kit/page-header title=("Crear Factura - " + usuario) variant="compact"}
         {#actions}
         <span id="badge-tipo-cambio" title="Tipo de cambio de venta (dólar)">
             {#if badge.disponible}
-            <span class="has-text-grey">Tipo de cambio:</span>
-            <span class="has-text-weight-semibold">&#36;1 = &#8353;{badge.venta}</span>
+            <span class="mercurius-text-muted">Tipo de cambio:</span>
+            <span class="has-text-weight-semibold">&#36;1 = {fmt:moneda(badge.venta)}</span>
             {#else}
-            <span class="has-text-grey">Tipo de cambio no disponible</span>
+            <span class="mercurius-text-muted">Tipo de cambio no disponible</span>
             {/if}
         </span>
         {/actions}
@@ -54,22 +56,22 @@
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
             <div class="column is-6">
                 <form id="forma-tipo-documento" class="field" style="margin-bottom:0">
-                    <label class="label is-small" for="select-tipo-documento">Tipo de Factura</label>
+                    <label class="label is-small" for="select-tipo-documento">Tipo de factura</label>
                     <div class="control select is-fullwidth is-small">
                         <select id="select-tipo-documento" name="tipoDocumento">
-                            <option value="04" selected>Tiquete Electrónico</option>
-                            <option value="01">Factura Electrónica</option>
-                            <option value="03">Nota de Crédito</option>
+                            <option value="04" selected>Tiquete electrónico</option>
+                            <option value="01">Factura electrónica</option>
+                            <option value="03">Nota de crédito</option>
                         </select>
                     </div>
                 </form>
             </div>
             <div class="column is-6">
-                <span class="label is-small" id="label-cliente">Cliente</span>
+                <span class="label is-small" id="label-cliente">Cliente
+                    <span class="has-text-weight-normal mercurius-text-muted">(opcional)</span></span>
                 <div class="field has-addons" style="margin-bottom:0">
-                    <div class="control is-expanded is-static has-text-grey is-size-7"
-                         style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                        Opcional &mdash; el cliente asignado se muestra en el carrito
+                    <div class="control is-expanded is-static mercurius-text-muted is-size-7 pos-cliente-hint">
+                        El cliente asignado aparece en el carrito
                     </div>
                     <div class="control">
                         <button type="button" class="button is-medium is-primary is-outlined" aria-haspopup="dialog"
@@ -84,26 +86,34 @@
     </div>
 
     {! Barcode capture: Enter posts (cantidad + codigoBarra) and redraws the
-       sale panel. The article picker button rides the same row. !}
+       sale panel. The article picker button rides the same row. The hint is
+       wired to both fields with aria-describedby so the scanner instructions
+       are not a caption that only sighted users get. !}
     <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
+          aria-label="Agregar artículo por código de barras"
           hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
-          hx-target="#cart-panel" hx-swap="outerHTML">
+          hx-target="#cart-panel" hx-swap="outerHTML"
+          hx-disabled-elt="#btn-agregar-scan">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
             <div class="column is-2">
                 <label class="label is-small" for="cantidad-input">Cantidad</label>
                 <input class="input is-medium has-text-centered" type="number" id="cantidad-input"
-                       name="cantidad" value="1" min="0" step="any" autocomplete="off"/>
+                       name="cantidad" value="1" min="0" step="any" inputmode="decimal"
+                       aria-describedby="ayuda-escaneo" autocomplete="off"/>
             </div>
             <div class="column is-7">
                 <label class="label is-small" for="barcode-input">Código de barras</label>
                 <input class="input is-medium" type="text" id="barcode-input"
                        name="codigoBarra" value="" autocomplete="off" autofocus
-                       placeholder="Escanee o digite y presione Enter"/>
+                       aria-describedby="ayuda-escaneo" enterkeyhint="go"
+                       autocapitalize="off" spellcheck="false"
+                       placeholder="Escanee el código o escríbalo y presione Enter"/>
             </div>
             <div class="column is-3">
                 <div class="field is-grouped" style="margin-bottom:0">
                     <p class="control is-expanded">
-                        <button type="submit" class="button is-medium is-primary is-fullwidth">Agregar</button>
+                        <button type="submit" id="btn-agregar-scan"
+                                class="button is-medium is-primary is-fullwidth">Agregar</button>
                     </p>
                     <p class="control">
                         <button type="button" class="button is-medium" aria-haspopup="dialog"
@@ -115,34 +125,50 @@
                 </div>
             </div>
         </div>
-        <p class="help has-text-grey">El lector envía Enter solo; la cantidad por defecto es 1.</p>
+        <p class="help mercurius-text-muted" id="ayuda-escaneo">El lector envía Enter solo; la cantidad por defecto es 1.</p>
     </form>
 
     {! Classic scrollable cart. The include is the single source of truth for
        the markup, so every mutation endpoint and row form keeps working; the
-       wrapper only supplies the scroll viewport. !}
-    <div style="max-height:28rem;overflow-y:auto;margin-bottom:0.75rem">
-        {#include pages/facturas/cart-panel panel=panel /}
-    </div>
+       scroll viewport now lives INSIDE the panel around the rows table, so the
+       totals and the two closing actions never scroll out of reach. !}
+    {#include pages/facturas/cart-panel panel=panel /}
 
-    {! Facturar outcome (PDF link / error envelope) swaps here. !}
-    <div id="facturar-resultado"></div>
+    {! Facturar outcome (PDF link / error envelope) swaps here. The empty
+       wrapper is the persistent aria-live region: the response repaints its
+       inner content, so the success/failure notice is announced without
+       replacing the region itself. !}
+    <div id="facturar-resultado" aria-live="polite"></div>
+
+    {! Polite announcer for async picker result counts (written by the picker
+       fragments; invisible, persistent across swaps). !}
+    <p id="pos-anuncio" class="is-sr-only" role="status"></p>
 </section>
 
 {! Payment dialog: kit modal shell, body loaded/re-rendered from
    /api/app/pos/payment-dialog + /payment-entries-form. Hidden trigger:
-   the cart panel's "Pagos / Vuelto" button opens it via data-kit-open. !}
+   the cart panel's "Pagos y vuelto" button opens it via data-kit-open and
+   carries its own hx-get, because a bridge-opened modal does not click the
+   kit's hidden trigger. Its footer closes the dialog AND refreshes the cart,
+   so the staged payments (Pagado / Vuelto) are visible before Facturar. !}
 {#include _kit/modal id="modal-pago" title="Pagos y vuelto" triggerLabel="Pagos"
-     triggerClass="is-hidden" bodyUrl="/api/app/pos/payment-dialog"}{/include}
+     triggerClass="is-hidden" bodyUrl="/api/app/pos/payment-dialog"}
+    {#footer}
+    <button type="button" class="button"
+            hx-get="{config:['quarkus.http.root-path']}/api/app/pos/cart-panel"
+            hx-target="#cart-panel" hx-swap="outerHTML"
+            @click="open = false">Volver al carrito</button>
+    {/footer}
+{/include}
 
 {! Client picker: kit modal shell over the reusable typeahead fragment. !}
-{#include _kit/modal id="modal-cliente" title="Seleccionar Cliente" triggerLabel="Cliente"
+{#include _kit/modal id="modal-cliente" title="Seleccionar cliente" triggerLabel="Cliente"
      triggerClass="is-hidden" bodyUrl="/api/app/pos/client-picker?q="}{/include}
 
 {! Article picker: kit modal shell over the search-as-you-type fragment. The
    "Buscar" button on the scan row opens it via data-kit-open + its own hx-get
    (T18 bridge pattern, same as the client picker). !}
-{#include _kit/modal id="modal-articulos" title="Buscar y Agregar Artículo" triggerClass="is-hidden"
+{#include _kit/modal id="modal-articulos" title="Buscar y agregar artículo" triggerClass="is-hidden"
      bodyUrl="/api/app/pos/articulos-picker?q="}{/include}
 
 {! Supervisor authorization: inline Alpine modal (same skeleton as
@@ -154,10 +180,12 @@
     <div class="modal-background" @click="open = false"></div>
     <div class="modal-card" tabindex="-1" @keydown.tab="kitTrapTab($event, $el)">
         <header class="modal-card-head">
-            <p class="modal-card-title" id="modal-autorizacion-title">Autorización Requerida</p>
+            <p class="modal-card-title" id="modal-autorizacion-title">Autorización requerida</p>
             <button class="delete" type="button" aria-label="Cerrar" @click="open = false"></button>
         </header>
-        <section class="modal-card-body" id="modal-autorizacion-body">
+        {! The id lives on the fragment (…-body), not on this section: putting it
+           on both made two elements with the same id before the first POST. !}
+        <section class="modal-card-body">
             {#include pages/facturas/auth-modal-body auth=authInicial /}
         </section>
     </div>
@@ -165,14 +193,25 @@
 
 {#include _kit/confirm /}
 
-{! Keyboard-first glue: barcode refocus after every swap, live puntos
+{! Keyboard-first glue: barcode refocus after every swap (never while a dialog
+   is open), focus handoff when a bridge-opened dialog appears, live puntos
    preview (JSON /puntos-preview), and the data-kit-open/close bridge.
    Every "{" in scripts keeps trailing whitespace (Qute literal rule). !}
 <script>
     (function () {
-        function refocusBarcode() {
+        function modalAbierto() {
+            return document.querySelector('.modal.is-active');
+        }
+
+        function focusBarcode() {
             var barcode = document.getElementById('barcode-input');
             if (!barcode) {
+                return;
+            }
+            // A dialog owns the keyboard while it is open. Without this guard
+            // the afterSwap refocus landed on the scanner field BEHIND the
+            // overlay and every picker keystroke went into the barcode.
+            if (modalAbierto()) {
                 return;
             }
             var active = document.activeElement;
@@ -184,28 +223,79 @@
                 barcode.select();
             }
         }
-        document.body.addEventListener('htmx:afterSwap', refocusBarcode);
-        document.addEventListener('DOMContentLoaded', refocusBarcode);
+        document.body.addEventListener('htmx:afterSwap', focusBarcode);
+        document.addEventListener('DOMContentLoaded', focusBarcode);
         if (document.readyState !== 'loading') {
-            refocusBarcode();
+            focusBarcode();
         }
 
+        // Escape closes a dialog by hiding it, which would otherwise leave the
+        // caret inside a hidden subtree. Only when Escape was pressed FROM a
+        // dialog (never hijacking the key elsewhere), hand the keyboard back to
+        // the scanner, which is where the next action starts.
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') {
+                return;
+            }
+            var dentro = document.activeElement && document.activeElement.closest('.modal');
+            if (!dentro) {
+                return;
+            }
+            window.setTimeout(function () {
+                var barcode = document.getElementById('barcode-input');
+                if (barcode && !modalAbierto()) {
+                    barcode.focus();
+                    barcode.select();
+                }
+            }, 0);
+        });
+
+        // A bridge-opened dialog (data-kit-open) skips the kit trigger, which
+        // is the only place that used to move focus into the dialog. Move it
+        // to the first autofocused field, else to the card itself so the focus
+        // trap has somewhere to start.
+        function enfocarModal(modal) {
+            window.setTimeout(function () {
+                // The body may have arrived first and focused its own field
+                // (the picker search); do not pull focus back out of it.
+                if (document.activeElement && modal.contains(document.activeElement)) {
+                    return;
+                }
+                var auto = modal.querySelector('[autofocus]');
+                var destino = auto && auto.offsetParent !== null
+                    ? auto : modal.querySelector('.modal-card');
+                if (destino) {
+                    destino.focus();
+                }
+            }, 0);
+        }
+
+        var puntosTimer = null;
+        var puntosSeq = 0;
         document.body.addEventListener('keyup', function (e) {
-            if (e.target && e.target.id === 'puntos-input') {
-                var out = document.getElementById('puntos-preview');
-                if (!out) {
-                    return;
-                }
-                var valor = parseInt(e.target.value, 10);
-                if (!valor || valor <= 0) {
-                    out.textContent = '\u00a0';
-                    return;
-                }
+            if (!e.target || e.target.id !== 'puntos-input') {
+                return;
+            }
+            var out = document.getElementById('puntos-preview');
+            if (!out) {
+                return;
+            }
+            var valor = parseInt(e.target.value, 10);
+            window.clearTimeout(puntosTimer);
+            if (!valor || valor <= 0) {
+                out.textContent = '\u00a0';
+                return;
+            }
+            var seq = ++puntosSeq;
+            puntosTimer = window.setTimeout(function () {
                 fetch('{config:['quarkus.http.root-path']}/api/app/pos/puntos-preview?puntos=' + encodeURIComponent(valor))
                     .then(function (r) {
                         return r.json();
                     })
                     .then(function (body) {
+                        if (seq !== puntosSeq) {
+                            return;
+                        }
                         if (body && body.data) {
                             out.textContent = 'Descuento estimado: \u20a1' + body.data.aplicado +
                                 ' (saldo ' + body.data.balance + ' pts)';
@@ -213,10 +303,14 @@
                             out.textContent = body.error.message;
                         }
                     })
-                    .catch(function () {
-                        out.textContent = '';
+                    .catch(function (err) {
+                        if (seq !== puntosSeq) {
+                            return;
+                        }
+                        out.textContent = 'No se pudo calcular el descuento por puntos.';
+                        console.warn('POS: no se pudo calcular el descuento por puntos', err);
                     });
-            }
+            }, 300);
         });
 
         document.addEventListener('click', function (e) {
@@ -225,6 +319,7 @@
                 var modal = document.getElementById(opener.getAttribute('data-kit-open'));
                 if (modal && window.Alpine) {
                     Alpine.$data(modal).open = true;
+                    enfocarModal(modal);
                 }
                 return;
             }

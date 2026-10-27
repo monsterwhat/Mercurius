@@ -48,7 +48,7 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
                 .when().get(PENDIENTES_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("Recibos Pendientes"))
+                .body(containsString("Facturas Recibidas Pendientes"))
                 .body(containsString("data-kit-table"));
     }
 
@@ -59,7 +59,7 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
                 .when().get(VENCIDOS_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("Recibos Vencidos"))
+                .body(containsString("Facturas Recibidas Vencidas"))
                 .body(containsString("data-kit-table"));
     }
 

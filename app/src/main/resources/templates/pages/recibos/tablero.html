@@ -34,22 +34,30 @@
     {#include _kit/view-tabs id="recibos-stats" ariaLabel="Vistas de facturas emitidas"}
         {#tabs}
         <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'todas' }"
-                aria-controls="panel-recibos-todas" @click="bucket = 'todas'">
+                aria-controls="panel-recibos-todas"
+                :aria-current="bucket === 'todas' ? 'page' : 'false'"
+                @click="bucket = 'todas'">
             <span>Todas</span>
             <span class="view-tab-count">{stats.todas}</span>
         </button>
         <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'pagadas' }"
-                aria-controls="panel-recibos-pagadas" @click="bucket = 'pagadas'">
+                aria-controls="panel-recibos-pagadas"
+                :aria-current="bucket === 'pagadas' ? 'page' : 'false'"
+                @click="bucket = 'pagadas'">
             <span>Pagadas</span>
             <span class="view-tab-count">{stats.pagadas}</span>
         </button>
         <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'procesadas' }"
-                aria-controls="panel-recibos-procesadas" @click="bucket = 'procesadas'">
+                aria-controls="panel-recibos-procesadas"
+                :aria-current="bucket === 'procesadas' ? 'page' : 'false'"
+                @click="bucket = 'procesadas'">
             <span>Procesadas</span>
             <span class="view-tab-count">{stats.procesadas}</span>
         </button>
         <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'vencidos' }"
-                aria-controls="panel-recibos-vencidos" @click="bucket = 'vencidos'">
+                aria-controls="panel-recibos-vencidos"
+                :aria-current="bucket === 'vencidos' ? 'page' : 'false'"
+                @click="bucket = 'vencidos'">
             <span>Vencidos</span>
             <span class="view-tab-count">{stats.vencidos}</span>
         </button>
@@ -59,16 +67,16 @@
     {! Only the selected bucket is on screen. The panel wrappers keep the
        tables' own ids (#recibos-tabla-<bucket>) and the hx-target of every
        search box, pager and row action intact. !}
-    <div id="panel-recibos-todas" x-show="bucket === 'todas'">
+    <div id="panel-recibos-todas" role="region" aria-label="Facturas: todas" x-show="bucket === 'todas'">
         {#include pages/recibos/tabla modelo=modelos.todas /}
     </div>
-    <div id="panel-recibos-pagadas" x-show="bucket === 'pagadas'" style="display:none">
+    <div id="panel-recibos-pagadas" role="region" aria-label="Facturas: pagadas" x-show="bucket === 'pagadas'" style="display:none">
         {#include pages/recibos/tabla modelo=modelos.pagadas /}
     </div>
-    <div id="panel-recibos-procesadas" x-show="bucket === 'procesadas'" style="display:none">
+    <div id="panel-recibos-procesadas" role="region" aria-label="Facturas: procesadas" x-show="bucket === 'procesadas'" style="display:none">
         {#include pages/recibos/tabla modelo=modelos.procesadas /}
     </div>
-    <div id="panel-recibos-vencidos" x-show="bucket === 'vencidos'" style="display:none">
+    <div id="panel-recibos-vencidos" role="region" aria-label="Facturas: vencidas" x-show="bucket === 'vencidos'" style="display:none">
         {#include pages/recibos/tabla modelo=modelos.vencidos /}
     </div>
 

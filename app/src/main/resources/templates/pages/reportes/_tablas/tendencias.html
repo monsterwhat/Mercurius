@@ -19,6 +19,9 @@
             {/if}
         </tr>
         {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin datos para la vista y el rango seleccionados</td></tr>
+        {/if}
       {/rows}
     {/include}
 </div>

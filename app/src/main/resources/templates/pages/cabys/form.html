@@ -22,29 +22,34 @@
             <div class="control">
                 <input class="input kit-code" id="cabys-codigo" value="{cabys.codigo}" disabled="disabled"/>
             </div>
-            <p class="help has-text-grey">El código es asignado por Hacienda y no es editable.</p>
+            <p class="help mercurius-text-muted">El código es asignado por Hacienda y no es editable.</p>
         </div>
         <div class="field">
             <label class="label" for="cabys-descripcion">Descripción:</label>
             <div class="control">
                 <textarea class="textarea {#if errorDescripcion??}is-danger{/if}" id="cabys-descripcion"
-                          name="descripcion" rows="3">{#if cabys.descripcion??}{cabys.descripcion}{/if}</textarea>
+                          name="descripcion" rows="3" maxlength="2000"
+                          aria-describedby="cabys-descripcion-ayuda">{#if cabys.descripcion??}{cabys.descripcion}{/if}</textarea>
             </div>
-            {#if errorDescripcion??}<p class="help is-danger">{errorDescripcion}</p>{/if}
+            {#if errorDescripcion??}<p class="help is-danger has-text-danger" role="alert">{errorDescripcion}</p>{/if}
+            <p class="help" id="cabys-descripcion-ayuda">Texto que verá el cliente en la factura. Máximo 2000 caracteres.</p>
         </div>
         <div class="field">
             <label class="label" for="cabys-estado">Estado:</label>
             <div class="control">
                 <input class="input" id="cabys-estado" name="estado" autocomplete="off"
+                       maxlength="255" spellcheck="false"
+                       aria-describedby="cabys-estado-ayuda"
                        value="{#if cabys.estado??}{cabys.estado}{/if}"/>
             </div>
+            <p class="help" id="cabys-estado-ayuda">Estado publicado por Hacienda. Solo un código activo se puede facturar.</p>
         </div>
         <div class="field is-grouped is-grouped-right">
             <div class="control">
                 <button class="button is-primary" type="submit">Guardar cambios</button>
             </div>
             <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
+                <button class="button" type="button" data-kit-close>Cancelar</button>
             </div>
         </div>
     </form>

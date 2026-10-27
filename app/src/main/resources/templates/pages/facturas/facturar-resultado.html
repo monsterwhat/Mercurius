@@ -6,6 +6,10 @@
   CartSessionStore.remove). On any guard failure it renders the error envelope
   with the sale intact, plus an OOB staleness-heal of the panel.
 
+  The root is deliberately NOT #facturar-resultado: the page owns that id and
+  swaps this fragment with innerHTML, so repeating the id here nested a second
+  copy inside the first on every sale (duplicate ids after the second invoice).
+
   Model ("resultado" bound key, Map):
     exito           bool
     pdfUrl          String  - success only (GET streams application/octet-stream)
@@ -17,12 +21,12 @@
     errorCode / errorMessage - failure only
     panelHtml       String  - rendered cart-panel carrying hx-swap-oob
 !}
-<div id="facturar-resultado">
+<div class="pos-resultado">
     {#if resultado.exito}
     <div class="notification is-success" role="status">
-        <p class="is-size-5"><strong>&#9989; Venta facturada</strong></p>
+        <p class="is-size-5"><strong>{#include _kit/icon name="check" /} Venta facturada</strong></p>
         {#if resultado.consecutivo??}
-        <p>Consecutivo: <span class="has-text-weight-semibold">{resultado.consecutivo}</span></p>
+        <p>Consecutivo: <span class="has-text-weight-semibold kit-code">{resultado.consecutivo}</span></p>
         {/if}
         {#if resultado.haciendaEstado??}
         <p>Hacienda: <span class="status-chip is-neutral">{resultado.haciendaEstado}</span>
@@ -30,26 +34,34 @@
         {/if}
         {#if resultado.puntosOtorgados?? && !resultado.puntosOtorgados}
         <div class="notification is-warning" role="alert">
-            <p><strong>&#9888; Puntos sin acreditar</strong></p>
+            <p><strong>{#include _kit/icon name="alert" /} Puntos sin acreditar</strong></p>
             {#if resultado.puntosMensaje??}<p>{resultado.puntosMensaje}</p>{/if}
         </div>
         {/if}
         {#if resultado.vuelto?? && resultado.vuelto > 0}
-        <p>Vuelto entregado: <span class="has-text-weight-semibold">{resultado.vuelto}</span></p>
+        <p>Vuelto entregado: <span class="has-text-weight-semibold">{fmt:moneda(resultado.vuelto)}</span></p>
         {/if}
         {#if resultado.pdfUrl??}
-        <p style="margin-top:0.5rem">
+        <div class="buttons" style="margin-top:0.5rem">
             <a id="pdf-link" class="button is-dark" href="{resultado.pdfUrl}">{#include _kit/icon name="download" /} Descargar PDF</a>
-        </p>
+            {! Legacy parity: the old page auto-printed; the operator asks for it
+               now, through the shared window.printPDF helper (web/print.js). !}
+            <button type="button" class="button" data-pos-imprimir data-pdf-url="{resultado.pdfUrl}">
+                {#include _kit/icon name="print" /} Imprimir</button>
+        </div>
         {/if}
+        {! Next action, stated: the scanner is already focused again, so the
+           cashier only has to scan. !}
+        <p class="help">El carrito quedó vacío: escanee el siguiente artículo cuando quiera.</p>
     </div>
     {#else}
     <div class="notification is-danger" role="alert">
         <p><strong>No se pudo facturar</strong></p>
-        <p><span class="status-chip is-neutral">{resultado.errorCode}</span> {resultado.errorMessage}</p>
+        <p><span class="status-chip is-danger">{resultado.errorCode}</span> {resultado.errorMessage}</p>
         {#if resultado.errorCode == 'SUPERVISOR_REQUIRED'}
         <p class="help">Use el botón &laquo;Autorizar precios&raquo; del carrito e intente de nuevo.</p>
         {/if}
+        <p class="help">La venta sigue en el carrito: corrija lo indicado e intente de nuevo.</p>
     </div>
     {/if}
 
@@ -57,4 +69,23 @@
     {#if resultado.panelHtml??}
     {resultado.panelHtml.raw}
     {/if}
+
+    {! Print uses the shared helper; a bundle without it hides the button
+       instead of leaving a control that does nothing. !}
+    <script>
+        (function () {
+            var boton = document.querySelector('[data-pos-imprimir]');
+            if (!boton) {
+                return;
+            }
+            if (!window.printPDF) {
+                boton.hidden = true;
+                console.warn('POS: window.printPDF no está disponible; se oculta Imprimir');
+                return;
+            }
+            boton.addEventListener('click', function () {
+                window.printPDF(boton.getAttribute('data-pdf-url'));
+            });
+        })();
+    </script>
 </div>

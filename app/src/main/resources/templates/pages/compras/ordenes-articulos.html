@@ -16,6 +16,7 @@
     <li style="margin:0">
         <button type="button"
                 class="button is-small is-fullwidth is-justify-content-flex-start js-articulo-opcion"
+                style="white-space:normal;text-align:left;height:auto;min-height:2.25rem"
                 data-codigo="{opcion.codigo}"
                 data-nombre="{#if opcion.nombre??}{opcion.nombre}{/if}">
             {#if opcion.nombre??}{opcion.nombre}{#else}&mdash;{/if}
@@ -23,6 +24,6 @@
         </button>
     </li>
     {#else}
-    <li class="has-text-grey p-2">Sin resultados</li>
+    <li class="has-text-grey p-2">Sin resultados para la búsqueda.</li>
     {/for}
 </ul>

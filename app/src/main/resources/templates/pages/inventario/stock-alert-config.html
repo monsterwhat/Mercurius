@@ -34,6 +34,29 @@
       tabular figures.
     - "Cargar" is a plain bordered button: the page's one filled primary
       is "Guardar Umbrales".
+
+  ROUND 2
+  -------
+  - THE ARTICLE LOADER NO LONGER LIVES INSIDE #alerta-config-forma. It was
+    inside the region its own hx-get replaces via outerHTML, so every
+    debounced keystroke destroyed the input under the cursor: the operator
+    could type about one character before losing focus. The loader renders
+    above the swap target now and keeps focus.
+  - The loader has a real <label> and a help line that says when it loads; it
+    previously had only a placeholder.
+  - The loader fires on `change` (leave the field) instead of on every debounced
+    keystroke. The server answers an unknown code with an error toast, so
+    keyup-loading produced one "No se encontró el artículo: 1" per digit while
+    the operator typed a code.
+  - hx-sync="this:replace" drops a stale in-flight response instead of letting
+    it overwrite the newer one.
+  - hx-disabled-elt="this" on Guardar Umbrales: the save used to allow a
+    second PUT while the first was still in flight.
+  - The OOB toast moved to the top level of the {#fragment forma} response.
+    htmx only processes out-of-band swaps on top-level response elements, so
+    a save confirmation nested inside the swapped div was silently dropped.
+  - The stock-optimal figure uses the app's figure class, and the empty state
+    says what to do instead of only reporting that nothing is loaded.
 !}
 {#include layout}
     {#title}{titulo} | Mercurius{/title}
@@ -56,25 +79,30 @@
                 {#include _kit/metric label="Antigüedad mínima" value=global.antiguedadMinimaDias detail="días de historia" /}
                 {#include _kit/metric label="Tope de nuevas por barrido" value=global.maximoNuevasPorBarrido detail="alertas" /}
             </div>
-            <p class="help has-text-grey">
+            <p class="help">
                 Un artículo con menos historia no se juzga; el tope (0 = sin tope)
                 reparte el backlog de alertas dormidas en varias corridas.
             </p>
             {/content}
         {/include}
 
-{#fragment forma}
-        <div id="alerta-config-forma">
-            {#include _kit/surface title="Umbrales por Artículo" }
-                {#content}
+        {#include _kit/surface title="Umbrales por Artículo" }
+            {#content}
+            {! Loader OUTSIDE #alerta-config-forma: the fragment swap must not
+               replace the field the operator is typing in. !}
+            <div class="field">
+                <label class="label" for="input-articulo">Código de artículo</label>
                 <div class="field has-addons">
                     <div class="control is-expanded">
                         <input id="input-articulo" class="input" type="text"
-                               name="articulo" inputmode="numeric"
-                               placeholder="Código del artículo"
+                               name="articulo" inputmode="numeric" autocomplete="off"
+                               autocapitalize="none" spellcheck="false"
+                               placeholder="Ej: 1024"
+                               aria-describedby="input-articulo-ayuda"
                                value="{articuloCodigoInput}"
                                hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
-                               hx-trigger="keyup changed delay:300ms"
+                               hx-trigger="change, search"
+                               hx-sync="this:replace"
                                hx-target="#alerta-config-forma" hx-swap="outerHTML"/>
                     </div>
                     <div class="control">
@@ -84,19 +112,31 @@
                                 hx-target="#alerta-config-forma" hx-swap="outerHTML">Cargar</button>
                     </div>
                 </div>
+                <p class="help" id="input-articulo-ayuda">
+                    Los umbrales se cargan al salir del campo con un código escrito; también puede presionar Cargar.
+                </p>
+            </div>
 
+            {#fragment forma}
+            <div id="alerta-config-forma">
                 {#if cargado && umbral?? && umbral.articuloCodigo??}
                 <form hx-put="{config:['quarkus.http.root-path']}/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
                       hx-target="#alerta-config-forma" hx-swap="outerHTML">
                     <input type="hidden" name="estadoAlertasPresente" value="1"/>
+                    <p class="is-size-7 mercurius-text-muted">
+                        Artículo: <strong>{umbral.articuloNombre ?: umbral.articuloCodigo}</strong>
+                        <span class="kit-code">({umbral.articuloCodigo})</span>
+                    </p>
                     <div class="field">
                         <label class="label" for="dias-stock-seguridad">Días de Stock de Seguridad</label>
                         <div class="control">
                             <input id="dias-stock-seguridad" class="input" type="number"
                                    min="0" step="1" name="diasStockSeguridad"
+                                   inputmode="numeric"
+                                   aria-describedby="dias-stock-seguridad-ayuda"
                                    value="{umbral.diasStockSeguridad}"/>
                         </div>
-                        <p class="help has-text-grey">
+                        <p class="help" id="dias-stock-seguridad-ayuda">
                             Vacío usa el valor por defecto del sistema
                             ({global.diasStockSeguridadPorDefecto} días).
                         </p>
@@ -107,34 +147,35 @@
                                    {#if umbral.estadoAlertas}checked{/if}/>
                             Alertas habilitadas para este artículo
                         </label>
-                        <p class="help has-text-grey">
+                        <p class="help">
                             Desmarcado excluye el artículo de la generación automática de alertas.
                         </p>
                     </div>
                     <div class="field">
                         <label class="label">Stock Óptimo Actual</label>
-                        <p>{#if umbral.stockOptimoActual??}{umbral.stockOptimoActual}{#else}&mdash;{/if}
-                            <span class="has-text-grey">&nbsp;(lo recalcula el sistema al verificar alertas)</span></p>
+                        <p><span class="kit-figure has-text-weight-semibold">{#if umbral.stockOptimoActual??}{umbral.stockOptimoActual}{#else}&mdash;{/if}</span>
+                            <span class="is-size-7 mercurius-text-muted">(lo recalcula el sistema al verificar alertas)</span></p>
                     </div>
                     <div class="field">
-                        <button class="button is-primary" type="submit">Guardar Umbrales</button>
+                        <button class="button is-primary" type="submit" hx-disabled-elt="this">Guardar Umbrales</button>
                     </div>
                 </form>
                 {#else}
-                <p class="has-text-grey">
-                    Escriba el código de un artículo y cárguelo para editar sus umbrales.
+                <p class="kit-empty">
+                    Escriba el código de un artículo y cárguelo para ver y editar sus umbrales.
                 </p>
                 {/if}
-                {/content}
-            {/include}
-
+            </div>
+            {! Top level of the fragment response: htmx only processes OOB
+               swaps on top-level elements. !}
             {#if mensajeToast??}
             <div hx-swap-oob="beforeend:#toast-container">
                 {#include _kit/toast-item severity=toastSeveridad message=mensajeToast /}
             </div>
             {/if}
-        </div>
-{/fragment}
+            {/fragment}
+            {/content}
+        {/include}
 
         {#include _kit/surface title="Alertas Disparadas Actualmente"
              subtitle="Instantánea de solo lectura; la gestión y el reporte completo viven en Reportes → Inventario → Alertas de Stock." }
@@ -153,7 +194,7 @@
                     <td>{fila.estado}</td>
                 </tr>
                 {#else}
-                <tr><td colspan="7" class="has-text-centered has-text-grey">Sin alertas activas</td></tr>
+                <tr><td colspan="7" class="has-text-centered"><span class="kit-empty">El motor no ha disparado alertas en este momento.</span></td></tr>
                 {/for}
               {/rows}
             {/include}

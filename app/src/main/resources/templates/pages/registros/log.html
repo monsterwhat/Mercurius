@@ -22,6 +22,12 @@
     next to the teal primary. It is a bordered button.
   - The table lost the zebra striping and its size column is a `num` cell:
     right-aligned with tabular figures.
+  - The empty state is a real empty state (heading + cause) instead of one
+    grey sentence inside a table cell, and the muted copy uses the
+    scheme-aware token rather than has-text-grey.
+  - Every download link carries the file name in its accessible name: a
+    column of identically named "Descargar" links is ambiguous to a screen
+    reader.
 !}
 {#include layout}
     {#title}Log de Actividades | Mercurius{/title}
@@ -36,10 +42,13 @@
             {#include _kit/metric label="Archivos" value=(totalArchivos ?: 0) /}
         </div>
 
-        {#include _kit/surface title="Archivos de registro" }
+        {#include _kit/surface title="Archivos de registro"
+             subtitle="Del más reciente al más antiguo" }
             {#content}
+            {#if archivos?? && archivos.size() > 0}
             <div class="table-container">
             <table class="table is-hoverable is-fullwidth">
+                <caption class="is-sr-only">Archivos de registro disponibles para descargar</caption>
                 <thead>
                     <tr>
                         <th scope="col">Archivo</th>
@@ -51,24 +60,33 @@
                 <tbody>
                     {#for a in archivos}
                     <tr>
-                        <td class="kit-code">{a.nombre}</td>
+                        <td><span class="kit-code table-clamp" title="{a.nombre}">{a.nombre}</span></td>
                         <td class="num">{a.tamanio}</td>
                         <td>{a.modificado}</td>
                         <td class="has-text-centered">
                             <a class="button is-small"
+                               aria-label="Descargar {a.nombre}"
                                href="{config:['quarkus.http.root-path']}/app/registros/log/descargar?archivo={a.nombre}">
-                                Descargar</a>
+                                {#include _kit/icon name="download" /}
+                                <span>Descargar</span></a>
                         </td>
                     </tr>
-                    {#else}
-                    <tr><td colspan="4" class="has-text-centered has-text-grey">
-                        No hay archivos de registro. Verifique que el log de archivo esté habilitado.</td></tr>
                     {/for}
                 </tbody>
             </table>
             </div>
-            <p class="help has-text-grey">
-                Los respaldos rotados se comprimen (.gz) tras 30 días y se eliminan tras 4 años.
+            {#else}
+            <div class="has-text-centered py-5">
+                <p class="mb-2">{#include _kit/icon name="file" size="large" /}</p>
+                <p class="has-text-weight-semibold mb-1">No hay archivos de registro</p>
+                <p class="kit-empty">
+                    El log de archivo no está generando archivos todavía.
+                    Verifique que el log de archivo esté habilitado en el servidor.
+                </p>
+            </div>
+            {/if}
+            <p class="help mercurius-text-muted mt-4">
+                Los archivos rotados se comprimen (.gz) tras 30 días y se eliminan tras 4 años.
             </p>
             {/content}
         {/include}

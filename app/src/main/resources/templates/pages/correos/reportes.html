@@ -40,6 +40,17 @@
     page header's {#actions} slot instead of a loose <div class="buttons">.
   - The table sits in a _kit/surface: the board is one kind of panel from top
     to bottom.
+
+  ROUND 2
+  -------
+  - THE SEARCH FIELD NO LONGER LIVES INSIDE THE SWAPPED FRAGMENT. It sat in
+    #tabla-reportes, which the search itself replaces via outerHTML on every
+    debounced keystroke, so the input was destroyed and re-created under the
+    cursor. It renders here, above the swap target, and keeps focus.
+  - The field is labelled (a placeholder is not a name), type="search", with
+    enterkeyhint so the phone keyboard offers Buscar, and hx-sync so a stale
+    in-flight response cannot overwrite a newer one.
+  - A visually hidden status line announces the result count after each swap.
 !}
 {#include layout}
     {#title}Reportes Programados | Mercurius{/title}
@@ -59,8 +70,26 @@
             {#include _kit/metric label="Reportes" value=(totalReportes ?: 0) /}
         </div>
 
+        <p id="reportes-anuncio" class="is-sr-only" role="status" aria-live="polite"></p>
+
         {#include _kit/surface title="Listado de reportes programados" }
             {#content}
+                {! Outside #tabla-reportes on purpose: see ROUND 2 above. !}
+                <div class="field">
+                    <label class="label" for="reportes-buscar">Buscar reportes</label>
+                    <div class="control has-icons-left">
+                        <input class="input" id="reportes-buscar" type="search" name="q"
+                               value="{#if tablaReportes.q??}{tablaReportes.q}{/if}"
+                               autocomplete="off" enterkeyhint="search"
+                               placeholder="Nombre, correo, frecuencia o reporte"
+                               hx-get="{config:['quarkus.http.root-path']}{tablaReportes.baseUrl}"
+                               hx-trigger="keyup changed delay:300ms, search"
+                               hx-sync="this:replace"
+                               hx-target="#{tablaReportes.id}" hx-swap="outerHTML"/>
+                        <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
+                    </div>
+                </div>
+
                 {#include pages/correos/tabla-reportes modelo=tablaReportes q=tablaReportes.q isAdmin=isAdmin /}
             {/content}
         {/include}
@@ -76,23 +105,58 @@
     {! Bridge: row-level edit buttons open the shared edit modal; the swapped
        form's [data-kit-close] button closes it (same contract as T18). !}
     <script>
-        document.addEventListener('click', function (e) {
-            var opener = e.target.closest('[data-kit-open]');
-            if (opener) {
-                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
-                if (modal && window.Alpine) {
-                    Alpine.$data(modal).open = true;
+        (function () {
+            document.addEventListener('click', function (e) {
+                var opener = e.target.closest('[data-kit-open]');
+                if (opener) {
+                    var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                    if (modal && window.Alpine) {
+                        Alpine.$data(modal).open = true;
+                    }
+                    return;
                 }
-                return;
-            }
-            var closer = e.target.closest('[data-kit-close]');
-            if (closer) {
-                var root = closer.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
+                var closer = e.target.closest('[data-kit-close]');
+                if (closer) {
+                    var root = closer.closest('.kit-modal-root');
+                    if (root && window.Alpine) {
+                        Alpine.$data(root).open = false;
+                    }
                 }
-            }
-        });
+            });
+
+            {! The table is swapped by the search box and by the row actions, so
+               the result count only exists in the new DOM. Announce it. !}
+            document.body.addEventListener('htmx:afterSwap', function (e) {
+                var target = e.detail ? e.detail.target : null;
+                if (!target || target.id !== 'tabla-reportes') {
+                    return;
+                }
+                var tabla = document.getElementById('tabla-reportes');
+                var region = document.getElementById('reportes-anuncio');
+                var total = tabla ? tabla.getAttribute('data-resultados') : null;
+                if (!region || total === null) {
+                    return;
+                }
+                region.textContent = total === '1'
+                    ? '1 reporte encontrado.'
+                    : total + ' reportes encontrados.';
+            });
+
+            {! On a rejected save the dialog body is re-rendered with the errors;
+               put the keyboard back on the first field the server flagged.
+               Scoped to the form itself: a search swap must not pull focus into
+               a closed dialog that happens to hold an old form. !}
+            document.body.addEventListener('htmx:afterSwap', function (e) {
+                var target = e.detail ? e.detail.target : null;
+                if (!target || target.id !== 'forma-reporte') {
+                    return;
+                }
+                var invalido = document.querySelector('#forma-reporte [aria-invalid="true"]');
+                if (invalido && typeof invalido.focus === 'function') {
+                    invalido.focus();
+                }
+            });
+        })();
     </script>
     {/body}
 {/include}
