@@ -81,81 +81,84 @@
 {! Only id/baseUrl/headers are declared: the remaining parameters are
    OPTIONAL per the data contract above, and {@...} declarations make Qute
    fail rendering when a caller omits them. Optional usages are ??-guarded. !}
-<div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}"
-     role="region" tabindex="0"
-     aria-label="{#if label??}{label}{#else}Tabla de resultados{/if}">
-    <table class="table is-hoverable is-fullwidth">
-        {#insert caption}{/insert}
-        <thead>
-            <tr>
-                {#for col in headers}
-                    {#if col.key??}
-                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.key == sortKey}{#if sortDir == 'desc'} aria-sort="descending"{#else} aria-sort="ascending"{/if}{#else} aria-sort="none"{/if}>
-                        <!--
-                          W2 (root-path normalization): the deployment root is read
-                          from configuration via {config:['quarkus.http.root-path']},
-                          never hard-coded. quarkus.http.root-path IS declared in
-                          application.properties, so the previous comment here
-                          ("absent from runtime config and 500s on render") was
-                          STALE and has been removed.
-
-                          Do not inline the resolved value, and do not reintroduce
-                          a hard-coded root path: the whole point is that the kit
-                          owns root-path resolution so templates never learn the
-                          deployment context. Pinned by RootPathNormalizationTest.
-                        -->
-                        <a href="{config:['quarkus.http.root-path']}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
-                           title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}{#if col.key == sortKey}<span class="kit-sort" aria-hidden="true">{#if sortDir == 'desc'}▼{#else}▲{/if}</span>{/if}</a>
-                    </th>
+{! The id lives on .table-block, NOT on the scroll frame. The pager must sit
+   outside .table-container: a phone-sized viewport turns the container into a
+   horizontal scroller as wide as the table, so a pager rendered inside it is
+   parked past the last column and the operator never sees it. HTMX swaps
+   still target #{id}, which now replaces table + pager as one unit. !}
+<div class="table-block" id="{id}">
+    <div class="table-container" data-kit-table data-base-url="{baseUrl}"
+         role="region" tabindex="0"
+         aria-label="{#if label??}{label}{#else}Tabla de resultados{/if}">
+        <table class="table is-hoverable is-fullwidth">
+            {#insert caption}{/insert}
+            <thead>
+                <tr>
+                    {#for col in headers}
+                        {#if col.key??}
+                        <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.key == sortKey}{#if sortDir == 'desc'} aria-sort="descending"{#else} aria-sort="ascending"{/if}{#else} aria-sort="none"{/if}>
+                            <!--
+                              W2 (root-path normalization): the deployment root is read
+                              from configuration via {config:['quarkus.http.root-path']},
+                              never hard-coded. quarkus.http.root-path IS declared in
+                              application.properties, so the previous comment here
+                              ("absent from runtime config and 500s on render") was
+                              STALE and has been removed.
+    
+                              Do not inline the resolved value, and do not reintroduce
+                              a hard-coded root path: the whole point is that the kit
+                              owns root-path resolution so templates never learn the
+                              deployment context. Pinned by RootPathNormalizationTest.
+                            -->
+                            <a href="{config:['quarkus.http.root-path']}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+                               title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}{#if col.key == sortKey}<span class="kit-sort" aria-hidden="true">{#if sortDir == 'desc'}▼{#else}▲{/if}</span>{/if}</a>
+                        </th>
+                        {#else}
+                        <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.help??} class="kit-help" title="{col.help}"{/if}>{col.label}</th>
+                        {/if}
+                    {/for}
+                </tr>
+            </thead>
+            <tbody>
+                {#if rowFragment??}
+                    {#for row in rows}
+                        {#include _id=rowFragment item=row rowIndex=row_index /}
                     {#else}
-                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.help??} class="kit-help" title="{col.help}"{/if}>{col.label}</th>
-                    {/if}
-                {/for}
-            </tr>
-        </thead>
-        <tbody>
-            {#if rowFragment??}
-                {#for row in rows}
-                    {#include _id=rowFragment item=row rowIndex=row_index /}
+                        <tr><td colspan="{headers.size()}" class="kit-empty-cell">{#if emptyLabel??}{emptyLabel}{#else}Sin registros{/if}</td></tr>
+                    {/for}
                 {#else}
-                    <tr><td colspan="{headers.size()}" class="kit-empty-cell">{#if emptyLabel??}{emptyLabel}{#else}Sin registros{/if}</td></tr>
-                {/for}
-            {#else}
-                {#insert rows}{/insert}
-            {/if}
-        </tbody>
-        {#if totalPages??}
-        <tfoot>
-            <tr>
-                <td colspan="{headers.size()}">
-                    <div class="level">
-                        <div class="level-left">
-                            <span class="mercurius-text-muted">
-                                {#if page??}Página {page} de {totalPages}{#if total??} · {total} registros{/if}{#else}{#if total??}{total} registros{/if}{/if}
-                            </span>
-                        </div>
-                        <div class="level-right">
-                            {! size/params are optional at this include's call site,
-                               so they are forwarded only when present: a bare
-                               size=size would fail to resolve on the callers that
-                               never pass it. The pager silently dropped the page
-                               size and every active filter before this. !}
-                            {#if params??}
-                                {#if size??}
-                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size params=params /}
-                                {#else}
-                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl params=params /}
-                                {/if}
-                            {#else if size??}
-                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size /}
-                            {#else}
-                                {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl /}
-                            {/if}
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        </tfoot>
-        {/if}
-    </table>
+                    {#insert rows}{/insert}
+                {/if}
+            </tbody>
+        </table>
+    </div>
+    {#if totalPages??}
+    <div class="table-footer">
+        <div class="level">
+            <div class="level-left">
+                <span class="mercurius-text-muted">
+                    {#if page??}Página {page} de {totalPages}{#if total??} · {total} registros{/if}{#else}{#if total??}{total} registros{/if}{/if}
+                </span>
+            </div>
+            <div class="level-right">
+                {! size/params are optional at this include's call site,
+                   so they are forwarded only when present: a bare
+                   size=size would fail to resolve on the callers that
+                   never pass it. The pager silently dropped the page
+                   size and every active filter before this. !}
+                {#if params??}
+                    {#if size??}
+                    {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size params=params /}
+                    {#else}
+                    {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl params=params /}
+                    {/if}
+                {#else if size??}
+                    {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl size=size /}
+                {#else}
+                    {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl /}
+                {/if}
+            </div>
+        </div>
+    </div>
+    {/if}
 </div>

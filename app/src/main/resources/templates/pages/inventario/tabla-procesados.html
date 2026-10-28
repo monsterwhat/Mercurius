@@ -64,12 +64,12 @@
             {#else}
             <tr>
                 <td colspan="{modelo.columnas.size()}" class="has-text-centered">
-                    {#if q??}{#if q}
+                    {#if q?? && !q.isEmpty()}
                     <span class="mercurius-text-muted">Sin coincidencias para «{q}» en los movimientos procesados.</span>
                     {#else}
                     <span class="mercurius-text-muted">Todavía no hay movimientos procesados.</span><br/>
                     <span class="is-size-7 mercurius-text-muted">Procese un movimiento desde la pestaña Pendientes.</span>
-                    {/if}{/if}
+                    {/if}
                 </td>
             </tr>
             {/for}

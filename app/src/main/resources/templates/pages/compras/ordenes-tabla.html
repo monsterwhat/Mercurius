@@ -112,13 +112,13 @@
             {#else}
             <tr>
                 <td colspan="{modelo.columnas.size()}" class="has-text-centered">
-                    {#if q??}{#if q}
+                    {#if q?? && !q.isEmpty()}
                     <span class="mercurius-text-muted">Sin coincidencias para «{q}».</span><br/>
                     <span class="is-size-7 mercurius-text-muted">Pruebe con otro número de orden o proveedor.</span>
                     {#else}
                     <span class="mercurius-text-muted">Todavía no hay órdenes de compra.</span><br/>
                     <span class="is-size-7 mercurius-text-muted">Cree la primera con «Nueva Orden».</span>
-                    {/if}{/if}
+                    {/if}
                 </td>
             </tr>
             {/for}

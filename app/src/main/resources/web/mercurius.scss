@@ -1320,6 +1320,10 @@ h1.title.is-3 {
 // and .is-scrolled-end once the right edge is reached, so the hint never lies.
 // The container is focusable (tabindex="0" in _kit/data-table) so a keyboard
 // user can scroll it with the arrows, which is the WCAG 2.1.1 fix.
+.table-block {
+    max-width: 100%;
+}
+
 .table-container {
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
@@ -1329,10 +1333,70 @@ h1.title.is-3 {
     box-shadow: inset -1.25rem 0 1.25rem -1.25rem color-mix(in srgb, var(--bulma-text) 35%, transparent);
 }
 
+// The pager is deliberately OUTSIDE .table-container (see _kit/data-table):
+// inside the scroll frame it sat past the last column on a phone and was
+// unreachable. It keeps the surface rhythm with a little breathing room.
+.table-footer {
+    padding-top: var(--mercurius-space-2, .5rem);
+}
+
 // =============================================================================
 // 21. Responsive
 // =============================================================================
 @media screen and (max-width: 768px) {
+    // The pager moved outside the horizontal scroll frame, but Bulma's
+    // .level and .pagination still assume desktop width. Let both wrap so
+    // every control stays on screen at 360px instead of overflowing.
+    .table-footer {
+        padding-top: var(--mercurius-space-3, .75rem);
+    }
+
+    .table-footer .level {
+        flex-wrap: wrap;
+        gap: var(--mercurius-space-2, .5rem);
+    }
+
+    .table-footer .level-left,
+    .table-footer .level-right {
+        flex: 1 1 100%;
+        margin: 0;
+    }
+
+    .table-footer .level-right {
+        justify-content: flex-start;
+    }
+
+    .table-footer .pagination {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        margin: 0;
+        row-gap: var(--mercurius-space-2, .5rem);
+    }
+
+    .table-footer .pagination-list {
+        flex-wrap: wrap;
+        gap: var(--mercurius-space-1, .25rem);
+    }
+
+    // A colspan cell is as wide as the whole table, so centring its text
+    // parks the empty-state message past the right edge of a phone viewport,
+    // and a fixed max-width cannot help: the table is inset by the page
+    // padding, so the visible width is the SCROLL FRAME, not 100vw.
+    // The frame is the query container, so 100cqw is exactly the width the
+    // operator can see; the padding pulls the cell's content box back to it
+    // and the text wraps there. Table layout (column widths, scrollWidth) is
+    // untouched.
+    .table-container {
+        container-type: inline-size;
+    }
+
+    .table td[colspan],
+    .table td.kit-empty-cell {
+        text-align: left !important;
+        box-sizing: border-box;
+        padding-right: calc(100% - 100cqw + 1.25rem);
+    }
+
     .metric-strip {
         grid-template-columns: repeat(2, 1fr);
     }
