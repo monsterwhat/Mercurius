@@ -92,7 +92,6 @@ def synthetic_rows(count: int, seed: int, run_id: int):
         brand = BRANDS[i % len(BRANDS)]
         product = PRODUCTS[(i * 7) % len(PRODUCTS)]
         size = SIZES[(i * 5) % len(SIZES)]
-        barcode = ean13(i, rng)
         name = f"{product} {brand} {size}"[:255]
         desc = f"{product} {size} - {brand} / lote de prueba {i}"[:500]
         cost = round(rng.uniform(150, 18000), 2)
