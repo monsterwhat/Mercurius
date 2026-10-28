@@ -2,18 +2,14 @@ package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import Models.Articulos.ArticuloStock;
-import Models.Articulos.Articulos;
 import Models.DTO.ReportChartPayload;
 import Models.DTO.ReportChartSeries;
 import Models.Departamento;
 import Models.Familia;
-import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
@@ -40,13 +36,13 @@ import jakarta.ws.rs.core.Response;
  * {@code secured/pages/Inventario/Resumen/index.xhtml}
  * (plan task T19, read-only).
  *
- * <p>Backed DIRECTLY by the same services the legacy
- * {@code InventarioResumenController} used: {@link ArticulosService},
- * {@link FamiliaService}, {@link DepartamentoService} and
- * {@link InventarioService#getAllStock()} (stock matched by barcode, exactly
- * like the legacy {@code getStockForArticulo}). The legacy p:tabView becomes a
- * {@code vista} query param (todos|cero|negativos); the stat-cards are links
- * that switch it server-side.</p>
+ * <p>Backed by {@link InventarioService}'s resumen queries: the article/stock
+ * join is counted, filtered, sorted and paged in SQL, so a request only reads
+ * the visible page instead of materialising all 252k enabled articles (with
+ * their EAGER price history) just to slice 15 rows. {@link FamiliaService} and
+ * {@link DepartamentoService} still supply the filter pickers. The legacy
+ * p:tabView becomes a {@code vista} query param (todos|cero|negativos); the
+ * stat-cards are links that switch it server-side.</p>
  */
 @Path("/app/reportes/inventario/resumen")
 @Produces(MediaType.TEXT_HTML)
@@ -55,9 +51,8 @@ public class ResumenResource {
 
     private static final String BASE_URL = "/app/reportes/inventario/resumen";
 
-    @Inject
-    @Nonnull
-    ArticulosService articulosService;
+    /** Same bounds the old in-memory {@code Tablas.paginaDe} applied. */
+    private static final int TAMANO_MAXIMO = 200;
 
     @Inject
     @Nonnull
@@ -107,76 +102,40 @@ public class ResumenResource {
         if (departamentosEntidad == null) {
             departamentosEntidad = new ArrayList<>();
         }
-        List<ArticuloStock> stocks = inventarioService.getAllStock();
-        List<Articulos> articulos = articulosService.ListAllEnabled();
-
-        // The stock snapshot is matched by barcode. Looking it up with a
-        // stream per article made this report O(articles × stock) — at 252k
-        // articles it never finished. One map turns it into O(n).
-        Map<String, BigDecimal> stockPorBarcode = new HashMap<>();
-        if (stocks != null) {
-            for (ArticuloStock stock : stocks) {
-                if (stock.getCodigoBarra() != null) {
-                    stockPorBarcode.put(stock.getCodigoBarra(), stock.getStock());
-                }
-            }
-        }
 
         Integer familiaId = entero(familia);
         Integer departamentoId = entero(departamento);
-        String filtro = q != null ? q.trim().toLowerCase() : null;
+        String filtro = q != null ? q.trim() : null;
 
-        List<Map<String, Object>> filas = new ArrayList<>();
-        long ceroCount = 0;
-        long negativoCount = 0;
-        Map<String, BigDecimal> stockPorFamilia = new LinkedHashMap<>();
-        if (articulos != null) {
-            for (Articulos articulo : articulos) {
-                BigDecimal stock = articulo.getCodigoBarra() == null
-                        ? BigDecimal.ZERO
-                        : stockPorBarcode.getOrDefault(articulo.getCodigoBarra(), BigDecimal.ZERO);
-                if (stock.compareTo(BigDecimal.ZERO) == 0) {
-                    ceroCount++;
-                } else if (stock.compareTo(BigDecimal.ZERO) < 0) {
-                    negativoCount++;
-                }
-                if (!pasaVista(tipoVista, stock)
-                        || !pasaFamilia(articulo, familiaId)
-                        || !pasaDepartamento(articulo, departamentoId)
-                        || !pasaTexto(articulo, filtro)) {
-                    continue;
-                }
-                filas.add(Tablas.fila(
-                        "codigo", articulo.getCodigo(),
-                        "nombre", articulo.getNombre(),
-                        "codigoBarra", articulo.getCodigoBarra(),
-                        "familia", articulo.getFamilia() != null
-                                ? articulo.getFamilia().getNombre() : "-",
-                        "departamento", articulo.getDepartamento() != null
-                                ? articulo.getDepartamento().getNombre() : "-",
-                        "stockActual", Tablas.fmtNumero(stock),
-                        "stockOptimo", articulo.getStockOptimo() != null
-                                ? articulo.getStockOptimo().toString() : "-",
-                        // getLastPrecioArticulo() NPEs on price-less articles; guard it.
-                        "precio", articulo.getLastPrecio() != null
-                                && articulo.getLastPrecio().getPrecioFinal() != null
-                                ? Tablas.fmtColones(articulo.getLastPrecio().getPrecioFinal())
-                                : "-"));
-                String familiaNombre = articulo.getFamilia() != null
-                        && articulo.getFamilia().getNombre() != null
-                        && !articulo.getFamilia().getNombre().isBlank()
-                        ? articulo.getFamilia().getNombre()
-                        : "Sin familia";
-                BigDecimal acumulado = stockPorFamilia.getOrDefault(familiaNombre, BigDecimal.ZERO);
-                stockPorFamilia.put(familiaNombre, acumulado.add(stock));
-            }
-        }
+        // KPI cards are COUNT queries over the whole enabled catalogue: they
+        // are not scoped by familia/departamento/q (same as the old counters,
+        // which were incremented before the row filters).
+        long[] kpis = inventarioService.countResumenInventarioKpis();
+
+        // Same clamps the old in-memory pager applied, so `size` keeps meaning
+        // "rows per page" for offsets too.
+        int tamanoPagina = Math.min(Math.max(size, 1), TAMANO_MAXIMO);
+        int paginaActual = Math.max(page, 1);
+        int offset = (int) Math.min((long) (paginaActual - 1) * tamanoPagina,
+                Integer.MAX_VALUE);
+
+        // The table is counted, filtered, sorted and sliced in SQL. Only the
+        // visible page is materialised; prices are loaded for those rows only
+        // (see filasDePagina).
+        long totalFilas = inventarioService.countResumenInventario(
+                tipoVista, familiaId, departamentoId, filtro);
+        List<Object[]> paginaActualDatos = inventarioService.pageResumenInventario(
+                tipoVista, familiaId, departamentoId, filtro, sort, dir,
+                offset, tamanoPagina);
+        List<Map<String, Object>> filas = filasDePagina(paginaActualDatos);
 
         List<String> chartLabels = new ArrayList<>();
         List<BigDecimal> chartValues = new ArrayList<>();
-        for (Map.Entry<String, BigDecimal> entry : stockPorFamilia.entrySet()) {
-            chartLabels.add(entry.getKey());
-            chartValues.add(entry.getValue());
+        for (Object[] grupo : inventarioService.stockResumenPorFamilia(
+                tipoVista, familiaId, departamentoId, filtro)) {
+            chartLabels.add(grupo[0] != null ? String.valueOf(grupo[0]) : "Sin familia");
+            chartValues.add(grupo[1] instanceof BigDecimal total
+                    ? total : BigDecimal.ZERO);
         }
 
         // P2 Phase 2.1 contract: one typed payload, serialized once by the
@@ -191,15 +150,13 @@ public class ResumenResource {
                 false,
                 "Sin datos para el período");
 
-        Tablas.ordenar(filas, sort, dir);
-        long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Resumen de Inventario");
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas());
-        model.put("filas", Tablas.paginaDe(filas, page, size));
+        model.put("filas", filas);
         model.put("sortKey", sort);
         model.put("sortDir", dir);
         model.put("page", Math.max(page, 1));
@@ -212,9 +169,9 @@ public class ResumenResource {
         model.put("vista", tipoVista);
         model.put("chartPayload", chartPayload);
         model.put("chartJson", ReportChartJson.toScriptJson(chartPayload));
-        model.put("todosCount", articulosService.countActivos());
-        model.put("ceroCount", ceroCount);
-        model.put("negativoCount", negativoCount);
+        model.put("todosCount", kpis[0]);
+        model.put("ceroCount", kpis[1]);
+        model.put("negativoCount", kpis[2]);
         model.put("familias", opciones(familiasEntidad.stream()
                 .map(Familia::getId).toList(), familiasEntidad.stream()
                 .map(Familia::getNombre).toList()));
@@ -241,47 +198,40 @@ public class ResumenResource {
         };
     }
 
-    private static boolean pasaVista(@Nonnull String vista, @Nonnull BigDecimal stock) {
-        return switch (vista) {
-            case "cero" -> stock.compareTo(BigDecimal.ZERO) == 0;
-            case "negativos" -> stock.compareTo(BigDecimal.ZERO) < 0;
-            default -> true;
-        };
-    }
-
-    private static boolean pasaFamilia(@Nonnull Articulos articulo, @Nullable Integer familiaId) {
-        if (familiaId == null || familiaId <= 0) {
-            return true;
+    /**
+     * Turns the page rows returned by
+     * {@link InventarioService#pageResumenInventario} into the display maps the
+     * table fragment renders. The last price is fetched in one query for these
+     * codes only — never for the whole catalogue.
+     *
+     * <p>Value parity with the old entity loop: stock is always formatted
+     * (missing stock = 0), optimal stock and price render {@code "-"} when
+     * absent, and family/department render {@code "-"} when the relation is
+     * null.</p>
+     */
+    @Nonnull
+    private List<Map<String, Object>> filasDePagina(@Nonnull List<Object[]> pagina) {
+        List<Long> codigos = new ArrayList<>(pagina.size());
+        for (Object[] fila : pagina) {
+            codigos.add(((Number) fila[0]).longValue());
         }
-        return articulo.getFamilia() != null
-                && articulo.getFamilia().getId() == familiaId;
-    }
+        Map<Long, BigDecimal> precios = inventarioService.ultimosPreciosPorArticulo(codigos);
 
-    private static boolean pasaDepartamento(@Nonnull Articulos articulo,
-            @Nullable Integer departamentoId) {
-        if (departamentoId == null || departamentoId <= 0) {
-            return true;
+        List<Map<String, Object>> filas = new ArrayList<>(pagina.size());
+        for (Object[] fila : pagina) {
+            long codigo = ((Number) fila[0]).longValue();
+            BigDecimal stock = fila[5] instanceof BigDecimal valor ? valor : BigDecimal.ZERO;
+            filas.add(Tablas.fila(
+                    "codigo", codigo,
+                    "nombre", fila[1],
+                    "codigoBarra", fila[2],
+                    "familia", fila[3] != null ? fila[3] : "-",
+                    "departamento", fila[4] != null ? fila[4] : "-",
+                    "stockActual", Tablas.fmtNumero(stock),
+                    "stockOptimo", fila[6] != null ? String.valueOf(fila[6]) : "-",
+                    "precio", Tablas.fmtColones(precios.get(codigo))));
         }
-        return articulo.getDepartamento() != null
-                && articulo.getDepartamento().getId() == departamentoId;
-    }
-
-    /** Legacy globalFilterFunction parity over codigo/nombre/barra/familia/depto. */
-    private static boolean pasaTexto(@Nonnull Articulos articulo, @Nullable String filtro) {
-        if (filtro == null || filtro.isEmpty()) {
-            return true;
-        }
-        return String.valueOf(articulo.getCodigo()).contains(filtro)
-                || (articulo.getNombre() != null
-                        && articulo.getNombre().toLowerCase().contains(filtro))
-                || (articulo.getCodigoBarra() != null
-                        && articulo.getCodigoBarra().toLowerCase().contains(filtro))
-                || (articulo.getFamilia() != null
-                        && articulo.getFamilia().getNombre() != null
-                        && articulo.getFamilia().getNombre().toLowerCase().contains(filtro))
-                || (articulo.getDepartamento() != null
-                        && articulo.getDepartamento().getNombre() != null
-                        && articulo.getDepartamento().getNombre().toLowerCase().contains(filtro));
+        return filas;
     }
 
     @Nullable

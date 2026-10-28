@@ -25,7 +25,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import jakarta.transaction.Transactional;
 import java.util.Date; 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List; 
+import java.util.Map;
 import org.jboss.logging.Logger;
 
 @Named
@@ -638,6 +641,350 @@ public class InventarioService extends GService<Inventario> {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // ── Resumen de Inventario (app) ───────────────────────────────────────
+    // /app/reportes/inventario/resumen materializaba los 252k articulos
+    // habilitados (con sus precios EAGER), formateaba 252k filas, las ordenaba
+    // en memoria y recortaba 15. Estas consultas dejan que PostgreSQL cuente,
+    // filtre, ordene y recorte; solo se hidrata la pagina pedida.
+
+    /** Escape character for the LIKE patterns built by {@link #likePattern}. */
+    private static final char LIKE_ESCAPE = '!';
+
+    /**
+     * Stock of the joined article. A missing {@code articulostock} row means
+     * zero, exactly like the previous in-memory map default.
+     */
+    private static final String RESUMEN_STOCK = "COALESCE(s.stock, 0)";
+
+    /**
+     * FROM shared by the resumen COUNT/page/chart queries. The barcode join is
+     * a plain equality: {@code NULL = anything} is UNKNOWN, so an article with
+     * a null barcode never matches (LEFT JOIN) and keeps the stock-0 default.
+     * All other joins are to-one, so no row multiplication.
+     */
+    private static final String RESUMEN_FROM =
+            " FROM articulos a"
+            + " LEFT JOIN articulostock s ON s.codigo_barra = a.codigobarra"
+            + " LEFT JOIN familia f ON f.id = a.familia_id"
+            + " LEFT JOIN departamento d ON d.id = a.departamento_id";
+
+    /**
+     * KPI counters for the resumen: enabled articles, those at zero stock and
+     * those with negative stock.
+     *
+     * <p>One COUNT pass instead of iterating the whole catalogue: the page used
+     * {@code countActivos()} for "todos" and counted cero/negativos while
+     * hydrating 252k entities.</p>
+     *
+     * @return {@code [todos, cero, negativos]}; all zeros when the query fails
+     *         (the page keeps rendering, as it did when the list came back
+     *         empty)
+     */
+    public @Nonnull long[] countResumenInventarioKpis() {
+        String sql = "SELECT COUNT(*)"
+                + ", COUNT(*) FILTER (WHERE " + RESUMEN_STOCK + " = 0)"
+                + ", COUNT(*) FILTER (WHERE " + RESUMEN_STOCK + " < 0)"
+                + RESUMEN_FROM
+                + " WHERE a.status = true";
+        try {
+            Object[] fila = (Object[]) em.createNativeQuery(sql).getSingleResult();
+            return new long[]{numero(fila[0]), numero(fila[1]), numero(fila[2])};
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando KPIs del resumen de inventario: " + e.getMessage()
+                    + " | source=InventarioService.countResumenInventarioKpis()"
+                    + " | despues=" + e.getMessage());
+            return new long[]{0L, 0L, 0L};
+        }
+    }
+
+    /**
+     * COUNT companion of {@link #pageResumenInventario}: identical FROM/WHERE,
+     * so the pager total and the returned page can never disagree.
+     *
+     * @param vista         {@code cero} / {@code negativos} / anything else
+     *                      (treated as {@code todos})
+     * @param familiaId     family filter; null or &le;0 means "all"
+     * @param departamentoId department filter; null or &le;0 means "all"
+     * @param q             free-text filter; null/blank means "no filter"
+     * @return filtered row count, 0 when the query fails
+     */
+    public long countResumenInventario(@Nullable String vista, @Nullable Integer familiaId,
+                                       @Nullable Integer departamentoId, @Nullable String q) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String sql = "SELECT COUNT(*)" + RESUMEN_FROM
+                + resumenWhere(vista, familiaId, departamentoId, q, params);
+        try {
+            return numero(consulta(sql, params).getSingleResult());
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando el resumen de inventario: " + e.getMessage()
+                    + " | source=InventarioService.countResumenInventario()"
+                    + " | vista=" + vista + " | familia=" + familiaId
+                    + " | departamento=" + departamentoId + " | q=" + q
+                    + " | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * One page of the resumen table, filtered and sorted in SQL.
+     *
+     * <p>Only the page rows are read. The last price is deliberately NOT part
+     * of this query (see {@link #ultimosPreciosPorArticulo(List)}): a request
+     * that is not sorted by price never touches the price history. When
+     * {@code sort=precio} the latest price is joined once per article because
+     * the ORDER BY needs it — the same aggregate
+     * {@code ArticulosService.pageByTab} uses, instead of a correlated
+     * subquery per row.</p>
+     *
+     * @return page rows of {@code [codigo, nombre, codigoBarra, familia,
+     *         departamento, stock, stockOptimo]} in display order
+     */
+    @SuppressWarnings("unchecked")
+    public @Nonnull List<Object[]> pageResumenInventario(
+            @Nullable String vista, @Nullable Integer familiaId,
+            @Nullable Integer departamentoId, @Nullable String q,
+            @Nullable String sort, @Nullable String dir, int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        boolean porPrecio = "precio".equals(trimKey(sort));
+        String sql = "SELECT a.codigo, a.nombre, a.codigobarra, f.nombre, d.nombre,"
+                + " " + RESUMEN_STOCK + ", a.stockoptimo"
+                + RESUMEN_FROM
+                + (porPrecio ? precioJoin() : "")
+                + resumenWhere(vista, familiaId, departamentoId, q, params)
+                + resumenOrderBy(sort, dir);
+        try {
+            Query query = consulta(sql, params);
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(size, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paginando el resumen de inventario: " + e.getMessage()
+                    + " | source=InventarioService.pageResumenInventario()"
+                    + " | vista=" + vista + " | familia=" + familiaId
+                    + " | departamento=" + departamentoId + " | q=" + q
+                    + " | sort=" + sort + " | dir=" + dir
+                    + " | offset=" + offset + " | size=" + size
+                    + " | despues=" + e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Last price of each requested article (latest row = highest id), fetched
+     * in ONE query for the visible page only.
+     *
+     * <p>{@code Articulos.precios} is EAGER, so the previous path loaded the
+     * price history of all 252k articles just to render 15 rows. This is a
+     * projection: no {@code Articulos}/{@code ArticuloPrecio} entity is
+     * hydrated, so no further EAGER cascade can fire.</p>
+     *
+     * @param codigos article codes of the current page; empty means "no query"
+     * @return code → {@code precio_final} (the value itself may be null: the
+     *         article has a price row without a final price)
+     */
+    public @Nonnull Map<Long, BigDecimal> ultimosPreciosPorArticulo(@Nonnull List<Long> codigos) {
+        if (codigos.isEmpty()) {
+            return Map.of();
+        }
+        String jpql = "SELECT p.articulo.codigo, p.precioFinal"
+                + " FROM ArticuloPrecio p"
+                + " WHERE p.articulo.codigo IN :codigos"
+                + " ORDER BY p.articulo.codigo ASC, p.id DESC";
+        try {
+            List<Object[]> filas = em.createQuery(jpql, Object[].class)
+                    .setParameter("codigos", codigos)
+                    .getResultList();
+            Map<Long, BigDecimal> precios = new HashMap<>(filas.size());
+            for (Object[] fila : filas) {
+                // ORDER BY id DESC: the first row per article is its last
+                // price. containsKey (not putIfAbsent) keeps a null final
+                // price from being replaced by an older row.
+                long codigo = numero(fila[0]);
+                if (!precios.containsKey(codigo)) {
+                    precios.put(codigo, (BigDecimal) fila[1]);
+                }
+            }
+            return precios;
+        } catch (PersistenceException e) {
+            LOG.warn("Error leyendo los ultimos precios del resumen de inventario: " + e.getMessage()
+                    + " | source=InventarioService.ultimosPreciosPorArticulo()"
+                    + " | articulos=" + codigos.size()
+                    + " | despues=" + e.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * Stock total by family for the current resumen filters, grouped in SQL.
+     * The page used to accumulate this while iterating every article.
+     *
+     * <p>Label parity with the old loop: a null/blank family name renders as
+     * {@code "Sin familia"}; any other name is kept verbatim (no trimming), so
+     * families that only differ by surrounding spaces stay distinct, as they
+     * did in the old in-memory map.</p>
+     *
+     * @return rows of {@code [etiqueta, total]}, ordered by label
+     */
+    @SuppressWarnings("unchecked")
+    public @Nonnull List<Object[]> stockResumenPorFamilia(
+            @Nullable String vista, @Nullable Integer familiaId,
+            @Nullable Integer departamentoId, @Nullable String q) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String sql = "SELECT CASE WHEN f.nombre IS NULL OR BTRIM(f.nombre) = ''"
+                + " THEN 'Sin familia' ELSE f.nombre END AS etiqueta"
+                + ", COALESCE(SUM(" + RESUMEN_STOCK + "), 0) AS total"
+                + RESUMEN_FROM
+                + resumenWhere(vista, familiaId, departamentoId, q, params)
+                + " GROUP BY 1 ORDER BY 1";
+        try {
+            return consulta(sql, params).getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error agrupando stock por familia del resumen de inventario: " + e.getMessage()
+                    + " | source=InventarioService.stockResumenPorFamilia()"
+                    + " | vista=" + vista + " | familia=" + familiaId
+                    + " | departamento=" + departamentoId + " | q=" + q
+                    + " | despues=" + e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Shared WHERE for the resumen COUNT/page/chart. Mirrors the filters the
+     * resource previously applied in memory:
+     *
+     * <ul>
+     *   <li>{@code a.status = true} — the old {@code ListAllEnabled()}.</li>
+     *   <li>{@code vista}: {@code cero} → stock = 0, {@code negativos} →
+     *       stock &lt; 0; anything else (including null/unknown) is "todos".</li>
+     *   <li>{@code familiaId}/{@code departamentoId}: exact id, ignored when
+     *       null or &le;0 (the old helper did the same).</li>
+     *   <li>{@code q}: case-insensitive {@code contains} over exactly the five
+     *       fields of {@code ResumenResource.pasaTexto} — codigo as text,
+     *       nombre, codigoBarra, familia.nombre and departamento.nombre. The
+     *       term is passed as an escaped LIKE pattern, never concatenated.</li>
+     * </ul>
+     */
+    private static @Nonnull String resumenWhere(
+            @Nullable String vista, @Nullable Integer familiaId,
+            @Nullable Integer departamentoId, @Nullable String q,
+            @Nonnull Map<String, Object> params) {
+        List<String> predicates = new ArrayList<>();
+        predicates.add("a.status = true");
+        String vistaKey = trimKey(vista);
+        if ("cero".equals(vistaKey)) {
+            predicates.add(RESUMEN_STOCK + " = 0");
+        } else if ("negativos".equals(vistaKey)) {
+            predicates.add(RESUMEN_STOCK + " < 0");
+        }
+        if (familiaId != null && familiaId > 0) {
+            predicates.add("a.familia_id = :familiaId");
+            params.put("familiaId", familiaId);
+        }
+        if (departamentoId != null && departamentoId > 0) {
+            predicates.add("a.departamento_id = :departamentoId");
+            params.put("departamentoId", departamentoId);
+        }
+        String term = trimKey(q);
+        if (term != null) {
+            String like = "LIKE LOWER(:q) ESCAPE '" + LIKE_ESCAPE + "'";
+            predicates.add("(LOWER(CAST(a.codigo AS text)) " + like
+                    + " OR LOWER(a.nombre) " + like
+                    + " OR LOWER(a.codigobarra) " + like
+                    + " OR LOWER(f.nombre) " + like
+                    + " OR LOWER(d.nombre) " + like + ")");
+            params.put("q", likePattern(term));
+        }
+        return " WHERE " + String.join(" AND ", predicates);
+    }
+
+    /**
+     * Whitelisted ORDER BY for {@link #pageResumenInventario}. Only the
+     * data-table column keys are interpolated; the request value never reaches
+     * the SQL. Text keys sort on {@code LOWER(...)} to keep the old
+     * case-insensitive comparator and familia/departamento sort on their
+     * displayed value ({@code "-"} when null). Every key ends in
+     * {@code a.codigo ASC} as a deterministic tiebreak, so a page can never
+     * shuffle between requests. PostgreSQL's default NULL placement (ASC last
+     * / DESC first) matches the previous nulls behaviour.
+     */
+    private static @Nonnull String resumenOrderBy(@Nullable String sort, @Nullable String dir) {
+        String key = trimKey(sort);
+        String direction = "desc".equalsIgnoreCase(dir) ? " DESC" : " ASC";
+        if (key == null) {
+            return " ORDER BY a.codigo ASC";
+        }
+        String expression = switch (key) {
+            case "codigo" -> "a.codigo";
+            case "nombre" -> "LOWER(a.nombre)";
+            case "codigoBarra" -> "LOWER(a.codigobarra)";
+            case "familia" -> "COALESCE(LOWER(NULLIF(f.nombre, '')), '-')";
+            case "departamento" -> "COALESCE(LOWER(NULLIF(d.nombre, '')), '-')";
+            case "stockActual" -> RESUMEN_STOCK;
+            case "stockOptimo" -> "a.stockoptimo";
+            case "precio" -> "lp.precio_final";
+            default -> null;
+        };
+        if (expression == null) {
+            return " ORDER BY a.codigo ASC";
+        }
+        return "codigo".equals(key)
+                ? " ORDER BY " + expression + direction
+                : " ORDER BY " + expression + direction + ", a.codigo ASC";
+    }
+
+    /**
+     * Latest price row per article (highest id), the same element
+     * {@code Articulos.getLastPrecio()} exposes. Aggregated once for the whole
+     * price sort instead of a correlated subquery evaluated per article.
+     */
+    private static @Nonnull String precioJoin() {
+        return " LEFT JOIN (SELECT ap.articulo_id AS art, MAX(ap.id) AS maxid"
+                + " FROM articuloprecio ap GROUP BY ap.articulo_id) ult ON ult.art = a.codigo"
+                + " LEFT JOIN articuloprecio lp ON lp.id = ult.maxid";
+    }
+
+    /** Native query with the collected named parameters bound. */
+    private @Nonnull Query consulta(@Nonnull String sql, @Nonnull Map<String, Object> params) {
+        Query query = em.createNativeQuery(sql);
+        for (Map.Entry<String, Object> param : params.entrySet()) {
+            query.setParameter(param.getKey(), param.getValue());
+        }
+        return query;
+    }
+
+    /** Long value of a COUNT/SUM cell; 0 for null/unknown types. */
+    private static long numero(@Nullable Object valor) {
+        return valor instanceof Number number ? number.longValue() : 0L;
+    }
+
+    @Nullable
+    private static String trimKey(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Builds the {@code %term%} LIKE pattern, escaping {@code !}, {@code %}
+     * and {@code _} so a user typing them searches literally (the old filter
+     * used {@code String.contains}, not a pattern).
+     */
+    private static @Nonnull String likePattern(@Nonnull String term) {
+        StringBuilder pattern = new StringBuilder(term.length() + 2);
+        pattern.append('%');
+        for (int i = 0; i < term.length(); i++) {
+            char ch = term.charAt(i);
+            if (ch == LIKE_ESCAPE || ch == '%' || ch == '_') {
+                pattern.append(LIKE_ESCAPE);
+            }
+            pattern.append(ch);
+        }
+        pattern.append('%');
+        return pattern.toString();
     }
 
 }
