@@ -41,7 +41,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,20 +131,13 @@ public class ClientsResource {
         page = Math.max(page, 0);
 
         try {
-            if (q != null && !q.isBlank()) {
-                // Delegate to ClientService.searchByName exactly like the legacy
-                // filter path does; it returns the FULL match list (no paging),
-                // so pagination happens in memory over its result.
-                List<Clientes> matches = clientService.searchByName(q.trim());
-                List<Clientes> safeMatches = (matches != null) ? matches : List.of();
-
-                List<ClientsDTO> dtos = safeMatches.stream().map(this::toDTO).toList();
-                List<ClientsDTO> data = paginate(dtos, page, size);
-                return Response.ok(new PagedResponse<>(data, dtos.size(), page, size)).build();
-            }
-
-            long total = clientService.count();
-            List<ClientsDTO> data = clientService.listPage(page * size, size).stream()
+            String search = (q == null || q.isBlank()) ? null : q.trim();
+            // SQL-side filter + count + window: same contract as the old
+            // searchByName()-then-subList() path (case-insensitive name
+            // contains, q trimmed, total = number of matches).
+            long total = clientService.countByNameLike(search, null);
+            List<ClientsDTO> data = clientService.pageByNameLike(search, null, "asc", page * size, size)
+                    .stream()
                     .map(this::toDTO)
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
@@ -483,15 +475,12 @@ public class ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "List zone codes in use with client counts")
     public Response zonasEnUso() {
-        Map<Integer, Long> counts = new java.util.TreeMap<>();
-        for (Clientes c : orEmpty(clientService.listAll())) {
-            counts.merge(c.getZoneCode(), 1L, Long::sum);
-        }
+        // GROUP BY zoneCode in SQL (ascending by zone, like the old TreeMap).
         List<Map<String, Object>> data = new ArrayList<>();
-        for (Map.Entry<Integer, Long> e : counts.entrySet()) {
+        for (ClientService.ZoneUsage usage : clientService.zoneUsage()) {
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("zone", e.getKey());
-            row.put("clientes", e.getValue());
+            row.put("zone", usage.zoneCode());
+            row.put("clientes", usage.clientes());
             data.add(row);
         }
         return Response.ok(ApiResponse.ok(data)).build();
@@ -678,14 +667,6 @@ public class ClientsResource {
         return null;
     }
 
-    private static <T> List<T> paginate(List<T> items, int page, int size) {
-        int from = page * size;
-        if (from >= items.size()) {
-            return List.of();
-        }
-        return items.subList(from, Math.min(from + size, items.size()));
-    }
-
     /** Row mapping for lists: identity, contact, loyalty points and status. */
     private ClientsDTO toDTO(Clientes client) {
         return new ClientsDTO(client.getCode(), client.getName(), client.getAddress(),
@@ -849,13 +830,12 @@ public class ClientsResource {
 
     private TemplateInstance renderFullPage(@Nullable String estado) {
         TableModel model = buildTableModel(1, 20, null, "asc", null, estado);
-        List<Clientes> todos = orEmpty(clientService.listAll());
-        long activos = todos.stream().filter(c -> c.getStatus() != null && c.getStatus()).count();
+        ClientService.StatusCounts counts = clientService.countByStatus();
         return pageIndex
                 .data("tablaClientes", model.asMap())
                 .data("clientesTotal", model.total())
-                .data("clientesActivosCount", activos)
-                .data("clientesInactivosCount", todos.size() - activos)
+                .data("clientesActivosCount", counts.activos())
+                .data("clientesInactivosCount", counts.inactivos())
                 .data("filtroEstado", estado != null && !estado.isBlank()
                         ? estado.trim().toLowerCase(java.util.Locale.ROOT) : null);
     }
@@ -876,26 +856,13 @@ public class ClientsResource {
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
                                        @Nullable String dir, @Nullable String q,
                                        @Nullable String estado) {
-        List<Clientes> filas;
-        if (q != null && !q.isBlank()) {
-            List<Clientes> matches = clientService.searchByName(q.trim());
-            filas = new ArrayList<>(matches != null ? matches : List.of());
-        } else {
-            filas = new ArrayList<>(orEmpty(clientService.listAll()));
-        }
-        if (estado != null && !estado.isBlank()) {
-            String filtro = estado.trim().toLowerCase(java.util.Locale.ROOT);
-            if ("activo".equals(filtro)) {
-                filas.removeIf(cliente -> cliente.getStatus() == null || !cliente.getStatus());
-            } else if ("inactivo".equals(filtro)) {
-                filas.removeIf(cliente -> cliente.getStatus() != null && cliente.getStatus());
-            }
-        }
-        sortClients(filas, sort, dir);
-
-        long total = filas.size();
+        // One COUNT for the pager and one paged SELECT for the window: the
+        // filter (q + estado) and the whitelisted ORDER BY are applied in SQL
+        // by ClientService. Same rows/pager/empty-state contract as the old
+        // listAll() + in-memory filter + subList() path.
+        long total = clientService.countByNameLike(q, estado);
         Window w = windowOf(total, page, size);
-        filas = filas.subList(w.from(), w.to());
+        List<Clientes> filas = clientService.pageByNameLike(q, estado, sort, dir, w.from(), w.size());
 
         List<Map<String, Object>> columnas = new ArrayList<>();
         columnas.add(col("Estado", null));
@@ -920,36 +887,6 @@ public class ClientsResource {
                 sort, "desc".equalsIgnoreCase(dir) ? "desc" : "asc",
                 w.page(), w.size(), total, w.totalPages(), pageWindow(w.page(), w.totalPages()),
                 filtros, q);
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? List.of() : list;
-    }
-
-    private static void sortClients(@Nonnull List<Clientes> rows, @Nullable String sort,
-                                    @Nullable String dir) {
-        if (rows.isEmpty() || sort == null || sort.isBlank()) {
-            return;
-        }
-        Comparator<Clientes> cmp = switch (sort) {
-            case "code" -> Comparator.comparingInt(Clientes::getCode);
-            case "name" -> Comparator.comparing(Clientes::getName,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "address" -> Comparator.comparing(Clientes::getAddress,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "email" -> Comparator.comparing(Clientes::getEmail,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "idNumber" -> Comparator.comparing(Clientes::getIdNumber,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "phoneNumber" -> Comparator.comparing(Clientes::getPhoneNumber,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "status" -> Comparator.comparing(Clientes::getStatus,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            default -> null;
-        };
-        if (cmp != null) {
-            rows.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
-        }
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
