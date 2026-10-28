@@ -297,6 +297,14 @@ public class StockAlertConfigResource {
      * read-only kit table snapshot of currently-triggered alerts. With the
      * {@code HX-Request} header renders ONLY the {@code forma} fragment so the
      * article loader can swap it in place.
+     *
+     * <p>The snapshot table is acquired as SQL {@code COUNT} + page
+     * ({@link StockAlertService#countReportAlerts} /
+     * {@link StockAlertService#pageReportAlerts}) instead of materialising
+     * every active alert: on a real database the old read hydrated the whole
+     * active set and lazily loaded each article, turning one page render into
+     * ~19 s. Columns, {@code page}/{@code size} paging, the totals and the
+     * empty state are unchanged.</p>
      */
     @GET
     @Path("/pagina")
@@ -332,32 +340,43 @@ public class StockAlertConfigResource {
             model.put("articuloCodigoInput", articulo);
             model.put("cargado", cargado);
 
+            if (hx) {
+                // The swapped response is the {#fragment forma} section only:
+                // the triggered-alerts table lives OUTSIDE it, so the article
+                // loader must not pay for the snapshot queries at all. This is
+                // the path the operator hits on every "Cargar".
+                return respuestaFragmento(model);
+            }
+
             // Triggered-alerts snapshot table (kit data-table, slot mode).
+            // COUNT + page in SQL (the same pattern as the stock-alert report):
+            // this used to hydrate EVERY active alert and its article just to
+            // slice one page out of it, which is what made this page take ~19 s
+            // on a real database (N+1 lazy article reads over the full set).
             int paginaSegura = Math.max(page, 1);
             int tamanoSeguro = Math.min(Math.max(size, 1), 100);
-            List<AlertaStock> activas = stockAlertService.getActiveStockAlerts();
+            long total = stockAlertService.countReportAlerts(null, null, null, null);
+            int desde = (int) Math.min((paginaSegura - 1L) * tamanoSeguro, total);
             List<Map<String, Object>> filas = new ArrayList<>();
-            if (activas != null) {
+            if (desde < total) {
+                // No filters on this snapshot: the old list was exactly the
+                // active alerts, newest first — the service's default order.
+                List<AlertaStock> activas = stockAlertService.pageReportAlerts(
+                        null, null, null, null, null, null, desde, tamanoSeguro);
                 for (AlertaStock alerta : activas) {
                     filas.add(fila(alerta));
                 }
             }
-            long total = filas.size();
-            int desde = (int) Math.min((paginaSegura - 1L) * tamanoSeguro, total);
-            int hasta = (int) Math.min(desde + (long) tamanoSeguro, total);
             int totalPaginas = Math.max(1,
                     (int) ((total + tamanoSeguro - 1) / tamanoSeguro));
             model.put("columnas", columnas());
-            model.put("filas", filas.subList(desde, hasta));
+            model.put("filas", filas);
             model.put("page", paginaSegura);
             model.put("size", tamanoSeguro);
             model.put("total", total);
             model.put("totalPages", totalPaginas);
             model.put("paginas", ventanaPaginas(paginaSegura, totalPaginas));
 
-            if (hx) {
-                return respuestaFragmento(model);
-            }
             String html = pagina.data(model).render();
             return Response.ok(html)
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))

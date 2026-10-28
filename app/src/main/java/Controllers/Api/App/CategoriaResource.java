@@ -86,9 +86,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       {@code alertas.registrarAlerta} audit entries with DiffUtils
  *       snapshots.</li>
  *   <li>Métricas: read model of
- *       {@link DepartamentoMetricoService#listAll()} (+ avgScore /
- *       sumMontoTotalCompras summary cards) and the admin-only
- *       recalculation trigger that used to live on the JSF page.</li>
+ *       {@link DepartamentoMetricoService#listUltimasPorDepartamento(int)}
+ *       (the page's leaderboard is one row per department, capped at
+ *       {@link #METRICAS_TOPE}, with the real supplier total from
+ *       {@code countDepartamentosConMetricas()}; {@code /metricas} keeps the
+ *       full {@link DepartamentoMetricoService#listAll()} read model) + avgScore
+ *       / sumMontoTotalCompras summary cards and the admin-only recalculation
+ *       trigger that used to live on the JSF page.</li>
  * </ul>
  *
  * <p><b>Paging/sorting contract</b> follows docs/ui-kit.md §3.1:
@@ -126,6 +130,13 @@ public class CategoriaResource {
     private static final String MSG_NOMBRE_REQUERIDO = "El nombre no puede estar vacío";
     /** Legacy duplicate-name warning parity (FamiliaController.createFamiliaDialog). */
     private static final String MSG_FAMILIA_DUPLICADA = "Ya existe una familia con ese nombre!";
+
+    /**
+     * Hard cap on the supplier-ranking rows of the full page (identical to
+     * {@code CategoriasPagesResource}): one row per department, so the cap only
+     * guards a pathological department count.
+     */
+    private static final int METRICAS_TOPE = 200;
 
     @Nonnull
     @Inject
@@ -886,7 +897,7 @@ public class CategoriaResource {
         TableModel td = buildTableModel(TAB_DEPARTAMENTOS, 1, 20, null, "asc", null);
 
         List<Map<String, Object>> metricasFilas = new ArrayList<>();
-        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listAll())) {
+        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listUltimasPorDepartamento(METRICAS_TOPE))) {
             Map<String, Object> fila = new LinkedHashMap<>();
             fila.put("id", m.getId());
             fila.put("proveedor", m.getDepartamento() != null && m.getDepartamento().getNombre() != null
@@ -912,7 +923,7 @@ public class CategoriaResource {
                 .data("departamentosActivosCount", departamentoService.countActivos())
                 .data("departamentosInactivosCount", departamentoService.countInactivos())
                 .data("isAdmin", isAdmin())
-                .data("metricasTotalProveedores", metricasFilas.size())
+                .data("metricasTotalProveedores", departamentoMetricoService.countDepartamentosConMetricas())
                 .data("metricasScorePromedio", departamentoMetricoService.avgScore())
                 .data("metricasComprasTotales", departamentoMetricoService.sumMontoTotalCompras())
                 .data("metricasFilas", metricasFilas);

@@ -393,6 +393,185 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
     }
 
+    // ── SQL-paged reporte Recibos Pendientes / Vencidos (app) ─────────────
+    // /app/reportes/recibos/{pendientes,vencidos} llamaba a listPendientes() /
+    // listVencidas(): cargaban TODAS las facturas recibidas impagas con su
+    // grafo (detalles + lineas + encabezado + resumen), calculaban el
+    // vencimiento en Java y paginaban en memoria. Con 50k recibidos eso pasa
+    // de 30 s. Estas consultas dejan el conteo, el filtro, el orden y el
+    // recorte a SQL; solo se hidrata la pagina pedida.
+
+    /**
+     * COUNT companion of {@link #pageRecibosPorVencimiento}: identical
+     * FROM/WHERE, so the pager total and the returned page always describe the
+     * same result set.
+     *
+     * @param vencidos {@code true} → {@code listVencidas()} (due date today or
+     *                 past); {@code false} → {@code listPendientes()} (due date
+     *                 still in the future)
+     * @param q        free-text filter over the report columns
+     *                 (consecutivo, emisor nombre, condicion de venta, fecha de
+     *                 emision); null/blank means "no filter"
+     * @return filtered row count, 0 when the query fails (logged)
+     */
+    public long countRecibosPorVencimiento(boolean vencidos, @Nullable String q) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT COUNT(f)"
+                + fromClauseReporte(false, tieneTexto(q))
+                + whereClauseReporte(vencidos, q, params);
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando recibos por vencimiento: " + e.getMessage()
+                    + " | source=ComprobantesRecibidosService.countRecibosPorVencimiento()"
+                    + " | vencidos=" + vencidos + " | q=" + q
+                    + " | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * One page of the Pendientes/Vencidos report, filtered and sorted in SQL.
+     *
+     * <p>Same predicates as the legacy service calls the report used:</p>
+     * <ul>
+     *   <li>{@code f.paid = false};</li>
+     *   <li>due date = {@code fechaEmision.toLocalDate() + plazoCredito}:
+     *       {@code > today} for pendientes, {@code <= today} for vencidas —
+     *       exactly the Java {@code isAfter}/{@code !isAfter} comparisons;</li>
+     *   <li>a non-numeric, empty or overflow-length {@code plazoCredito} makes
+     *       the due date NULL, so the row is excluded, mirroring the old
+     *       {@code NumberFormatException → false} branch.</li>
+     * </ul>
+     *
+     * <p>Only to-one associations are fetched ({@code encabezado},
+     * {@code emisor}, {@code resumen}): the template reads them for every
+     * column, and fetching them avoids one lazy load per row. The old
+     * {@code DISTINCT} was only needed because {@code listPendientes()}/
+     * {@code listVencidas()} also fetched the {@code detalles} bag; without a
+     * bag there is no row multiplication.</p>
+     *
+     * <p>ORDER BY is whitelisted against the report columns
+     * ({@code consecutivo}, {@code fecha}, {@code emisor}, {@code condicion},
+     * {@code plazo}, {@code total}); {@code estado} deliberately keeps the
+     * legacy no-op (the in-memory switch had no comparator for it) and unknown
+     * keys fall back to {@code f.id}. Every order ends with {@code f.id ASC} so
+     * a page can never shuffle between requests. Explicit {@code NULLS FIRST}
+     * (ASC) / {@code NULLS LAST} (DESC) mirror the old
+     * {@code nullsFirst(...)} + {@code reversed()} comparators.</p>
+     *
+     * @param offset zero-based first row
+     * @param size   page size (clamped to at least 1)
+     */
+    public @Nonnull List<ComprobantesRecibidos> pageRecibosPorVencimiento(
+            boolean vencidos, @Nullable String q,
+            @Nullable String sort, @Nullable String dir,
+            int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT f"
+                + fromClauseReporte(true, true)
+                + whereClauseReporte(vencidos, q, params)
+                + orderByReporte(sort, dir);
+        try {
+            TypedQuery<ComprobantesRecibidos> query =
+                    em.createQuery(jpql, ComprobantesRecibidos.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(size, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paginando recibos por vencimiento: " + e.getMessage()
+                    + " | source=ComprobantesRecibidosService.pageRecibosPorVencimiento()"
+                    + " | vencidos=" + vencidos + " | q=" + q
+                    + " | sort=" + sort + " | dir=" + dir
+                    + " | offset=" + offset + " | size=" + size
+                    + " | despues=" + e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    /**
+     * FROM shared by the report COUNT/page. The emisor join is only added when
+     * the page needs it (page always, COUNT only for the {@code q} predicate);
+     * it is a to-one LEFT JOIN in both cases, so no COUNT row multiplication.
+     */
+    private static @Nonnull String fromClauseReporte(boolean fetchForPage, boolean needsEmisor) {
+        String join = fetchForPage ? " LEFT JOIN FETCH " : " LEFT JOIN ";
+        String from = " FROM ComprobantesRecibidos f" + join + "f.encabezado e";
+        if (fetchForPage) {
+            from += join + "f.resumen r";
+        }
+        if (needsEmisor) {
+            from += join + "e.emisor em";
+        }
+        return from;
+    }
+
+    /**
+     * Shared WHERE for {@link #countRecibosPorVencimiento} and
+     * {@link #pageRecibosPorVencimiento}. The {@code q} fields are exactly the
+     * ones the resource filtered in memory (emisor nombre, numero
+     * consecutivo, condicion de venta and fecha de emision), case-insensitive
+     * contains with {@code %}/{@code _} escaped.
+     */
+    private static @Nonnull String whereClauseReporte(boolean vencidos, @Nullable String q,
+                                                      @Nonnull Map<String, Object> params) {
+        List<String> predicates = new ArrayList<>();
+        predicates.add("f.paid = false");
+        predicates.add("CAST(timestampadd(day, " + plazoEnDias()
+                + ", e.fechaEmision) AS date) " + (vencidos ? "<= :hoy" : "> :hoy"));
+        params.put("hoy", LocalDate.now());
+
+        String term = q == null ? "" : q.trim();
+        if (!term.isEmpty()) {
+            String like = "LIKE :q ESCAPE '" + LIKE_ESCAPE + "'";
+            predicates.add("(LOWER(COALESCE(em.nombre, '')) " + like
+                    + " OR LOWER(COALESCE(e.numeroConsecutivo, '')) " + like
+                    + " OR LOWER(COALESCE(e.condicionVenta, '')) " + like
+                    + " OR LOWER(COALESCE(FUNCTION('to_char', e.fechaEmision,"
+                    + " 'YYYY-MM-DD\"T\"HH24:MI:SS'), '')) " + like + ")");
+            params.put("q", likePattern(term.toLowerCase(Locale.ROOT)));
+        }
+        return " WHERE " + String.join(" AND ", predicates);
+    }
+
+    /**
+     * Whitelisted ORDER BY for the report table. {@code plazo} and
+     * {@code condicion} sort as the VARCHAR columns they are (the old
+     * comparators compared the raw strings), {@code emisor} sorts
+     * case-insensitively on {@code LOWER(nombre)} like the inbox query, and
+     * {@code f.id ASC} is the deterministic tiebreak.
+     */
+    private static @Nonnull String orderByReporte(@Nullable String sort, @Nullable String dir) {
+        String key = sort == null ? "" : sort.trim();
+        boolean desc = "desc".equalsIgnoreCase(dir == null ? "" : dir.trim());
+        String direction = desc ? " DESC" : " ASC";
+        String nulls = desc ? " NULLS LAST" : " NULLS FIRST";
+        return switch (key) {
+            case "consecutivo" -> " ORDER BY e.numeroConsecutivo" + direction + nulls + ", f.id ASC";
+            case "fecha" -> " ORDER BY e.fechaEmision" + direction + nulls + ", f.id ASC";
+            case "emisor" -> " ORDER BY LOWER(em.nombre)" + direction + nulls + ", f.id ASC";
+            case "condicion" -> " ORDER BY e.condicionVenta" + direction + nulls + ", f.id ASC";
+            case "plazo" -> " ORDER BY e.plazoCredito" + direction + nulls + ", f.id ASC";
+            case "total" -> " ORDER BY r.totalComprobante" + direction + nulls + ", f.id ASC";
+            // "estado" has no comparator in the legacy switch either: keep the
+            // stable id order instead of inventing a new one.
+            default -> " ORDER BY f.id ASC";
+        };
+    }
+
+    /** True when the free-text filter has anything to match. */
+    private static boolean tieneTexto(@Nullable String q) {
+        return q != null && !q.trim().isEmpty();
+    }
+
     // ── SQL-paged inbox (buzón de facturas recibidas) ─────────────────────
     // Replaces the resource's "load every row, filter/sort/slice in memory"
     // path. Kept in this service (instead of the resource) so the SAME

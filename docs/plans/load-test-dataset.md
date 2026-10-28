@@ -79,17 +79,48 @@ Fixed after the load exposed them:
 | Artículos (252k) | >25 s | 1.38 s |
 | Artículos API | >25 s | 0.23 s |
 | Estacionalidad (1M movs) | >25 s | 0.95 s |
-| Tributación (212k) | >25 s | SQL aggregates (counters 261 ms, series 41 ms) |
-| Resumen de inventario | >20 s | map lookup instead of O(n²) |
-| Facturas Recibidas (50k) | >25 s | SQL count/page |
+| Tributación (212k) | >25 s | 0.85 s |
+| Resumen de inventario | >20 s | in progress (SQL rewrite) |
+| Facturas Recibidas (50k) | >25 s | 0.60 s |
+| Alertas de stock (200k) | 15.7 s | 0.20 s |
 
 Already fast: dashboard 0.56 s, facturas emitidas 0.37 s, órdenes 0.33 s,
 precios 0.22 s, merma 0.46 s, rendimiento 1.43 s, correos 0.14 s, CAByS 0.04 s.
 
 ## Known remaining hotspots
 
-- `pronosticos` (>20 s with 200k precision rows).
-- `etiquetas` (>20 s: materializes 252k articles to build labels).
-- `alertas` is being converted to SQL paging.
+- `pronosticos` (>20 s): `gruposPorArticulo()` loads all 252k articles and
+  `generateBulkForecast` runs over the whole catalog. Fixing this needs a
+  product decision (forecast only articles with sales/stock, or paginate).
+- `etiquetas` (>20 s): materializes 252k articles to build labels.
+- `alertas` was converted to SQL paging (see below).
 
-These are the next candidates for the same treatment (count/page or streaming).
+## Full re-check (51 routes, seeded DB)
+
+Sweep of every page, report and table view with 252k articles / 1M movements /
+212k emitted invoices / 50k received. **0 HTTP 500s, 0 template errors.**
+
+Slow at the time of the sweep, then fixed:
+
+| Route | Before | After |
+|---|---:|---:|
+| `/app/reportes/inventario/resumen` | >30 s | 0.82 s |
+| `/app/reportes/inventario/alertas` | 15.7 s | 0.20 s |
+| `/api/app/facturas-recibidas/tabla` | >25 s | 0.41 s |
+| `/app/tributacion` | >25 s | 0.85 s |
+
+Found in the sweep and being fixed:
+
+| Route | Symptom |
+|---|---|
+| `/app/categorias` | 136 MB / 200,043 rows (all department metrics rendered) |
+| `/app/devoluciones` | >30 s |
+| `/app/tributacion/consultas` | >30 s |
+| `/app/reportes/recibos/pendientes` | >30 s |
+| `/app/reportes/recibos/vencidos` | >30 s |
+| `/app/reportes/inventario/etiquetas` | >30 s |
+| `/api/app/stock-alert-config/pagina` | 18.9 s |
+
+Expected non-200s (not bugs): `/app/recibos` is a 302 redirect to the received
+table; `/app/reportes/recibos` is not a route; `/app/compras/ordenes` and
+`/app/facturas-recibidas` are API-only paths with no page.

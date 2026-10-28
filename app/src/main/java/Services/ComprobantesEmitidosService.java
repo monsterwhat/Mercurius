@@ -257,6 +257,24 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
      *         vacia si {@code q} esta en blanco o si la consulta falla
      */
     public @Nonnull List<ComprobantesEmitidos> findByIdContainingConsecutivo(@Nullable String q, int limit) {
+        return findByIdContainingConsecutivo(q, 0, limit);
+    }
+
+    /**
+     * Pagina de {@link #findByIdContainingConsecutivo(String, int)} (misma
+     * semantica, {@code OFFSET}/{@code LIMIT} en SQL).
+     *
+     * <p>La usa la pagina de devoluciones: antes materializaba el historico
+     * completo (211k comprobantes) y paginaba en memoria; ahora el total sale
+     * de {@link #countByIdContainingConsecutivo(String)} y solo viaja la
+     * pagina pedida.</p>
+     *
+     * @param q      texto buscado dentro de {@code encabezado.numeroConsecutivo}
+     * @param offset primera fila (0-based)
+     * @param limit  maximo de filas (se fuerza a {@code >= 1})
+     */
+    public @Nonnull List<ComprobantesEmitidos> findByIdContainingConsecutivo(
+            @Nullable String q, int offset, int limit) {
         if (q == null || q.trim().isEmpty()) {
             return java.util.List.of();
         }
@@ -269,12 +287,38 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                             + " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC",
                     ComprobantesEmitidos.class);
             query.setParameter("q", "%" + q.trim() + "%");
+            query.setFirstResult(Math.max(offset, 0));
             query.setMaxResults(Math.max(limit, 1));
             return query.getResultList();
         } catch (PersistenceException e) {
             LOG.warn("Error buscando por consecutivo: " + e.getMessage()
                     + " | source=ComprobantesEmitidosService.findByIdContainingConsecutivo() | despues=" + e.getMessage());
             return java.util.List.of();
+        }
+    }
+
+    /**
+     * Total de coincidencias de {@link #findByIdContainingConsecutivo}: mismo
+     * {@code FROM}/{@code WHERE} para que el paginador y la pagina describan
+     * siempre el mismo conjunto.
+     */
+    public long countByIdContainingConsecutivo(@Nullable String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return 0L;
+        }
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f"
+                            + " JOIN f.encabezado e"
+                            + " WHERE e.numeroConsecutivo LIKE :q",
+                    Long.class);
+            query.setParameter("q", "%" + q.trim() + "%");
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando por consecutivo: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countByIdContainingConsecutivo() | despues=" + e.getMessage());
+            return 0L;
         }
     }
 
@@ -298,6 +342,19 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
      *         vacia si {@code q} esta en blanco o si la consulta falla
      */
     public @Nonnull List<ComprobantesEmitidos> findByClientNameLike(@Nullable String q, int limit) {
+        return findByClientNameLike(q, 0, limit);
+    }
+
+    /**
+     * Pagina de {@link #findByClientNameLike(String, int)} (misma semantica
+     * invertida del {@code LIKE}, {@code OFFSET}/{@code LIMIT} en SQL).
+     *
+     * @param q      criterio que debe contener el nombre del receptor
+     * @param offset primera fila (0-based)
+     * @param limit  maximo de filas (se fuerza a {@code >= 1})
+     */
+    public @Nonnull List<ComprobantesEmitidos> findByClientNameLike(
+            @Nullable String q, int offset, int limit) {
         if (q == null || q.trim().isEmpty()) {
             return java.util.List.of();
         }
@@ -314,12 +371,40 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                             + " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC",
                     ComprobantesEmitidos.class);
             query.setParameter("q", needle);
+            query.setFirstResult(Math.max(offset, 0));
             query.setMaxResults(Math.max(limit, 1));
             return query.getResultList();
         } catch (PersistenceException e) {
             LOG.warn("Error buscando por nombre de cliente: " + e.getMessage()
                     + " | source=ComprobantesEmitidosService.findByClientNameLike() | despues=" + e.getMessage());
             return java.util.List.of();
+        }
+    }
+
+    /**
+     * Total de coincidencias de {@link #findByClientNameLike}: mismo
+     * {@code FROM}/{@code WHERE} (incluida la direccion invertida del
+     * {@code LIKE}) para que el paginador y la pagina coincidan.
+     */
+    public long countByClientNameLike(@Nullable String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return 0L;
+        }
+        String needle = q.trim().toLowerCase(java.util.Locale.ROOT);
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f"
+                            + " JOIN f.encabezado e JOIN e.receptor rc"
+                            + " WHERE rc.nombre IS NOT NULL"
+                            + " AND :q LIKE CONCAT('%', LOWER(rc.nombre), '%')",
+                    Long.class);
+            query.setParameter("q", needle);
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando por nombre de cliente: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countByClientNameLike() | despues=" + e.getMessage());
+            return 0L;
         }
     }
 
@@ -776,6 +861,45 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
             return 0L;
         }
     }
+
+    /**
+     * Contadores de los tres buckets de la pagina de consultas, en UNA pasada.
+     *
+     * <p>La pagina pedia tres {@code COUNT} JPQL separados sobre el mismo
+     * universo ({@code status = true}, electronicos con clave): cada uno
+     * recorria el historico completo. Este agregado usa {@code count(*) FILTER}
+     * sobre una sola lectura y devuelve exactamente los mismos numeros que
+     * {@link #countFacturasPendientes()}, {@link #countFacturasAceptadas()} y
+     * {@link #countFacturasRechazadas()} (el estado sale de
+     * {@code encabezado.estado}, no de {@code haciendaEstado}).</p>
+     *
+     * @return conteos de pendientes, aceptadas y rechazadas
+     */
+    public @Nonnull ContadoresConsultas contadoresConsultas() {
+        long pendientes = 0L;
+        long aceptadas = 0L;
+        long rechazadas = 0L;
+        try {
+            var query = em.createNativeQuery(
+                    "SELECT count(*) FILTER (WHERE e.estado IS NULL OR e.estado = 'PENDIENTE'),"
+                            + " count(*) FILTER (WHERE e.estado = 'ACEPTADO'),"
+                            + " count(*) FILTER (WHERE e.estado = 'RECHAZADO')"
+                            + " FROM comprobantesemitidos f"
+                            + " JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " WHERE f.status = true AND e.clave IS NOT NULL");
+            Object[] fila = (Object[]) query.getSingleResult();
+            pendientes = numero(fila[0]);
+            aceptadas = numero(fila[1]);
+            rechazadas = numero(fila[2]);
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando los buckets de consultas: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.contadoresConsultas() | despues=" + e.getMessage());
+        }
+        return new ContadoresConsultas(pendientes, aceptadas, rechazadas);
+    }
+
+    /** Contadores de la pagina de consultas (ver {@link #contadoresConsultas()}). */
+    public record ContadoresConsultas(long pendientes, long aceptadas, long rechazadas) { }
 
     /**
      * Comprobantes de un bucket de consultas, acotados y filtrados en SQL.

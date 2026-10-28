@@ -13,6 +13,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -167,6 +168,84 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                     + " | source=DepartamentoMetricoService.listAll()"
                     + " | despues=" + e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Supplier ranking: the LATEST stored metric per department, highest score
+     * first, bounded to {@code limite} rows.
+     *
+     * <p>One row per supplier is what the table means. On a real database the
+     * table holds ~200k snapshots for a few dozen departments (recalculation
+     * history), so {@link #listAll()} rendered every snapshot of every supplier
+     * — 136 MB of HTML and 200k {@code <tr>} for a leaderboard — and repeated
+     * the same supplier thousands of times with different scores.</p>
+     *
+     * <p>"Latest" is {@code (fechaCalculo DESC, id DESC)} per department: the
+     * id tiebreak keeps equal timestamps deterministic (the seeded data does
+     * have timestamp ties). The cut happens in SQL: {@code NOT EXISTS} keeps
+     * only rows no newer snapshot shadows, then the paged {@code ORDER BY
+     * score DESC, id ASC} plus {@code LIMIT} bounds the result. Rows without a
+     * department are excluded — a metric no supplier owns is not a ranking row
+     * (it used to render as "Sin nombre"). Departments are fetched in the same
+     * query, so the page does not lazily load one per row.</p>
+     *
+     * <p>The pair {@code countDepartamentosConMetricas()} is the matching total:
+     * one row per non-null department, so the KPI and the table cannot
+     * disagree.</p>
+     *
+     * @param limite maximum number of rows to return (below 1 clamped to 1)
+     * @return up to {@code limite} latest metrics, or an empty list if the
+     *         query fails
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public List<DepartamentoMetrico> listUltimasPorDepartamento(int limite) {
+        int tope = Math.max(limite, 1);
+        try {
+            TypedQuery<DepartamentoMetrico> query = em.createQuery(
+                    "SELECT m FROM DepartamentoMetrico m"
+                    + " LEFT JOIN FETCH m.departamento d"
+                    + " WHERE m.departamento IS NOT NULL"
+                    + " AND NOT EXISTS (SELECT m2.id FROM DepartamentoMetrico m2"
+                    + "   WHERE m2.departamento = m.departamento"
+                    + "   AND (m2.fechaCalculo > m.fechaCalculo"
+                    + "     OR (m2.fechaCalculo = m.fechaCalculo AND m2.id > m.id)))"
+                    + " ORDER BY m.score DESC, m.id ASC",
+                    DepartamentoMetrico.class);
+            query.setMaxResults(tope);
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listando las últimas métricas por departamento: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.listUltimasPorDepartamento()"
+                    + " | limite=" + tope
+                    + " | antes=" + String.valueOf((Object) null)
+                    + " | despues=" + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Number of departments with stored metrics — the supplier total the
+     * categorías ranking reports. A SQL {@code COUNT(DISTINCT)}: it never
+     * hydrates the ~200k snapshot rows, and it matches
+     * {@link #listUltimasPorDepartamento(int)} one-to-one (both count only
+     * metrics with a department). Returns 0 if the query fails.
+     */
+    @Transactional(TxType.SUPPORTS)
+    public long countDepartamentosConMetricas() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(DISTINCT m.departamento) FROM DepartamentoMetrico m",
+                    Long.class);
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando departamentos con métricas: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.countDepartamentosConMetricas()"
+                    + " | antes=" + String.valueOf((Object) null)
+                    + " | despues=" + e.getMessage());
+            return 0L;
         }
     }
 

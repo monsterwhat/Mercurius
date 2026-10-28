@@ -23,10 +23,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -57,6 +55,16 @@ public class DevolucionesPagesResource {
 
     /** Legacy p:dataTable rows=10 on search results and historial. */
     private static final int PAGE_SIZE = 10;
+
+    /**
+     * Filas del historial de notas de credito.
+     *
+     * <p>Espeja {@code DevolucionesResource.HISTORIAL_OOB_LIMIT}: el
+     * historial no tiene paginador y el refresco OOB posterior a una
+     * devolucion ya pinta solo las mas recientes. La pagina inicial usa el
+     * mismo tope para que ambas vistas coincidan.</p>
+     */
+    private static final int HISTORIAL_LIMIT = 20;
 
     @Inject
     @Nonnull
@@ -118,21 +126,26 @@ public class DevolucionesPagesResource {
         boolean busquedaActiva = q != null && !q.trim().isEmpty();
 
         if (busquedaActiva) {
-            // Same filter semantics as the JSON twin (legacy buscarFactura);
-            // paged here for the kit table footer.
-            List<Map<String, Object>> todas = buscar(tipo, q.trim());
-            total = todas.size();
+            // Same filter semantics as the JSON twin (legacy buscarFactura),
+            // now counted and paged in SQL. The legacy path materialized the
+            // whole emitted-invoice history (211k rows) and paginated it in
+            // memory: every Buscar paid a full scan plus full hydration.
+            String criterio = q.trim();
+            total = buscarTotal(tipo, criterio);
             totalPages = (int) Math.max(1L, (total + PAGE_SIZE - 1) / PAGE_SIZE);
             safePage = Math.min(safePage, totalPages);
-            int from = Math.min((safePage - 1) * PAGE_SIZE, todas.size());
-            int to = Math.min(from + PAGE_SIZE, todas.size());
-            filas.addAll(todas.subList(from, to));
+            if (total > 0) {
+                int offset = (safePage - 1) * PAGE_SIZE;
+                for (ComprobantesEmitidos f : buscarPagina(tipo, criterio, offset, PAGE_SIZE)) {
+                    filas.add(filaMap(f));
+                }
+            }
         }
 
-        List<Integer> pages = new ArrayList<>();
-        for (int p = 1; p <= totalPages; p++) {
-            pages.add(p);
-        }
+        // Ventana del paginador (page ± 2), como el resto de las tablas del
+        // kit: con el total exacto en SQL una busqueda amplia puede dar miles
+        // de paginas y el pager no debe emitir un enlace por cada una.
+        List<Integer> pages = pageWindow(safePage, totalPages);
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Devoluciones y Notas de Credito");
@@ -152,7 +165,9 @@ public class DevolucionesPagesResource {
                 Map.of("label", "Cliente"),
                 Map.of("label", "Total"),
                 Map.of("label", "Acción")));
-        model.put("historialNotas", historialRows());
+        // El fragmento de resultados (HX-Request) no incluye el historial: no
+        // se consulta al Buscar; solo la pagina completa lo pinta.
+        model.put("historialNotas", isHxRequest() ? List.of() : historialRows());
         model.put("headersHistorial", List.of(
                 Map.of("label", "Fecha"),
                 Map.of("label", "Factura Original"),
@@ -162,50 +177,52 @@ public class DevolucionesPagesResource {
         return model;
     }
 
-    /** Legacy buscarFactura() filtering — kept verbatim (see API twin). */
-    private List<Map<String, Object>> buscar(@Nonnull String tipo, @Nonnull String criterio) {
-        List<ComprobantesEmitidos> source = new ArrayList<>();
+    /**
+     * Legacy {@code buscarFactura()} total, resuelto en SQL.
+     *
+     * <p>Cliente mode keeps the legacy guard: without a client matching the
+     * criterion there are no results, so the invoice count is never asked for.
+     * Consecutivo mode delegates to the same {@code LIKE} predicate as the
+     * page query, so footer total and rows always describe one result set.</p>
+     */
+    private long buscarTotal(@Nonnull String tipo, @Nonnull String criterio) {
         if ("cliente".equals(tipo)) {
             List<Models.Clientes> clients = clientService.searchByName(criterio);
             if (clients == null || clients.isEmpty()) {
-                return Collections.emptyList();
+                return 0L;
             }
-            String needle = criterio.toLowerCase(Locale.ROOT);
-            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAllConClave())) {
-                Encabezado enc = f.getEncabezado();
-                if (enc == null || enc.getReceptor() == null || enc.getReceptor().getNombre() == null) {
-                    continue;
-                }
-                if (needle.contains(enc.getReceptor().getNombre().toLowerCase(Locale.ROOT))) {
-                    source.add(f);
-                }
-            }
-        } else {
-            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAllConClave())) {
-                Encabezado enc = f.getEncabezado();
-                if (enc != null && enc.getNumeroConsecutivo() != null
-                        && enc.getNumeroConsecutivo().contains(criterio)) {
-                    source.add(f);
-                }
-            }
+            return emitidosService.countByClientNameLike(criterio);
         }
-        List<Map<String, Object>> rows = new ArrayList<>(source.size());
-        for (ComprobantesEmitidos f : source) {
-            Encabezado enc = f.getEncabezado();
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("id", f.getId());
-            row.put("consecutivo", enc != null ? enc.getNumeroConsecutivo() : null);
-            row.put("fechaEmision", enc != null ? enc.getFechaEmision() : null);
-            row.put("cliente", enc != null && enc.getReceptor() != null ? enc.getReceptor().getNombre() : null);
-            row.put("total", f.getResumen() != null ? f.getResumen().getTotalComprobante() : null);
-            rows.add(row);
+        return emitidosService.countByIdContainingConsecutivo(criterio);
+    }
+
+    /** One SQL page of the legacy {@code buscarFactura()} result set. */
+    private @Nonnull List<ComprobantesEmitidos> buscarPagina(
+            @Nonnull String tipo, @Nonnull String criterio, int offset, int max) {
+        if ("cliente".equals(tipo)) {
+            return orEmpty(emitidosService.findByClientNameLike(criterio, offset, max));
         }
-        return rows;
+        return orEmpty(emitidosService.findByIdContainingConsecutivo(criterio, offset, max));
+    }
+
+    /** Table row of one invoice (same columns the template renders). */
+    private static @Nonnull Map<String, Object> filaMap(@Nonnull ComprobantesEmitidos f) {
+        Encabezado enc = f.getEncabezado();
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", f.getId());
+        row.put("consecutivo", enc != null ? enc.getNumeroConsecutivo() : null);
+        row.put("fechaEmision", enc != null ? enc.getFechaEmision() : null);
+        row.put("cliente", enc != null && enc.getReceptor() != null ? enc.getReceptor().getNombre() : null);
+        row.put("total", f.getResumen() != null ? f.getResumen().getTotalComprobante() : null);
+        return row;
     }
 
     private List<Map<String, Object>> historialRows() {
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (NotaCredito nota : orEmpty(notaCreditoService.listAll())) {
+        // Mismo tope que el refresco OOB del twin JSON: el historial no tiene
+        // techo y materializarlo entero (50k notas, una consulta lazy por
+        // fila) era el otro costo fijo de la pagina.
+        for (NotaCredito nota : orEmpty(notaCreditoService.listRecent(HISTORIAL_LIMIT))) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("fecha", nota.getFecha());
             row.put("facturaOriginal",

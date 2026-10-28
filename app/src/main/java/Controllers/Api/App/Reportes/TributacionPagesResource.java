@@ -86,6 +86,9 @@ public class TributacionPagesResource {
     /** Legacy p:dataTable rows=15 on the Consultas tabs. */
     private static final int CONSULTAS_PAGE_SIZE = 15;
 
+    /** Legacy cap of the Mensajes tab (first 100 by deadline). */
+    private static final int MENSAJES_LIMIT = 100;
+
     /** Legacy p:dataTable rows=10 on the Declaración detail tables. */
     private static final int DECLARACION_DETAIL_LIMIT = 10;
 
@@ -367,14 +370,17 @@ public class TributacionPagesResource {
 
     /** Consultas model: counters + countdown seed + first page of each bucket. */
     private Map<String, Object> consultasModel(@Nonnull String tab, @Nullable String q) {
-        // Las tablas muestran la primera pagina: el bucket completo son miles de
-        // comprobantes y materializarlo costaba 10 s por pagina.
+        // Las tablas muestran la primera pagina (rows=15 del legacy): el bucket
+        // completo son miles de comprobantes y materializarlo costaba 10 s por
+        // pagina. Los contadores salen de UN agregado FILTER, no de tres COUNT.
+        ComprobantesEmitidosService.ContadoresConsultas contadores =
+                emitidosService.contadoresConsultas();
         List<ComprobantesEmitidos> pendientes = emitidosService.findFacturasParaTabla("pendientes", 0, 15, q);
         List<ComprobantesEmitidos> aceptadas = emitidosService.findFacturasParaTabla("aceptadas", 0, 15, q);
         List<ComprobantesEmitidos> rechazadas = emitidosService.findFacturasParaTabla("rechazadas", 0, 15, q);
-        long totalPendientes = emitidosService.countFacturasPendientes();
-        long totalAceptadas = emitidosService.countFacturasAceptadas();
-        long totalRechazadas = emitidosService.countFacturasRechazadas();
+        long totalPendientes = contadores.pendientes();
+        long totalAceptadas = contadores.aceptadas();
+        long totalRechazadas = contadores.rechazadas();
 
         ReporteProgramado proximo = reportesProgramadosService.findNextScheduledReport();
         Date nextScheduledTime = proximo != null ? proximo.getNextRunTime() : null;
@@ -433,13 +439,21 @@ public class TributacionPagesResource {
         model.put("filasRechazadas", pageOf(rechazadas));
 
         List<Map<String, Object>> mensajes = new ArrayList<>();
-        for (ComprobantesRecibidos r : orEmpty(recibidosService.listAll())) {
+        // Antes: recibidosService.listAll(), que hidrataba el grafo completo
+        // (50k comprobantes + 226k lineas) solo para ordenar y mostrar 100.
+        // Ahora el total sale de un COUNT y la ventana de 100 viaja acotada en
+        // SQL; el orden por limite (derivado de fechaEmision) se conserva
+        // ordenando esa ventana igual que antes. El bucket "activas" es el
+        // mismo filtro status = true de la bandeja de recibidas.
+        long totalMensajes = recibidosService.countRecibidos("activas", null);
+        for (ComprobantesRecibidos r : orEmpty(recibidosService.pageRecibidos(
+                "activas", null, "fechaEmision", "asc", 0, MENSAJES_LIMIT))) {
             mensajes.add(mensajeMap(r));
         }
         mensajes.sort(Comparator.comparing(m -> (java.time.LocalDate) m.get("limite"),
                 Comparator.nullsLast(Comparator.naturalOrder())));
-        model.put("filasMensajes", mensajes.size() > 100 ? mensajes.subList(0, 100) : mensajes);
-        model.put("contadorMensajes", mensajes.size());
+        model.put("filasMensajes", mensajes);
+        model.put("contadorMensajes", totalMensajes);
         return model;
     }
 

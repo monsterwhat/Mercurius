@@ -57,6 +57,16 @@ public class CategoriasPagesResource {
     /** Legacy p:dataTable rows=20 on the Categorias tabs. */
     private static final int PAGE_SIZE = 20;
 
+    /**
+     * Hard cap on the supplier-ranking rows rendered in the page. The table is
+     * one row per department (its latest stored metric), so this is only a
+     * safety net for a pathological department count: the page used to render
+     * every stored metric (200k snapshot rows → 136 MB / 200k {@code <tr>},
+     * repeating the same supplier thousands of times). The KPI keeps the real
+     * supplier total through a SQL {@code COUNT(DISTINCT)}.
+     */
+    private static final int METRICAS_TOPE = 200;
+
     @Inject
     @Nonnull
     DepartamentoService departamentoService;
@@ -110,7 +120,7 @@ public class CategoriasPagesResource {
         model.put("departamentosActivosCount", departamentoService.countActivos());
         model.put("departamentosInactivosCount", departamentoService.countInactivos());
         model.put("isAdmin", isAdmin());
-        model.put("metricasTotalProveedores", metricasFilas.size());
+        model.put("metricasTotalProveedores", departamentoMetricoService.countDepartamentosConMetricas());
         model.put("metricasScorePromedio", departamentoMetricoService.avgScore());
         model.put("metricasComprasTotales", departamentoMetricoService.sumMontoTotalCompras());
         model.put("metricasFilas", metricasFilas);
@@ -170,10 +180,17 @@ public class CategoriasPagesResource {
         return model;
     }
 
-    /** Supplier-metrics rows for the ranking table (score chips/bars). */
+    /**
+     * Supplier-metrics rows for the ranking table (score chips/bars).
+     *
+     * <p>One row per department (its latest metric), capped at
+     * {@link #METRICAS_TOPE} in SQL: the ranking used to render every stored
+     * metric, which is what turned this page into a 136 MB / 200k-row response
+     * on a real database.</p>
+     */
     private List<Map<String, Object>> metricasFilas() {
         List<Map<String, Object>> filas = new ArrayList<>();
-        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listAll())) {
+        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listUltimasPorDepartamento(METRICAS_TOPE))) {
             Map<String, Object> fila = new LinkedHashMap<>();
             fila.put("id", m.getId());
             fila.put("proveedor", m.getDepartamento() != null && m.getDepartamento().getNombre() != null

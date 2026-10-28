@@ -13,8 +13,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -499,6 +501,202 @@ public class ArticulosService extends GService<Articulos> {
                     + " | source=ArticulosService.listReporteFilterOptions() | despues=" + e.getMessage());
             return List.of();
         }
+    }
+
+    // ── Etiquetas de precio (app) ─────────────────────────────────────────
+    // /app/reportes/inventario/etiquetas llamaba a ListAllEnabled() y armaba
+    // las filas de los 252k articulos habilitados (con sus precios EAGER) para
+    // imprimir 15 etiquetas. Estas consultas cuentan, filtran, ordenan y
+    // recortan en SQL: solo se proyecta la pagina visible, y los precios se
+    // leen en UNA consulta para esos codigos.
+
+    /**
+     * COUNT companion of {@link #pageEtiquetas}: identical FROM/WHERE, so the
+     * pager total and the returned page can never disagree.
+     *
+     * @param q               free-text filter over codigo/nombre/codigoBarra
+     *                        (the legacy {@code coincide()} fields);
+     *                        null/blank means "no filter"
+     * @param familiaId       family filter; null or &le;0 means "all"
+     * @param departamentoId  department filter; null or &le;0 means "all"
+     * @return filtered row count, 0 when the query fails (logged)
+     */
+    public long countEtiquetas(@Nullable String q, @Nullable Integer familiaId,
+                               @Nullable Integer departamentoId) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT COUNT(a) FROM Articulos a"
+                + etiquetasWhere(q, familiaId, departamentoId, params);
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting articles for etiquetas: " + e.getMessage()
+                    + " | source=ArticulosService.countEtiquetas()"
+                    + " | q=" + q + " | familia=" + familiaId
+                    + " | departamento=" + departamentoId
+                    + " | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * One page of the label table, projected and sorted in SQL. Only the six
+     * columns the table renders are read — no {@code Articulos} entity is
+     * hydrated, so the EAGER {@code precios} collection of the whole catalogue
+     * is never touched. The price itself comes from
+     * {@link #ultimosPreciosEtiquetas(List)} for these codes only; the latest
+     * price row is joined here solely when the ORDER BY needs it.
+     *
+     * <p>ORDER BY is whitelisted against the table columns
+     * ({@code codigo}, {@code nombre}, {@code codigoBarra}, {@code precio},
+     * {@code familia}, {@code departamento}); unknown/null keys fall back to
+     * codigo and every order ends with {@code a.codigo ASC} so a page can never
+     * shuffle between requests. Text keys sort on {@code LOWER(...)} and
+     * nulls follow the PostgreSQL ASC NULLS LAST / DESC NULLS FIRST default,
+     * which is what the old {@code ValorOrden} comparator did (nulls last on
+     * ASC, first on DESC). Familia/departamento render {@code "-"} when the
+     * relation is null, so they sort on that literal like before.</p>
+     *
+     * @return rows of {@code [codigo, nombre, codigoBarra, familiaNombre,
+     *         departamentoNombre]} in display order
+     */
+    @SuppressWarnings("unchecked")
+    public @Nonnull List<Object[]> pageEtiquetas(@Nullable String q, @Nullable Integer familiaId,
+                                                 @Nullable Integer departamentoId,
+                                                 @Nullable String sort, @Nullable String dir,
+                                                 int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        boolean porPrecio = "precio".equals(trimKey(sort));
+        // fromClause() already carries the familia/departamento joins (and the
+        // one-pass latest-price aggregate, only when sorted by price).
+        String jpql = "SELECT a.codigo, a.nombre, a.codigoBarra, f.nombre, d.nombre"
+                + fromClause(true, false, porPrecio)
+                + etiquetasWhere(q, familiaId, departamentoId, params)
+                + etiquetasOrderBy(sort, dir);
+        try {
+            TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(size, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paging articles for etiquetas: " + e.getMessage()
+                    + " | source=ArticulosService.pageEtiquetas()"
+                    + " | q=" + q + " | familia=" + familiaId
+                    + " | departamento=" + departamentoId
+                    + " | sort=" + sort + " | dir=" + dir
+                    + " | offset=" + offset + " | size=" + size
+                    + " | despues=" + e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Last price of each requested article (latest row = highest id), fetched
+     * in ONE query for the visible page only.
+     *
+     * <p>{@code Articulos.precios} is EAGER, so hydrating the entities loaded
+     * the price history of the whole catalogue just to print a page of labels.
+     * This is a projection: no entity is hydrated, so no further EAGER cascade
+     * can fire.</p>
+     *
+     * @param codigos article codes of the current page; empty means "no query"
+     * @return code → {@code precioFinal} (the value itself may be null: the
+     *         article has a price row without a final price)
+     */
+    public @Nonnull Map<Long, BigDecimal> ultimosPreciosEtiquetas(@Nonnull List<Long> codigos) {
+        if (codigos.isEmpty()) {
+            return Map.of();
+        }
+        String jpql = "SELECT p.articulo.codigo, p.precioFinal"
+                + " FROM ArticuloPrecio p"
+                + " WHERE p.articulo.codigo IN :codigos"
+                + " ORDER BY p.articulo.codigo ASC, p.id DESC";
+        try {
+            List<Object[]> filas = em.createQuery(jpql, Object[].class)
+                    .setParameter("codigos", codigos)
+                    .getResultList();
+            Map<Long, BigDecimal> precios = new HashMap<>(filas.size());
+            for (Object[] fila : filas) {
+                long codigo = ((Number) fila[0]).longValue();
+                // ORDER BY id DESC: the first row per article is its last
+                // price. containsKey (not putIfAbsent) keeps a null final
+                // price from being replaced by an older row.
+                if (!precios.containsKey(codigo)) {
+                    precios.put(codigo, (BigDecimal) fila[1]);
+                }
+            }
+            return precios;
+        } catch (PersistenceException e) {
+            LOG.warn("Error reading last prices for etiquetas: " + e.getMessage()
+                    + " | source=ArticulosService.ultimosPreciosEtiquetas()"
+                    + " | articulos=" + codigos.size()
+                    + " | despues=" + e.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * Shared WHERE for {@link #countEtiquetas} and {@link #pageEtiquetas}.
+     * Mirrors the legacy {@code ListAllEnabled()} + in-memory filter:
+     * {@code a.status = true} and, for {@code q}, case-insensitive contains
+     * over codigo (as text), nombre and codigoBarra — the exact fields
+     * {@code coincide()} matched, with {@code %}/{@code _} escaped because the
+     * old filter was {@code String.contains}.
+     */
+    private static @Nonnull String etiquetasWhere(@Nullable String q, @Nullable Integer familiaId,
+                                                  @Nullable Integer departamentoId,
+                                                  @Nonnull Map<String, Object> params) {
+        List<String> predicates = new ArrayList<>();
+        predicates.add("a.status = true");
+        if (familiaId != null && familiaId > 0) {
+            predicates.add("a.familia.id = :familiaId");
+            params.put("familiaId", familiaId);
+        }
+        if (departamentoId != null && departamentoId > 0) {
+            predicates.add("a.departamento.id = :departamentoId");
+            params.put("departamentoId", departamentoId);
+        }
+        String term = q == null ? "" : q.trim();
+        if (!term.isEmpty()) {
+            String like = "LIKE LOWER(:q) ESCAPE '" + LIKE_ESCAPE + "'";
+            predicates.add("(LOWER(CAST(a.codigo AS string)) " + like
+                    + " OR LOWER(a.nombre) " + like
+                    + " OR LOWER(a.codigoBarra) " + like + ")");
+            params.put("q", likePattern(term));
+        }
+        return " WHERE " + String.join(" AND ", predicates);
+    }
+
+    /**
+     * Whitelisted ORDER BY for {@link #pageEtiquetas}: the request parameter is
+     * never interpolated, text keys sort case-insensitively and
+     * {@code a.codigo ASC} is the deterministic tiebreak.
+     */
+    private static @Nonnull String etiquetasOrderBy(@Nullable String sort, @Nullable String dir) {
+        String key = trimKey(sort);
+        String direction = "desc".equalsIgnoreCase(dir) ? " DESC" : " ASC";
+        String expression = switch (key == null ? "" : key) {
+            case "codigo" -> "a.codigo";
+            case "nombre" -> "LOWER(a.nombre)";
+            case "codigoBarra" -> "LOWER(a.codigoBarra)";
+            case "precio" -> "lp.precioFinal";
+            // The table prints "-" for a missing relation, so that literal is
+            // what the old comparator sorted.
+            case "familia" -> "LOWER(COALESCE(f.nombre, '-'))";
+            case "departamento" -> "LOWER(COALESCE(d.nombre, '-'))";
+            default -> null;
+        };
+        if (expression == null) {
+            return " ORDER BY a.codigo ASC";
+        }
+        return " ORDER BY " + expression + direction + ", a.codigo ASC";
     }
 
 }
