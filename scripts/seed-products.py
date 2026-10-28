@@ -324,10 +324,15 @@ def main() -> int:
     ap.add_argument("--run-id", type=int, default=None,
                     help="barcode namespace (default: epoch seconds mod 100000)")
     ap.add_argument("--load", action="store_true")
+    ap.add_argument("--force", action="store_true",
+                    help="allow a non-local host (live seeding is never recommended)")
     args = ap.parse_args()
 
     if args.database not in ALLOWED_DATABASES:
         print(f"Refusing to seed '{args.database}'; allowed: {sorted(ALLOWED_DATABASES)}", file=sys.stderr)
+        return 2
+    if args.host not in {"localhost", "127.0.0.1", "::1"} and not args.force:
+        print(f"Refusing to seed non-local host '{args.host}' without --force", file=sys.stderr)
         return 2
 
     if args.source == "openfoodfacts":
