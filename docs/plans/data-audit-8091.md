@@ -3,6 +3,7 @@
 **Date:** 2026-10-28 (local time UTC-6), audit window ≈ 04:00–05:10
 **Auditor:** read-only subagent
 **Target:** local PostgreSQL `127.0.0.1:5433`, database `mercurius` (the DB behind the app on port 8091)
+**Revision 5:** adds §17 — exact manifest of the **7,707 missing XML claves**, direction/version split, endpoint choice, expected DB effect, risks, and the ready-to-run import script (dry-run executed; live import prepared but not run). §16 records the repairs the owner executed on 2026-10-28.
 **Revision 4:** adds §15 — live-DB deep-dive on **families, prices and margin-report inputs** (78 families vs 87 source, 418 unpriced articles, `cost × 1.25` repricing, pack-cost unit mismatch, duplicated margin snapshots) with repair plan and SQL (not executed).
 **Revision 3:** adds the **full source catalog including every backup**, the **XML/artifact census** (claves, dates, versions, DB overlap), and a **union import plan**. It also reveals that `F:\Desktop\WebDAV-Facturacion\migration\` is a completed migration workspace (the live server was loaded from it on 2026-10-21).
 **Revision 2:** incorporates the **current** vSuper snapshot at `F:\Desktop\WebDAV-Facturacion\extracted\Sistema_vsuper_20261004\` (2026-10-03). Revision 1 only knew the 2019 copy at `E:\VPALMERAS\`.
@@ -1049,6 +1050,8 @@ No DBF/XML business cluster has been identified on `G:` yet (`G:\` top level: `m
 
 ## 15. Families, prices and margin inputs — live DB deep-dive
 
+> **Post-repair state:** the repairs described here were executed on 2026-10-28 — see §16 for the applied result. This section preserves the pre-repair findings and the reasoning behind each fix.
+
 **Scope:** read-only analysis of `192.168.100.99:5432/mercurius` (97 tables, live DB) plus `F:\Desktop\WebDAV-Facturacion\extracted\Sistema_vsuper_20261004\MAESTRO.DBF` / `FAMILIAS.DBF`, using the credentials in `/home/alvaro/Mercurius/.env` through a `/tmp` SQL file and `/tmp/run_audit.sh` (both created for this audit; no DML was executed).
 
 **Owner's model confirmed:** `departamento` = seller/distributor (125 rows, all supplier names, 100 % populated) — this is correct and must not be "fixed". `familia` = product type — currently polluted by the legacy POS taxonomy.
@@ -1480,6 +1483,165 @@ Families with negative utility in the snapshots (both copies included): CERVEZAS
 
 ---
 
+---
+
+## 16. Repair executed — 2026-10-28 (live 192.168.100.99)
+
+Executed with rollback copies; no index changes.
+
+### Backups
+- Table copies: `_bk_20261028_fam`, `_bk_20261028_art`, `_bk_20261028_prec`,
+  `_bk_20261028_pmh`, `_bk_20261028_pms`.
+- CSV exports under `/tmp/bk_20261028_*.csv` on the server.
+- A full `pg_dump` was not possible: the app role lacks permission on staging
+  tables owned by another role (`stg_headers`, `cur_precios`).
+
+### Families
+- 24 canonical product families created; **5,274 articles re-pointed**;
+  65 superseded rows retired (`status=false`, never deleted).
+- Verification: **24 active families, 0 articles without family**.
+
+### Prices
+- Repriced from `MAESTRO` (barcode join, 5,996/5,996 matched):
+  - `precio_final = VENTA` (gross shelf price),
+  - `precio_con_utilidad = VENTA / (1 + PORCEIMP)` (0 for `EXENTO='S'`),
+  - `precio_costo_sin_iva` = `COSTO`, except when the implied pack factor is
+    `>= 1.5`, where it becomes `neto / (1 + MARGENUTIL/100)`,
+  - `porcentaje_utilidad = MARGENUTIL`.
+- 5,847 rows repriced from Maestro; 53 copied from the previous valid row.
+- **5,901 articles priced; 95 remain unpriced** (no `VENTA` and no prior valid
+  price). Only 3 articles still have `costo > neto`.
+
+### Margin tables (regenerated)
+- `profit_margin_history`: **302,911 rows** (2015-08-14 → 2026-10-20),
+  **111 negative** (min −9.61 %), average **28.50 %**.
+- `profit_margin_snapshots`: 19,654 family rows + 39,462 department rows,
+  **0 rows without a dimension**.
+- Totals agree across dimensions: family = department = history =
+  **₡939,355,999.32**. (The old table held two dimensions in one table; summing
+  all rows double-counted. Reports must filter one dimension.)
+- Example: PILSEN LT 16ONZ → sale ₡1,350.00, net ₡1,194.69, cost ₡955.75,
+  margin 20.0 % (was a negative margin from a ₡5,475.66 pack cost).
+
+### Report fix
+- `ProfitAnalysisService.margenesPorGrupo` now aggregates by group over the
+  selected range (no per-date rows) and computes a weighted margin
+  (`utilidad / ventas`). Shipped in 2.15.14.
+
+### Remaining known items
+- 95 unpriced articles need a POS export or manual price.
+- Pack-size inference is still an inference (audit §15.6); confirm against
+  supplier invoices if exact case sizes matter.
+- XML gap: **7,707 importable claves** missing from live (8,367 vs the old local DB); manifest and script prepared in §17.
+
+---
+
+## 17. XML import dry-run (prepared, not executed)
+
+**Status:** manifest built and validated; import script written and dry-run tested. **Nothing has been sent to the app or the DB.**
+
+### 17.1 Manifest
+
+| Metric | Manifest | To import |
+|---|---:|---:|
+| Missing claves (live DB, by clave) | **7,707** | **7,677** |
+| … emitted (`comprobantesemitidos`) | **7,542** | **7,542** |
+| … received (`comprobantesrecibidos`) | **165** | **135** |
+| XML version | v4.4 7,677 · v4.3 30 · v4.2 0 | **v4.4 7,677** |
+| Document type | Tiquete 7,496 · Factura 207 · NC 4 | Tiquete 7,496 · Factura 179 · NC 2 |
+| Year | 2025 4,106 · 2026 3,571 · 2024 30 | 2025 4,106 · 2026 3,571 |
+| Source folder | `Respuestas` 7,542 · `Facturas Electronicas` 165 | same split |
+| Emitted state | ACEPTADO 6,183 · NO_ENVIADO 1,359 | same |
+| Detail lines (`<LineaDetalle>`) | **17,357** | **17,166** (avg 2.24/doc) |
+| Files missing on disk | **0** | **0** |
+| Consecutivo collisions | emitted **0** · received **30** (all 2024) | **0** |
+| **Effective inserts** | — | **7,677** (7,542 + 135) |
+
+The 30 received collisions are pre-filtered in the manifest (`accion = omitir_duplicado`): they already exist as purchases under the same consecutivo, so the server would answer "Ya importado" and leave their clave empty. The script does not send them.
+
+Reconciliation with the earlier 8,367: that figure was "on disk but not in the **local** DB". Against the **live** DB the gap is 7,715 (of those 8,367 claves, live already contains 652); 8 of the remaining are Hacienda responses with no document XML, leaving **7,707**.
+
+Manifest CSV: `C:\Users\alvar\AppData\Local\Temp\opencode\xml_manifest_import.csv`
+Columns: `clave, direction, version, tipo, consecutivo, fecha_emision, emisor_id, receptor_id, estado, archivo, carpeta, variante, copias, consecutivo_en_live, estado_mh, estado_fedoc, accion`.
+Canonical file per clave: highest schema version (4.4 > 4.3 > 4.2), then signed (`_firmado`, `SF*`) over plain. 8 response-only files (root `MensajeHacienda`) were dropped.
+
+### 17.2 Direction and endpoint
+
+| Direction | Endpoint | Why |
+|---|---|---|
+| Emitted (7,542) | `POST /api/app/historico-emitidos/upload` | Builds the full `Encabezado → DetalleServicio → LineaDetalle → ResumenFactura → ComprobantesEmitidos` graph, stores the real Hacienda state, **never contacts Hacienda**, and is idempotent by `NumeroConsecutivo`. |
+| Received (135 to import; 165 in manifest) | `POST /api/app/facturas-recibidas/upload` | The parser persists the purchase graph as `ComprobantesRecibidos`; validates against the v4.3/v4.4 XSD; dedupes by received consecutivo. |
+
+Both are the endpoints already used by `migration/upload_emitidos.py`, `upload_recibidas.py` and `import_nuevas.py`. `importar_backup.py` was **not** reused because it also runs `stage11/11b/12` SQL (movements, stock, margins) — out of scope for a document import.
+
+Auth: form login `/login` → `/j_security_check`, CSRF cookie `csrf-token`, header `X-CSRF-TOKEN`. Same flow the migration used.
+
+**Version support:** `ComprobanteFactory.getSupportedVersions()` = `{4.3, 4.4}`. The emitted path does not call the XSD gate and only runs `validarTotalMedioPago` for 4.4, so it accepts what the parser can read — but all 7,542 emitted files are v4.4 anyway. The 30 v4.3 files are all **2024 received documents already present by consecutivo**, so they are deferred; if that backfill is done later, `POST /facturas-recibidas/upload` validates them against `xsd/v4.3`. **No v4.2 file is in the missing set** (the 27 E: 2018 claves already exist in live), so nothing needs translation for this run.
+
+**Dedupe behaviour:** emitted → `encabezadoService.existsEmitidoByNumeroConsecutivo()`; received → `ComprobantesRecibidosService.findByNumeroConsecutivo()`. Both return `"Ya importado"` without writing. All 7,542 emitted consecutivos are new; the 30 received 2024 docs already exist with the same consecutivo (different/empty clave) and will be skipped.
+
+### 17.3 Expected DB effect
+
+| Table | Rows added |
+|---|---:|
+| `encabezado` | ~7,677 |
+| `detalle_servicio` | ~7,677 |
+| `resumen_factura` | ~7,677 |
+| `comprobantesemitidos` | 7,542 |
+| `comprobantesrecibidos` | 135 (30 skipped) |
+| `linea_detalle` | ~17,166 |
+| `impuesto` | ~18,000 (≈1.06/line) |
+| `medio_pago_encabezado/resumen` | ~7,500 |
+| `descuento`, `codigo_comercial` | proportional to lines/discounts |
+| `emisor` / `receptor` | create-if-missing (few new; mostly the generic receptor) |
+| `consecutivo_emitido` | counters raised to the historical max per (sucursal, terminal, tipo) |
+
+### 17.4 Risks
+
+1. **Double execution** — safe: the endpoint is idempotent by consecutivo; a second run logs `"Ya importado"`.
+2. **NO_ENVIADO (1,359)** — documents without a Hacienda response. They are stored as `NO_ENVIADO`, which the scheduler ignores (it only picks `PENDIENTE`). If they were actually accepted, the state is understated; it can be corrected later with the `Mensaje Hacienda` endpoint.
+3. **Received collisions (30)** — 2024 supplier invoices already exist by consecutivo. They are excluded by the manifest (`accion = omitir_duplicado`), so their **clave stays empty**; fixing that requires a separate clave backfill (not this import).
+4. **Receptor growth/duplicates** — the received/emitted paths call `createIfNotExist` on receptor; different spellings of the same client may create new rows. No merge is performed.
+5. **Consecutive counters** — `elevarContador` only raises, never lowers; irreversible but intended.
+6. **v4.3 XSD rejection** — a schema violation fails that file only (per-file result), not the batch; the script aborts after 3 consecutive batches with zero successes.
+7. **Batch timeouts** — 20 files per request; on timeout/5xx the script retries with exponential backoff (idempotency makes retries safe).
+
+### 17.5 Ready-to-run script
+
+`C:\Users\alvar\AppData\Local\Temp\opencode\import_missing_xml.py` (stdlib only, no SQL):
+
+* default mode is **dry-run** (no network);
+* `--live --yes` required to write;
+* per-file CSV log + human log + JSON summary under `%TEMP%\opencode\xml_import_runs\<timestamp>\`;
+* retry/backoff, 401 → re-login, stop after N consecutive failed batches;
+* submits each file as `<clave>.xml` so responses map 1:1;
+* counts duplicates separately from imports.
+
+**Dry-run (already executed, safe to repeat):**
+
+```powershell
+python "C:\Users\alvar\AppData\Local\Temp\opencode\import_missing_xml.py"
+```
+
+**Canary (20 emitted documents):**
+
+```powershell
+python "C:\Users\alvar\AppData\Local\Temp\opencode\import_missing_xml.py" `
+  --live --yes --user Admin --base http://192.168.100.99:8081/Mercurius `
+  --limit 20 --directions emitida
+```
+
+**Full run:**
+
+```powershell
+python "C:\Users\alvar\AppData\Local\Temp\opencode\import_missing_xml.py" `
+  --live --yes --user Admin --base http://192.168.100.99:8081/Mercurius
+```
+
+The script prompts for the password (or reads `MER_PASSWORD`). Expected duration at batch 20: ~380 requests, roughly 15–25 minutes. Run the emitted batch first (`--directions emitida`), verify the `resumen`, then run received (`--directions recibida`).
+
+---
+
 ## Appendix A — reproducible command set
 
 ```powershell
@@ -1538,56 +1700,4 @@ curl.exe -sI -u '<REDACTED>' 'http://192.168.100.99:9200/webdav/Facturas/Factura
 Get-ChildItem "$env:TEMP\mercurius-webdav-facturas" -Filter *.zip | ForEach-Object { & tar -tf $_.FullName }
 ```
 
-*Report generated read-only; no database, file, or repository state was modified except the creation of this document and two throwaway probe scripts under `%TEMP%` (`dbf_probe.py`, `xml_probe.py`).*
-
-
----
-
-## 16. Repair executed — 2026-10-28 (live 192.168.100.99)
-
-Executed with rollback copies; no index changes.
-
-### Backups
-- Table copies: `_bk_20261028_fam`, `_bk_20261028_art`, `_bk_20261028_prec`,
-  `_bk_20261028_pmh`, `_bk_20261028_pms`.
-- CSV exports under `/tmp/bk_20261028_*.csv` on the server.
-- A full `pg_dump` was not possible: the app role lacks permission on staging
-  tables owned by another role (`stg_headers`, `cur_precios`).
-
-### Families
-- 24 canonical product families created; **5,274 articles re-pointed**;
-  65 superseded rows retired (`status=false`, never deleted).
-- Verification: **24 active families, 0 articles without family**.
-
-### Prices
-- Repriced from `MAESTRO` (barcode join, 5,996/5,996 matched):
-  - `precio_final = VENTA` (gross shelf price),
-  - `precio_con_utilidad = VENTA / (1 + PORCEIMP)` (0 for `EXENTO='S'`),
-  - `precio_costo_sin_iva` = `COSTO`, except when the implied pack factor is
-    `>= 1.5`, where it becomes `neto / (1 + MARGENUTIL/100)`,
-  - `porcentaje_utilidad = MARGENUTIL`.
-- 5,847 rows repriced from Maestro; 53 copied from the previous valid row.
-- **5,901 articles priced; 95 remain unpriced** (no `VENTA` and no prior valid
-  price). Only 3 articles still have `costo > neto`.
-
-### Margin tables (regenerated)
-- `profit_margin_history`: **302,911 rows** (2015-08-14 → 2026-10-20),
-  **111 negative** (min −9.61 %), average **28.50 %**.
-- `profit_margin_snapshots`: 19,654 family rows + 39,462 department rows,
-  **0 rows without a dimension**.
-- Totals agree across dimensions: family = department = history =
-  **₡939,355,999.32**. (The old table held two dimensions in one table; summing
-  all rows double-counted. Reports must filter one dimension.)
-- Example: PILSEN LT 16ONZ → sale ₡1,350.00, net ₡1,194.69, cost ₡955.75,
-  margin 20.0 % (was a negative margin from a ₡5,475.66 pack cost).
-
-### Report fix
-- `ProfitAnalysisService.margenesPorGrupo` now aggregates by group over the
-  selected range (no per-date rows) and computes a weighted margin
-  (`utilidad / ventas`). Shipped in 2.15.14.
-
-### Remaining known items
-- 95 unpriced articles need a POS export or manual price.
-- Pack-size inference is still an inference (audit §15.6); confirm against
-  supplier invoices if exact case sizes matter.
-- XML gap: 8,367 claves present on disk but not in the DB (separate import).
+*Report generated read-only. §16 records repairs executed by the owner on 2026-10-28; §17 prepares the XML import. Probe and import scripts live under `%TEMP%\opencode` (`dbf_probe.py`, `xml_probe.py`, `build_xml_manifest.py`, `refine_manifest.py`, `import_missing_xml.py`).*
