@@ -28,13 +28,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -242,14 +242,29 @@ public class TributacionPagesResource {
      * (contract of pages/tributacion/index.html).
      */
     private Map<String, Object> indexModel() {
-        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAllConClave());
+        ComprobantesEmitidosService.DashboardTributacion resumen =
+                resumenTributacion(LocalDate.now(ZONA_CR));
         Map<String, Object> model = new LinkedHashMap<>();
-        model.put("totalFacturas", (long) todos.size());
-        model.put("totalEnviadas", countEstado(todos, "ENVIADO"));
-        model.put("totalAceptadas", countEstado(todos, "ACEPTADO"));
-        model.put("totalRechazadas", countEstado(todos, "RECHAZADO"));
+        model.put("totalFacturas", resumen.total());
+        model.put("totalEnviadas", resumen.enviadosSinRespuesta());
+        model.put("totalAceptadas", resumen.aceptados());
+        model.put("totalRechazadas", resumen.rechazados());
         model.put("baseUrl", "/app/tributacion");
         return model;
+    }
+
+    /**
+     * Agregados del dashboard para el día de negocio recibido. Una sola
+     * llamada al servicio: el histórico completo (211k comprobantes) ya no se
+     * materializa para contar en Java.
+     */
+    private ComprobantesEmitidosService.DashboardTributacion resumenTributacion(@Nonnull LocalDate hoy) {
+        return emitidosService.dashboardTributacion(
+                hoy.atStartOfDay(),
+                hoy.plusDays(1).atStartOfDay(),
+                hoy.minusDays(6).atStartOfDay(),
+                PENDIENTES_ENVIO_LIMIT,
+                RECHAZADOS_RECIENTES_LIMIT);
     }
 
     /**
@@ -258,73 +273,41 @@ public class TributacionPagesResource {
      * twin {@link TributacionResource#dashboard()} for the DTO contract).
      */
     private Map<String, Object> dashboardModel() {
-        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAllConClave());
-
-        long totalEmitidos = todos.size();
-        long totalAceptados = countEstado(todos, "ACEPTADO");
-        long totalRechazados = countEstado(todos, "RECHAZADO");
-        long totalPendientes = countPendientes(todos);
-        long totalEnviadosSinRespuesta = countEstado(todos, "ENVIADO");
-
         LocalDate hoy = LocalDate.now(ZONA_CR);
-        LocalDateTime inicioHoy = hoy.atStartOfDay();
-        LocalDateTime finHoy = hoy.plusDays(1).atStartOfDay();
+        ComprobantesEmitidosService.DashboardTributacion resumen = resumenTributacion(hoy);
 
-        long emitidosHoy = todos.stream()
-                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
-                        && c.getEncabezado().getFechaEmision().isBefore(finHoy))
-                .count();
-        // These two figures sit under "Emitidos hoy", so they must describe
-        // TODAY'S emissions, not every response received today. The old
-        // version filtered by haciendaFechaRespuesta and could show
-        // "Emitidos hoy 0 · Aceptados 19" after importing historical XMLs.
-        long aceptadosHoy = todos.stream()
-                .filter(c -> "ACEPTADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
-                        && c.getEncabezado().getFechaEmision().isBefore(finHoy))
-                .count();
-        long rechazadosHoy = todos.stream()
-                .filter(c -> "RECHAZADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
-                        && c.getEncabezado().getFechaEmision().isBefore(finHoy))
-                .count();
+        long totalEmitidos = resumen.total();
+        long totalAceptados = resumen.aceptados();
+        long totalRechazados = resumen.rechazados();
+        long totalPendientes = resumen.pendientes();
+        long totalEnviadosSinRespuesta = resumen.enviadosSinRespuesta();
 
-        BigDecimal montoAceptados = todos.stream()
-                .filter(c -> "ACEPTADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .filter(c -> c.getResumen() != null && c.getResumen().getTotalComprobante() != null)
-                .map(c -> c.getResumen().getTotalComprobante())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal montoPendientes = todos.stream()
-                .filter(c -> c.getHaciendaEstado() == null
-                        || "PENDIENTE".equalsIgnoreCase(c.getHaciendaEstado())
-                        || c.getHaciendaEstado().isEmpty())
-                .filter(c -> c.getResumen() != null && c.getResumen().getTotalComprobante() != null)
-                .map(c -> c.getResumen().getTotalComprobante())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // "Emitidos hoy" y sus dos desgloses describen las emisiones de HOY
+        // (no las respuestas recibidas hoy): el filtro va sobre fechaEmision
+        // igual que en la versión que recorría la lista en Java.
+        long emitidosHoy = resumen.emitidosHoy();
+        long aceptadosHoy = resumen.aceptadosHoy();
+        long rechazadosHoy = resumen.rechazadosHoy();
+
+        BigDecimal montoAceptados = resumen.montoAceptados();
+        BigDecimal montoPendientes = resumen.montoPendientes();
 
         double tasaExito = totalEmitidos == 0 ? 100.0
                 : Math.round(((double) totalAceptados / totalEmitidos) * 1000.0) / 10.0;
 
-        // Últimos 7 días (legacy DailyStat rows).
+        // Últimos 7 días (legacy DailyStat rows). El servicio devuelve solo los
+        // días con emisiones; los huecos se rellenan con cero en el mismo
+        // orden y con la misma etiqueta dd/MM.
+        Map<LocalDate, ComprobantesEmitidosService.SerieDia> porDia = new HashMap<>();
+        for (ComprobantesEmitidosService.SerieDia dia : resumen.serie()) {
+            porDia.put(dia.dia(), dia);
+        }
         List<Map<String, Object>> dailyStats = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {
             LocalDate dia = hoy.minusDays(i);
-            LocalDateTime inicio = dia.atStartOfDay();
-            LocalDateTime fin = dia.plusDays(1).atStartOfDay();
-            long diaEmitidos = todos.stream()
-                    .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                    .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicio)
-                            && c.getEncabezado().getFechaEmision().isBefore(fin))
-                    .count();
-            long diaAceptados = todos.stream()
-                    .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                    .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicio)
-                            && c.getEncabezado().getFechaEmision().isBefore(fin))
-                    .filter(c -> "ACEPTADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                    .count();
+            ComprobantesEmitidosService.SerieDia stats = porDia.get(dia);
+            long diaEmitidos = stats == null ? 0L : stats.emitidos();
+            long diaAceptados = stats == null ? 0L : stats.aceptados();
             Map<String, Object> fila = new LinkedHashMap<>();
             fila.put("dia", dia.format(DateTimeFormatter.ofPattern("dd/MM")));
             fila.put("emitidos", diaEmitidos);
@@ -333,34 +316,16 @@ public class TributacionPagesResource {
             dailyStats.add(fila);
         }
 
-        long emitidosUltimos7 = dailyStats.stream()
-                .mapToLong(fila -> ((Number) fila.get("emitidos")).longValue())
-                .sum();
-        LocalDate ultimaEmision = todos.stream()
-                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
-                .map(c -> c.getEncabezado().getFechaEmision().toLocalDate())
-                .max(LocalDate::compareTo)
-                .orElse(null);
+        long emitidosUltimos7 = resumen.emitidosUltimos7();
+        LocalDate ultimaEmision = resumen.ultimaEmision();
         String ultimaEmisionTexto = ultimaEmision == null ? null
                 : ultimaEmision.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-        List<Map<String, Object>> pendientesEnvio = todos.stream()
-                .filter(c -> c.getHaciendaEstado() == null
-                        || "PENDIENTE".equalsIgnoreCase(c.getHaciendaEstado())
-                        || c.getHaciendaEstado().isEmpty())
-                .sorted(Comparator.comparing(
-                        (ComprobantesEmitidos c) -> c.getEncabezado() != null
-                                ? c.getEncabezado().getFechaEmision() : LocalDateTime.MIN,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(PENDIENTES_ENVIO_LIMIT)
+        List<Map<String, Object>> pendientesEnvio = resumen.pendientesEnvio().stream()
                 .map(TributacionPagesResource::filaMap)
                 .toList();
 
-        List<Map<String, Object>> rechazadosRecientes = todos.stream()
-                .filter(c -> "RECHAZADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .sorted(Comparator.comparing(ComprobantesEmitidos::getHaciendaFechaRespuesta,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(RECHAZADOS_RECIENTES_LIMIT)
+        List<Map<String, Object>> rechazadosRecientes = resumen.rechazadosRecientes().stream()
                 .map(TributacionPagesResource::filaMap)
                 .toList();
 
@@ -708,20 +673,6 @@ public class TributacionPagesResource {
             lista.add(mes);
         }
         return Collections.unmodifiableList(lista);
-    }
-
-    private static long countEstado(@Nonnull List<ComprobantesEmitidos> todos, @Nonnull String estado) {
-        return todos.stream()
-                .filter(c -> estado.equalsIgnoreCase(c.getHaciendaEstado()))
-                .count();
-    }
-
-    private static long countPendientes(@Nonnull List<ComprobantesEmitidos> todos) {
-        return todos.stream()
-                .filter(c -> c.getHaciendaEstado() == null
-                        || "PENDIENTE".equalsIgnoreCase(c.getHaciendaEstado())
-                        || c.getHaciendaEstado().isEmpty())
-                .count();
     }
 
     /** Legacy getMontoTotal*Formateado parity: "₡" + %,.2f (default locale). */

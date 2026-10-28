@@ -887,6 +887,246 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
         }
     }
 
+    // ════════════════════════════════════════════════════════════════════
+    // Instantánea del dashboard / landing de Tributación (agregados SQL)
+    //
+    // El dashboard hidrataba el grafo completo de comprobantes con
+    // listAllConClave() para contar en Java: con 211k facturas eso pasaba de
+    // 25 s. Todo lo que es contador o monto se resuelve ahora con COUNT/SUM/
+    // GROUP BY y las dos listas acotadas viajan con LIMIT.
+    // ════════════════════════════════════════════════════════════════════
+
+    /** Un día de la serie "Últimos 7 días" del dashboard. */
+    public record SerieDia(java.time.LocalDate dia, long emitidos, long aceptados) { }
+
+    /**
+     * Instantánea del dashboard de Tributación ({@code /app/tributacion} y
+     * {@code /app/tributacion/dashboard}).
+     *
+     * <p>Mismos números y mismas listas que la versión que materializaba
+     * {@link #listAllConClave()}: el universo son los comprobantes con clave
+     * ({@code encabezado.clave IS NOT NULL}), y el estado se normaliza sobre
+     * {@code comprobante.haciendaEstado} igual que el código Java
+     * ({@code equalsIgnoreCase}, con {@code null}/vacío como PENDIENTE).</p>
+     *
+     * @param total            comprobantes con clave
+     * @param aceptados        {@code haciendaEstado = ACEPTADO}
+     * @param rechazados       {@code haciendaEstado = RECHAZADO}
+     * @param pendientes       {@code haciendaEstado} null, vacío o PENDIENTE
+     * @param enviadosSinRespuesta {@code haciendaEstado = ENVIADO}
+     * @param emitidosHoy      con {@code fechaEmision} en el día de negocio
+     * @param montoAceptados   suma de {@code totalComprobante} de los aceptados
+     * @param montoPendientes  suma de {@code totalComprobante} de los pendientes
+     * @param ultimaEmision    mayor {@code fechaEmision} (null sin emisiones)
+     * @param serie            días con emisiones dentro de la ventana de 7 días
+     * @param pendientesEnvio  hasta {@code limitePendientes} pendientes, más recientes primero
+     * @param rechazadosRecientes hasta {@code limiteRechazados} rechazados por fecha de respuesta
+     */
+    public record DashboardTributacion(
+            long total,
+            long aceptados,
+            long rechazados,
+            long pendientes,
+            long enviadosSinRespuesta,
+            long emitidosHoy,
+            long aceptadosHoy,
+            long rechazadosHoy,
+            long emitidosUltimos7,
+            java.math.BigDecimal montoAceptados,
+            java.math.BigDecimal montoPendientes,
+            java.time.LocalDate ultimaEmision,
+            List<SerieDia> serie,
+            List<ComprobantesEmitidos> pendientesEnvio,
+            List<ComprobantesEmitidos> rechazadosRecientes) { }
+
+    /**
+     * Contadores, montos y serie diaria en agregados SQL + las dos listas
+     * acotadas del dashboard.
+     *
+     * <p>Los límites de fecha llegan ya calculados por el llamador (la zona de
+     * negocio es {@code America/Costa_Rica} y vive en el recurso): así el
+     * {@code BETWEEN} de {@code fechaEmision} es idéntico al que hacía el
+     * filtrado en Java y no depende de la zona del host ni de la sesión SQL.
+     * La serie se agrupa con {@code to_char} sobre un {@code timestamp sin
+     * zona}, que no aplica conversión de zona horaria.</p>
+     *
+     * @param inicioHoy    inicio del día de negocio actual
+     * @param finHoy       inicio del día siguiente (exclusivo)
+     * @param inicioSerie  inicio de la ventana de 7 días (inclusive)
+     * @param limitePendientes filas máximas de "Pendientes de envío"
+     * @param limiteRechazados filas máximas de "Rechazados recientes"
+     */
+    public @Nonnull DashboardTributacion dashboardTributacion(
+            @Nonnull LocalDateTime inicioHoy,
+            @Nonnull LocalDateTime finHoy,
+            @Nonnull LocalDateTime inicioSerie,
+            int limitePendientes,
+            int limiteRechazados) {
+        long total = 0L;
+        long aceptados = 0L;
+        long rechazados = 0L;
+        long pendientes = 0L;
+        long enviadosSinRespuesta = 0L;
+        long emitidosHoy = 0L;
+        long aceptadosHoy = 0L;
+        long rechazadosHoy = 0L;
+        java.math.BigDecimal montoAceptados = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal montoPendientes = java.math.BigDecimal.ZERO;
+        java.time.LocalDate ultimaEmision = null;
+        try {
+            var query = em.createNativeQuery(
+                    "SELECT count(*),"
+                            + " count(*) FILTER (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'ACEPTADO'),"
+                            + " count(*) FILTER (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'RECHAZADO'),"
+                            + " count(*) FILTER (WHERE f.haciendaestado IS NULL"
+                            + "     OR f.haciendaestado = ''"
+                            + "     OR UPPER(f.haciendaestado) = 'PENDIENTE'),"
+                            + " count(*) FILTER (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'ENVIADO'),"
+                            + " count(*) FILTER (WHERE e.fecha_emision >= :inicioHoy"
+                            + "     AND e.fecha_emision < :finHoy),"
+                            + " count(*) FILTER (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'ACEPTADO'"
+                            + "     AND e.fecha_emision >= :inicioHoy AND e.fecha_emision < :finHoy),"
+                            + " count(*) FILTER (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'RECHAZADO'"
+                            + "     AND e.fecha_emision >= :inicioHoy AND e.fecha_emision < :finHoy),"
+                            + " COALESCE(sum(r.total_comprobante) FILTER"
+                            + "     (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'ACEPTADO'), 0),"
+                            + " COALESCE(sum(r.total_comprobante) FILTER"
+                            + "     (WHERE f.haciendaestado IS NULL"
+                            + "         OR f.haciendaestado = ''"
+                            + "         OR UPPER(f.haciendaestado) = 'PENDIENTE'), 0),"
+                            + " max(e.fecha_emision)"
+                            + " FROM comprobantesemitidos f"
+                            + " JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " LEFT JOIN resumen_factura r ON r.id = f.resumen_id"
+                            + " WHERE e.clave IS NOT NULL");
+            query.setParameter("inicioHoy", inicioHoy);
+            query.setParameter("finHoy", finHoy);
+            Object[] fila = (Object[]) query.getSingleResult();
+            total = numero(fila[0]);
+            aceptados = numero(fila[1]);
+            rechazados = numero(fila[2]);
+            pendientes = numero(fila[3]);
+            enviadosSinRespuesta = numero(fila[4]);
+            emitidosHoy = numero(fila[5]);
+            aceptadosHoy = numero(fila[6]);
+            rechazadosHoy = numero(fila[7]);
+            montoAceptados = decimal(fila[8]);
+            montoPendientes = decimal(fila[9]);
+            ultimaEmision = aFecha(fila[10]);
+        } catch (PersistenceException e) {
+            LOG.warn("Error calculando los contadores del dashboard de tributación: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.dashboardTributacion() | despues=" + e.getMessage());
+        }
+
+        List<SerieDia> serie = new java.util.ArrayList<>();
+        long emitidosUltimos7 = 0L;
+        try {
+            var query = em.createNativeQuery(
+                    "SELECT to_char(e.fecha_emision, 'YYYY-MM-DD'),"
+                            + " count(*),"
+                            + " count(*) FILTER"
+                            + "     (WHERE UPPER(COALESCE(f.haciendaestado,'')) = 'ACEPTADO')"
+                            + " FROM comprobantesemitidos f"
+                            + " JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " WHERE e.clave IS NOT NULL"
+                            + " AND e.fecha_emision >= :inicioSerie"
+                            + " AND e.fecha_emision < :finHoy"
+                            + " GROUP BY 1 ORDER BY 1");
+            query.setParameter("inicioSerie", inicioSerie);
+            query.setParameter("finHoy", finHoy);
+            @SuppressWarnings("unchecked")
+            List<Object[]> filas = (List<Object[]>) query.getResultList();
+            for (Object[] f : filas) {
+                java.time.LocalDate dia = f[0] == null ? null : java.time.LocalDate.parse(String.valueOf(f[0]));
+                if (dia == null) {
+                    continue;
+                }
+                long emitidos = numero(f[1]);
+                serie.add(new SerieDia(dia, emitidos, numero(f[2])));
+                emitidosUltimos7 += emitidos;
+            }
+        } catch (PersistenceException e) {
+            LOG.warn("Error calculando la serie de 7 días del dashboard: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.dashboardTributacion() | despues=" + e.getMessage());
+        }
+
+        return new DashboardTributacion(total, aceptados, rechazados, pendientes,
+                enviadosSinRespuesta, emitidosHoy, aceptadosHoy, rechazadosHoy,
+                emitidosUltimos7, montoAceptados, montoPendientes, ultimaEmision,
+                serie,
+                listarPendientesEnvio(limitePendientes),
+                listarRechazadosRecientes(limiteRechazados));
+    }
+
+    /** "Pendientes de envío" del dashboard: acotado, más recientes primero. */
+    private @Nonnull List<ComprobantesEmitidos> listarPendientesEnvio(int max) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.receptor"
+                            + " WHERE e.clave IS NOT NULL"
+                            + " AND (f.haciendaEstado IS NULL"
+                            + "     OR f.haciendaEstado = ''"
+                            + "     OR UPPER(f.haciendaEstado) = 'PENDIENTE')"
+                            + " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC",
+                    ComprobantesEmitidos.class);
+            query.setMaxResults(Math.max(max, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listando pendientes de envío del dashboard: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listarPendientesEnvio() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /** "Rechazados recientes" del dashboard: acotado, última respuesta primero. */
+    private @Nonnull List<ComprobantesEmitidos> listarRechazadosRecientes(int max) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.receptor"
+                            + " WHERE e.clave IS NOT NULL"
+                            + " AND UPPER(f.haciendaEstado) = 'RECHAZADO'"
+                            + " ORDER BY f.haciendaFechaRespuesta DESC NULLS LAST, f.id DESC",
+                    ComprobantesEmitidos.class);
+            query.setMaxResults(Math.max(max, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listando rechazados recientes del dashboard: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listarRechazadosRecientes() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    private static long numero(@Nullable Object valor) {
+        return valor instanceof Number n ? n.longValue() : 0L;
+    }
+
+    private static @Nonnull java.math.BigDecimal decimal(@Nullable Object valor) {
+        if (valor instanceof java.math.BigDecimal b) {
+            return b;
+        }
+        return valor instanceof Number n ? new java.math.BigDecimal(n.toString()) : java.math.BigDecimal.ZERO;
+    }
+
+    private static @Nullable java.time.LocalDate aFecha(@Nullable Object valor) {
+        if (valor instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime().toLocalDate();
+        }
+        if (valor instanceof LocalDateTime ldt) {
+            return ldt.toLocalDate();
+        }
+        if (valor instanceof java.time.LocalDate ld) {
+            return ld;
+        }
+        if (valor instanceof java.time.OffsetDateTime odt) {
+            return odt.toLocalDateTime().toLocalDate();
+        }
+        return null;
+    }
+
     public @Nullable List<ComprobantesEmitidos> findByClave(@Nonnull String clave) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(

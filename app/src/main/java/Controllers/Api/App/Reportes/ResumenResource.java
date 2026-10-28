@@ -2,6 +2,7 @@ package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,18 @@ public class ResumenResource {
         List<ArticuloStock> stocks = inventarioService.getAllStock();
         List<Articulos> articulos = articulosService.ListAllEnabled();
 
+        // The stock snapshot is matched by barcode. Looking it up with a
+        // stream per article made this report O(articles × stock) — at 252k
+        // articles it never finished. One map turns it into O(n).
+        Map<String, BigDecimal> stockPorBarcode = new HashMap<>();
+        if (stocks != null) {
+            for (ArticuloStock stock : stocks) {
+                if (stock.getCodigoBarra() != null) {
+                    stockPorBarcode.put(stock.getCodigoBarra(), stock.getStock());
+                }
+            }
+        }
+
         Integer familiaId = entero(familia);
         Integer departamentoId = entero(departamento);
         String filtro = q != null ? q.trim().toLowerCase() : null;
@@ -119,7 +132,9 @@ public class ResumenResource {
         Map<String, BigDecimal> stockPorFamilia = new LinkedHashMap<>();
         if (articulos != null) {
             for (Articulos articulo : articulos) {
-                BigDecimal stock = stockDe(stocks, articulo);
+                BigDecimal stock = articulo.getCodigoBarra() == null
+                        ? BigDecimal.ZERO
+                        : stockPorBarcode.getOrDefault(articulo.getCodigoBarra(), BigDecimal.ZERO);
                 if (stock.compareTo(BigDecimal.ZERO) == 0) {
                     ceroCount++;
                 } else if (stock.compareTo(BigDecimal.ZERO) < 0) {
@@ -267,20 +282,6 @@ public class ResumenResource {
                 || (articulo.getDepartamento() != null
                         && articulo.getDepartamento().getNombre() != null
                         && articulo.getDepartamento().getNombre().toLowerCase().contains(filtro));
-    }
-
-    /** Legacy getStockForArticulo: match the stock snapshot by barcode. */
-    @Nonnull
-    private static BigDecimal stockDe(@Nullable List<ArticuloStock> stocks,
-            @Nullable Articulos articulo) {
-        if (stocks == null || articulo == null || articulo.getCodigoBarra() == null) {
-            return BigDecimal.ZERO;
-        }
-        return stocks.stream()
-                .filter(s -> articulo.getCodigoBarra().equals(s.getCodigoBarra()))
-                .map(ArticuloStock::getStock)
-                .findFirst()
-                .orElse(BigDecimal.ZERO);
     }
 
     @Nullable
