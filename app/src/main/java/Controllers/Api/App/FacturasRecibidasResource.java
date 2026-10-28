@@ -65,7 +65,6 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -96,11 +95,13 @@ import org.w3c.dom.Element;
  * <p><b>Behavior parity contract</b> (ported 1:1, receipts in
  * .omo/evidence/t36/parity-matrix.md):</p>
  * <ul>
- *   <li>Bucket listings delegate ONLY to existing
- *       {@link ComprobantesRecibidosService} queries: todas/activas =
- *       {@code ListAllEnabled()}, pagadas/procesadas = in-memory filters over
- *       {@code ListAllEnabled()} (legacy stream-filter parity), pendientes =
- *       {@code listPendientes()}, vencidas = {@code listVencidas()}.</li>
+ *   <li>Bucket listings delegate to the SQL count/page methods of
+ *       {@link ComprobantesRecibidosService}: todas/activas =
+ *       {@code status = true}, pagadas/procesadas = the same plus
+ *       {@code paid}/{@code processed} (legacy stream-filter parity),
+ *       pendientes = unpaid with due date after today, vencidas = unpaid with
+ *       due date today or earlier ({@code listPendientes()}/{@code listVencidas()}
+ *       date math, now in SQL).</li>
  *   <li>Global filter {@code q} reproduces the legacy
  *       {@code globalFilterFunction} fields: codigoActividadEmisor,
  *       condicionVenta, emisor nombre/correos/identificacion/nombreComercial,
@@ -143,8 +144,10 @@ import org.w3c.dom.Element;
  * <p><b>Paging/sorting contract</b> follows docs/ui-kit.md §3.1: 1-based
  * {@code page} (default 1), {@code size} default 20, whitelisted {@code sort}
  * keys, {@code dir} asc|desc, reserved keys never treated as filters.
- * Filtering/sorting/paging is computed in memory over the existing service
- * queries because the Services layer is frozen for this task.</p>
+ * Filtering, sorting and paging happen in SQL through
+ * {@link ComprobantesRecibidosService#countRecibidos} /
+ * {@link ComprobantesRecibidosService#pageRecibidos}; only the 20-row page is
+ * mapped to DTOs.</p>
  *
  * <p><b>Fragment dual-mode:</b> endpoints backing a UI surface check the
  * {@code HX-Request} header — present ⇒ only the requested fragment (inbox
@@ -363,16 +366,16 @@ public class FacturasRecibidasResource {
                                                                           @Nullable String dir,
                                                                           @Nullable String q) {
         String cubeta = normalizarBucket(bucket);
-        List<ComprobantesRecibidos> fuente = aplicarPredicado(cubeta, fuenteDelBucket(cubeta));
-        List<ComprobantesRecibidos> filtradas = filtrar(fuente, q);
-        ordenar(filtradas, sort, dir);
-        long total = filtradas.size();
         int pagina = clampPage(page);
         int medida = clampSize(size);
-        int from = (pagina - 1) * medida;
+        // COUNT and page share the service's FROM/WHERE; when the count fails
+        // (0) the page is skipped so total and rows can never disagree.
+        long total = recibidosService.countRecibidos(cubeta, q);
         List<ComprobantesRecibidosListDTO> data = new ArrayList<>();
-        if (from < filtradas.size()) {
-            for (ComprobantesRecibidos f : filtradas.subList(from, Math.min(from + medida, filtradas.size()))) {
+        if (total > 0) {
+            int from = (pagina - 1) * medida;
+            for (ComprobantesRecibidos f
+                    : recibidosService.pageRecibidos(cubeta, q, sort, dir, from, medida)) {
                 data.add(toListDTO(f));
             }
         }
@@ -386,16 +389,7 @@ public class FacturasRecibidasResource {
         return mapa;
     }
 
-    /** Legacy bucket → service query mapping (parity documented above). */
-    private @Nonnull List<ComprobantesRecibidos> fuenteDelBucket(@Nonnull String bucket) {
-        return switch (bucket) {
-            case BUCKET_PENDIENTES -> orEmpty(recibidosService.listPendientes());
-            case BUCKET_VENCIDAS -> orEmpty(recibidosService.listVencidas());
-            case BUCKET_TODAS, BUCKET_ACTIVAS, BUCKET_PAGADAS, BUCKET_PROCESADAS -> orEmpty(recibidosService.ListAllEnabled());
-            default -> orEmpty(recibidosService.ListAllEnabled());
-        };
-    }
-
+    /** Normaliza la clave de bandeja de la URL (null/desconocida → todas). */
     private static @Nonnull String normalizarBucket(@Nullable String bucket) {
         if (bucket == null || bucket.isBlank()) {
             return BUCKET_TODAS;
@@ -408,115 +402,6 @@ public class FacturasRecibidasResource {
             case BUCKET_VENCIDAS -> BUCKET_VENCIDAS;
             default -> BUCKET_TODAS;
         };
-    }
-
-    /** Applies the legacy bucket predicates after the shared source query. */
-    private static @Nonnull List<ComprobantesRecibidos> aplicarPredicado(@Nonnull String bucket,
-                                                                         @Nonnull List<ComprobantesRecibidos> filas) {
-        return switch (bucket) {
-            case BUCKET_PAGADAS -> filas.stream().filter(f -> f.getPaid() != null && f.getPaid()).toList();
-            case BUCKET_PROCESADAS -> filas.stream().filter(f -> f.getProcessed() != null && f.getProcessed()).toList();
-            case BUCKET_ACTIVAS -> filas.stream().filter(f -> f.getStatus() != null && f.getStatus()).toList();
-            default -> filas;
-        };
-    }
-
-    /** Legacy globalFilterFunction fields, case-insensitive contains. */
-    private static @Nonnull List<ComprobantesRecibidos> filtrar(@Nonnull List<ComprobantesRecibidos> filas,
-                                                                @Nullable String q) {
-        String texto = q == null ? "" : q.trim().toLowerCase();
-        if (texto.isEmpty()) {
-            return filas;
-        }
-        List<ComprobantesRecibidos> salida = new ArrayList<>();
-        for (ComprobantesRecibidos f : filas) {
-            Encabezado enc = f.getEncabezado();
-            Emisor emisor = enc == null ? null : enc.getEmisor();
-            if (contiene(enc == null ? null : enc.getCodigoActividadEmisor(), texto)
-                    || contiene(enc == null ? null : enc.getCondicionVenta(), texto)
-                    || contiene(emisor == null ? null : emisor.getNombre(), texto)
-                    || contieneCorreo(emisor == null ? null : emisor.getCorreosElectronicos(), texto)
-                    || contiene(emisor != null && emisor.getIdentificacion() != null
-                                ? emisor.getIdentificacion().getNumero() : null, texto)
-                    || contiene(emisor == null ? null : emisor.getNombreComercial(), texto)
-                    || contiene(enc == null ? null : String.valueOf(enc.getFechaEmision()), texto)
-                    || contiene(enc == null ? null : enc.getNumeroConsecutivo(), texto)) {
-                salida.add(f);
-            }
-        }
-        return salida;
-    }
-
-    private static boolean contiene(@Nullable String fuente, @Nonnull String filtro) {
-        return fuente != null && fuente.toLowerCase().contains(filtro);
-    }
-
-    private static boolean contieneCorreo(@Nullable List<CorreoElectronicoEmisor> correos, @Nonnull String filtro) {
-        if (correos == null) {
-            return false;
-        }
-        return correos.stream()
-                .map(CorreoElectronicoEmisor::getCorreo)
-                .filter(Objects::nonNull)
-                .anyMatch(correo -> correo.toLowerCase().contains(filtro));
-    }
-
-    /** Whitelisted sort keys (kit golden rule #5: reserved keys excluded). */
-    private void ordenar(@Nonnull List<ComprobantesRecibidos> filas, @Nullable String sort, @Nullable String dir) {
-        filas.sort(comparadorPor(sort, !isDescending(dir)));
-    }
-
-    private static @Nonnull Comparator<ComprobantesRecibidos> comparadorPor(@Nullable String sort,
-                                                                            boolean ascendente) {
-        Comparator<ComprobantesRecibidos> base;
-        if ("consecutivo".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::consecutivoDe,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        } else if ("fechaEmision".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::fechaDe,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        } else if ("emisor".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::emisorDe,
-                    Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
-        } else if ("totalComprobante".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::totalDe,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        } else if ("totalImpuesto".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::impuestoDe,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        } else if ("estado".equals(sort)) {
-            base = Comparator.comparing(FacturasRecibidasResource::estadoDe,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        } else {
-            base = Comparator.comparing(ComprobantesRecibidos::getId,
-                    Comparator.nullsFirst(Comparator.naturalOrder()));
-        }
-        return ascendente ? base : base.reversed();
-    }
-
-    private static @Nullable String consecutivoDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getEncabezado() != null ? f.getEncabezado().getNumeroConsecutivo() : null;
-    }
-
-    private static @Nullable java.time.LocalDateTime fechaDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getEncabezado() != null ? f.getEncabezado().getFechaEmision() : null;
-    }
-
-    private static @Nullable String emisorDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getEncabezado() != null && f.getEncabezado().getEmisor() != null
-                ? f.getEncabezado().getEmisor().getNombre() : null;
-    }
-
-    private static @Nullable BigDecimal totalDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getResumen() != null ? f.getResumen().getTotalComprobante() : null;
-    }
-
-    private static @Nullable BigDecimal impuestoDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getResumen() != null ? f.getResumen().getTotalImpuesto() : null;
-    }
-
-    private static @Nullable String estadoDe(@Nonnull ComprobantesRecibidos f) {
-        return f.getEncabezado() != null ? f.getEncabezado().getEstado() : null;
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -1868,10 +1753,6 @@ public class FacturasRecibidasResource {
             mapa.put(String.valueOf(keyValuePairs[i]), valor);
         }
         return mapa;
-    }
-
-    private static @Nonnull List<ComprobantesRecibidos> orEmpty(@Nullable List<ComprobantesRecibidos> lista) {
-        return lista == null ? Collections.emptyList() : lista;
     }
 
     // ════════════════════════════════════════════════════════════════════

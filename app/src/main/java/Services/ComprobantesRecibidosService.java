@@ -20,8 +20,12 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root; 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -387,6 +391,235 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             LOG.warn("Error listing vencidas: " + e.getMessage() + " | source=ComprobantesRecibidosService.listVencidas() | despues=" + e.getMessage());
             return java.util.Collections.emptyList();
         }
+    }
+
+    // ── SQL-paged inbox (buzón de facturas recibidas) ─────────────────────
+    // Replaces the resource's "load every row, filter/sort/slice in memory"
+    // path. Kept in this service (instead of the resource) so the SAME
+    // FROM/WHERE feeds the COUNT and the page, and the pager total can never
+    // disagree with the returned rows.
+
+    /** Escape character for the free-text LIKE patterns (contains semantics). */
+    private static final char LIKE_ESCAPE = '!';
+
+    /**
+     * COUNT companion of {@link #pageRecibidos}: identical FROM/WHERE, so the
+     * pager total and the page always describe the same result set.
+     *
+     * @param bucket {@code todas|activas|pagadas|procesadas|pendientes|vencidas}
+     *               (null/unknown behaves like {@code todas})
+     * @param q      global filter text; null/blank means "no filter"
+     */
+    public long countRecibidos(@Nullable String bucket, @Nullable String q) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT COUNT(f)" + fromClause(false)
+                + whereClause(bucket, q, params);
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting recibidos: " + e.getMessage()
+                    + " | source=ComprobantesRecibidosService.countRecibidos()"
+                    + " | bucket=" + bucket + " | q=" + q
+                    + " | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * SQL-paged list of received invoices for the inbox table.
+     *
+     * <p>Bucket predicates mirror the legacy service calls the resource used
+     * before paging in SQL:</p>
+     * <ul>
+     *   <li>{@code todas}/{@code activas} → {@code f.status = true}
+     *       ({@code ListAllEnabled()} plus the old {@code status} filter);</li>
+     *   <li>{@code pagadas} → {@code f.paid = true AND f.status = true};</li>
+     *   <li>{@code procesadas} → {@code f.processed = true AND f.status = true};</li>
+     *   <li>{@code pendientes} → {@code f.paid = false} and
+     *       {@code fechaEmision.toLocalDate() + plazoCredito > today}
+     *       ({@code listPendientes()});</li>
+     *   <li>{@code vencidas} → {@code f.paid = false} and
+     *       {@code fechaEmision.toLocalDate() + plazoCredito <= today}
+     *       ({@code listVencidas()}).</li>
+     * </ul>
+     *
+     * <p>{@code q} keeps the legacy {@code globalFilterFunction} fields: codigo
+     * de actividad del emisor, condicion de venta, emisor nombre/nombre
+     * comercial/identificacion/correos, fecha de emision and numero
+     * consecutivo, all case-insensitive contains. {@code %}/{@code _} are
+     * escaped because the legacy filter used {@code String.contains}.</p>
+     *
+     * <p>ORDER BY is whitelisted; unknown/null keys fall back to {@code f.id}.
+     * Every order ends with {@code f.id ASC}, so a page can never shuffle
+     * between requests. The old Java comparators used {@code nullsFirst} and
+     * then {@code reversed()} for DESC, i.e. nulls first on ASC and last on
+     * DESC — mirrored with explicit {@code NULLS FIRST}/{@code NULLS LAST}.</p>
+     *
+     * @param offset zero-based first row
+     * @param size   page size (clamped to at least 1)
+     */
+    public @Nonnull List<ComprobantesRecibidos> pageRecibidos(@Nullable String bucket, @Nullable String q,
+                                                              @Nullable String sort, @Nullable String dir,
+                                                              int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT f" + fromClause(true)
+                + whereClause(bucket, q, params)
+                + orderBy(sort, dir);
+        try {
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(jpql, ComprobantesRecibidos.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(size, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paging recibidos: " + e.getMessage()
+                    + " | source=ComprobantesRecibidosService.pageRecibidos()"
+                    + " | bucket=" + bucket + " | q=" + q + " | sort=" + sort + " | dir=" + dir
+                    + " | offset=" + offset + " | size=" + size
+                    + " | despues=" + e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    /**
+     * Shared FROM builder. To-one relations only, so no row multiplication and
+     * no DISTINCT needed (the old {@code DISTINCT} forced a full sort before
+     * LIMIT). The page variant FETCHes exactly what the list DTO reads;
+     * identificacion is a plain LEFT JOIN because only the filter uses it and
+     * an implicit join would drop emisores without a tax id.
+     */
+    private static @Nonnull String fromClause(boolean fetchForPage) {
+        String from = " FROM ComprobantesRecibidos f"
+                + " LEFT JOIN " + (fetchForPage ? "FETCH " : "") + "f.encabezado e";
+        if (fetchForPage) {
+            // Only the page DTO reads resumen; COUNT never needs it.
+            from += " LEFT JOIN FETCH f.resumen r";
+        }
+        return from
+                + " LEFT JOIN " + (fetchForPage ? "FETCH " : "") + "e.emisor em"
+                + " LEFT JOIN em.identificacion ident";
+    }
+
+    /**
+     * Shared WHERE builder for {@link #countRecibidos} and
+     * {@link #pageRecibidos}. User text only ever travels as the {@code :q}
+     * parameter; the JPQL is assembled from constants.
+     */
+    private static @Nonnull String whereClause(@Nullable String bucket, @Nullable String q,
+                                               @Nonnull Map<String, Object> params) {
+        List<String> predicates = new ArrayList<>();
+        switch (normalizarBucket(bucket)) {
+            case "activas" -> predicates.add("f.status = true");
+            case "pagadas" -> predicates.add("(f.paid = true AND f.status = true)");
+            case "procesadas" -> predicates.add("(f.processed = true AND f.status = true)");
+            case "pendientes" -> {
+                predicates.add("f.paid = false");
+                predicates.add("CAST(timestampadd(day, " + plazoEnDias()
+                        + ", e.fechaEmision) AS date) > :hoy");
+                params.put("hoy", LocalDate.now());
+            }
+            case "vencidas" -> {
+                predicates.add("f.paid = false");
+                predicates.add("CAST(timestampadd(day, " + plazoEnDias()
+                        + ", e.fechaEmision) AS date) <= :hoy");
+                params.put("hoy", LocalDate.now());
+            }
+            default -> predicates.add("f.status = true");
+        }
+        String term = q == null ? "" : q.trim();
+        if (!term.isEmpty()) {
+            String like = "LIKE :q ESCAPE '" + LIKE_ESCAPE + "'";
+            predicates.add("(LOWER(COALESCE(e.codigoActividadEmisor, '')) " + like
+                    + " OR LOWER(COALESCE(e.condicionVenta, '')) " + like
+                    + " OR LOWER(COALESCE(em.nombre, '')) " + like
+                    + " OR LOWER(COALESCE(em.nombreComercial, '')) " + like
+                    + " OR LOWER(COALESCE(ident.numero, '')) " + like
+                    + " OR LOWER(COALESCE(FUNCTION('to_char', e.fechaEmision,"
+                    + " 'YYYY-MM-DD\"T\"HH24:MI:SS'), '')) " + like
+                    + " OR LOWER(COALESCE(e.numeroConsecutivo, '')) " + like
+                    + " OR EXISTS (SELECT ce.id FROM CorreoElectronicoEmisor ce"
+                    + " WHERE ce.emisor = em AND LOWER(COALESCE(ce.correo, '')) " + like + "))");
+            params.put("q", likePattern(term.toLowerCase(Locale.ROOT)));
+        }
+        return " WHERE " + String.join(" AND ", predicates);
+    }
+
+    /**
+     * Plazo de credito as days, or NULL when the legacy
+     * {@code Integer.parseInt} would have thrown (non-numeric, empty or
+     * overflow-length). The CASE keeps PostgreSQL from evaluating the cast on
+     * non-numeric rows, and NULL makes the date comparison false — the same
+     * {@code NumberFormatException} guard the old in-memory filter had.
+     */
+    private static @Nonnull String plazoEnDias() {
+        return "CASE WHEN e.plazoCredito IS NOT NULL"
+                + " AND e.plazoCredito <> ''"
+                + " AND LENGTH(e.plazoCredito) <= 9"
+                + " AND FUNCTION('regexp_replace', e.plazoCredito, '[^0-9]', '', 'g') = e.plazoCredito"
+                + " THEN CAST(e.plazoCredito AS integer) ELSE NULL END";
+    }
+
+    /**
+     * Whitelisted ORDER BY. {@code emisorNombre} is the column key the table
+     * declares ({@code emisor} is kept for the legacy API); text keys sort on
+     * {@code LOWER(...)} like the old case-insensitive comparator, and
+     * {@code f.id ASC} is the deterministic tiebreak.
+     */
+    private static @Nonnull String orderBy(@Nullable String sort, @Nullable String dir) {
+        String key = sort == null ? "" : sort.trim();
+        boolean desc = "desc".equalsIgnoreCase(dir == null ? "" : dir.trim());
+        String direction = desc ? " DESC" : " ASC";
+        String nulls = desc ? " NULLS LAST" : " NULLS FIRST";
+        return switch (key) {
+            case "consecutivo" -> " ORDER BY e.numeroConsecutivo" + direction + nulls + ", f.id ASC";
+            case "fechaEmision" -> " ORDER BY e.fechaEmision" + direction + nulls + ", f.id ASC";
+            case "emisor", "emisorNombre" -> " ORDER BY LOWER(em.nombre)" + direction + nulls + ", f.id ASC";
+            case "totalComprobante" -> " ORDER BY r.totalComprobante" + direction + nulls + ", f.id ASC";
+            case "totalImpuesto" -> " ORDER BY r.totalImpuesto" + direction + nulls + ", f.id ASC";
+            case "estado" -> " ORDER BY e.estado" + direction + nulls + ", f.id ASC";
+            default -> " ORDER BY f.id" + direction;
+        };
+    }
+
+    /** Same bucket normalization used by the resource (unknown → todas). */
+    private static @Nonnull String normalizarBucket(@Nullable String bucket) {
+        if (bucket == null || bucket.isBlank()) {
+            return "todas";
+        }
+        return switch (bucket.trim().toLowerCase(Locale.ROOT)) {
+            case "activas" -> "activas";
+            case "pagadas" -> "pagadas";
+            case "procesadas" -> "procesadas";
+            case "pendientes" -> "pendientes";
+            case "vencidas" -> "vencidas";
+            default -> "todas";
+        };
+    }
+
+    /**
+     * Builds the {@code %term%} LIKE pattern, escaping the escape char,
+     * {@code %} and {@code _} so the old {@code String.contains} semantics are
+     * preserved for literal user input.
+     */
+    private static @Nonnull String likePattern(@Nonnull String term) {
+        StringBuilder pattern = new StringBuilder(term.length() + 2);
+        pattern.append('%');
+        for (int i = 0; i < term.length(); i++) {
+            char ch = term.charAt(i);
+            if (ch == LIKE_ESCAPE || ch == '%' || ch == '_') {
+                pattern.append(LIKE_ESCAPE);
+            }
+            pattern.append(ch);
+        }
+        pattern.append('%');
+        return pattern.toString();
     }
 
     @Nullable
