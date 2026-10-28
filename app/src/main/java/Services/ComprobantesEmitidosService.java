@@ -240,6 +240,89 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
 
+    /**
+     * Comprobantes cuyo consecutivo CONTIENE el texto, resuelto en SQL.
+     *
+     * <p>Sustituye el {@code listAll()} + {@code String.contains()} de la
+     * busqueda de devoluciones: con el historico completo ese camino
+     * materializaba cientos de miles de filas para quedarse con las primeras
+     * coincidencias. El {@code LIKE} de PostgreSQL distingue mayusculas igual
+     * que {@code contains}, y las filas van con encabezado, receptor y resumen
+     * ya cargados para que el mapeo de la respuesta no dispare una consulta
+     * por fila.</p>
+     *
+     * @param q     texto buscado dentro de {@code encabezado.numeroConsecutivo}
+     * @param limit maximo de filas devueltas (se fuerza a {@code >= 1})
+     * @return las coincidencias mas recientes ({@code fechaEmision DESC}); lista
+     *         vacia si {@code q} esta en blanco o si la consulta falla
+     */
+    public @Nonnull List<ComprobantesEmitidos> findByIdContainingConsecutivo(@Nullable String q, int limit) {
+        if (q == null || q.trim().isEmpty()) {
+            return java.util.List.of();
+        }
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.receptor"
+                            + " WHERE e.numeroConsecutivo LIKE :q"
+                            + " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC",
+                    ComprobantesEmitidos.class);
+            query.setParameter("q", "%" + q.trim() + "%");
+            query.setMaxResults(Math.max(limit, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando por consecutivo: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.findByIdContainingConsecutivo() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /**
+     * Comprobantes cuyo receptor cumple el criterio de la busqueda legacy.
+     *
+     * <p><b>Ojo con la direccion del {@code LIKE}:</b> el legacy
+     * ({@code DevolucionesController.buscarFactura}) se quedaba con las
+     * facturas cuyo nombre de receptor estaba CONTENIDO en el criterio
+     * ({@code criterio.contains(receptor.nombre)}), no al reves. Se conserva esa
+     * semantica invirtiendo los lados del {@code LIKE} en vez de "corregirla":
+     * cambiar la direccion altera resultados (buscar "Cliente" pasaria de no
+     * devolver nada a devolver todas las facturas de "Cliente Contado").
+     * {@code rc.nombre IS NOT NULL} replica el {@code continue} del legacy sobre
+     * receptores sin nombre, que un {@code CONCAT} dejaria pasar como cadena
+     * vacia.</p>
+     *
+     * @param q     criterio que debe contener el nombre del receptor
+     * @param limit maximo de filas devueltas (se fuerza a {@code >= 1})
+     * @return las coincidencias mas recientes ({@code fechaEmision DESC}); lista
+     *         vacia si {@code q} esta en blanco o si la consulta falla
+     */
+    public @Nonnull List<ComprobantesEmitidos> findByClientNameLike(@Nullable String q, int limit) {
+        if (q == null || q.trim().isEmpty()) {
+            return java.util.List.of();
+        }
+        // El criterio se compara YA en minusculas (el LIKE invertido pone el
+        // criterio a la izquierda y el nombre del receptor a la derecha).
+        String needle = q.trim().toLowerCase(java.util.Locale.ROOT);
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.receptor rc"
+                            + " WHERE rc.nombre IS NOT NULL"
+                            + " AND :q LIKE CONCAT('%', LOWER(rc.nombre), '%')"
+                            + " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC",
+                    ComprobantesEmitidos.class);
+            query.setParameter("q", needle);
+            query.setMaxResults(Math.max(limit, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando por nombre de cliente: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.findByClientNameLike() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
     /** Carga las filas indicadas con encabezado, resumen y emisor. */
     private @Nonnull List<ComprobantesEmitidos> cargarPorIds(@Nonnull List<Number> ids) {
         if (ids.isEmpty()) {

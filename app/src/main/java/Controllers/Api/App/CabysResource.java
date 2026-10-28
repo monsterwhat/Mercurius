@@ -30,10 +30,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -118,24 +116,15 @@ public class CabysResource {
         page = Math.max(page, 0);
 
         try {
-            if (q != null && !q.isBlank()) {
-                // Parity with CabysController.globalFilterFunction(): the legacy
-                // datatable filters the FULL in-memory catalog with a
-                // case-insensitive contains over codigo/descripcion. CabysService
-                // exposes no combined code+description filter, so the same
-                // full-scan + in-memory filter/paginate is reproduced here.
-                String filter = q.trim().toLowerCase(Locale.ROOT);
-                List<CabysDTO> filtered = cabysService.listAll().stream()
-                        .filter(c -> matchesFilter(c, filter))
-                        .map(this::toDTO)
-                        .toList();
-
-                List<CabysDTO> data = paginate(filtered, page, size);
-                return Response.ok(new PagedResponse<>(data, filtered.size(), page, size)).build();
-            }
-
-            long total = cabysService.count();
-            List<CabysDTO> data = cabysService.listPage(page * size, size).stream()
+            // Parity with CabysController.globalFilterFunction(): the legacy
+            // datatable filters the FULL catalog with a case-insensitive
+            // contains over codigo/descripcion. The filter and the window are
+            // now resolved by the database (CabysService.search/countMatching)
+            // instead of materialising the ~6k rows on every request; the
+            // response contract (0-based page, total = matching rows,
+            // natural order when unfiltered) is unchanged.
+            long total = cabysService.countMatching(q);
+            List<CabysDTO> data = cabysService.search(q, null, true, page * size, size).stream()
                     .map(this::toDTO)
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
@@ -375,24 +364,6 @@ public class CabysResource {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /**
-     * Case-insensitive contains match over codigo/descripcion, mirroring the
-     * relevant columns of {@code CabysController.globalFilterFunction()}.
-     */
-    private static boolean matchesFilter(@Nonnull Cabys cabys, @Nonnull String filter) {
-        return (cabys.getCodigo() != null && cabys.getCodigo().toLowerCase(Locale.ROOT).contains(filter))
-                || (cabys.getDescripcion() != null
-                        && cabys.getDescripcion().toLowerCase(Locale.ROOT).contains(filter));
-    }
-
-    private static <T> List<T> paginate(List<T> items, int page, int size) {
-        int from = page * size;
-        if (from >= items.size()) {
-            return List.of();
-        }
-        return items.subList(from, Math.min(from + size, items.size()));
-    }
-
     private CabysDTO toDTO(Cabys cabys) {
         return new CabysDTO(cabys.getCodigo(), cabys.getDescripcion(), cabys.getCategorias(),
                 cabys.getImpuesto(), cabys.getUri(), cabys.getEstado());
@@ -438,20 +409,15 @@ public class CabysResource {
 
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
                                        @Nullable String dir, @Nullable String q) {
-        List<Cabys> filas;
-        if (q != null && !q.isBlank()) {
-            String filter = q.trim().toLowerCase(Locale.ROOT);
-            filas = new ArrayList<>(cabysService.listAll().stream()
-                    .filter(c -> matchesFilter(c, filter))
-                    .toList());
-        } else {
-            filas = new ArrayList<>(cabysService.listAll());
-        }
-        sortCabys(filas, sort, dir);
-
-        long total = filas.size();
+        // Total and window are computed first so the pager contract is
+        // untouched (page clamped into [1,totalPages]); only the slice moves
+        // into the database. countMatching/search reproduce the old in-memory
+        // filter (codigo/descripcion, case-insensitive) and the sort keys the
+        // table declares — see CabysService#search.
+        long total = cabysService.countMatching(q);
         Window w = windowOf(total, page, size);
-        filas = filas.subList(w.from(), w.to());
+        List<Cabys> filas = cabysService.search(q, sort, !"desc".equalsIgnoreCase(dir),
+                w.from(), w.size());
 
         List<Map<String, Object>> columnas = new ArrayList<>();
         columnas.add(col("Código", "codigo"));
@@ -469,29 +435,6 @@ public class CabysResource {
                 sort, "desc".equalsIgnoreCase(dir) ? "desc" : "asc",
                 w.page(), w.size(), total, w.totalPages(), pageWindow(w.page(), w.totalPages()),
                 filtros, q);
-    }
-
-    private static void sortCabys(@Nonnull List<Cabys> rows, @Nullable String sort,
-                                  @Nullable String dir) {
-        if (rows.isEmpty() || sort == null || sort.isBlank()) {
-            return;
-        }
-        Comparator<Cabys> cmp = switch (sort) {
-            case "codigo" -> Comparator.comparing(Cabys::getCodigo,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "descripcion" -> Comparator.comparing(Cabys::getDescripcion,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "categorias" -> Comparator.comparing(Cabys::getCategorias,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "impuesto" -> Comparator.comparing(Cabys::getImpuesto,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "estado" -> Comparator.comparing(Cabys::getEstado,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            default -> null;
-        };
-        if (cmp != null) {
-            rows.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
-        }
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}

@@ -76,11 +76,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * <p><b>Behavior parity contract</b> (1:1 port; receipts in
  * .omo/evidence/t32/flow-and-guards.md):</p>
  * <ul>
- *   <li>Search ({@link #facturas}): consecutivo mode filters
- *       {@link ComprobantesEmitidosService#listAll()} by
- *       {@code encabezado.numeroConsecutivo.contains(q)}; cliente mode keeps
- *       the facturas whose receptor name is CONTAINED IN the query (the
- *       legacy inverted-contains semantics are preserved verbatim).</li>
+ *   <li>Search ({@link #facturas}): consecutivo mode asks
+ *       {@link ComprobantesEmitidosService#findByIdContainingConsecutivo} for a
+ *       SQL {@code LIKE} on {@code encabezado.numeroConsecutivo}; cliente mode
+ *       uses {@link ComprobantesEmitidosService#findByClientNameLike}, which
+ *       keeps the facturas whose receptor name is CONTAINED IN the query (the
+ *       legacy inverted-contains semantics are preserved verbatim). Both are
+ *       acotadas ({@link #MAX_SEARCH_RESULTS}) en vez de materializar la tabla
+ *       completa y despues filtrar en memoria.</li>
  *   <li>Initiate ({@link #initiate}): validates motivo/lines and computes
  *       {@code totalDevolucion = Σ precioUnitario × cantidadDevolver} — the
  *       exact legacy {@code recalcularTotal()} formula.</li>
@@ -166,6 +169,27 @@ public class DevolucionesResource {
     public static final int DEFAULT_PAGE_SIZE = 10;
 
     private static final int MAX_PAGE_SIZE = 100;
+
+    /**
+     * Tope de filas que la busqueda de facturas materializa en SQL.
+     *
+     * <p>La busqueda es un {@code LIKE} sobre todo el historico de comprobantes
+     * (cientos de miles de filas), asi que la consulta se acota en vez de
+     * traer la tabla entera para paginar en memoria. Con {@link #MAX_PAGE_SIZE}
+     * como tamano de pagina maximo esto cubre las primeras 10 paginas del
+     * visor; el {@code total} del sobre tambien queda acotado a este tope,
+     * porque contarlo exacto exigiria un segundo {@code COUNT} sobre la misma
+     * busqueda.</p>
+     */
+    private static final int MAX_SEARCH_RESULTS = 100;
+
+    /**
+     * Filas del historial de notas de credito en el refresco OOB.
+     *
+     * <p>El historial no tiene techo y el fragmento se regenera despues de
+     * CADA devolucion confirmada: se pintan solo las mas recientes.</p>
+     */
+    private static final int HISTORIAL_OOB_LIMIT = 20;
 
     @Nonnull
     @Inject
@@ -659,39 +683,35 @@ public class DevolucionesResource {
     // ════════════════════════════════════════════════════════════════════
 
     /**
-     * Legacy {@code buscarFactura()} filtering, verbatim: consecutivo mode =
-     * contains on numeroConsecutivo over ALL comprobantes; cliente mode =
-     * keep facturas whose receptor name is contained IN the criterion (the
-     * legacy inverted contains). No status filter existed in legacy — none
-     * added here.
+     * Legacy {@code buscarFactura()} filtering, now resolved in SQL: consecutivo
+     * mode = {@link ComprobantesEmitidosService#findByIdContainingConsecutivo}
+     * ({@code LIKE} case-sensitive, igual que el {@code contains} original);
+     * cliente mode = {@link ComprobantesEmitidosService#findByClientNameLike}
+     * (the legacy inverted contains: the criterion must contain the receptor
+     * name), guarded — as in the legacy — by a hit on
+     * {@link ClientService#searchByName}. No status filter existed in legacy —
+     * none added here.
+     *
+     * <p>Ambas consultas vienen acotadas a {@link #MAX_SEARCH_RESULTS} y
+     * ordenadas por {@code fechaEmision DESC, id DESC} (el legacy no fijaba
+     * orden; se elige el mas reciente primero para que "las primeras N" sea
+     * determinista). El paginado en memoria que sigue trabaja entonces sobre
+     * ese bloque acotado, no sobre la tabla completa.</p>
      */
     private @Nonnull List<Map<String, Object>> buscarFacturas(@Nonnull String tipo, @Nonnull String criterio) {
-        List<ComprobantesEmitidasRow> encontradas = new ArrayList<>();
+        List<ComprobantesEmitidos> encontradas;
         if ("cliente".equals(tipo)) {
             List<Clientes> clients = clientService.searchByName(criterio);
-            if (clients != null && !clients.isEmpty()) {
-                String needle = criterio.toLowerCase(Locale.ROOT);
-                for (ComprobantesEmitidos f : orEmpty(comprobantesService.listAll())) {
-                    Encabezado enc = f.getEncabezado();
-                    if (enc == null || enc.getReceptor() == null || enc.getReceptor().getNombre() == null) {
-                        continue; // legacy removeIf drops these
-                    }
-                    if (needle.contains(enc.getReceptor().getNombre().toLowerCase(Locale.ROOT))) {
-                        encontradas.add(toRow(f));
-                    }
-                }
-            }
+            encontradas = clients == null || clients.isEmpty()
+                    ? List.of() // legacy: sin cliente que matchee no hay resultados
+                    : orEmpty(comprobantesService.findByClientNameLike(criterio, MAX_SEARCH_RESULTS));
         } else { // "consecutivo" (legacy default)
-            for (ComprobantesEmitidos f : orEmpty(comprobantesService.listAll())) {
-                Encabezado enc = f.getEncabezado();
-                if (enc != null && enc.getNumeroConsecutivo() != null
-                        && enc.getNumeroConsecutivo().contains(criterio)) {
-                    encontradas.add(toRow(f));
-                }
-            }
+            encontradas = orEmpty(comprobantesService.findByIdContainingConsecutivo(
+                    criterio, MAX_SEARCH_RESULTS));
         }
         List<Map<String, Object>> rows = new ArrayList<>(encontradas.size());
-        for (ComprobantesEmitidasRow r : encontradas) {
+        for (ComprobantesEmitidos f : encontradas) {
+            ComprobantesEmitidasRow r = toRow(f);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", r.id());
             row.put("consecutivo", r.consecutivo());
@@ -1515,11 +1535,19 @@ public class DevolucionesResource {
         return sb.toString();
     }
 
-    /** Out-of-band refresh of the page historial tbody after a success. */
+    /**
+     * Out-of-band refresh of the page historial tbody after a success.
+     *
+     * <p>Solo las {@link #HISTORIAL_OOB_LIMIT} notas mas recientes
+     * ({@link NotaCreditoService#listRecent}): el historial es ilimitado y este
+     * fragmento se regenera en cada devolucion, asi que no puede seguir
+     * materializando la tabla entera. El orden (fecha descendente) es el mismo
+     * que el de la pagina.</p>
+     */
     private @Nonnull String historialOobFragment() {
         StringBuilder sb = new StringBuilder();
         sb.append("<tbody hx-swap-oob=\"true\" id=\"historial-tbody\">");
-        List<NotaCredito> notas = orEmpty(notaCreditoService.listAll());
+        List<NotaCredito> notas = orEmpty(notaCreditoService.listRecent(HISTORIAL_OOB_LIMIT));
         if (notas.isEmpty()) {
             sb.append("<tr><td colspan=\"5\" class=\"has-text-centered has-text-grey\">")
                     .append("No hay notas de credito registradas</td></tr>");

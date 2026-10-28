@@ -17,7 +17,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,12 +98,13 @@ public class CabysPagesResource {
      * filtros, q.
      */
     private Map<String, Object> tableModel() {
-        List<Cabys> all = orEmpty(cabysService.listAll());
-        long total = all.size();
+        // Page 1 of the catalog: count + first PAGE_SIZE rows are resolved by
+        // the database (CabysService.search) instead of materialising the whole
+        // ~6k-row catalog with listAll(). The unfiltered, unsorted window is the
+        // same one the previous subList(0, PAGE_SIZE) produced.
+        long total = cabysService.countMatching(null);
         int totalPages = (int) Math.max(1L, (total + PAGE_SIZE - 1) / PAGE_SIZE);
-        int from = Math.min(0, (int) total);
-        int to = Math.min(from + PAGE_SIZE, (int) total);
-        List<Cabys> filas = all.subList(from, to);
+        List<Cabys> filas = orEmpty(cabysService.search(null, null, true, 0, PAGE_SIZE));
 
         // Column definitions mirror the legacy p:dataTable column set; null
         // key ⇒ non-sortable (docs/ui-kit.md §3.1).

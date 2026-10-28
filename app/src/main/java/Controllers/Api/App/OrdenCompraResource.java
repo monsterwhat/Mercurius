@@ -46,7 +46,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -201,14 +200,16 @@ public class OrdenCompraResource {
     /**
      * GET /api/app/ordenes?page&size&sort&dir&q&estado&proveedorId&numeroOrden
      *
-     * <p>Paginated/sorted list over the ACTIVE orders
-     * ({@code OrdenCompraService.listAll()} already filters status=true and
-     * fetch-joins the relations). Page is 0-based (ClientsResource JSON
-     * convention); filters mirror the legacy global filter
-     * ({@code globalFilterFunction}: numeroOrden/proveedor/estado/notas/usuario)
-     * plus the dedicated estado/numeroOrden/proveedor filters of the legacy
-     * bean. Reserved kit keys page/size/sort/dir are never treated as
-     * filters.</p>
+     * <p>Paginated/sorted list over the ACTIVE orders. Filtering, sorting and
+     * paging happen in SQL ({@code OrdenCompraService.listPage} selects the
+     * page's ids first, then fetch-joins exactly those rows) — the order book is
+     * never materialised in memory. Page is 0-based (ClientsResource JSON
+     * convention); {@code total} is the matching row count from
+     * {@code OrdenCompraService.countPage}. Filters mirror the legacy global
+     * filter ({@code globalFilterFunction}:
+     * numeroOrden/proveedor/estado/notas/usuario) plus the dedicated
+     * estado/numeroOrden/proveedor filters of the legacy bean. Reserved kit keys
+     * page/size/sort/dir are never treated as filters.</p>
      */
     @GET
     @Operation(summary = "List purchase orders with pagination, sorting and legacy filters")
@@ -232,16 +233,14 @@ public class OrdenCompraResource {
         page = Math.max(page, 0);
 
         try {
-            List<OrdenCompra> filas = new ArrayList<>(orEmpty(ordenCompraService.listAll()));
-            filas = filtrar(filas, q, estado, proveedorId, numeroOrden);
-            sortOrdenes(filas, sort, dir);
-
-            long total = filas.size();
-            int from = Math.min(page * size, (int) total);
-            int to = Math.min(from + size, (int) total);
-            List<OrdenCompraDTO> data = filas.subList(from, to).stream()
-                    .map(OrdenCompraResource::toDTO)
-                    .toList();
+            long total = ordenCompraService.countPage(q, estado, proveedorId, numeroOrden);
+            long offset = (long) page * size;
+            List<OrdenCompraDTO> data = offset >= total
+                    ? List.of()
+                    : ordenCompraService.listPage(q, estado, proveedorId, numeroOrden,
+                            sort, dir, (int) Math.min(offset, Integer.MAX_VALUE), size).stream()
+                            .map(OrdenCompraResource::toDTO)
+                            .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
             LOG.warn("Error listing órdenes de compra", e);
@@ -1104,79 +1103,11 @@ public class OrdenCompraResource {
         return list == null ? List.of() : list;
     }
 
-    // ── Filtering/sorting (legacy globalFilterFunction + column sortBy) ─────
-
-    @Nonnull
-    private static List<OrdenCompra> filtrar(@Nonnull List<OrdenCompra> filas,
-                                             @Nullable String q,
-                                             @Nullable String estado,
-                                             @Nullable Integer proveedorId,
-                                             @Nullable String numeroOrden) {
-        String texto = trimToNull(q);
-        String textoLower = texto == null ? null : texto.toLowerCase();
-        String numero = trimToNull(numeroOrden);
-        String numeroLower = numero == null ? null : numero.toLowerCase();
-        String estadoFiltro = trimToNull(estado);
-
-        List<OrdenCompra> salida = new ArrayList<>();
-        for (OrdenCompra orden : filas) {
-            if (textoLower != null && !pasaFiltroGlobal(orden, textoLower)) {
-                continue;
-            }
-            if (estadoFiltro != null && !estadoFiltro.equals(orden.getEstado())) {
-                continue;
-            }
-            if (proveedorId != null
-                    && (orden.getProveedor() == null || orden.getProveedor().getId() != proveedorId)) {
-                continue;
-            }
-            if (numeroLower != null && (orden.getNumeroOrden() == null
-                    || !orden.getNumeroOrden().toLowerCase().contains(numeroLower))) {
-                continue;
-            }
-            salida.add(orden);
-        }
-        return salida;
-    }
-
-    /** Verbatim port of the legacy globalFilterFunction searchable fields. */
-    private static boolean pasaFiltroGlobal(@Nonnull OrdenCompra orden, @Nonnull String filtro) {
-        return contiene(orden.getNumeroOrden(), filtro)
-                || (orden.getProveedor() != null && contiene(orden.getProveedor().getNombre(), filtro))
-                || contiene(orden.getEstado(), filtro)
-                || contiene(orden.getNotas(), filtro)
-                || (orden.getUsuario() != null && contiene(orden.getUsuario().getUsername(), filtro));
-    }
-
-    private static boolean contiene(@Nullable String valor, @Nonnull String filtroLower) {
-        return valor != null && valor.toLowerCase().contains(filtroLower);
-    }
-
-    private static void sortOrdenes(@Nonnull List<OrdenCompra> filas, @Nullable String sort,
-                                    @Nullable String dir) {
-        if (filas.isEmpty() || sort == null || sort.isBlank()) {
-            return;
-        }
-        Comparator<OrdenCompra> cmp = switch (sort) {
-            case "numeroOrden" -> Comparator.comparing(OrdenCompra::getNumeroOrden,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "proveedor" -> Comparator.comparing(
-                    (OrdenCompra o) -> o.getProveedor() != null ? o.getProveedor().getNombre() : null,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "fechaOrden" -> Comparator.comparing(OrdenCompra::getFechaOrden,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case "entrega" -> Comparator.comparing(OrdenCompra::getFechaEntregaEstimada,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case "estado" -> Comparator.comparing(OrdenCompra::getEstado,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "total" -> Comparator.comparing(OrdenCompra::getTotalEstimado,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            default -> null;
-        };
-        if (cmp != null) {
-            filas.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
-        }
-    }
+    // ── Filtering/sorting ────────────────────────────────────────────────────
+    // Filtering (legacy globalFilterFunction), sorting and paging now run in SQL
+    // in OrdenCompraService.listPage/countPage: the order book reaches 10^4-10^5
+    // rows, so it must not be materialised here. The WHERE/ORDER BY fragments in
+    // that service are the single source of truth for these semantics.
 
     // ── DTO mapping ──────────────────────────────────────────────────────────
 
@@ -1335,20 +1266,16 @@ public class OrdenCompraResource {
                                             @Nullable String estado, @Nullable Integer proveedorId,
                                             @Nullable String numeroOrden) {
         TableModel model = buildTableModel(page, size, sort, dir, q, estado, proveedorId, numeroOrden);
-        List<OrdenCompra> todas = orEmpty(ordenCompraService.listAll());
-        long borrador = todas.stream().filter(o -> "BORRADOR".equals(o.getEstado())).count();
-        long enviada = todas.stream().filter(o -> "ENVIADA".equals(o.getEstado())).count();
-        long confirmada = todas.stream().filter(o -> "CONFIRMADA".equals(o.getEstado())).count();
-        long recibida = todas.stream().filter(o -> "RECIBIDA".equals(o.getEstado())).count();
-        long facturada = todas.stream().filter(o -> "FACTURADA".equals(o.getEstado())).count();
+        // One GROUP BY query instead of five full-list stream passes.
+        Map<String, Long> porEstado = ordenCompraService.contarPorEstado();
         return pageIndex
                 .data("tablaOrdenes", model.asMap())
                 .data("ordenesTotal", model.total())
-                .data("countBorrador", borrador)
-                .data("countEnviada", enviada)
-                .data("countConfirmada", confirmada)
-                .data("countRecibida", recibida)
-                .data("countFacturada", facturada)
+                .data("countBorrador", porEstado.getOrDefault("BORRADOR", 0L))
+                .data("countEnviada", porEstado.getOrDefault("ENVIADA", 0L))
+                .data("countConfirmada", porEstado.getOrDefault("CONFIRMADA", 0L))
+                .data("countRecibida", porEstado.getOrDefault("RECIBIDA", 0L))
+                .data("countFacturada", porEstado.getOrDefault("FACTURADA", 0L))
                 .data("estadoActivo", trimToNull(estado));
     }
 
@@ -1417,21 +1344,19 @@ public class OrdenCompraResource {
                                        @Nullable String dir, @Nullable String q,
                                        @Nullable String estado, @Nullable Integer proveedorId,
                                        @Nullable String numeroOrden) {
-        List<OrdenCompra> filas = filtrar(
-                new ArrayList<>(orEmpty(ordenCompraService.listAll())),
-                q, estado, proveedorId, numeroOrden);
-        sortOrdenes(filas, sort, dir);
+        long total = ordenCompraService.countPage(q, estado, proveedorId, numeroOrden);
 
-        long total = filas.size();
         int s = Math.min(Math.max(size, 1), 100);
         int totalPages = (int) Math.max(1L, (total + s - 1) / s);
         int p = Math.min(Math.max(page, 1), totalPages);
-        int from = Math.min((p - 1) * s, (int) total);
-        int to = Math.min(from + s, (int) total);
+        int from = (int) Math.min((long) (p - 1) * s, total);
 
         List<Map<String, Object>> filasVm = new ArrayList<>();
-        for (OrdenCompra orden : filas.subList(from, to)) {
-            filasVm.add(filaTabla(orden));
+        if (from < total) {
+            for (OrdenCompra orden : orEmpty(ordenCompraService.listPage(
+                    q, estado, proveedorId, numeroOrden, sort, dir, from, s))) {
+                filasVm.add(filaTabla(orden));
+            }
         }
 
         List<Map<String, Object>> columnas = new ArrayList<>();
