@@ -309,13 +309,13 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
         if (nombre != null && !nombre.isBlank()) {
             condiciones.add("g.nombre = :nombre");
         }
-        String jpql = "SELECT g.nombre, h.fecha, SUM(h.totalIngresos), "
-                + "SUM(h.totalIngresos * h.margenReal / 100), AVG(h.margenReal), "
+        String jpql = "SELECT g.nombre, SUM(h.totalIngresos), "
+                + "SUM(h.totalIngresos * h.margenReal / 100), "
                 + "SUM(h.precioVenta * h.cantidadVendida), SUM(h.precioCosto * h.cantidadVendida), "
                 + "SUM(h.cantidadVendida), COUNT(h.id) "
                 + "FROM HistorialMargen h JOIN h.articulo a JOIN " + grupo + " g "
                 + "WHERE " + condiciones + " "
-                + "GROUP BY g.nombre, h.fecha ORDER BY g.nombre, h.fecha";
+                + "GROUP BY g.nombre ORDER BY g.nombre";
         try {
             TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class)
                     .setParameter("startDate", start)
@@ -325,29 +325,32 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
             }
             List<Map<String, Object>> filas = new ArrayList<>();
             for (Object[] fila : query.getResultList()) {
-                BigDecimal ventas = aBigDecimal(fila[2]);
-                BigDecimal utilidad = aBigDecimal(fila[3]);
-                BigDecimal unidades = aBigDecimal(fila[7]);
+                BigDecimal ventas = aBigDecimal(fila[1]);
+                BigDecimal utilidad = aBigDecimal(fila[2]);
+                BigDecimal unidades = aBigDecimal(fila[5]);
                 BigDecimal precioVenta = unidades.signum() == 0
-                        ? BigDecimal.ZERO : aBigDecimal(fila[5]).divide(unidades, 2, RoundingMode.HALF_UP);
+                        ? BigDecimal.ZERO : aBigDecimal(fila[3]).divide(unidades, 2, RoundingMode.HALF_UP);
                 BigDecimal precioCosto = unidades.signum() == 0
-                        ? BigDecimal.ZERO : aBigDecimal(fila[6]).divide(unidades, 2, RoundingMode.HALF_UP);
+                        ? BigDecimal.ZERO : aBigDecimal(fila[4]).divide(unidades, 2, RoundingMode.HALF_UP);
                 BigDecimal diferencia = precioVenta.subtract(precioCosto).setScale(2, RoundingMode.HALF_UP);
                 BigDecimal diferenciaPct = precioVenta.signum() == 0
                         ? BigDecimal.ZERO
                         : diferencia.multiply(BigDecimal.valueOf(100))
                                 .divide(precioVenta, 2, RoundingMode.HALF_UP);
+                BigDecimal margen = ventas.signum() == 0
+                        ? BigDecimal.ZERO
+                        : utilidad.multiply(BigDecimal.valueOf(100))
+                                .divide(ventas, 2, RoundingMode.HALF_UP);
                 Map<String, Object> mapa = new LinkedHashMap<>();
                 mapa.put("grupo", fila[0] == null ? "" : String.valueOf(fila[0]));
-                mapa.put("fecha", fila[1]);
                 mapa.put("ventas", ventas);
                 mapa.put("utilidad", utilidad);
-                mapa.put("margen", aBigDecimal(fila[4]).setScale(2, RoundingMode.HALF_UP));
+                mapa.put("margen", margen);
                 mapa.put("precioVenta", precioVenta);
                 mapa.put("precioCosto", precioCosto);
                 mapa.put("diferencia", diferencia);
                 mapa.put("diferenciaPct", diferenciaPct);
-                mapa.put("articulos", fila[8] instanceof Number n ? n.intValue() : 0);
+                mapa.put("articulos", fila[6] instanceof Number n ? n.intValue() : 0);
                 filas.add(mapa);
             }
             return filas;
