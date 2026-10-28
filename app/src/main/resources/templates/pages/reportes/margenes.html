@@ -163,8 +163,11 @@
                 {/include}
                 {#include _kit/chart-card title="Ventas por Departamento" canvasId="margenes-chart" height="300px"}
         {/include}
-                <script type="application/json" id="margenes-chart-data">
-{"labels":[{#for l in chartLabels}"{l}",{/for}],"values":[{#for v in chartValues}{v},{/for}]}
+                <script>
+window.margenesChartData = {
+    labels: [{#for l in chartLabels}"{l}",{/for}],
+    values: [{#for v in chartValues}{v},{/for}]
+};
                 </script>
                 {/if}
             {/fragment}
@@ -174,10 +177,8 @@
 document.addEventListener('DOMContentLoaded', function () {
         (function () {
             function renderMargenesChart() {
-                var dataEl = document.getElementById('margenes-chart-data');
-                if (!dataEl) { return; }
-                var data = { labels: [], values: [] };
-                try { data = JSON.parse(dataEl.textContent || '{}'); } catch (e) { return; }
+                var data = window.margenesChartData;
+                if (!data) { return; }
                 if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
                     // One hue for the data: --mercurius-chart-series-1, resolved
                     // through resolveColour() because a canvas cannot paint var().
