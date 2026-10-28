@@ -35,10 +35,12 @@ import jakarta.ws.rs.core.Response;
  * (plan task T19, READ-ONLY).
  *
  * <p>Backed DIRECTLY by the existing {@link StockAlertService}:
- * {@link StockAlertService#getActiveStockAlerts()},
+ * {@link StockAlertService#countReportAlerts} /
+ * {@link StockAlertService#pageReportAlerts} for the alert table,
  * {@link StockAlertService#getAllReorderSuggestions()} /
- * {@link StockAlertService#getReorderSuggestionsByPriority(String)} and
- * {@link StockAlertService#getAlertStatistics()} — the same reads the legacy
+ * {@link StockAlertService#getReorderSuggestionsByPriority(String)} for the
+ * sugerencias section and {@link StockAlertService#getAlertStatistics()} for
+ * the header cards — the same reads the legacy
  * {@code stockAlertController.init()} performed, mapped into display rows with
  * the same field flattening as the pre-existing read-side StockAlertDTO.</p>
  *
@@ -46,6 +48,14 @@ import jakarta.ws.rs.core.Response;
  * mutations and stay with the legacy controller until plan task T33 ports the
  * full AlertaStock module. The export button posts the T17-registered
  * {@code stock-alerts} dataset to {@code POST /api/app/export}.</p>
+ *
+ * <p>The alertas table is filtered, sorted and paged in SQL through
+ * {@link StockAlertService#countReportAlerts} /
+ * {@link StockAlertService#pageReportAlerts}: the page used to materialise the
+ * whole active-alert set twice (rows + "Total alertas") and slice it in
+ * memory, which cost ~15.7 s with 200k {@code stock_alerts} rows. The
+ * sugerencias section still runs its legacy in-memory pipeline (different
+ * table, no hot path).</p>
  */
 @Path("/app/reportes/inventario/alertas")
 @Produces(MediaType.TEXT_HTML)
@@ -85,6 +95,8 @@ public class AlertasStockResource {
             @QueryParam("departamento") @Nullable String departamento,
             @QueryParam("prioridad") @Nullable String prioridad,
             @QueryParam("tipo") @Nullable String tipo,
+            @QueryParam("estado") @Nullable String estado,
+            @QueryParam("q") @Nullable String q,
             @QueryParam("seccion") @Nullable String seccion) {
 
         String vista = "sugerencias".equals(seccion) ? "sugerencias" : "alertas";
@@ -92,10 +104,17 @@ public class AlertasStockResource {
         filtros.put("departamento", departamento);
         filtros.put("prioridad", prioridad);
         filtros.put("tipo", tipo);
+        filtros.put("estado", estado);
+        filtros.put("q", q);
         filtros.put("seccion", vista);
 
-        List<Map<String, Object>> filas = new ArrayList<>();
+        List<Map<String, Object>> filas;
+        long totalFilas;
         if ("sugerencias".equals(vista)) {
+            // Sugerencias still comes from its own table through the legacy
+            // read; filter/sort/page stay in memory (not the stock_alerts hot
+            // path).
+            List<Map<String, Object>> sugerenciasFilas = new ArrayList<>();
             List<SugerenciaReposicion> sugerencias =
                     prioridad != null && !prioridad.isBlank()
                             ? stockAlertService.getReorderSuggestionsByPriority(prioridad.trim())
@@ -110,7 +129,7 @@ public class AlertasStockResource {
                             continue;
                         }
                     }
-                    filas.add(Tablas.fila(
+                    sugerenciasFilas.add(Tablas.fila(
                             "articulo", sugerencia.getArticulo() != null
                                     ? sugerencia.getArticulo().getNombre() : "-",
                             "codigoBarra", sugerencia.getArticulo() != null
@@ -125,45 +144,43 @@ public class AlertasStockResource {
                             "fechaCreacion", Tablas.fmtFechaHora(sugerencia.getFechaCreacion())));
                 }
             }
+            Tablas.ordenar(sugerenciasFilas, sort, dir);
+            totalFilas = sugerenciasFilas.size();
+            filas = Tablas.paginaDe(sugerenciasFilas, page, size);
         } else {
-            List<AlertaStock> alertas = stockAlertService.getActiveStockAlerts();
-            if (alertas != null) {
-                for (AlertaStock alerta : alertas) {
-                    filas.add(toFila(alerta));
-                }
+            // Alertas: COUNT + one page in SQL. The clamping mirrors
+            // Tablas.paginaDe (size 1..200, page >= 1) so the pager keeps the
+            // same window semantics.
+            int tamPagina = Math.min(Math.max(size, 1), 200);
+            long desde = (long) (Math.max(page, 1) - 1) * tamPagina;
+            int offset = desde > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) desde;
+            totalFilas = stockAlertService.countReportAlerts(q, tipo, estado, departamento);
+            List<AlertaStock> pagina = stockAlertService.pageReportAlerts(
+                    q, tipo, estado, departamento, sort, dir, offset, tamPagina);
+            filas = new ArrayList<>(pagina.size());
+            for (AlertaStock alerta : pagina) {
+                filas.add(toFila(alerta));
             }
         }
 
-        // Department filter mirrors the legacy getStockAlertsByDepartment path.
-        if (departamento != null && !departamento.isBlank() && "alertas".equals(vista)) {
-            Departamento depto = departamentoService.findByName(departamento.trim());
-            filas.clear();
-            if (depto != null) {
-                List<AlertaStock> filtradas = stockAlertService.getStockAlertsByDepartment(depto);
-                if (filtradas != null) {
-                    for (AlertaStock alerta : filtradas) {
-                        filas.add(toFila(alerta));
-                    }
-                }
-            }
-        }
-
-        Tablas.ordenar(filas, sort, dir);
-        if (tipo != null && !tipo.isBlank() && "alertas".equals(vista)) {
-            String aguja = tipo.trim();
-            filas.removeIf(f -> !aguja.equalsIgnoreCase(String.valueOf(f.get("tipo"))));
-        }
-        long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
-        // Header stats (legacy stat-cards).
+        // Header stats (legacy stat-cards). getAlertStatistics is already a
+        // GROUP BY; "Total alertas" used to be getActiveStockAlerts().size().
         Map<String, Integer> estadisticas = stockAlertService.getAlertStatistics();
         int sinStock = valor(estadisticas, "out_of_stock");
         int stockBajo = valor(estadisticas, "low_stock");
         int sobrestock = valor(estadisticas, "overstock");
         int sugerenciasCount = valor(estadisticas, "reorder_suggestion");
-        List<AlertaStock> alertasActivas = stockAlertService.getActiveStockAlerts();
-        int totalAlertas = alertasActivas != null ? alertasActivas.size() : 0;
+        int totalAlertas;
+        boolean sinFiltros = esBlanco(q) && esBlanco(tipo) && esBlanco(estado) && esBlanco(departamento);
+        if (sinFiltros && "alertas".equals(vista)) {
+            // Same predicate as the table COUNT: reuse it instead of a second
+            // full scan just for the KPI card.
+            totalAlertas = aInt(totalFilas);
+        } else {
+            totalAlertas = aInt(stockAlertService.countReportAlerts(null, null, null, null));
+        }
 
         List<String> nombresDepartamentos = new ArrayList<>();
         List<Departamento> departamentosEntidad = departamentoService.listAll();
@@ -184,7 +201,7 @@ public class AlertasStockResource {
         model.put("titulo", "Alertas de Stock");
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas(vista));
-        model.put("filas", Tablas.paginaDe(filas, page, size));
+        model.put("filas", filas);
         model.put("sortKey", sort);
         model.put("sortDir", dir);
         model.put("page", Math.max(page, 1));
@@ -278,6 +295,15 @@ public class AlertasStockResource {
         }
         Integer valor = estadisticas.get(clave);
         return valor != null ? valor : 0;
+    }
+
+    /** Saturating long → int for the KPI counter (counts only, never negative). */
+    private static int aInt(long valor) {
+        return valor > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) Math.max(valor, 0L);
+    }
+
+    private static boolean esBlanco(@Nullable String valor) {
+        return valor == null || valor.isBlank();
     }
 
     @Nonnull

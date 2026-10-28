@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
@@ -24,6 +25,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 /**
  * Service for intelligent stock management and automated reordering
@@ -32,6 +34,20 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Named
 @ApplicationScoped
 public class StockAlertService extends GService<AlertaStock> {
+
+    private static final Logger LOG = Logger.getLogger(StockAlertService.class);
+
+    /** Escape character for the LIKE patterns built by {@link #likePattern}. */
+    private static final char LIKE_ESCAPE = '!';
+
+    /**
+     * FROM fragment shared by the report COUNT and page queries. Both joins are
+     * to-one (no row multiplication); {@code a} is required because the report
+     * displays the article name/barcode/optimal stock, and {@code d} because the
+     * department filter and the department name live there.
+     */
+    private static final String REPORT_FROM =
+            " FROM AlertaStock sa LEFT JOIN sa.articulo a LEFT JOIN sa.departamento d";
 
     @Inject @Nonnull
     private EntityManager em;
@@ -599,6 +615,283 @@ public class StockAlertService extends GService<AlertaStock> {
         TypedQuery<AlertaStock> query = em.createQuery(jpql, AlertaStock.class)
                 .setParameter("departamento", departamento);
         return query.getResultList();
+    }
+
+    /**
+     * COUNT companion of {@link #pageReportAlerts}: identical FROM/WHERE, so
+     * the pager total and the returned page can never disagree.
+     *
+     * <p>Replaces the {@code getActiveStockAlerts().size()}-style reads that
+     * hydrated every alert (200k rows) just to count or page it.</p>
+     *
+     * <p>Filters reproduce what the report applied in memory on top of the
+     * active-alert list:</p>
+     * <ul>
+     *   <li>{@code q} — free-text filter (case-insensitive substring over the
+     *       article name, barcode and code); null/blank means no text
+     *       filter.</li>
+     *   <li>{@code tipo} — the display label the metric cards send
+     *       ({@code Sin Stock}, {@code Stock Bajo}, {@code Sobrestock},
+     *       {@code Sugerencia}) or the raw {@code tipoAlerta} code; unknown
+     *       values are matched against the stored code, which is exactly what
+     *       the old label comparison did for an unlabelled type.</li>
+     *   <li>{@code estado} — display label or raw code ({@code Activa}/
+     *       {@code active}, {@code Reconocida}/{@code acknowledged},
+     *       {@code Resuelta}/{@code resolved}); null/blank means
+     *       {@code active}, the only state this report has ever shown.</li>
+     *   <li>{@code departamento} — exact, case-sensitive department name that
+     *       must also be active ({@code status = true}). The old path resolved
+     *       the name with {@code DepartamentoService.findByName} and rendered an
+     *       empty table when it did not exist, so an unknown name matches zero
+     *       rows.</li>
+     * </ul>
+     *
+     * @throws PersistenceException if the query fails; a failed count must not
+     *         render as an empty report (same rule as
+     *         {@code OrdenCompraService.countPage})
+     */
+    @Transactional(TxType.SUPPORTS)
+    public long countReportAlerts(@Nullable String q, @Nullable String tipo,
+                                  @Nullable String estado, @Nullable String departamento) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT COUNT(sa)" + REPORT_FROM
+                + reportWhere(q, tipo, estado, departamento, params);
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando alertas de stock: " + e.getMessage()
+                    + " | source=StockAlertService.countReportAlerts()"
+                    + " | q=" + q + " | tipo=" + tipo + " | estado=" + estado
+                    + " | departamento=" + departamento
+                    + " | antes=" + String.valueOf((Object) null)
+                    + " | despues=" + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * One page of the stock-alert report, filtered and sorted in SQL.
+     *
+     * <p>The article is fetch-joined because every displayed column except
+     * {@code tipo}/{@code estado} comes from it (name, barcode, optimal stock);
+     * the department join only serves the filter. Only the visible page is
+     * hydrated — the report used to materialise the whole active set and slice
+     * it with {@code subList}.</p>
+     *
+     * <p>Order: a whitelisted sort key in {@code dir} direction, then the old
+     * list order ({@code fechaCreacion DESC}) and {@code id DESC} so equal keys
+     * can never shuffle between requests. With no/unknown sort the old order
+     * stands. Text keys sort on {@code LOWER(...)} to keep the old
+     * case-insensitive comparators; {@code tipo}/{@code estado} sort on their
+     * <em>display label</em> (CASE → label), because that is what the previous
+     * in-memory comparator saw ("Sin Stock" before "Sobrestock", not
+     * {@code low_stock} before {@code out_of_stock}). PostgreSQL's default NULL
+     * placement (ASC last / DESC first) matches the old nulls-last display
+     * rows. Dates sort chronologically on {@code fechaCreacion} — the old
+     * comparison ran on the {@code dd/MM/yyyy HH:mm} display string, which
+     * ordered days before months.</p>
+     *
+     * @param q            free-text filter, may be null
+     * @param tipo         display label or raw type code, may be null
+     * @param estado       display label or raw state code, null/blank = active
+     * @param departamento exact department name, may be null
+     * @param sort         one of {@link #reportOrderBy}'s keys, may be null
+     * @param dir          {@code desc} (case-insensitive) for descending, else asc
+     * @param offset       zero-based first row (negative clamped to 0)
+     * @param size         page size (below 1 clamped to 1)
+     * @return the page rows with the article association fetched
+     * @throws PersistenceException if the query fails (a failed read must not
+     *         render as an empty report)
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public List<AlertaStock> pageReportAlerts(@Nullable String q, @Nullable String tipo,
+                                              @Nullable String estado, @Nullable String departamento,
+                                              @Nullable String sort, @Nullable String dir,
+                                              int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT sa"
+                + " FROM AlertaStock sa"
+                + " LEFT JOIN FETCH sa.articulo a"
+                + " LEFT JOIN sa.departamento d"
+                + reportWhere(q, tipo, estado, departamento, params)
+                + reportOrderBy(sort, dir);
+        try {
+            TypedQuery<AlertaStock> query = em.createQuery(jpql, AlertaStock.class);
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                query.setParameter(param.getKey(), param.getValue());
+            }
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(size, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paginando alertas de stock: " + e.getMessage()
+                    + " | source=StockAlertService.pageReportAlerts()"
+                    + " | q=" + q + " | tipo=" + tipo + " | estado=" + estado
+                    + " | departamento=" + departamento + " | sort=" + sort
+                    + " | dir=" + dir + " | offset=" + offset + " | size=" + size
+                    + " | antes=" + String.valueOf((Object) null)
+                    + " | despues=" + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Shared WHERE builder for {@link #countReportAlerts} and
+     * {@link #pageReportAlerts}. User text never reaches the JPQL: {@code q}
+     * goes in as an escaped LIKE pattern, {@code tipo}/{@code estado} as
+     * normalized codes, {@code departamento} as a parameter.
+     */
+    @Nonnull
+    private static String reportWhere(@Nullable String q, @Nullable String tipo,
+                                      @Nullable String estado, @Nullable String departamento,
+                                      @Nonnull Map<String, Object> params) {
+        List<String> predicates = new ArrayList<>();
+        predicates.add("sa.estado = :estado");
+        params.put("estado", estadoCode(estado));
+
+        String term = trimKey(q);
+        if (term != null) {
+            String like = "LIKE LOWER(:q) ESCAPE '" + LIKE_ESCAPE + "'";
+            predicates.add("(LOWER(a.nombre) " + like
+                    + " OR LOWER(a.codigoBarra) " + like
+                    + " OR LOWER(CAST(a.codigo AS string)) " + like + ")");
+            params.put("q", likePattern(term));
+        }
+
+        String tipoFiltro = tipoCode(tipo);
+        if (tipoFiltro != null) {
+            predicates.add("sa.tipoAlerta = :tipo");
+            params.put("tipo", tipoFiltro);
+        }
+
+        String depto = trimKey(departamento);
+        if (depto != null) {
+            // findByName() -> status = true, then match by id; doing it in SQL
+            // keeps the "unknown/inactive department renders nothing" rule.
+            predicates.add("d.nombre = :departamento AND d.status = true");
+            params.put("departamento", depto);
+        }
+
+        return " WHERE " + String.join(" AND ", predicates);
+    }
+
+    /**
+     * Whitelisted ORDER BY for {@link #pageReportAlerts}. Only the data-table
+     * keys are interpolated; the request parameter never reaches the JPQL.
+     * Every key ends in {@code sa.fechaCreacion DESC, sa.id DESC}, the old
+     * list order plus a deterministic tiebreak.
+     */
+    @Nonnull
+    private static String reportOrderBy(@Nullable String sort, @Nullable String dir) {
+        String key = trimKey(sort);
+        String direction = "desc".equalsIgnoreCase(dir) ? " DESC" : " ASC";
+        String defaultOrder = " ORDER BY sa.fechaCreacion DESC, sa.id DESC";
+        if (key == null) {
+            return defaultOrder;
+        }
+        String expression = switch (key) {
+            // Display label, not the stored code: the old comparator sorted
+            // the strings the user sees.
+            case "tipo" -> "LOWER(CASE sa.tipoAlerta"
+                    + " WHEN 'out_of_stock' THEN 'Sin Stock'"
+                    + " WHEN 'low_stock' THEN 'Stock Bajo'"
+                    + " WHEN 'overstock' THEN 'Sobrestock'"
+                    + " WHEN 'reorder_suggestion' THEN 'Sugerencia'"
+                    + " ELSE sa.tipoAlerta END)";
+            case "articulo" -> "LOWER(a.nombre)";
+            case "codigoBarra" -> "LOWER(a.codigoBarra)";
+            case "cantidadActual" -> "sa.cantidadActual";
+            case "cantidadMinima" -> "sa.cantidadMinima";
+            case "stockOptimo" -> "a.stockOptimo";
+            case "fechaCreacion" -> "sa.fechaCreacion";
+            case "estado" -> "LOWER(CASE sa.estado"
+                    + " WHEN 'active' THEN 'Activa'"
+                    + " WHEN 'acknowledged' THEN 'Reconocida'"
+                    + " WHEN 'resolved' THEN 'Resuelta'"
+                    + " ELSE sa.estado END)";
+            default -> null;
+        };
+        if (expression == null) {
+            return defaultOrder;
+        }
+        if ("fechaCreacion".equals(key)) {
+            return " ORDER BY sa.fechaCreacion" + direction + ", sa.id DESC";
+        }
+        return " ORDER BY " + expression + direction + ", sa.fechaCreacion DESC, sa.id DESC";
+    }
+
+    /**
+     * Maps the report's {@code tipo} filter to the stored {@code tipoAlerta}
+     * code. Labels are what the metric cards send; codes are accepted for API
+     * callers. Anything else is used verbatim (the old filter compared unknown
+     * types against their own code, since that is how they render).
+     */
+    @Nullable
+    private static String tipoCode(@Nullable String tipo) {
+        String key = trimKey(tipo);
+        if (key == null) {
+            return null;
+        }
+        return switch (key.toLowerCase(Locale.ROOT)) {
+            case "sin stock", "out_of_stock" -> "out_of_stock";
+            case "stock bajo", "low_stock" -> "low_stock";
+            case "sobrestock", "overstock" -> "overstock";
+            case "sugerencia", "reorder_suggestion" -> "reorder_suggestion";
+            default -> key;
+        };
+    }
+
+    /**
+     * Maps the report's {@code estado} filter/label to the stored state code.
+     * Null/blank keeps the report's historical scope: active alerts only.
+     */
+    @Nonnull
+    private static String estadoCode(@Nullable String estado) {
+        String key = trimKey(estado);
+        if (key == null) {
+            return "active";
+        }
+        return switch (key.toLowerCase(Locale.ROOT)) {
+            case "activa", "active" -> "active";
+            case "reconocida", "acknowledged" -> "acknowledged";
+            case "resuelta", "resolved" -> "resolved";
+            default -> key;
+        };
+    }
+
+    @Nullable
+    private static String trimKey(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Builds the {@code %term%} LIKE pattern, escaping {@code !}, {@code %} and
+     * {@code _} so a user typing them searches literally (parity with
+     * {@code ArticulosService.likePattern}).
+     */
+    @Nonnull
+    private static String likePattern(@Nonnull String term) {
+        StringBuilder pattern = new StringBuilder(term.length() + 2);
+        pattern.append('%');
+        for (int i = 0; i < term.length(); i++) {
+            char ch = term.charAt(i);
+            if (ch == LIKE_ESCAPE || ch == '%' || ch == '_') {
+                pattern.append(LIKE_ESCAPE);
+            }
+            pattern.append(ch);
+        }
+        pattern.append('%');
+        return pattern.toString();
     }
 
     /**
