@@ -169,7 +169,9 @@ public class MargenesReportesResource {
                 "peoresArticulos", filasArticulo(profitAnalysisService.getWorstProfitMarginArticles(10, startDate, endDate)),
                 "comparativoDepartamentos", profitAnalysisService.getDepartmentMarginComparison(startDate, endDate),
                 "departamentos", departamentoService.listAll().stream().map(d -> d.getNombre()).toList(),
-                "familias", familiaService.listAll().stream().map(Familia::getNombre).toList(),
+                "familias", familiaService.listAll().stream()
+                        .filter(f -> Boolean.TRUE.equals(f.getStatus()))
+                        .map(Familia::getNombre).toList(),
                 "filtroInicio", inicio == null ? "" : inicio,
                 "filtroFin", fin == null ? "" : fin,
                 "filtroDepartamento", departamento == null ? "" : departamento,
