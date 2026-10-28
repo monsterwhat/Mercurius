@@ -1539,3 +1539,55 @@ Get-ChildItem "$env:TEMP\mercurius-webdav-facturas" -Filter *.zip | ForEach-Obje
 ```
 
 *Report generated read-only; no database, file, or repository state was modified except the creation of this document and two throwaway probe scripts under `%TEMP%` (`dbf_probe.py`, `xml_probe.py`).*
+
+
+---
+
+## 16. Repair executed — 2026-10-28 (live 192.168.100.99)
+
+Executed with rollback copies; no index changes.
+
+### Backups
+- Table copies: `_bk_20261028_fam`, `_bk_20261028_art`, `_bk_20261028_prec`,
+  `_bk_20261028_pmh`, `_bk_20261028_pms`.
+- CSV exports under `/tmp/bk_20261028_*.csv` on the server.
+- A full `pg_dump` was not possible: the app role lacks permission on staging
+  tables owned by another role (`stg_headers`, `cur_precios`).
+
+### Families
+- 24 canonical product families created; **5,274 articles re-pointed**;
+  65 superseded rows retired (`status=false`, never deleted).
+- Verification: **24 active families, 0 articles without family**.
+
+### Prices
+- Repriced from `MAESTRO` (barcode join, 5,996/5,996 matched):
+  - `precio_final = VENTA` (gross shelf price),
+  - `precio_con_utilidad = VENTA / (1 + PORCEIMP)` (0 for `EXENTO='S'`),
+  - `precio_costo_sin_iva` = `COSTO`, except when the implied pack factor is
+    `>= 1.5`, where it becomes `neto / (1 + MARGENUTIL/100)`,
+  - `porcentaje_utilidad = MARGENUTIL`.
+- 5,847 rows repriced from Maestro; 53 copied from the previous valid row.
+- **5,901 articles priced; 95 remain unpriced** (no `VENTA` and no prior valid
+  price). Only 3 articles still have `costo > neto`.
+
+### Margin tables (regenerated)
+- `profit_margin_history`: **302,911 rows** (2015-08-14 → 2026-10-20),
+  **111 negative** (min −9.61 %), average **28.50 %**.
+- `profit_margin_snapshots`: 19,654 family rows + 39,462 department rows,
+  **0 rows without a dimension**.
+- Totals agree across dimensions: family = department = history =
+  **₡939,355,999.32**. (The old table held two dimensions in one table; summing
+  all rows double-counted. Reports must filter one dimension.)
+- Example: PILSEN LT 16ONZ → sale ₡1,350.00, net ₡1,194.69, cost ₡955.75,
+  margin 20.0 % (was a negative margin from a ₡5,475.66 pack cost).
+
+### Report fix
+- `ProfitAnalysisService.margenesPorGrupo` now aggregates by group over the
+  selected range (no per-date rows) and computes a weighted margin
+  (`utilidad / ventas`). Shipped in 2.15.14.
+
+### Remaining known items
+- 95 unpriced articles need a POS export or manual price.
+- Pack-size inference is still an inference (audit §15.6); confirm against
+  supplier invoices if exact case sizes matter.
+- XML gap: 8,367 claves present on disk but not in the DB (separate import).
