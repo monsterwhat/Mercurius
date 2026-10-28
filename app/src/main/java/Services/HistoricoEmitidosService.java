@@ -133,8 +133,9 @@ public class HistoricoEmitidosService {
             throw new IllegalArgumentException("XML inválido: falta la clave");
         }
 
-        // Idempotencia: el consecutivo ya importado se omite.
-        if (encabezadoService.existsByNumeroConsecutivoWithValidComprobante(numeroConsecutivo)) {
+        // Idempotencia: solo otro comprobante EMITIDO con el mismo consecutivo
+        // bloquea la importación. Un recibo de compra puede compartir número.
+        if (encabezadoService.existsEmitidoByNumeroConsecutivo(numeroConsecutivo)) {
             LOG.info("Comprobante histórico ya existente, se omite | user=" + usuario
                     + " | source=HistoricoEmitidosService.importar() | antes=" + numeroConsecutivo
                     + " | despues=" + clave);

@@ -74,13 +74,6 @@
                    data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
                    aria-haspopup="dialog">Nueva Factura</a>
             </div>
-            {! Caja and Loyalty are full pages at the API table routes (they
-               render the page shell on a non-HTMX GET). They had no navbar
-               entry at all; the boards were only reachable from the dashboard. !}
-            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/caja/table"
-               data-planned-route="/api/app/caja/table">Caja</a>
-            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/loyalty/table"
-               data-planned-route="/api/app/loyalty/table">Lealtad</a>
             {/if}
 
             {!

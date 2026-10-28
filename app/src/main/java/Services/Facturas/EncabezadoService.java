@@ -95,6 +95,35 @@ public class EncabezadoService extends GService<Encabezado> {
             return false;
         }
     }
+
+    /**
+     * Idempotency check for the EMITTED historical importer.
+     *
+     * <p>It must look at {@code ComprobantesEmitidos}, not the received table:
+     * a purchase invoice and a sales invoice can legitimately share a
+     * consecutive number in their own series. The old importer reused the
+     * received check, so any received row with the same number made the
+     * emitted import report "Ya importado" while
+     * {@code comprobantesemitidos} stayed empty.</p>
+     */
+    public boolean existsEmitidoByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                "SELECT COUNT(c.id) FROM ComprobantesEmitidos c " +
+                "WHERE c.encabezado.numeroConsecutivo = :numeroConsecutivo",
+                Long.class
+            );
+            query.setParameter("numeroConsecutivo", numeroConsecutivo);
+            Long count = query.getSingleResult();
+            return count != null && count > 0;
+        } catch (PersistenceException e) {
+            LOG.warn("Error checking emitted comprobante existence: " + e.getMessage()
+                    + " | source=EncabezadoService.existsEmitidoByNumeroConsecutivo()"
+                    + " | antes=" + numeroConsecutivo
+                    + " | despues=" + e.getMessage());
+            return false;
+        }
+    }
     
     // New method to find existing encabezado and handle duplicates properly
     @Nullable

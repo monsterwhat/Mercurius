@@ -134,6 +134,12 @@
                 </table>
                 </div>
                 <p class="help mercurius-text-muted">La tasa se muestra como &mdash; en los días sin facturas emitidas.</p>
+                {#if emitidosUltimos7 == 0}
+                <p class="help is-warning" role="status">
+                    No hay facturas electrónicas emitidas en este período.
+                    {#if ultimaEmision??}La última emisión registrada es del {ultimaEmision}.{/if}
+                </p>
+                {/if}
             </div>
             </div>
 

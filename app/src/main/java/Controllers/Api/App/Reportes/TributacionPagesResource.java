@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,6 +69,14 @@ import org.jboss.logging.Logger;
 public class TributacionPagesResource {
 
     private static final Logger LOG = Logger.getLogger(TributacionPagesResource.class);
+
+    /**
+     * The operator is in Costa Rica; the host may run in UTC. Using the host
+     * default made the "last 7 days" window show tomorrow's date (28/10 at
+     * 23:00 CST) and could hide today's emissions. All operator-facing day
+     * windows use the business zone explicitly.
+     */
+    private static final ZoneId ZONA_CR = ZoneId.of("America/Costa_Rica");
 
     private static final String[] MESES = {
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -210,7 +219,7 @@ public class TributacionPagesResource {
             @QueryParam("mes") @Nullable Integer mes,
             @QueryParam("anio") @Nullable Integer anio) {
         try {
-            LocalDate hoy = LocalDate.now();
+            LocalDate hoy = LocalDate.now(ZONA_CR);
             int m = mes == null ? hoy.getMonthValue() : Math.min(Math.max(mes, 1), 12);
             int y = anio == null ? hoy.getYear() : anio;
             TemplateInstance instance = isHxRequest()
@@ -257,7 +266,7 @@ public class TributacionPagesResource {
         long totalPendientes = countPendientes(todos);
         long totalEnviadosSinRespuesta = countEstado(todos, "ENVIADO");
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(ZONA_CR);
         LocalDateTime inicioHoy = hoy.atStartOfDay();
         LocalDateTime finHoy = hoy.plusDays(1).atStartOfDay();
 
@@ -266,17 +275,21 @@ public class TributacionPagesResource {
                 .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
                         && c.getEncabezado().getFechaEmision().isBefore(finHoy))
                 .count();
+        // These two figures sit under "Emitidos hoy", so they must describe
+        // TODAY'S emissions, not every response received today. The old
+        // version filtered by haciendaFechaRespuesta and could show
+        // "Emitidos hoy 0 · Aceptados 19" after importing historical XMLs.
         long aceptadosHoy = todos.stream()
                 .filter(c -> "ACEPTADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .filter(c -> c.getHaciendaFechaRespuesta() != null)
-                .filter(c -> !c.getHaciendaFechaRespuesta().isBefore(inicioHoy)
-                        && c.getHaciendaFechaRespuesta().isBefore(finHoy))
+                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
+                .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
+                        && c.getEncabezado().getFechaEmision().isBefore(finHoy))
                 .count();
         long rechazadosHoy = todos.stream()
                 .filter(c -> "RECHAZADO".equalsIgnoreCase(c.getHaciendaEstado()))
-                .filter(c -> c.getHaciendaFechaRespuesta() != null)
-                .filter(c -> !c.getHaciendaFechaRespuesta().isBefore(inicioHoy)
-                        && c.getHaciendaFechaRespuesta().isBefore(finHoy))
+                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
+                .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicioHoy)
+                        && c.getEncabezado().getFechaEmision().isBefore(finHoy))
                 .count();
 
         BigDecimal montoAceptados = todos.stream()
@@ -307,9 +320,9 @@ public class TributacionPagesResource {
                             && c.getEncabezado().getFechaEmision().isBefore(fin))
                     .count();
             long diaAceptados = todos.stream()
-                    .filter(c -> c.getHaciendaFechaRespuesta() != null)
-                    .filter(c -> !c.getHaciendaFechaRespuesta().isBefore(inicio)
-                            && c.getHaciendaFechaRespuesta().isBefore(fin))
+                    .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
+                    .filter(c -> !c.getEncabezado().getFechaEmision().isBefore(inicio)
+                            && c.getEncabezado().getFechaEmision().isBefore(fin))
                     .filter(c -> "ACEPTADO".equalsIgnoreCase(c.getHaciendaEstado()))
                     .count();
             Map<String, Object> fila = new LinkedHashMap<>();
@@ -319,6 +332,17 @@ public class TributacionPagesResource {
             fila.put("tasa", diaEmitidos > 0 ? (int) (diaAceptados * 100 / diaEmitidos) : 0);
             dailyStats.add(fila);
         }
+
+        long emitidosUltimos7 = dailyStats.stream()
+                .mapToLong(fila -> ((Number) fila.get("emitidos")).longValue())
+                .sum();
+        LocalDate ultimaEmision = todos.stream()
+                .filter(c -> c.getEncabezado() != null && c.getEncabezado().getFechaEmision() != null)
+                .map(c -> c.getEncabezado().getFechaEmision().toLocalDate())
+                .max(LocalDate::compareTo)
+                .orElse(null);
+        String ultimaEmisionTexto = ultimaEmision == null ? null
+                : ultimaEmision.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         List<Map<String, Object>> pendientesEnvio = todos.stream()
                 .filter(c -> c.getHaciendaEstado() == null
@@ -354,6 +378,8 @@ public class TributacionPagesResource {
         model.put("montoPendientes", colones(montoPendientes));
         model.put("tasaExito", tasaExito);
         model.put("dailyStats", dailyStats);
+        model.put("emitidosUltimos7", emitidosUltimos7);
+        model.put("ultimaEmision", ultimaEmisionTexto);
         model.put("pendientesEnvio", pendientesEnvio);
         model.put("rechazadosRecientes", rechazadosRecientes);
         // Bounded legacy lists: label-only headers (null key ⇒ non-sortable,
