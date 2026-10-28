@@ -133,9 +133,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p><b>Paging/sorting contract</b> follows docs/ui-kit.md §3.1: {@code page}
  * 1-based (default 1), {@code size} default 20, {@code sort} from a
- * whitelist (null = service order), {@code dir} asc|desc. Filtering/sorting/
- * paging computed in memory because the Services layer must not be modified
- * by this task.</p>
+ * whitelist (null = codigo order), {@code dir} asc|desc. The four article
+ * tabs now count and page in SQL
+ * ({@link ArticulosService#countByTab}/{@link ArticulosService#pageByTab});
+ * promotions and the ten-row article selectors remain in-memory.</p>
  *
  * <p><b>Fragment dual-mode:</b> endpoints backing a UI surface check the
  * {@code HX-Request} header — fragment-only HTML when present, ApiResponse/
@@ -326,12 +327,15 @@ public class ArticuloResource {
                         .map(ArticuloResource::toDTO).toList();
                 return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
             }
-            List<Articulos> filtered = filterArticulos(articulosOfTab(t), q);
-            sortArticulos(filtered, sort, dir);
-            long total = filtered.size();
+            List<ArticuloListDTO> data;
+            long total = articulosService.countByTab(t, q);
             Window w = windowOf(total, page, size);
-            List<ArticuloListDTO> data = filtered.subList(w.from(), w.to()).stream()
-                    .map(ArticuloResource::toListDTO).toList();
+            if (total == 0) {
+                data = List.of();
+            } else {
+                data = articulosService.pageByTab(t, q, sort, dir, w.from(), w.size()).stream()
+                        .map(ArticuloResource::toListDTO).toList();
+            }
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
             LOG.warn("Error listando artículos", e);
@@ -1491,25 +1495,27 @@ public class ArticuloResource {
         }
     }
 
-    /** Builds one tab's full model (filter → sort → slice → columns). */
+    /** Builds one tab's full model (count → page → columns; promotions stay in memory). */
     private TableModel buildTableModel(@Nonnull String tab, int page, int size,
                                        @Nullable String sort, @Nullable String dir,
                                        @Nullable String q) {
         boolean promociones = TAB_PROMOCIONES.equals(tab);
-        List<?> filtered;
+        long total;
+        Window w;
+        List<?> filas;
         if (promociones) {
-            List<Promocion> source = filterPromociones(orEmpty(promoService.listAll()), q);
-            sortPromociones(source, sort, dir);
-            filtered = source;
+            List<Promocion> filtered = filterPromociones(orEmpty(promoService.listAll()), q);
+            sortPromociones(filtered, sort, dir);
+            total = filtered.size();
+            w = windowOf(total, page, size);
+            filas = filtered.subList(w.from(), w.to());
         } else {
-            List<Articulos> source = filterArticulos(articulosOfTab(tab), q);
-            sortArticulos(source, sort, dir);
-            filtered = source;
+            total = articulosService.countByTab(tab, q);
+            w = windowOf(total, page, size);
+            filas = total == 0
+                    ? List.of()
+                    : articulosService.pageByTab(tab, q, sort, dir, w.from(), w.size());
         }
-
-        long total = filtered.size();
-        Window w = windowOf(total, page, size);
-        List<?> filas = filtered.subList(w.from(), w.to());
 
         // Column definitions mirror the legacy p:column sets per tab; null
         // key ⇒ non-sortable (docs/ui-kit.md §3.1).
@@ -1561,7 +1567,7 @@ public class ArticuloResource {
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
 
-    /** Clamped 1-based window over an in-memory result (Qute can't divide). */
+    /** Clamped 1-based window over the counted result (Qute can't divide). */
     private static Window windowOf(long total, int page, int size) {
         int s = Math.min(Math.max(size, 1), 100);
         int totalPages = (int) Math.max(1L, (total + s - 1) / s);
@@ -1695,7 +1701,7 @@ public class ArticuloResource {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Lookups, filtering, sorting (in-memory; Services layer untouched)
+    // Lookups and legacy in-memory filters (promotions/selectors)
     // ════════════════════════════════════════════════════════════════════
 
     @Nullable
@@ -1731,18 +1737,13 @@ public class ArticuloResource {
         return codigoBarra == null ? 0.0 : inventarioService.getStock(codigoBarra);
     }
 
-    private List<Articulos> articulosOfTab(@Nonnull String tab) {
-        return switch (tab) {
-            case TAB_INACTIVOS -> orEmpty(articulosService.listAllInactivos());
-            case TAB_CATALOGO -> orEmpty(articulosService.listAllActivosYProcesados());
-            case TAB_PENDIENTES -> orEmpty(articulosService.listAllSinProcesar());
-            default -> orEmpty(articulosService.ListAllEnabled());
-        };
-    }
-
     /**
      * Legacy {@code ArticulosController.globalFilterFunction} parity:
      * codigo | nombre | codigoBarra | departamento | familia | usuario.
+     *
+     * <p>Still used by the small result selectors (which cap at ten rows);
+     * the tab lists now count/page in SQL via
+     * {@link ArticulosService#pageByTab}.</p>
      */
     private static List<Articulos> filterArticulos(@Nonnull List<Articulos> source, @Nullable String q) {
         if (q == null || q.trim().isEmpty()) {
@@ -1785,32 +1786,6 @@ public class ArticuloResource {
 
     private static boolean matches(@Nullable String value, @Nonnull String needle) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
-    }
-
-    /** Typed comparator dispatch over a whitelisted key set (articles). */
-    private static void sortArticulos(@Nonnull List<Articulos> rows, @Nullable String sort,
-                                      @Nullable String dir) {
-        if (rows.isEmpty() || sort == null || sort.isBlank()) {
-            return;
-        }
-        Comparator<Articulos> cmp = switch (sort) {
-            case "codigo" -> Comparator.comparingLong(Articulos::getCodigo);
-            case "nombre" -> Comparator.comparing(Articulos::getNombre,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "codigoBarra" -> Comparator.comparing(Articulos::getCodigoBarra,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "cabys" -> Comparator.comparing(a -> a.getCodigoCabys() == null
-                    ? null : a.getCodigoCabys().getCodigo(),
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "precio" -> Comparator.comparing(a -> {
-                ArticuloPrecio p = a.getLastPrecio();
-                return p == null ? null : p.getPrecioFinal();
-            }, Comparator.nullsLast(Comparator.naturalOrder()));
-            default -> null;
-        };
-        if (cmp != null) {
-            rows.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
-        }
     }
 
     /** Typed comparator dispatch over a whitelisted key set (promotions). */
