@@ -12,8 +12,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import Models.DTO.ReportChartPayload;
+import Models.DTO.ReportChartSeries;
 import Models.Inventario;
 import Services.ShrinkageAnalysisService;
+import Utils.ReportChartJson;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
@@ -158,6 +161,18 @@ public class MermaResource {
         long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
+        // P2 Phase 2.1 contract: one typed payload, serialized once by the
+        // shared helper. The template keys its empty state off chartHasData and
+        // never concatenates labels or values into JavaScript.
+        ReportChartPayload chartPayload = new ReportChartPayload(
+                "datos-grafica-merma",
+                "bar",
+                "Merma",
+                chartLabels,
+                List.of(new ReportChartSeries("Merma", chartValues)),
+                false,
+                "Sin datos para el período");
+
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Control de Mermas y Pérdidas");
         model.put("baseUrl", BASE_URL);
@@ -173,8 +188,9 @@ public class MermaResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("seccion", vista);
-        model.put("chartLabels", chartLabels);
-        model.put("chartValues", chartValues);
+        model.put("chartPayload", chartPayload);
+        model.put("chartJson", ReportChartJson.toScriptJson(chartPayload));
+        model.put("chartHasData", !chartValues.isEmpty());
         model.put("chartTitle", chartTitle);
         model.put("hayDatos", movimientos != null && !movimientos.isEmpty());
         model.put("totalMerma", Tablas.fmtColones(totalMerma));

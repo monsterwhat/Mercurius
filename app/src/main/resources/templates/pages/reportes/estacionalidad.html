@@ -3,7 +3,8 @@
 
   Replaces secured/pages/Reportes/Estacionalidad/index.xhtml over
   SeasonalityService. The four legacy p:chart visualizations are ported as
-  Chart.js cards (window.MercuriusCharts, _kit/chart-card) above the exact
+  Chart.js cards (_kit/chart-card): each card gets its own server-emitted
+  ReportChartPayload and web/report-chart.js mounts it, above the exact
   figure tables.
 !}
 {#include layout}
@@ -46,25 +47,25 @@
         <div class="columns is-multiline mb-4">
             {#if mensual != null && !mensual.isEmpty()}
             <div class="column is-half">
-                {#include _kit/chart-card title="Tendencia Mensual de Ventas" canvasId="estacionalidad-mensual-chart" height="260px"}
+                {#include _kit/chart-card title="Tendencia Mensual de Ventas" canvasId="estacionalidad-mensual-chart" dataId="datos-estacionalidad-mensual-chart" chartJson=chartJsonMensual height="260px"}
         {/include}
             </div>
             {/if}
             {#if dias != null && !dias.isEmpty()}
             <div class="column is-half">
-                {#include _kit/chart-card title="Ventas por Día de la Semana" canvasId="estacionalidad-dias-chart" height="260px"}
+                {#include _kit/chart-card title="Ventas por Día de la Semana" canvasId="estacionalidad-dias-chart" dataId="datos-estacionalidad-dias-chart" chartJson=chartJsonDias height="260px"}
         {/include}
             </div>
             {/if}
             {#if departamentos != null && !departamentos.isEmpty()}
             <div class="column is-half">
-                {#include _kit/chart-card title="Ventas por Departamento" canvasId="estacionalidad-departamentos-chart" height="260px"}
+                {#include _kit/chart-card title="Ventas por Departamento" canvasId="estacionalidad-departamentos-chart" dataId="datos-estacionalidad-departamentos-chart" chartJson=chartJsonDepartamentos height="260px"}
         {/include}
             </div>
             {/if}
             {#if familias != null && !familias.isEmpty()}
             <div class="column is-half">
-                {#include _kit/chart-card title="Ventas por Familia" canvasId="estacionalidad-familias-chart" height="260px"}
+                {#include _kit/chart-card title="Ventas por Familia" canvasId="estacionalidad-familias-chart" dataId="datos-estacionalidad-familias-chart" chartJson=chartJsonFamilias height="260px"}
         {/include}
             </div>
             {/if}
@@ -165,52 +166,6 @@
         {/include}
             {/fragment}
         </div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-(function () {
-    if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') { return; }
-    // One hue for the data on all four charts: --mercurius-chart-series-1,
-    // resolved through resolveColour() because a canvas cannot paint var().
-    var rootStyle = getComputedStyle(document.documentElement);
-    var seriesOne = window.MercuriusCharts.resolveColour(
-        rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
-    var monthlyLabels = [{#for m in mensual}'{m.mes}',{/for}];
-    var monthlyValues = [{#for m in mensual}{m.total},{/for}];
-    var dayLabels = [{#for d in dias}'{d.dia}',{/for}];
-    var dayValues = [{#for d in dias}{d.total},{/for}];
-    var departmentLabels = [{#for d in departamentos}'{d.nombre}',{/for}];
-    var departmentValues = [{#for d in departamentos}{d.total},{/for}];
-    var familyLabels = [{#for f in familias}'{f.nombre}',{/for}];
-    var familyValues = [{#for f in familias}{f.total},{/for}];
-
-    window.MercuriusCharts.create('estacionalidad-mensual-chart', {
-        type: 'bar',
-        labels: monthlyLabels,
-        datasets: [{ label: 'Ventas', data: monthlyValues, backgroundColor: seriesOne }],
-        options: { plugins: { legend: { display: false } } }
-    });
-    window.MercuriusCharts.create('estacionalidad-dias-chart', {
-        type: 'bar',
-        labels: dayLabels,
-        datasets: [{ label: 'Ventas', data: dayValues, backgroundColor: seriesOne }],
-        options: { plugins: { legend: { display: false } } }
-    });
-    window.MercuriusCharts.create('estacionalidad-departamentos-chart', {
-        type: 'bar',
-        labels: departmentLabels,
-        datasets: [{ label: 'Ventas', data: departmentValues, backgroundColor: seriesOne }],
-        options: { plugins: { legend: { display: false } } }
-    });
-    window.MercuriusCharts.create('estacionalidad-familias-chart', {
-        type: 'bar',
-        labels: familyLabels,
-        datasets: [{ label: 'Ventas', data: familyValues, backgroundColor: seriesOne }],
-        options: { plugins: { legend: { display: false } } }
-    });
-})();
-
-});
-</script>
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">

@@ -8,12 +8,15 @@ import java.util.Map;
 
 import Models.Articulos.ArticuloStock;
 import Models.Articulos.Articulos;
+import Models.DTO.ReportChartPayload;
+import Models.DTO.ReportChartSeries;
 import Models.Departamento;
 import Models.Familia;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
+import Utils.ReportChartJson;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
@@ -161,6 +164,18 @@ public class ResumenResource {
             chartValues.add(entry.getValue());
         }
 
+        // P2 Phase 2.1 contract: one typed payload, serialized once by the
+        // shared helper. The template only carries the marker + JSON script tag;
+        // it never concatenates labels or values into JavaScript.
+        ReportChartPayload chartPayload = new ReportChartPayload(
+                "datos-grafica-resumen",
+                "bar",
+                "Stock Actual",
+                chartLabels,
+                List.of(new ReportChartSeries("Stock Actual", chartValues)),
+                false,
+                "Sin datos para el período");
+
         Tablas.ordenar(filas, sort, dir);
         long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
@@ -180,8 +195,8 @@ public class ResumenResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("vista", tipoVista);
-        model.put("chartLabels", chartLabels);
-        model.put("chartValues", chartValues);
+        model.put("chartPayload", chartPayload);
+        model.put("chartJson", ReportChartJson.toScriptJson(chartPayload));
         model.put("todosCount", articulosService.countActivos());
         model.put("ceroCount", ceroCount);
         model.put("negativoCount", negativoCount);

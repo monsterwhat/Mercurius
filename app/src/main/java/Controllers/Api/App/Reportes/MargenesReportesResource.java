@@ -29,9 +29,12 @@ import java.util.Objects;
 
 import Models.Familia;
 import Models.CorteMargen;
+import Models.DTO.ReportChartPayload;
+import Models.DTO.ReportChartSeries;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.ProfitAnalysisService;
+import Utils.ReportChartJson;
 
 /**
  * Read-only "Análisis de Márgenes de Utilidad" page
@@ -143,6 +146,18 @@ public class MargenesReportesResource {
             chartValues.add((BigDecimal) margen.get("ventas"));
         }
 
+        // P2 Phase 2.1 contract: one typed payload, serialized once by the
+        // shared helper. Replaces window.margenesChartData and its initializer;
+        // web/report-chart.js also re-mounts the card after each htmx swap.
+        ReportChartPayload chartPayload = new ReportChartPayload(
+                "datos-margenes-chart",
+                "bar",
+                "Ventas",
+                chartLabels,
+                List.of(new ReportChartSeries("Ventas", chartValues)),
+                false,
+                "Sin datos para el período");
+
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
         long total = filas.size();
@@ -175,8 +190,8 @@ public class MargenesReportesResource {
                 "filtroInicio", inicio == null ? "" : inicio,
                 "filtroFin", fin == null ? "" : fin,
                 "filtroDepartamento", departamento == null ? "" : departamento,
-                "chartLabels", chartLabels,
-                "chartValues", chartValues,
+                "chartPayload", chartPayload,
+                "chartJson", ReportChartJson.toScriptJson(chartPayload),
                 "filtroFamilia", familia == null ? "" : familia,
                 "seccion", seccion == null || seccion.isBlank() ? "resumen" : seccion,
                 "baseUrl", BASE_URL);

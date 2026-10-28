@@ -25,7 +25,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import Models.DTO.ReportChartPayload;
+import Models.DTO.ReportChartSeries;
 import Services.SeasonalityService;
+import Utils.ReportChartJson;
 
 /**
  * Read-only "Análisis de Estacionalidad" page
@@ -120,12 +123,30 @@ public class EstacionalidadReportesResource {
                     "total", row[1] != null ? row[1] : BigDecimal.ZERO));
         }
 
+        // P2 Phase 2.1 contract: four typed payloads, serialized once by the
+        // shared helper. The template only carries the markers + JSON script
+        // tags; it never concatenates labels or values into JavaScript.
+        ReportChartPayload payloadMensual = payload("datos-estacionalidad-mensual-chart", mensual, "mes");
+        ReportChartPayload payloadDias = payload("datos-estacionalidad-dias-chart", dias, "dia");
+        ReportChartPayload payloadDepartamentos =
+                payload("datos-estacionalidad-departamentos-chart", departamentos, "nombre");
+        ReportChartPayload payloadFamilias =
+                payload("datos-estacionalidad-familias-chart", familias, "nombre");
+
         Map<String, Object> model = ReportePageSupport.model(
                 "mensual", mensual,
                 "dias", dias,
                 "departamentos", departamentos,
                 "familias", familias,
                 "diarios", diarios,
+                "chartPayloadMensual", payloadMensual,
+                "chartPayloadDias", payloadDias,
+                "chartPayloadDepartamentos", payloadDepartamentos,
+                "chartPayloadFamilias", payloadFamilias,
+                "chartJsonMensual", ReportChartJson.toScriptJson(payloadMensual),
+                "chartJsonDias", ReportChartJson.toScriptJson(payloadDias),
+                "chartJsonDepartamentos", ReportChartJson.toScriptJson(payloadDepartamentos),
+                "chartJsonFamilias", ReportChartJson.toScriptJson(payloadFamilias),
                 "filtroInicio", start.toString(),
                 "filtroFin", end.toString(),
                 "filtros", ReportePageSupport.params("inicio", inicio, "fin", fin),
@@ -142,5 +163,38 @@ public class EstacionalidadReportesResource {
 
     private static LocalDate orFallback(@Nullable LocalDate parsed, @Nonnull LocalDate fallback) {
         return parsed != null ? parsed : fallback;
+    }
+
+    /**
+     * Build one single-series chart payload from an already-rendered figure
+     * list: {@code claveEtiqueta} names the category key, {@code total} the
+     * value. Labels keep the exact text of the table column beside the card.
+     *
+     * @param id            payload id, also the canvas'{@code data-report-chart}
+     * @param filas         rows already built for the page tables
+     * @param claveEtiqueta row key holding the category label
+     * @return the payload for {@code Utils.ReportChartJson#toScriptJson(Object)}
+     */
+    @Nonnull
+    private static ReportChartPayload payload(
+            @Nonnull String id,
+            @Nonnull List<Map<String, Object>> filas,
+            @Nonnull String claveEtiqueta) {
+        List<String> labels = new ArrayList<>();
+        List<BigDecimal> values = new ArrayList<>();
+        for (Map<String, Object> fila : filas) {
+            Object etiqueta = fila.get(claveEtiqueta);
+            labels.add(etiqueta != null ? String.valueOf(etiqueta) : "-");
+            Object total = fila.get("total");
+            values.add(total instanceof BigDecimal numero ? numero : BigDecimal.ZERO);
+        }
+        return new ReportChartPayload(
+                id,
+                "bar",
+                "Ventas",
+                labels,
+                List.of(new ReportChartSeries("Ventas", values)),
+                false,
+                "Sin datos para el período");
     }
 }

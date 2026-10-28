@@ -161,48 +161,11 @@
                     {/if}
                   {/rows}
                 {/include}
-                {#include _kit/chart-card title="Ventas por Departamento" canvasId="margenes-chart" height="300px"}
+                {#include _kit/chart-card title="Ventas por Departamento" canvasId="margenes-chart" dataId="datos-margenes-chart" chartJson=chartJson height="300px"}
         {/include}
-                <script>
-window.margenesChartData = {
-    labels: [{#for l in chartLabels}"{l}",{/for}],
-    values: [{#for v in chartValues}{v},{/for}]
-};
-                </script>
                 {/if}
             {/fragment}
         </div>
 
-        <script>
-document.addEventListener('DOMContentLoaded', function () {
-        (function () {
-            function renderMargenesChart() {
-                var data = window.margenesChartData;
-                if (!data) { return; }
-                if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
-                    // One hue for the data: --mercurius-chart-series-1, resolved
-                    // through resolveColour() because a canvas cannot paint var().
-                    var rootStyle = getComputedStyle(document.documentElement);
-                    var seriesOne = window.MercuriusCharts.resolveColour(
-                        rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
-                    window.MercuriusCharts.create('margenes-chart', {
-                        type: 'bar',
-                        labels: data.labels || [],
-                        datasets: [{ label: 'Ventas', data: data.values || [], backgroundColor: seriesOne }],
-                        // One series: the card title names it, so no legend.
-                        options: { plugins: { legend: { display: false } } }
-                    });
-                }
-            }
-            renderMargenesChart();
-            document.addEventListener('htmx:afterSwap', function (event) {
-                if (event.target && event.target.id === 'margenes-tabla-container') {
-                    renderMargenesChart();
-                }
-            });
-        })();
-        
-});
-</script>
     {/body}
 {/include}

@@ -80,33 +80,8 @@
 
         {#include pages/reportes/_tablas/resumen /}
 
-        {#include _kit/chart-card title="Stock por Familia" canvasId="grafica-resumen" height="320px"}
+        {#include _kit/chart-card title="Stock por Familia" canvasId="grafica-resumen" dataId="datos-grafica-resumen" chartJson=chartJson height="320px"}
         {/include}
-
-        <script>
-document.addEventListener('DOMContentLoaded', function () {
-        (function () {
-            var labels = [{#for l in chartLabels}'{l}',{/for}];
-            var values = [{#for v in chartValues}{v},{/for}];
-            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
-                // One hue for the data: the series colour comes from the
-                // --mercurius-chart-series-1 token (resolved through
-                // resolveColour(), because a canvas cannot paint var()).
-                var rootStyle = getComputedStyle(document.documentElement);
-                var seriesOne = window.MercuriusCharts.resolveColour(
-                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
-                window.MercuriusCharts.create('grafica-resumen', {
-                    type: 'bar',
-                    labels: labels,
-                    datasets: [{ label: 'Stock Actual', data: values, backgroundColor: seriesOne }],
-                    // One series: the card title names it, so no legend.
-                    options: { plugins: { legend: { display: false } } }
-                });
-            }
-        })();
-        
-});
-</script>
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
