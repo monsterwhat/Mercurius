@@ -696,6 +696,14 @@ both are currently protected by annotations only.
 > (157-181, 284-335) and `PublicApiJwtFilterRoutingTest` are the oracles. If ordering proves
 > unreliable on Quarkus 3.36, revert to enumeration and add the two missing prefixes instead.
 
+> **ATTEMPTED AND REJECTED (2026-10-28).** The wildcard pair was applied and the security suite
+> run. `RoutingComprehensiveTest.apiAppUnknownJson404` failed: an unknown `/api/app/...` path now
+> matched the secured policy and answered **302 to /login** instead of the JSON **404** that the
+> enumeration deliberately preserves (README: "así un `/api/app/desconocido` responde 404 JSON en
+> vez del redirect de login"). The wildcard is therefore **not** behavior-compatible; do not retry
+> it without first changing that pinned product contract. Keep the enumeration and add missing
+> prefixes explicitly when a new resource appears.
+
 ### 3.3 Classes to annotate (non-Mercatus)
 
 | Class | Path | Proposed gate | Why / risk |
