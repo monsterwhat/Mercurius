@@ -1,0 +1,95 @@
+# Load-test dataset (local 8091)
+
+Generated 2026-10-28 against the local `mercurius` database (PostgreSQL 5433).
+No production data was touched; every generator refuses non-local hosts unless
+`--force` and only accepts `mercurius` / `mercurius_test`.
+
+## Why synthetic first
+
+Real barcode sources were evaluated:
+
+| Source | Volume | Licence | Notes |
+|---|---|---|---|
+| Open Food Facts | 4M+ products | ODbL | JSONL ~8 GB / Parquet 7.95 GB, nightly |
+| USDA FoodData Central (Branded) | ~1M foods | public domain | CSV/JSON, `gtin_upc` |
+| Nudger GTIN (Kaggle) | tens of millions | CC BY 4.0 | 16.65 GB, account required |
+| OpenMRP (India) | community | ODbL | GitHub/API |
+| Datakick | 6.5k | CC0 | too small |
+
+`scripts/seed-products.py --source openfoodfacts` is available for real data;
+the default synthetic mode was used because it needs no 8–16 GB download and
+can be sized to any volume.
+
+## Generators (run in this order)
+
+1. `scripts/seed-products.py` — articles, prices, stock.
+2. `scripts/seed/clients_loyalty.py` — clients, activity, points.
+3. `scripts/seed/inventory_movements.py` — inventory, lotes, cash sessions.
+4. `scripts/seed/invoices.py` — emitted/received invoices and full graph.
+5. `scripts/seed/ops.py` — orders, promotions, CAByS, exchange rates, users,
+   scheduled reports.
+6. `scripts/seed/minor_tables.py` — credit notes, stock alerts, reorder,
+   offline queue, department metrics, forecast precision.
+
+Each writes CSV + `load.sql` (staging + `COPY` + `INSERT ... SELECT`), uses
+`max(id)+row_number()` for PKs, validates FKs, resynchronizes sequences and
+runs `ANALYZE`.
+
+## Volumes loaded
+
+| Table | Rows |
+|---|---:|
+| articulos | 252,008 |
+| articuloprecio | 252,008 |
+| articulostock | 252,000 |
+| clients | 105,000 |
+| clienteactividad | 300,000 |
+| puntos_transacciones | 315,000 |
+| inventario | 1,000,008 |
+| lotes | 50,000 |
+| cierrecaja | 20,000 |
+| comprobantesemitidos | 211,923 |
+| comprobantesrecibidos | 50,259 |
+| encabezado | 262,182 |
+| linea_detalle | 1,149,044 |
+| impuesto | 1,150,547 |
+| orden_compra | 100,000 |
+| orden_compra_detalle | 431,130 |
+| promocion | 20,000 |
+| cabys | 120,505 |
+| tipocambio | 7,307 |
+| users | 202 |
+| notacredito | 50,000 |
+| stock_alerts | 200,000 |
+| reorder_suggestions | 200,000 |
+| envio_fuera_linea | 100,000 |
+| departamentometrico | 200,000 |
+| precision_pronostico | 200,000 |
+| profit_margin_history | 699,167 |
+| profit_margin_snapshots | 60,280 |
+
+Database size: **1.54 GB**.
+
+## Performance results
+
+Fixed after the load exposed them:
+
+| Page | Before | After |
+|---|---:|---:|
+| Artículos (252k) | >25 s | 1.38 s |
+| Artículos API | >25 s | 0.23 s |
+| Estacionalidad (1M movs) | >25 s | 0.95 s |
+| Tributación (212k) | >25 s | SQL aggregates (counters 261 ms, series 41 ms) |
+| Resumen de inventario | >20 s | map lookup instead of O(n²) |
+| Facturas Recibidas (50k) | >25 s | SQL count/page |
+
+Already fast: dashboard 0.56 s, facturas emitidas 0.37 s, órdenes 0.33 s,
+precios 0.22 s, merma 0.46 s, rendimiento 1.43 s, correos 0.14 s, CAByS 0.04 s.
+
+## Known remaining hotspots
+
+- `pronosticos` (>20 s with 200k precision rows).
+- `etiquetas` (>20 s: materializes 252k articles to build labels).
+- `alertas` is being converted to SQL paging.
+
+These are the next candidates for the same treatment (count/page or streaming).
