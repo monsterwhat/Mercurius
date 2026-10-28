@@ -539,3 +539,4 @@ sessions/
 
 # tooling de opencode, no es parte del proyecto
 .opencode/package-lock.json
+scripts/seed/out/
