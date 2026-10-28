@@ -2,9 +2,8 @@
   pages/reportes/clientes - read-only "Reportes de Clientes" (T20).
 
   Replaces secured/pages/Clientes/Reportes/index.xhtml over ClientService
-  aggregates. The legacy dataExporter buttons have no T17 dataset yet
-  (ExportResource only ships articulos/inventario/stock-alerts/profit-margins)
-  — export wiring TODO once a clientes dataset lands in T17/T21.
+  aggregates. The legacy dataExporter buttons are wired to the shared export
+  endpoint (/api/app/export, dataset=clientes — see ExportResource).
 !}
 {#include layout}
     {#title}Reportes de Clientes | Mercurius{/title}

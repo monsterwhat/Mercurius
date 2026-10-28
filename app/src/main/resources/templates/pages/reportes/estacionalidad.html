@@ -2,9 +2,9 @@
   pages/reportes/estacionalidad - read-only "Análisis de Estacionalidad" (T20).
 
   Replaces secured/pages/Reportes/Estacionalidad/index.xhtml over
-  SeasonalityService. The four legacy p:chart visualizations are NOT ported:
-  Chart.js wiring is plan task T29 ("Estacionalidad charts if not done in
-  T20") — until then the same aggregates render as server-side tables.
+  SeasonalityService. The four legacy p:chart visualizations are ported as
+  Chart.js cards (window.MercuriusCharts, _kit/chart-card) above the exact
+  figure tables.
 !}
 {#include layout}
     {#title}Análisis de Estacionalidad | Mercurius{/title}
@@ -39,10 +39,6 @@
         {/include}
 
 
-
-        {! TODO(T29): replace these tables with Chart.js line/bar charts consuming
-           SeasonalityService JSON (monthly trend, day-of-week, department,
-           family) once chart infrastructure lands. !}
 
         {! A chart with no rows is not a chart: the card only renders when its
            list has data. An empty four-card grid was four 260px boxes of

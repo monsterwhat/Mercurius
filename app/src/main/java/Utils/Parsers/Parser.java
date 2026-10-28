@@ -639,8 +639,20 @@ public class Parser {
             Impuesto impuesto = new Impuesto();
             impuesto.setCodigo(codigo);
             impuesto.setCodigoTarifaIVA(codigoTarifa);
-            impuesto.setTarifa(new BigDecimal(tarifa.trim()));
-            impuesto.setMonto(new BigDecimal(monto.trim()));
+            BigDecimal tarifaValor = decimalOrNull(tarifa);
+            BigDecimal montoValor = decimalOrNull(monto);
+            if (tarifaValor == null || montoValor == null) {
+                // Real-world XMLs arrive with <Tarifa/> or <Monto/> empty.
+                // new BigDecimal("") threw an ArrayIndexOutOfBoundsException
+                // inside the old catch, printing a 20-line stack per line item.
+                // The outcome stays the same (no impuesto), without the noise.
+                LOG.warn("impuesto sin tarifa/monto numericos; se omite | codigo=" + codigo
+                        + " | tarifa=" + tarifa + " | monto=" + monto
+                        + " | source=Parser.parseImpuesto()");
+                return null;
+            }
+            impuesto.setTarifa(tarifaValor);
+            impuesto.setMonto(montoValor);
 
             String codigoImpuestoOtro = impuestoNode.path("CodigoImpuestoOtro").asText();
             if (codigoImpuestoOtro != null && !codigoImpuestoOtro.isEmpty()) {
@@ -676,6 +688,19 @@ public class Parser {
         } catch (RuntimeException e) {
             String articleName = impuestoNode.path("Detalle").asText("unknown");
             LOG.warn("failed to parse impuesto | source=Parser.parseImpuesto() | despues=" + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /** Blank or non-numeric decimal fields are absent, not a crash. */
+    @Nullable
+    private static BigDecimal decimalOrNull(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(raw.trim());
+        } catch (NumberFormatException e) {
             return null;
         }
     }

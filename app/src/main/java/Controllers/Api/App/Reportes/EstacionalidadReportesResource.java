@@ -37,10 +37,11 @@ import Services.SeasonalityService;
  * table — all rendered as server-side tables with the legacy date-range
  * defaults (last 12 months).</p>
  *
- * <p>{! TODO(T29): the four p:chart visualizations are intentionally NOT
- * ported yet; Chart.js wiring is plan task T29 ("Estacionalidad charts if not
- * done in T20"). Until then this page renders the same aggregates as tables.
- * !}</p>
+ * <p>The four legacy {@code p:chart} visualizations are ported as Chart.js
+ * cards over the same aggregates (monthly trend, day of week, department and
+ * family), rendered by {@code pages/reportes/estacionalidad.html} through the
+ * {@code _kit/chart-card} helper. The server-side tables stay below the charts
+ * because they carry the exact figures the charts only summarize.</p>
  *
  * <p>Role gate mirrors web.xml: Reportes/Estacionalidad sat under the generic
  * {@code /secured/*} any-authenticated constraint. Mutations: none.</p>

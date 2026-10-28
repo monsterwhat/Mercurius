@@ -23,6 +23,7 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
  * signed-in operator belongs on the dashboard instead of a dead page. The
  * /api/* branch keeps a real JSON 404 so API clients can distinguish
  * "no such resource" from a navigation.
+ * <p>No 404 template is rendered. This is the contract: do not add one without changing these javadoc, README.md, and RoutingComprehensiveTest.</p>
  */
 @Provider
 @jakarta.enterprise.context.ApplicationScoped

@@ -162,19 +162,14 @@ public class TipoCambioPageResource {
     @Path("/historial")
     @Operation(summary = "Recent tipo de cambio history for the modal body")
     public Response historial() {
-        List<TipoCambio> todos = tipoCambioService.listAll();
         List<Map<String, Object>> filas = new ArrayList<>();
-        if (todos != null) {
-            int desde = Math.max(0, todos.size() - HISTORIAL_LIMIT);
-            for (int i = todos.size() - 1; i >= desde; i--) {
-                TipoCambio tc = todos.get(i);
-                Map<String, Object> fila = new LinkedHashMap<>();
-                fila.put("fecha", fmtFecha(tc.getFecha()));
-                fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
-                fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
-                fila.put("origen", Boolean.TRUE.equals(tc.getManual()) ? "Manual" : "BCCR");
-                filas.add(fila);
-            }
+        for (TipoCambio tc : tipoCambioService.listUltimos(HISTORIAL_LIMIT)) {
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("fecha", fmtFecha(tc.getFecha()));
+            fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
+            fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
+            fila.put("origen", Boolean.TRUE.equals(tc.getManual()) ? "Manual" : "BCCR");
+            filas.add(fila);
         }
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("filas", filas);

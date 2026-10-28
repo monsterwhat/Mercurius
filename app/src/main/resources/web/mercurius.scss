@@ -1767,51 +1767,6 @@ button,
 }
 
 // =============================================================================
-// 34. Error page (404) — one centred state, not a bare title
-// =============================================================================
-.error-page {
-    margin: var(--mercurius-space-6) auto;
-    max-width: 34rem;
-    padding: 0 var(--mercurius-space-3);
-    text-align: center;
-}
-
-.error-page-code {
-    color: var(--mercurius-text-muted);
-    font-size: 3rem;
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    letter-spacing: -.02em;
-    line-height: 1;
-    margin-bottom: var(--mercurius-space-3);
-}
-
-.error-page-text {
-    color: var(--mercurius-text-muted);
-    margin: 0 auto var(--mercurius-space-3);
-    max-width: 32rem;
-}
-
-.error-page-path {
-    margin-bottom: var(--mercurius-space-5);
-    overflow-wrap: anywhere;
-}
-
-@media screen and (max-width: 480px) {
-    .error-page-code {
-        font-size: 2.5rem;
-    }
-
-    .error-page .buttons {
-        flex-direction: column;
-    }
-
-    .error-page .buttons .button {
-        width: 100%;
-    }
-}
-
-// =============================================================================
 // 35. Login — pre-auth surface (no navbar, no layout include)
 // =============================================================================
 // 100svh, not Bulma's 100vh: on a phone the URL bar is visible on first paint,

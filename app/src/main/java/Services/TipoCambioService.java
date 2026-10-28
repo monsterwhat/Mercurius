@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -187,6 +188,26 @@ public class TipoCambioService extends GService<TipoCambio> {
         TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.id DESC", TipoCambio.class);
         query.setMaxResults(1);
         return query.getResultList().stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Newest {@code limite} rates for the history modal, newest first.
+     *
+     * <p>The modal only shows 20 rows, but the resource used to load every
+     * stored rate (~3.6k) and slice the tail in memory. The ordering is now
+     * explicit in SQL instead of relying on insertion order.</p>
+     */
+    public @Nonnull List<TipoCambio> listUltimos(int limite) {
+        try {
+            TypedQuery<TipoCambio> query = em.createQuery(
+                    "SELECT t FROM TipoCambio t ORDER BY t.id DESC", TipoCambio.class);
+            query.setMaxResults(Math.max(limite, 1));
+            return query.getResultList();
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("Error listing recent tipo de cambio: " + e.getMessage()
+                    + " | source=TipoCambioService.listUltimos() | despues=" + e.getMessage());
+            return List.of();
+        }
     }
     
     public TipoCambio getNewestTipoCambioFallback() {
