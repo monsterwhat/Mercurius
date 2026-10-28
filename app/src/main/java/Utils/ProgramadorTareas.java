@@ -249,7 +249,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         // Skip unconfigured IMAP so the @CircuitBreaker is not tripped by repeated connect failures.
         if (correoElectronico == null || correoElectronico.isBlank()
                 || contrasenaCorreo == null || contrasenaCorreo.isBlank()) {
-            LOG.info("failed to revisar recibos en correos");
+            LOG.debug("IMAP no configurado; se omite la revisión de recibos en correos");
             return;
         }
         
@@ -257,20 +257,15 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
     }
     
     private void revisarRecibosEnCorreosFallback() {
-        LOG.warn("failed to revisar recibos en correos fallback");
+        LOG.warn("revisión de recibos en correos no disponible; se reintentará en el próximo ciclo");
     }
     
     public void handleEmailProcess(@Nonnull String emailResult) {
-    // Log the result of the email processing
-    LOG.info("failed to handle email process");
-
         if (emailResult.startsWith("Processing completed")) {
-            LOG.info("failed to handle email process");
+            LOG.info("revisión de recibos en correos completada");
         } else {
-            // If there was an error, handle it appropriately
-            LOG.warn("failed to handle email process");
+            LOG.warn("revisión de recibos en correos con incidencias | resultado=" + emailResult);
         }
-    
     }
 
     @Scheduled(cron = "0 */30 * * * ?")
