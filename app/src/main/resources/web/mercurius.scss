@@ -1009,6 +1009,11 @@ input[type="file"]::file-selector-button:hover {
 // =============================================================================
 .button {
     box-shadow: none;
+    // Bulma renders the icon and the label as separate flex items; without a
+    // gap the glyph sits directly against the first letter ("Abrir Sesión"
+    // looked like the lock was printed on the A). Icon-only buttons have one
+    // item, so this changes nothing for them.
+    gap: .35em;
 }
 
 // Bulma's default button variables are the SCHEME colours, not the text

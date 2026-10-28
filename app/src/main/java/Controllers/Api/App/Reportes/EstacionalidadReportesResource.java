@@ -103,8 +103,17 @@ public class EstacionalidadReportesResource {
 
         List<Map<String, Object>> diarios = new ArrayList<>();
         for (Object[] row : seasonalityService.getDailySales(startDate, endDate)) {
+            // java.sql.Date.toInstant() throws UnsupportedOperationException;
+            // Qute's time:format would therefore turn the whole page into a
+            // 500. Convert the JDBC date to LocalDate first.
+            Object fecha = row[0];
+            if (fecha instanceof java.sql.Date sqlDate) {
+                fecha = sqlDate.toLocalDate();
+            } else if (fecha instanceof java.util.Date utilDate) {
+                fecha = utilDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
             diarios.add(Map.of(
-                    "fecha", row[0],
+                    "fecha", fecha,
                     "total", row[1] != null ? row[1] : BigDecimal.ZERO));
         }
 

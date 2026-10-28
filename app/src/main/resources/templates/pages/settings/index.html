@@ -147,7 +147,7 @@
             <span class="status-chip {#if settings.estatus}is-success{#else}is-neutral{/if}">
                 {#if settings.estatus}Activo{#else}Inactivo{/if}</span>
             <p class="is-size-7 mercurius-text-muted">Progreso del asistente</p>
-            <p>Paso {settings.completedSteps} de 5</p>
+            <p>Paso <span x-text="paso + 1">1</span> de 5</p>
         </div>
 
         <div x-show="paso === 1" style="display: none;" role="region" aria-label="Paso 2: Logo">
