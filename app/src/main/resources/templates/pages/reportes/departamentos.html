@@ -43,33 +43,8 @@
 
         {#include pages/reportes/_tablas/departamentos /}
 
-        {#include _kit/chart-card title="Ventas por Departamento" subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-departamentos" height="360px"}
+        {#include _kit/chart-card title="Ventas por Departamento" subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-departamentos" dataId="datos-grafica-departamentos" chartJson=chartJson height="360px"}
         {/include}
-
-        <script>
-document.addEventListener('DOMContentLoaded', function () {
-        (function () {
-            var labels = [{#for l in chartLabels}'{l}',{/for}];
-            var values = [{#for v in chartValues}{v},{/for}];
-            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
-                // One hue for the data: the series colour comes from
-                // --mercurius-chart-series-1 instead of a second hard-coded
-                // blue that ignored the colour scheme.
-                var rootStyle = getComputedStyle(document.documentElement);
-                var seriesOne = window.MercuriusCharts.resolveColour(
-                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
-                window.MercuriusCharts.create('grafica-departamentos', {
-                    type: 'bar',
-                    labels: labels,
-                    datasets: [{ label: 'Ventas', data: values, backgroundColor: seriesOne }],
-                    // One series: the card title names it, so no legend.
-                    options: { plugins: { legend: { display: false } } }
-                });
-            }
-        })();
-        
-});
-</script>
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">

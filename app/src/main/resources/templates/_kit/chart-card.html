@@ -21,6 +21,13 @@
                        {#body} is given, a <canvas> is rendered for you.
     height   String - OPTIONAL. Explicit CSS length, overrides `size`
                        (e.g. "360px"). Escape hatch, prefer `size`.
+    dataId   String - OPTIONAL. Id of the JSON payload. Emits
+                       `data-report-chart="{dataId}"` on the canvas; it must
+                       match ReportChartPayload.id.
+    chartJson String - OPTIONAL. Already-serialized payload (Utils.ReportChartJson
+                       .toScriptJson). Emits the
+                       `<script type="application/json" id="{dataId}">` right
+                       after the card. Never build this string in the template.
 
   SLOTS
     {#actions} - header controls (a range selector, an export button).
@@ -28,10 +35,15 @@
                   state, or a server-rendered fallback table.
 
   INITIALISING FROM THE PAGE SCRIPT
-  The bundle publishes a factory with the shared defaults already applied
-  (web/chart-config.js -> window.MercuriusCharts). Pages supply labels,
-  datasets, type and an optional options override - never fonts, grid colours,
-  tooltips or locale:
+  Do NOT add a page script for a report chart. Emit the payload with
+  `dataId` + `chartJson`; web/report-chart.js mounts every
+  `[data-report-chart]` canvas on load and re-mounts it after an htmx swap.
+
+  The legacy escape hatch is still available for a page that genuinely owns its
+  data (dashboard). The bundle publishes a factory with the shared defaults
+  already applied (web/chart-config.js -> window.MercuriusCharts). Pages supply
+  labels, datasets, type and an optional options override - never fonts, grid
+  colours, tooltips or locale:
 
       const c = MercuriusCharts.create('grafica-ventas-hora', {
           type: 'bar',
@@ -67,10 +79,13 @@
     <div class="chart-body">
         {#insert chartBody}
             {#if canvasId??}
-            <canvas id="{canvasId}" role="img" aria-label="{title}">
+            <canvas id="{canvasId}"{#if dataId??} data-report-chart="{dataId}"{/if} role="img" aria-label="{title}">
                 Su navegador no soporta canvas.
             </canvas>
             {/if}
         {/insert}
     </div>
 </figure>
+{#if canvasId?? && dataId?? && chartJson??}
+<script type="application/json" id="{dataId}">{chartJson.raw}</script>
+{/if}

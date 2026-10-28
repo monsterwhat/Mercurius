@@ -12,6 +12,12 @@ import './index.scss';
 import './mercurius.scss';
 import { installIconHydration } from './icons.js';
 import { applyChartDefaults, Chart, create as createChart, destroyAll as destroyCharts, resolveColour, currency, number, date } from './chart-config.js';
+// P2 Phase 2: the shared chart bootstrap (reads the server payload and mounts /
+// re-mounts charts). A static import is hoisted above the
+// `window.MercuriusCharts = ...` assignment below no matter where it is
+// written, so the module deliberately reads nothing at import time: its first
+// mount is deferred until after boot() has applied the chart defaults.
+import './report-chart.js';
 
 // chart.js is a provided-scope org.mvnpm dependency resolvable ONLY at build
 // time inside bundle entries, so Qute pages cannot import it directly.

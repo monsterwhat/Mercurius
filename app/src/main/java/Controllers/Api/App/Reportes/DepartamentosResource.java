@@ -8,8 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import Models.DTO.ReportChartPayload;
+import Models.DTO.ReportChartSeries;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.InventarioService;
+import Utils.ReportChartJson;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
@@ -120,6 +123,18 @@ public class DepartamentosResource {
         long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
+        // P2 Phase 2.1 contract: one typed payload, serialized once by the
+        // shared helper. The template only carries the marker + JSON script tag;
+        // it never concatenates labels or values into JavaScript.
+        ReportChartPayload chartPayload = new ReportChartPayload(
+                "datos-grafica-departamentos",
+                "bar",
+                "Ventas",
+                chartLabels,
+                List.of(new ReportChartSeries("Ventas", chartValues)),
+                false,
+                "Sin datos para el período");
+
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Reporte de Ventas por Departamento");
         model.put("baseUrl", BASE_URL);
@@ -135,8 +150,8 @@ public class DepartamentosResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("consultaCompleta", consultaCompleta);
-        model.put("chartLabels", chartLabels);
-        model.put("chartValues", chartValues);
+        model.put("chartPayload", chartPayload);
+        model.put("chartJson", ReportChartJson.toScriptJson(chartPayload));
         model.put("totalGeneral", total != null ? Tablas.fmtNumero(total) : null);
 
         boolean fragmento = headers.getHeaderString("HX-Request") != null;
