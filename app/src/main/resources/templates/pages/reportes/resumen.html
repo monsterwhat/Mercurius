@@ -84,6 +84,7 @@
         {/include}
 
         <script>
+document.addEventListener('DOMContentLoaded', function () {
         (function () {
             var labels = [{#for l in chartLabels}'{l}',{/for}];
             var values = [{#for v in chartValues}{v},{/for}];
@@ -103,7 +104,9 @@
                 });
             }
         })();
-        </script>
+        
+});
+</script>
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">

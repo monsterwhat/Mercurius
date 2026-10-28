@@ -170,6 +170,7 @@
             {/fragment}
         </div>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
 (function () {
     if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') { return; }
     // One hue for the data on all four charts: --mercurius-chart-series-1,
@@ -211,6 +212,8 @@
         options: { plugins: { legend: { display: false } } }
     });
 })();
+
+});
 </script>
 
         <div class="buttons mt-4">

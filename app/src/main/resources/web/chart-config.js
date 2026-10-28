@@ -194,15 +194,11 @@ function withScaleDefaults(options) {
 const registry = new Map();
 
 /**
- * A chart's values are the data, and ZERO IS A VALUE.
- *
- * The previous version treated every all-zero series as "no data" and hid the
- * canvas, so a day with confirmed zero sales looked like a broken query and
- * the operator could not tell "nothing happened" from "the report failed".
- * The honest treatment is the one the app already uses for a money column:
- * zero is printed as 0. An all-zero series now draws its flat zero line; only a
- * series with no numeric sample at all (empty array, or every point null) is an
- * empty state.
+ * A chart with no numeric samples has nothing to draw. Zero is a real value
+ * when it sits next to a non-zero sample (the flat zero line is meaningful),
+ * but an all-zero series would otherwise create a 0-1.0 axis with no visible
+ * mark: it reads as a broken chart. An all-zero series therefore uses the
+ * empty state; a mixed series keeps its real zero points.
  */
 function numericValue(value) {
     if (value === null || value === undefined || value === '') {
@@ -223,11 +219,18 @@ function numericValue(value) {
 }
 
 function hasData(config) {
-    return (config.datasets || []).some(function (dataset) {
-        return (dataset.data || []).some(function (value) {
-            return numericValue(value) !== null;
-        });
-    });
+    const datasets = config.datasets
+        || (config.data && config.data.datasets)
+        || [];
+    for (const dataset of datasets) {
+        for (const value of (dataset.data || [])) {
+            const n = numericValue(value);
+            if (n !== null && n !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /**
@@ -295,10 +298,26 @@ export function create(canvasId, config) {
         return null;
     }
 
-    const spec = Object.assign({}, config, { options: withScaleDefaults(config.options) });
-    // emptyLabel is our copy, not a Chart.js option; handing an unknown key to
-    // the constructor is noise at best.
+    // Chart.js expects the payload under config.data. Every page passes the
+    // convenient flat form ({ type, labels, datasets }); wrapping it here keeps
+    // that API and fixes the old bug where Chart.js ignored the flat fields and
+    // drew empty datasets (0-1.0 axes on every chart).
+    const data = config.data ? Object.assign({}, config.data) : {};
+    if (data.labels === undefined) {
+        data.labels = config.labels || [];
+    }
+    if (data.datasets === undefined) {
+        data.datasets = config.datasets || [];
+    }
+    const spec = Object.assign({}, config, {
+        data,
+        options: withScaleDefaults(config.options)
+    });
+    // emptyLabel is our copy, not a Chart.js option; the flat labels/datasets
+    // are now inside data.
     delete spec.emptyLabel;
+    delete spec.labels;
+    delete spec.datasets;
     const chart = new Chart(context, spec);
     registry.set(canvasId, chart);
     return chart;

@@ -92,6 +92,7 @@
         <p class="help mt-2" id="grafica-tendencias-estado" role="status" aria-live="polite">Cargando datos…</p>
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
 (function () {
     var canvas = document.getElementById('grafica-tendencias');
     if (!canvas) { return; }
@@ -148,6 +149,8 @@
             }
         });
 })();
+
+});
 </script>
     {/body}
 {/include}
