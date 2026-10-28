@@ -194,7 +194,15 @@ public abstract class GService<T> implements Serializable{
     @Transactional(TxType.SUPPORTS)
     public @Nullable T find(@Nonnull Object id) {
         try {
-            try { em.flush(); } catch (Exception ignore) {}
+            try {
+                em.flush();
+            } catch (Exception flushError) {
+                // find() tolerates a pending flush failure, but hiding it turns
+                // "your last change never reached the DB" into a silent state.
+                LOG.warn("No se pudo vaciar el contexto antes de find(" + id + "): "
+                        + flushError.getMessage()
+                        + " | source=GService.find() | despues=" + flushError.getMessage());
+            }
             em.clear();
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {

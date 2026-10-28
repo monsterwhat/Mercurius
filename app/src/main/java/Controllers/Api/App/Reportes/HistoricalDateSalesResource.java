@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import Models.Articulos.Articulos;
 import Services.ArticulosService;
 import Services.SalesTrendService;
 import io.quarkus.qute.Location;
@@ -67,24 +66,26 @@ public class HistoricalDateSalesResource {
 
         Set<String> selectedItems = new LinkedHashSet<>(items != null ? items : List.of());
 
-        List<String> allProductos = new ArrayList<>();
+        Set<String> productosSet = new LinkedHashSet<>();
         Set<String> allFamilias = new TreeSet<>();
         Set<String> allDepartamentos = new TreeSet<>();
-        List<Articulos> todosArticulos = articulosService.listAll();
-        if (todosArticulos == null) todosArticulos = List.of();
-        for (Articulos a : todosArticulos) {
-            if (a.getNombre() != null && !a.getNombre().isBlank() && !allProductos.contains(a.getNombre().trim())) {
-                allProductos.add(a.getNombre().trim());
+        // Projection, not entity hydration: this report only needs the distinct
+        // option labels, and 6k article rows per request was pure overhead.
+        for (Object[] row : articulosService.listReporteFilterOptions()) {
+            String nombre = blankToNull(row.length > 0 ? row[0] : null);
+            if (nombre != null) {
+                productosSet.add(nombre);
             }
-            if (a.getFamilia() != null && a.getFamilia().getNombre() != null
-                    && !a.getFamilia().getNombre().isBlank()) {
-                allFamilias.add(a.getFamilia().getNombre().trim());
+            String familia = blankToNull(row.length > 1 ? row[1] : null);
+            if (familia != null) {
+                allFamilias.add(familia);
             }
-            if (a.getDepartamento() != null && a.getDepartamento().getNombre() != null
-                    && !a.getDepartamento().getNombre().isBlank()) {
-                allDepartamentos.add(a.getDepartamento().getNombre().trim());
+            String departamento = blankToNull(row.length > 2 ? row[2] : null);
+            if (departamento != null) {
+                allDepartamentos.add(departamento);
             }
         }
+        List<String> allProductos = new ArrayList<>(productosSet);
         allProductos.sort(String.CASE_INSENSITIVE_ORDER);
 
         List<String> opciones;
@@ -151,5 +152,14 @@ public class HistoricalDateSalesResource {
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
+    }
+
+    /** Trims a projection column and maps blank/null to null. */
+    private static @Nullable String blankToNull(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString().trim();
+        return text.isEmpty() ? null : text;
     }
 }

@@ -3,6 +3,7 @@ package Controllers.Api.App.Reportes;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import Models.Articulos.ArticuloPrecio;
@@ -29,8 +30,10 @@ import jakarta.ws.rs.core.Response;
  * {@code secured/pages/Inventario/Precios/index.xhtml}
  * (plan task T19, read-only).
  *
- * <p>Backed DIRECTLY by {@link ArticuloPrecioService#listAll()} — the same
- * listing the legacy {@code ArticulosPrecioController.getFilteredPrecios()}
+ * <p>Backed by {@link ArticuloPrecioService#findReportePage(String, String, boolean, int, int)}
+ * with the filter, sort and page pushed into SQL: the history holds 16k+ rows
+ * and only the visible page is hydrated. The same listing the legacy
+ * {@code ArticulosPrecioController.getFilteredPrecios()}
  * rendered (the legacy controller's price-edit mutation is NOT ported here;
  * it belongs to the Articulos module wave). The legacy client-side global
  * filter becomes the {@code q} query param with legacy filter parity
@@ -68,45 +71,48 @@ public class PreciosResource {
         Map<String, String> filtros = new LinkedHashMap<>();
         filtros.put("q", q);
 
-        List<ArticuloPrecio> precios = precioService.listAll();
-        String filtro = q != null ? q.trim().toLowerCase() : null;
+        String filtro = (q == null || q.isBlank())
+                ? null
+                : "%" + q.trim().toLowerCase(Locale.ROOT) + "%";
+
+        int current = ReportePageSupport.clampPage(page);
+        int pageSize = ReportePageSupport.clampSize(size);
+        long totalFilas = precioService.countReporte(filtro);
+        int totalPages = ReportePageSupport.totalPages(totalFilas, pageSize);
+
+        // Filter/sort/page in SQL: the history holds 16k+ rows and the old
+        // code hydrated all of them for every request just to show 15.
+        List<ArticuloPrecio> precios = precioService.findReportePage(
+                filtro, sort, !ReportePageSupport.isDescending(dir),
+                (current - 1) * pageSize, pageSize);
 
         List<Map<String, Object>> filas = new ArrayList<>();
-        if (precios != null) {
-            for (ArticuloPrecio precio : precios) {
-                if (filtro != null && !filtro.isEmpty() && !coincide(precio, filtro)) {
-                    continue;
-                }
-                filas.add(Tablas.fila(
-                        "articulo", precio.getArticulo() != null
-                                ? precio.getArticulo().getNombre() : "-",
-                        "porcentajeUtilidad", Tablas.fmtNumero(precio.getPorcentajeUtilidad()),
-                        "precioCostoSinIVA", Tablas.fmtColones(precio.getPrecioCostoSinIVA()),
-                        "precioConUtilidad", Tablas.fmtColones(precio.getPrecioConUtilidad()),
-                        "precioFinal", Tablas.fmtColones(precio.getPrecioFinal()),
-                        "fechaCompra", Tablas.fmtFecha(precio.getFechaCompra()),
-                        "usuario", precio.getUsuario() != null
-                                && precio.getUsuario().getUsername() != null
-                                ? precio.getUsuario().getUsername() : "-"));
-            }
+        for (ArticuloPrecio precio : precios) {
+            filas.add(Tablas.fila(
+                    "articulo", precio.getArticulo() != null
+                            ? precio.getArticulo().getNombre() : "-",
+                    "porcentajeUtilidad", Tablas.fmtNumero(precio.getPorcentajeUtilidad()),
+                    "precioCostoSinIVA", Tablas.fmtColones(precio.getPrecioCostoSinIVA()),
+                    "precioConUtilidad", Tablas.fmtColones(precio.getPrecioConUtilidad()),
+                    "precioFinal", Tablas.fmtColones(precio.getPrecioFinal()),
+                    "fechaCompra", Tablas.fmtFecha(precio.getFechaCompra()),
+                    "usuario", precio.getUsuario() != null
+                            && precio.getUsuario().getUsername() != null
+                            ? precio.getUsuario().getUsername() : "-"));
         }
-
-        Tablas.ordenar(filas, sort, dir);
-        long totalFilas = filas.size();
-        int totalPages = Tablas.totalPaginas(totalFilas, size);
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Hist\u00f3rico de Precios");
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas());
-        model.put("filas", Tablas.paginaDe(filas, page, size));
+        model.put("filas", filas);
         model.put("sortKey", sort);
         model.put("sortDir", dir);
-        model.put("page", Math.max(page, 1));
-        model.put("size", size);
+        model.put("page", current);
+        model.put("size", pageSize);
         model.put("total", totalFilas);
         model.put("totalPages", totalPages);
-        model.put("pages", Tablas.ventanaPaginas(page, totalPages));
+        model.put("pages", Tablas.ventanaPaginas(current, totalPages));
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
 
@@ -116,33 +122,6 @@ public class PreciosResource {
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
-    }
-
-    /** Legacy globalFilterFunction parity. */
-    private static boolean coincide(@Nonnull ArticuloPrecio precio, @Nonnull String filtro) {
-        String articulo = precio.getArticulo() != null
-                && precio.getArticulo().getNombre() != null
-                ? precio.getArticulo().getNombre().toLowerCase() : "";
-        String barra = precio.getArticulo() != null
-                && precio.getArticulo().getCodigoBarra() != null
-                ? precio.getArticulo().getCodigoBarra().toLowerCase() : "";
-        String departamento = precio.getArticulo() != null
-                && precio.getArticulo().getDepartamento() != null
-                && precio.getArticulo().getDepartamento().getNombre() != null
-                ? precio.getArticulo().getDepartamento().getNombre().toLowerCase() : "";
-        String familia = precio.getArticulo() != null
-                && precio.getArticulo().getFamilia() != null
-                && precio.getArticulo().getFamilia().getNombre() != null
-                ? precio.getArticulo().getFamilia().getNombre().toLowerCase() : "";
-        String usuario = precio.getUsuario() != null
-                && precio.getUsuario().getUsername() != null
-                ? precio.getUsuario().getUsername().toLowerCase() : "";
-        return String.valueOf(precio.getId()).contains(filtro)
-                || articulo.contains(filtro)
-                || barra.contains(filtro)
-                || departamento.contains(filtro)
-                || familia.contains(filtro)
-                || usuario.contains(filtro);
     }
 
     @Nonnull

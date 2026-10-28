@@ -256,4 +256,31 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
 
+    /**
+     * Filter-picker projection for the report pages: article name, family and
+     * department, without hydrating the entity graph.
+     *
+     * <p>The histórico-de-ventas report used to call {@link #listAll()} just to
+     * build three option lists: 6k entities (plus their to-one relations) per
+     * request for a few hundred distinct strings. This projection returns the
+     * same three columns and lets the caller deduplicate in a set.</p>
+     *
+     * @return rows of {@code [nombre, familiaNombre, departamentoNombre]},
+     *         never null; a failed query returns an empty list (logged)
+     */
+    @SuppressWarnings("unchecked")
+    public @Nonnull List<Object[]> listReporteFilterOptions() {
+        try {
+            return em.createQuery(
+                    "SELECT a.nombre, f.nombre, d.nombre FROM Articulos a"
+                    + " LEFT JOIN a.familia f"
+                    + " LEFT JOIN a.departamento d")
+                    .getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing report filter options: " + e.getLocalizedMessage()
+                    + " | source=ArticulosService.listReporteFilterOptions() | despues=" + e.getMessage());
+            return List.of();
+        }
+    }
+
 }

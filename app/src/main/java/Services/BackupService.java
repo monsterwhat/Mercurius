@@ -112,7 +112,15 @@ public class BackupService implements Serializable {
                 return true;
             } else {
                                 LOG.warn("pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-                try { Files.deleteIfExists(outputFile); } catch (IOException ignored) {}
+                try {
+                    Files.deleteIfExists(outputFile);
+                } catch (IOException deleteError) {
+                    // A failed delete must not pass for a clean failure: the
+                    // partial dump would stay on disk and look like a backup.
+                    LOG.warn("No se pudo borrar el backup parcial " + outputFile
+                            + ": " + deleteError.getMessage()
+                            + " | source=BackupService.ejecutarBackup() | despues=" + deleteError.getMessage());
+                }
                 return false;
             }
 

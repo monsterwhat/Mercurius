@@ -38,7 +38,13 @@ public class DbSessionKeyConfigSource implements ConfigSource {
         String pass = resolvePass();
         if (url == null || user == null) return null;
         try {
-            try { Class.forName("org.postgresql.Driver"); } catch (ClassNotFoundException ignored) {}
+            try {
+                Class.forName("org.postgresql.Driver");
+            } catch (ClassNotFoundException driverMissing) {
+                // DriverManager still resolves the driver through the service
+                // loader; log why the eager load was skipped instead of hiding it.
+                LOG.debug("Driver PostgreSQL no precargado: " + driverMissing.getMessage());
+            }
             try (Connection c = DriverManager.getConnection(url, user, pass)) {
                 try (PreparedStatement ps = c.prepareStatement(
                         "SELECT auth_session_key FROM appsettings WHERE estatus = true AND auth_session_key IS NOT NULL AND auth_session_key <> '' LIMIT 1")) {

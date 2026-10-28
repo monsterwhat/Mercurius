@@ -17,9 +17,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import Models.ComprobantesEmitidos;
@@ -108,55 +106,6 @@ public class FacturasReportesResource {
                 Map.of("label", "Condicion Venta", "key", "condicion"),
                 Map.of("label", "Estado Hacienda", "key", "estado"),
                 Map.of("label", "Total", "key", "total"));
-    }
-
-    /**
-     * Mirrors the legacy globalFilterFunction field coverage that is safe to
-     * evaluate on fetched entities: consecutivo, condicionVenta, emisor name,
-     * emision date and hacienda estado.
-     */
-    private static @Nonnull List<ComprobantesEmitidos> filterAndSort(
-            @Nonnull List<ComprobantesEmitidos> all,
-            @Nullable String sort, @Nullable String dir, @Nullable String q) {
-
-        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
-        List<ComprobantesEmitidos> result = new ArrayList<>();
-        for (ComprobantesEmitidos f : all) {
-            if (needle.isEmpty() || matches(f, needle)) {
-                result.add(f);
-            }
-        }
-
-        boolean ascending = !ReportePageSupport.isDescending(dir);
-        Comparator<ComprobantesEmitidos> comparator = switch (sort == null ? "" : sort) {
-            case "consecutivo" -> ReportePageSupport.sortBy(f -> encabezado(f) == null ? null : encabezado(f).getNumeroConsecutivo(), ascending);
-            case "fecha" -> ReportePageSupport.sortBy(f -> encabezado(f) == null ? null : encabezado(f).getFechaEmision(), ascending);
-            case "emisor" -> ReportePageSupport.sortBy(ComprobantesEmitidos::getUser, ascending);
-            case "condicion" -> ReportePageSupport.sortBy(f -> encabezado(f) == null ? null : encabezado(f).getCondicionVenta(), ascending);
-            case "estado" -> ReportePageSupport.sortBy(ComprobantesEmitidos::getHaciendaEstado, ascending);
-            case "total" -> ReportePageSupport.sortBy(f -> f.getResumen() == null ? null : f.getResumen().getTotalComprobante(), ascending);
-            default -> null;
-        };
-        if (comparator != null) {
-            result.sort(comparator);
-        }
-        return result;
-    }
-
-    private static boolean matches(@Nonnull ComprobantesEmitidos f, @Nonnull String needle) {
-        String consecutivo = encabezado(f) == null ? null : encabezado(f).getNumeroConsecutivo();
-        String condicion = encabezado(f) == null ? null : encabezado(f).getCondicionVenta();
-        String emisorNombre = encabezado(f) != null && encabezado(f).getEmisor() != null
-                ? encabezado(f).getEmisor().getNombre() : null;
-        String fecha = encabezado(f) == null || encabezado(f).getFechaEmision() == null
-                ? null : encabezado(f).getFechaEmision().toString();
-        return contains(consecutivo, needle) || contains(condicion, needle)
-                || contains(emisorNombre, needle) || contains(fecha, needle)
-                || contains(f.getHaciendaEstado(), needle) || contains(f.getUser(), needle);
-    }
-
-    private static @Nullable Models.Encabezado.Encabezado encabezado(@Nonnull ComprobantesEmitidos f) {
-        return f.getEncabezado();
     }
 
     private static @Nonnull List<ComprobantesEmitidos> orEmpty(@Nullable List<ComprobantesEmitidos> list) {
