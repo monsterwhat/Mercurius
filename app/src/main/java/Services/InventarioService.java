@@ -507,9 +507,10 @@ public class InventarioService extends GService<Inventario> {
                 + "FROM inventario i "
                 + "JOIN articulos a ON a.codigo = i.articulo_codigo "
                 + "JOIN " + tabla + " g ON g.id = a." + columna + " "
-                + "JOIN LATERAL (SELECT ap.precio_final FROM articuloprecio ap "
-                + "              WHERE ap.articulo_id = a.codigo AND ap.fechacompra <= i.fechamovimiento "
-                + "              ORDER BY ap.fechacompra DESC LIMIT 1) p ON true "
+                + "JOIN (SELECT DISTINCT ON (ap.articulo_id) ap.articulo_id, ap.precio_final "
+                + "        FROM articuloprecio ap "
+                + "       ORDER BY ap.articulo_id, ap.fechacompra DESC NULLS LAST, ap.id DESC) p "
+                + "  ON p.articulo_id = a.codigo "
                 + "WHERE i.tipomovimiento = 'Venta' "
                 + "AND i.fechamovimiento BETWEEN :startDate AND :endDate "
                 + "GROUP BY g.nombre";
