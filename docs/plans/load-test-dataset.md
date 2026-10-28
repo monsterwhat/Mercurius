@@ -89,11 +89,10 @@ precios 0.22 s, merma 0.46 s, rendimiento 1.43 s, correos 0.14 s, CAByS 0.04 s.
 
 ## Known remaining hotspots
 
-- `pronosticos` (>20 s): `gruposPorArticulo()` loads all 252k articles and
+- `pronosticos` (>30 s): `gruposPorArticulo()` loads all 252k articles and
   `generateBulkForecast` runs over the whole catalog. Fixing this needs a
   product decision (forecast only articles with sales/stock, or paginate).
-- `etiquetas` (>20 s): materializes 252k articles to build labels.
-- `alertas` was converted to SQL paging (see below).
+- All other pages measured in the final sweep are ≤2.5 s.
 
 ## Full re-check (51 routes, seeded DB)
 
@@ -109,17 +108,26 @@ Slow at the time of the sweep, then fixed:
 | `/api/app/facturas-recibidas/tabla` | >25 s | 0.41 s |
 | `/app/tributacion` | >25 s | 0.85 s |
 
-Found in the sweep and being fixed:
+Found in the sweep, now fixed:
+
+| Route | Before | After |
+|---|---:|---:|
+| `/app/categorias` | 136 MB / 200,043 rows | 245 KB / 0.39 s |
+| `/app/devoluciones` | >30 s | 0.16 s |
+| `/app/tributacion/consultas` | >30 s | 2.42 s |
+| `/app/reportes/recibos/pendientes` | >30 s | 0.55 s |
+| `/app/reportes/recibos/vencidos` | >30 s | 0.40 s |
+| `/app/reportes/inventario/etiquetas` | >30 s | 0.07 s |
+| `/api/app/stock-alert-config/pagina` | 18.9 s | 0.09 s |
+
+Only remaining timeout in the final sweep:
 
 | Route | Symptom |
 |---|---|
-| `/app/categorias` | 136 MB / 200,043 rows (all department metrics rendered) |
-| `/app/devoluciones` | >30 s |
-| `/app/tributacion/consultas` | >30 s |
-| `/app/reportes/recibos/pendientes` | >30 s |
-| `/app/reportes/recibos/vencidos` | >30 s |
-| `/app/reportes/inventario/etiquetas` | >30 s |
-| `/api/app/stock-alert-config/pagina` | 18.9 s |
+| `/app/reportes/inventario/pronosticos` | >30 s: loads all 252k articles and runs the bulk forecast over the whole catalog. Needs a product decision (forecast only items with sales/stock, or paginate). |
+
+`/app/reportes/articulos/ventas-fecha-historica` renders 4.7 MB / 9.5k rows in
+1.5 s; large but not a timeout.
 
 Expected non-200s (not bugs): `/app/recibos` is a 302 redirect to the received
 table; `/app/reportes/recibos` is not a route; `/app/compras/ordenes` and
