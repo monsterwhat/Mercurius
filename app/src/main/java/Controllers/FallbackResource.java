@@ -1,6 +1,7 @@
 package Controllers;
 
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -43,6 +44,7 @@ import java.net.URI;
  * dead-link contract, pinned by StaticAssetContractTest.
  */
 @Path("/{remaining:(?!static/|resources/|q/)(?!static$|resources$|q$).+}")
+@PermitAll
 public class FallbackResource {
 
     @Inject

@@ -6,6 +6,7 @@ import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -51,6 +52,7 @@ import Services.LoyaltyService;
  */
 @Path("/app/reportes/loyalty")
 @Produces(MediaType.TEXT_HTML)
+@Authenticated
 public class LoyaltyReportesResource {
 
     private static final String BASE_URL = "/app/reportes/loyalty";

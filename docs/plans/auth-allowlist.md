@@ -35,22 +35,20 @@ When you annotate one of these classes, delete its line in the same commit.
 
 ## Public by design (no session exists yet)
 
-- `Controllers.Api.OAuthController` — `/oauth/*` token endpoint
-- `Controllers.Api.App.LoginPageResource` — login page, pre-auth by definition
-- `Controllers.Api.App.AppAuthResource` — self-verifies credentials; `/auth/me` and `/auth/logout` are policy carve-outs
-- `Controllers.RootRedirectResource` — `/` navigation only
-- `Controllers.FallbackResource` — unmatched-path navigation only
-- `Controllers.AppEntryResource` — `/app` landing, covered by the `/app/*` authenticated policy
+Phase 3.5.2 annotated the class-level public shells (`@PermitAll` on
+`LoginPageResource`, `RootRedirectResource`, `FallbackResource` and
+`AppEntryResource`), so their entries are gone. The two below keep a class
+without a gate because only ONE method needs (or must not need) a session; a
+class-level annotation would change the other methods' answers. They stay
+listed here because `AuthorizationCoverageTest` only recognises class-level
+gates.
 
-## Cookie-policy surfaces (class-level annotation pending in Phase 3.5.2)
+- `Controllers.Api.OAuthController` — `/oauth/*`; `token()` is `@PermitAll`, the class stays ungated
+- `Controllers.Api.App.AppAuthResource` — self-verifies credentials; `/auth/me` and `/auth/logout` are policy carve-outs, `supervisorAuthorize()` carries `@Authenticated`
 
-- `Controllers.Api.App.PosResource` — `/api/app/pos/*` is in the secured policy
+## Cookie-policy surfaces (class-level annotation pending)
+
 - `Controllers.Api.App.MiscPagesResource` — `/app/*` policy
-- `Controllers.Api.App.LayoutProbeResource` — `/app/_probe`, `/app/*` policy
-- `Controllers.Api.App.RecibosRedirectResource` — `/app/recibos`, `/app/*` policy
-- `Controllers.Api.App.Reportes.ClientesReportesResource` — `/app/reportes/*` policy; specific role gate tracked as Phase 3.5.2
-- `Controllers.Api.App.Reportes.EstacionalidadReportesResource` — `/app/reportes/*` policy; specific role gate tracked as Phase 3.5.2
-- `Controllers.Api.App.Reportes.LoyaltyReportesResource` — `/app/reportes/*` policy; specific role gate tracked as Phase 3.5.2
 
 ## Known exposure — deferred to Phase 3.5.4 (Bearer identity spike)
 

@@ -3,6 +3,7 @@ package Controllers.Api.App;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.core.Context;
@@ -38,11 +39,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       from a Jakarta REST method has no registered message-body writer on
  *       this stack.</li>
  *   <li>Path is public via the T13 permit policy
- *       ({@code quarkus.http.auth.permission.public.paths=/login,...}); no
- *       security annotation is needed.</li>
+ *       ({@code quarkus.http.auth.permission.public.paths=/login,...}); the
+ *       class-level {@link PermitAll} makes that intent explicit instead of
+ *       relying on the property list alone.</li>
  * </ul></p>
  */
 @Path("/login")
+@PermitAll
 @Tag(name = "App - Auth")
 public class LoginPageResource {
 

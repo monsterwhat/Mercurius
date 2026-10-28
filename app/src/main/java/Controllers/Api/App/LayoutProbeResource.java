@@ -3,6 +3,7 @@ package Controllers.Api.App;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -22,12 +23,12 @@ import java.util.Map;
  * fed with one sample notification per severity, footer and the web-bundler
  * bundle tags.</p>
  *
- * <p><b>Why it can be reached before login exists:</b> the
- * {@code quarkus.http.auth.permission.*} block that will guard
- * {@code /app/*} and {@code /api/app/*} is still commented out in
- * application.properties (tasks T13/T14 own its activation), so this route is
- * anonymous for now. Once those tasks land, the probe simply becomes an
- * authenticated smoke page like any other app route.</p>
+ * <p><b>Reachability:</b> this route used to be anonymous because the
+ * {@code quarkus.http.auth.permission.*} block that guards {@code /app/*} was
+ * still commented out in application.properties (tasks T13/T14 own its
+ * activation). That block is active now, and the class also carries
+ * {@link Authenticated} so the intent is explicit instead of implied: the
+ * probe renders through the role-gated layout, so it needs a session.
  *
  * @deprecated Temporary scaffolding from plan task T11. DELETE this class
  *             together with {@code templates/pages/probe.html} in wave W4,
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 @Deprecated
 @Path("/app/_probe")
+@Authenticated
 public class LayoutProbeResource {
 
     /**

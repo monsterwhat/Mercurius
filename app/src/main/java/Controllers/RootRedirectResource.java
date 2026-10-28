@@ -1,5 +1,6 @@
 package Controllers;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -22,6 +23,7 @@ import java.net.URI;
  * — the same bounce-back contract the login journey asserts.
  */
 @Path("/")
+@PermitAll
 public class RootRedirectResource {
 
     private Response redirectToApp() {

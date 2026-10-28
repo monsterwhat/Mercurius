@@ -5,6 +5,7 @@ import Models.DTO.ApiResponse;
 import Services.ApiClientsService;
 import Services.JwtTokenUtil;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -44,6 +45,7 @@ public class OAuthController {
 
     @POST
     @Path("/token")
+    @PermitAll
     @Operation(summary = "Exchange client credentials for JWT token")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Token issued"),

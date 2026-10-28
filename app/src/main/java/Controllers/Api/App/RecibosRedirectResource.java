@@ -1,6 +1,7 @@
 package Controllers.Api.App;
 
 import jakarta.annotation.Nonnull;
+import io.quarkus.security.Authenticated;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -19,6 +20,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 @Path("/app/recibos")
 @Produces(MediaType.TEXT_HTML)
+@Authenticated
 public class RecibosRedirectResource {
 
     /** El buzón de facturas recibidas (la tabla con sus cubos). */

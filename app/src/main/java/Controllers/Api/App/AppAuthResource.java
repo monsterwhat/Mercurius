@@ -7,6 +7,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.FormAuthenticationMechanism;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -100,6 +101,7 @@ public class AppAuthResource {
     @POST
     @Path("/supervisor-authorize")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Authenticated
     @Operation(summary = "Re-authorize a supervisor by verifying a second set of credentials")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Supervisor credentials verified"),

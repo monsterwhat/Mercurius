@@ -31,6 +31,8 @@ import io.quarkus.qute.Template;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -94,6 +96,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/api/app/pos")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({"admin", "facturacion"})
 @Tag(name = "App - POS")
 public class PosResource {
 
@@ -956,6 +959,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      */
     @GET
     @Path("/cart")
+    @PermitAll
     @Operation(summary = "Debug summary of the caller's cart state")
     public Response cart() {
         String username = currentUsername();
@@ -1083,6 +1087,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @GET
     @Path("/cart-panel")
     @Produces(MediaType.TEXT_HTML)
+    @PermitAll
     @Operation(summary = "Cart panel HTML fragment for the caller's session")
     public Response cartPanel() {
         String username = currentUsername();
