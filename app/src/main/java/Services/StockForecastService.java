@@ -3,7 +3,6 @@ package Services;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Models.Articulos.Articulos;
-import Models.Inventario;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -12,6 +11,7 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import io.quarkus.cache.CacheResult;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,6 +31,79 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 @Named("stockForecastService")
 public class StockForecastService {
+
+    private static final Logger LOG = Logger.getLogger(StockForecastService.class);
+
+    /** Días de historia de ventas con los que se estima la demanda. */
+    private static final int DIAS_HISTORIAL = 90;
+
+    /** Máximo de artículos críticos que lista el reporte de salud. */
+    private static final int CRITICOS_VISIBLES = 10;
+
+    /**
+     * Una fila por artículo activo con el historial de ventas ya agregado y el
+     * stock vigente.
+     *
+     * <p>{@code primera_suma}/{@code segunda_suma} son las mitades de la serie
+     * diaria (ordenada por fecha) y {@code suma_cuadrados} alimenta la
+     * velocidad; el resto del cálculo se hace en {@link EstadisticaArticulo}
+     * para no repetir la aritmética en la página, la exportación y el API.</p>
+     */
+    private static final String CONSULTA_ESTADISTICAS = """
+            WITH historial AS (
+                SELECT a.codigo AS articulo,
+                       CAST(e.fecha_emision AS date) AS dia,
+                       COALESCE(SUM(ld.cantidad), 0) AS cantidad
+                FROM comprobantesemitidos f
+                JOIN detalle_servicio d ON d.id = f.detalle_servicio_id
+                JOIN linea_detalle ld ON ld.detalle_servicio_id = d.id
+                JOIN encabezado e ON e.id = f.encabezado_id
+                JOIN articulos a ON a.nombre = ld.detalle
+                WHERE f.status = true
+                  AND e.fecha_emision BETWEEN :inicio AND :fin
+                GROUP BY a.codigo, CAST(e.fecha_emision AS date)
+            ), ordenado AS (
+                SELECT articulo,
+                       cantidad,
+                       ROW_NUMBER() OVER (PARTITION BY articulo ORDER BY dia) AS posicion,
+                       COUNT(*) OVER (PARTITION BY articulo) AS dias
+                FROM historial
+            ), agregado AS (
+                SELECT articulo,
+                       MAX(dias) AS dias,
+                       SUM(cantidad) AS total,
+                       SUM(cantidad) FILTER (WHERE posicion <= dias / 2) AS primera_suma,
+                       COUNT(*) FILTER (WHERE posicion <= dias / 2) AS primera_dias,
+                       SUM(cantidad) FILTER (WHERE posicion > dias / 2) AS segunda_suma,
+                       COUNT(*) FILTER (WHERE posicion > dias / 2) AS segunda_dias,
+                       SUM(cantidad * cantidad) AS suma_cuadrados
+                FROM ordenado
+                GROUP BY articulo
+            )
+            SELECT a.codigo,
+                   a.nombre,
+                   dep.nombre,
+                   fam.nombre,
+                   COALESCE(st.stock, 0),
+                   COALESCE(g.dias, 0),
+                   COALESCE(g.total, 0),
+                   COALESCE(g.primera_suma, 0),
+                   COALESCE(g.primera_dias, 0),
+                   COALESCE(g.segunda_suma, 0),
+                   COALESCE(g.segunda_dias, 0),
+                   COALESCE(g.suma_cuadrados, 0)
+            FROM articulos a
+            LEFT JOIN agregado g ON g.articulo = a.codigo
+            LEFT JOIN (
+                SELECT articulo_codigo, SUM(cantidad) AS stock
+                FROM inventario
+                GROUP BY articulo_codigo
+            ) st ON st.articulo_codigo = a.codigo
+            LEFT JOIN departamento dep ON dep.id = a.departamento_id
+            LEFT JOIN familia fam ON fam.id = a.familia_id
+            WHERE a.status = true
+            ORDER BY a.codigo
+            """;
 
     @Inject @Nonnull
     EntityManager entityManager;
@@ -88,53 +161,43 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public List<ProductForecast> generateBulkForecast(int daysToForecast) {
-        List<Articulos> articulos = entityManager.createQuery(
-            "SELECT a FROM Articulos a WHERE a.status = true", Articulos.class
-        ).getResultList();
+        return pronosticosDe(estadisticasCatalogo(), daysToForecast);
+    }
 
-        // El historial y el stock se cargan de una vez para todo el catalogo:
-        // consultarlos articulo por articulo son miles de consultas y la
-        // pagina se pasa del timeout con el catalogo real.
-        Map<Long, List<SalesData>> historiales = getSalesHistoryBatch(90);
-        Map<Long, Integer> stocks = getCurrentStockBatch();
+    /**
+     * El mismo pronóstico sobre una lectura ya hecha del catálogo.
+     *
+     * <p>La exportación necesita el pronóstico y los contadores de salud en la
+     * misma respuesta: con las dos llamadas de siempre pagaba dos veces la
+     * consulta agregada. Así lee el catálogo una vez y deriva las dos cosas.</p>
+     */
+    @Nonnull
+    public List<ProductForecast> generateBulkForecast(
+            @Nonnull List<EstadisticaArticulo> estadisticas, int daysToForecast) {
+        return pronosticosDe(estadisticas, daysToForecast);
+    }
 
-        List<ProductForecast> allForecasts = new ArrayList<>();
+    @Nonnull
+    private static List<ProductForecast> pronosticosDe(
+            @Nonnull List<EstadisticaArticulo> estadisticas, int daysToForecast) {
+        List<ProductForecast> allForecasts = new ArrayList<>(estadisticas.size());
 
-        for (Articulos articulo : articulos) {
-            List<SalesData> salesHistory = historiales.getOrDefault(articulo.getCodigo(), List.of());
-            
-            if (salesHistory.isEmpty()) continue;
-
-            BigDecimal averageDailySales = calculateAverageDailySales(salesHistory);
-            BigDecimal salesVelocity = calculateSalesVelocity(salesHistory);
-            BigDecimal trendFactor = calculateTrendFactor(salesHistory);
-
-            int currentStock = stocks.getOrDefault(articulo.getCodigo(), 0);
-            int reorderPoint = calculateReorderPoint(averageDailySales, 7);
-            
-            BigDecimal predictedSales = averageDailySales;
-            BigDecimal runningStock = BigDecimal.valueOf(currentStock);
-
-            for (int day = 1; day <= daysToForecast; day++) {
-                predictedSales = predictedSales.multiply(trendFactor);
-                runningStock = runningStock.subtract(predictedSales);
-
-                if (runningStock.compareTo(BigDecimal.valueOf(reorderPoint)) <= 0) {
-                    LocalDate forecastDate = LocalDate.now().plusDays(day);
-                    allForecasts.add(new ProductForecast(
-                        articulo.getCodigo(),
-                        articulo.getNombre(),
-                        forecastDate,
-                        currentStock,
-                        predictedSales.setScale(0, RoundingMode.HALF_UP).intValue(),
-                        Math.max(0, runningStock.setScale(0, RoundingMode.HALF_UP).intValue()),
-                        true,
-                        averageDailySales.setScale(2, RoundingMode.HALF_UP),
-                        salesVelocity.setScale(2, RoundingMode.HALF_UP)
-                    ));
-                    break;
-                }
+        for (EstadisticaArticulo estadistica : estadisticas) {
+            Proyeccion proyeccion = estadistica.proyectar(daysToForecast);
+            if (proyeccion == null) {
+                continue;
             }
+            allForecasts.add(new ProductForecast(
+                estadistica.codigo(),
+                estadistica.nombre(),
+                LocalDate.now().plusDays(proyeccion.dia()),
+                estadistica.stock(),
+                proyeccion.ventaPronosticada(),
+                proyeccion.stockPronosticado(),
+                true,
+                estadistica.promedioDiario().setScale(2, RoundingMode.HALF_UP),
+                estadistica.velocidadVentas().setScale(2, RoundingMode.HALF_UP)
+            ));
         }
 
         return allForecasts;
@@ -180,57 +243,7 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public InventoryHealthReport getInventoryHealthReport() {
-        List<Articulos> articulos = entityManager.createQuery(
-            "SELECT a FROM Articulos a WHERE a.status = true", Articulos.class
-        ).getResultList();
-
-        int totalProducts = articulos.size();
-        int lowStock = 0;
-        int overStocked = 0;
-        int optimal = 0;
-        int outOfStock = 0;
-
-        List<Articulos> criticalItems = new ArrayList<>();
-
-        // Una sola consulta para el catalogo completo (ver generateBulkForecast).
-        Map<Long, List<SalesData>> historiales = getSalesHistoryBatch(90);
-        Map<Long, Integer> stocks = getCurrentStockBatch();
-
-        for (Articulos articulo : articulos) {
-            List<SalesData> salesHistory = historiales.getOrDefault(articulo.getCodigo(), List.of());
-            int currentStock = stocks.getOrDefault(articulo.getCodigo(), 0);
-            
-            if (currentStock <= 0) {
-                outOfStock++;
-                criticalItems.add(articulo);
-            } else if (salesHistory.isEmpty()) {
-                optimal++;
-            } else {
-                BigDecimal avgDaily = calculateAverageDailySales(salesHistory);
-                int reorderPoint = calculateReorderPoint(avgDaily, 7);
-                int optimalStock = calculateOptimalStock(avgDaily, 30);
-
-                if (currentStock < reorderPoint) {
-                    lowStock++;
-                    if (currentStock < reorderPoint / 2) {
-                        criticalItems.add(articulo);
-                    }
-                } else if (currentStock > optimalStock * 2) {
-                    overStocked++;
-                } else {
-                    optimal++;
-                }
-            }
-        }
-
-        return new InventoryHealthReport(
-            totalProducts,
-            optimal,
-            lowStock,
-            overStocked,
-            outOfStock,
-            criticalItems.stream().limit(10).map(a -> a.getNombre()).collect(Collectors.toList())
-        );
+        return saludDe(estadisticasCatalogo());
     }
 
     @Transactional(TxType.SUPPORTS)
@@ -288,72 +301,390 @@ public class StockForecastService {
     }
 
     /**
-     * Historial de ventas de TODO el catálogo en una sola consulta.
+     * Estadística de venta y stock de TODO el catálogo en una sola consulta.
      *
-     * <p>Equivale a {@link #getSalesHistory(Long, int)} para cada artículo, pero
-     * resuelto en una consulta: con el catálogo real (miles de artículos) la
-     * versión por artículo hace miles de consultas y la página de pronósticos
-     * revienta el timeout. La línea seasocia al artículo por su nombre, igual
-     * que la versión por artículo.</p>
+     * <p>Sustituye a las tres lecturas que hacía el pronóstico: las entidades
+     * {@code Articulos} (con su colección EAGER de precios), el historial diario
+     * de ventas y el stock por artículo. Devuelve una fila por artículo activo
+     * (aunque no tenga ventas) con los agregados que necesitan el pronóstico y
+     * el reporte de salud.</p>
+     *
+     * <p>El historial son los últimos 90 días de líneas de comprobantes
+     * emitidos, asociadas al artículo por nombre (así lo hace
+     * {@link #getSalesHistory(Long, int)}). El stock es la suma de
+     * {@code inventario}, igual que {@link #getCurrentStock(Long)}. La ventana
+     * de {@value #DIAS_HISTORIAL} días no depende del horizonte pedido: es la
+     * historia con la que se estima la demanda.</p>
+     *
+     * <p>Si la lectura falla se registra y se devuelve una lista vacía: el
+     * reporte se degrada a "sin datos" en vez de responder 500.</p>
      */
-    private Map<Long, List<SalesData>> getSalesHistoryBatch(int days) {
-        LocalDateTime startDate = LocalDate.now().minusDays(days).atStartOfDay();
-        LocalDateTime endDate = LocalDate.now().atTime(23, 59, 59);
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public List<EstadisticaArticulo> estadisticasCatalogo() {
+        LocalDateTime inicio = LocalDate.now().minusDays(DIAS_HISTORIAL).atStartOfDay();
+        LocalDateTime fin = LocalDate.now().atTime(23, 59, 59);
 
-        List<Object[]> results = entityManager.createQuery(
-            "SELECT a.codigo, CAST(e.fechaEmision AS date), COALESCE(SUM(ld.cantidad), 0) " +
-            "FROM ComprobantesEmitidos f " +
-            "JOIN f.detalles d " +
-            "JOIN d.lineasDetalle ld " +
-            "JOIN f.encabezado e " +
-            "JOIN Articulos a ON a.nombre = ld.detalle " +
-            "WHERE f.status = true " +
-            "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY a.codigo, CAST(e.fechaEmision AS date) " +
-            "ORDER BY a.codigo, CAST(e.fechaEmision AS date)",
-            Object[].class
-        )
-        .setParameter("start", startDate)
-        .setParameter("end", endDate)
-        .getResultList();
-
-        Map<Long, List<SalesData>> porArticulo = new HashMap<>();
-        for (Object[] row : results) {
-            Long articuloId = (Long) row[0];
-            LocalDate date;
-            Object dateObj = row[1];
-            if (dateObj instanceof LocalDate) {
-                date = (LocalDate) dateObj;
-            } else if (dateObj instanceof java.sql.Date) {
-                date = ((java.sql.Date) dateObj).toLocalDate();
-            } else {
-                date = LocalDate.parse(String.valueOf(dateObj));
-            }
-            double cantidad = row[2] == null ? 0.0 : ((Number) row[2]).doubleValue();
-            porArticulo.computeIfAbsent(articuloId, k -> new ArrayList<>())
-                    .add(new SalesData(date, cantidad));
+        List<Object[]> filas;
+        try {
+            filas = entityManager.createNativeQuery(CONSULTA_ESTADISTICAS)
+                    .setParameter("inicio", inicio)
+                    .setParameter("fin", fin)
+                    .getResultList();
+        } catch (RuntimeException e) {
+            LOG.warn("estadisticasCatalogo: no se pudo leer historial/stock ("
+                    + e.getMessage() + "); el reporte saldra vacio", e);
+            return List.of();
         }
-        return porArticulo;
+
+        List<EstadisticaArticulo> estadisticas = new ArrayList<>(filas.size());
+        for (Object[] fila : filas) {
+            estadisticas.add(new EstadisticaArticulo(
+                    numeroLargo(fila[0]),
+                    texto(fila[1]),
+                    texto(fila[2]),
+                    texto(fila[3]),
+                    numeroEntero(fila[4]),
+                    numeroEntero(fila[5]),
+                    decimal(fila[6]),
+                    decimal(fila[7]),
+                    numeroEntero(fila[8]),
+                    decimal(fila[9]),
+                    numeroEntero(fila[10]),
+                    decimal(fila[11])));
+        }
+        return estadisticas;
     }
 
     /**
-     * Stock vigente de TODO el catálogo en una sola consulta
-     * (equivalente a {@link #getCurrentStock(Long)} para cada artículo).
+     * Todo lo que la página de pronósticos necesita, en una sola lectura.
+     *
+     * <p>En lugar de hidratar el catálogo dos veces y paginar 200k mapas en
+     * memoria, la consulta agregada se recorre una vez: de ahí salen los
+     * selectores, los contadores de salud y <b>solo</b> las filas de la
+     * sección pedida. El controlador ordena y pagina esa lista compacta.</p>
+     *
+     * @param dias        horizonte en días (7, 14, 30 o 60)
+     * @param seccion     pronosticos | reorden | salud
+     * @param departamento filtro por nombre exacto (vacío = todos)
+     * @param familia     filtro por nombre exacto (vacío = todas)
      */
-    private Map<Long, Integer> getCurrentStockBatch() {
-        List<Object[]> results = entityManager.createQuery(
-            "SELECT a.codigo, COALESCE(SUM(i.cantidad), 0) " +
-            "FROM Articulos a LEFT JOIN Inventario i ON i.articulo.codigo = a.codigo " +
-            "GROUP BY a.codigo",
-            Object[].class
-        ).getResultList();
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public ReportePronosticos reportePronosticos(int dias,
+                                                 @Nullable String seccion,
+                                                 @Nullable String departamento,
+                                                 @Nullable String familia) {
+        List<EstadisticaArticulo> estadisticas = estadisticasCatalogo();
+        String depto = normalizarFiltro(departamento);
+        String fam = normalizarFiltro(familia);
+        boolean vistaSalud = "salud".equals(seccion);
 
-        Map<Long, Integer> porArticulo = new HashMap<>();
-        for (Object[] row : results) {
-            Long articuloId = (Long) row[0];
-            porArticulo.put(articuloId, row[1] == null ? 0 : ((Number) row[1]).intValue());
+        SortedSet<String> departamentos = new TreeSet<>();
+        SortedSet<String> familias = new TreeSet<>();
+        for (EstadisticaArticulo e : estadisticas) {
+            if (!e.departamento().isBlank()) {
+                departamentos.add(e.departamento());
+            }
+            if (!e.familia().isBlank()) {
+                familias.add(e.familia());
+            }
         }
-        return porArticulo;
+
+        List<FilaPronostico> filas = new ArrayList<>();
+        if (!vistaSalud) {
+            for (EstadisticaArticulo e : estadisticas) {
+                if (!coincide(e.departamento(), e.familia(), depto, fam)) {
+                    continue;
+                }
+                Proyeccion proyeccion = e.proyectar(dias);
+                if (proyeccion == null) {
+                    continue;
+                }
+                filas.add(new FilaPronostico(
+                        e.codigo(),
+                        e.nombre(),
+                        e.departamento(),
+                        e.familia(),
+                        e.stock(),
+                        proyeccion.ventaPronosticada(),
+                        diasRestantes(e),
+                        cantidadSugerida(e, dias),
+                        proyeccion.stockPronosticado() <= 0 ? "Comprar" : "Pronto"));
+            }
+        }
+
+        // La sección de salud lista los primeros 10 críticos del catálogo (no
+        // los 10 primeros del filtro): el filtro se aplica después, igual que
+        // cuando la página leía criticalItems() y lo cruzaba con el grupo.
+        List<FilaCritico> criticos = new ArrayList<>();
+        if (vistaSalud) {
+            for (EstadisticaArticulo e : estadisticas) {
+                if (criticos.size() >= CRITICOS_VISIBLES) {
+                    break;
+                }
+                if (!esCritico(e)) {
+                    continue;
+                }
+                if (coincide(e.departamento(), e.familia(), depto, fam)) {
+                    criticos.add(new FilaCritico(e.codigo(), e.nombre(),
+                            e.departamento(), e.familia()));
+                }
+            }
+        }
+
+        return new ReportePronosticos(
+                List.copyOf(departamentos),
+                List.copyOf(familias),
+                saludDe(estadisticas),
+                filas,
+                criticos);
+    }
+
+    /** Agregados de venta y stock de un artículo, listos para pronosticar. */
+    public record EstadisticaArticulo(
+            long codigo,
+            @Nonnull String nombre,
+            @Nonnull String departamento,
+            @Nonnull String familia,
+            int stock,
+            int diasConVenta,
+            @Nonnull BigDecimal totalVendido,
+            @Nonnull BigDecimal primeraMitad,
+            int diasPrimeraMitad,
+            @Nonnull BigDecimal segundaMitad,
+            int diasSegundaMitad,
+            @Nonnull BigDecimal sumaCuadrados) {
+
+        /** Promedio diario de los días CON venta, con cuatro decimales. */
+        @Nonnull
+        public BigDecimal promedioDiario() {
+            if (diasConVenta <= 0) {
+                return BigDecimal.ZERO;
+            }
+            return totalVendido.divide(BigDecimal.valueOf(diasConVenta), 4, RoundingMode.HALF_UP);
+        }
+
+        /**
+         * Cociente entre la segunda y la primera mitad de la serie diaria.
+         *
+         * <p>Con menos de siete días la tendencia no es estimable y se usa 1
+         * (pronóstico plano), igual que el recorrido anterior.</p>
+         */
+        @Nonnull
+        public BigDecimal factorTendencia() {
+            if (diasConVenta < 7 || diasPrimeraMitad <= 0 || diasSegundaMitad <= 0) {
+                return BigDecimal.ONE;
+            }
+            BigDecimal primera = primeraMitad.divide(
+                    BigDecimal.valueOf(diasPrimeraMitad), 4, RoundingMode.HALF_UP);
+            if (primera.compareTo(BigDecimal.ZERO) == 0) {
+                return BigDecimal.ONE;
+            }
+            BigDecimal segunda = segundaMitad.divide(
+                    BigDecimal.valueOf(diasSegundaMitad), 4, RoundingMode.HALF_UP);
+            return segunda.divide(primera, 4, RoundingMode.HALF_UP);
+        }
+
+        /** 1 - coeficiente de variación de la serie diaria (como antes). */
+        @Nonnull
+        public BigDecimal velocidadVentas() {
+            if (diasConVenta < 2) {
+                return BigDecimal.ONE;
+            }
+            double n = diasConVenta;
+            double media = totalVendido.doubleValue() / n;
+            if (media == 0d) {
+                return BigDecimal.ONE;
+            }
+            double varianza = (sumaCuadrados.doubleValue() / n) - (media * media);
+            double desviacion = Math.sqrt(Math.max(0d, varianza));
+            return BigDecimal.ONE.add(BigDecimal.valueOf(desviacion / media).negate());
+        }
+
+        /** Punto de reorden a siete días: media redondeada por 7, más uno. */
+        public int puntoReorden() {
+            return promedioDiario().setScale(0, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(7)).intValue() + 1;
+        }
+
+        /** Stock óptimo a treinta días: media redondeada por 30. */
+        public int stockOptimo() {
+            return promedioDiario().setScale(0, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(30)).intValue();
+        }
+
+        /**
+         * Primera proyección diaria que alcanza el punto de reorden.
+         *
+         * <p>Es el mismo recorrido día a día que hacía el pronóstico: la venta
+         * del día se acumula multiplicando por la tendencia y el stock baja
+         * hasta cruzar el punto de reorden. Sin ventas no hay pronóstico.</p>
+         *
+         * @return la proyección del primer día que cruza, o {@code null}
+         */
+        @Nullable
+        public Proyeccion proyectar(int dias) {
+            if (diasConVenta <= 0) {
+                return null;
+            }
+            BigDecimal promedio = promedioDiario();
+            BigDecimal tendencia = factorTendencia();
+            int reorden = puntoReorden();
+            BigDecimal venta = promedio;
+            BigDecimal stockProyectado = BigDecimal.valueOf(stock);
+
+            for (int dia = 1; dia <= dias; dia++) {
+                venta = venta.multiply(tendencia);
+                stockProyectado = stockProyectado.subtract(venta);
+                if (stockProyectado.compareTo(BigDecimal.valueOf(reorden)) <= 0) {
+                    return new Proyeccion(dia,
+                            venta.setScale(0, RoundingMode.HALF_UP).intValue(),
+                            Math.max(0, stockProyectado.setScale(0, RoundingMode.HALF_UP).intValue()));
+                }
+            }
+            return null;
+        }
+    }
+
+    /** Día en que el stock proyectado cruza el punto de reorden. */
+    public record Proyeccion(int dia, int ventaPronosticada, int stockPronosticado) {
+    }
+
+    /** Fila de la tabla de pronósticos o de sugerencias de reorden. */
+    public record FilaPronostico(
+            long articuloCodigo,
+            @Nonnull String articulo,
+            @Nonnull String departamento,
+            @Nonnull String familia,
+            int stockActual,
+            int demandaEstimada,
+            @Nonnull String diasRestantes,
+            int cantidadSugerida,
+            @Nonnull String recomendacion) {
+    }
+
+    /** Fila de la sección de salud del inventario. */
+    public record FilaCritico(
+            long articuloCodigo,
+            @Nonnull String articulo,
+            @Nonnull String departamento,
+            @Nonnull String familia) {
+    }
+
+    /** Lectura completa de la página de pronósticos. */
+    public record ReportePronosticos(
+            @Nonnull List<String> departamentos,
+            @Nonnull List<String> familias,
+            @Nonnull InventoryHealthReport salud,
+            @Nonnull List<FilaPronostico> filas,
+            @Nonnull List<FilaCritico> criticos) {
+    }
+
+    /** Contadores de salud sobre la misma lectura agregada. */
+    @Nonnull
+    public static InventoryHealthReport saludDe(@Nonnull List<EstadisticaArticulo> estadisticas) {
+        int optimo = 0;
+        int bajo = 0;
+        int exceso = 0;
+        int sinStock = 0;
+        List<String> criticos = new ArrayList<>();
+
+        for (EstadisticaArticulo e : estadisticas) {
+            if (e.stock() <= 0) {
+                sinStock++;
+                if (criticos.size() < CRITICOS_VISIBLES) {
+                    criticos.add(e.nombre());
+                }
+            } else if (e.diasConVenta() <= 0) {
+                optimo++;
+            } else {
+                int reorden = e.puntoReorden();
+                if (e.stock() < reorden) {
+                    bajo++;
+                    if (e.stock() < reorden / 2 && criticos.size() < CRITICOS_VISIBLES) {
+                        criticos.add(e.nombre());
+                    }
+                } else if (e.stock() > e.stockOptimo() * 2) {
+                    exceso++;
+                } else {
+                    optimo++;
+                }
+            }
+        }
+
+        return new InventoryHealthReport(
+                estadisticas.size(), optimo, bajo, exceso, sinStock, criticos);
+    }
+
+    /** ¿El artículo entra en la lista de críticos del reporte de salud? */
+    private static boolean esCritico(@Nonnull EstadisticaArticulo e) {
+        if (e.stock() <= 0) {
+            return true;
+        }
+        if (e.diasConVenta() <= 0) {
+            return false;
+        }
+        return e.stock() < e.puntoReorden() / 2;
+    }
+
+    /** Días de cobertura al ritmo promedio (misma lectura que la tabla). */
+    @Nonnull
+    private static String diasRestantes(@Nonnull EstadisticaArticulo e) {
+        // La tabla siempre mostró el promedio con dos decimales: se conserva
+        // ese redondeo para que los días de cobertura no cambien de valor.
+        BigDecimal promedio = e.promedioDiario().setScale(2, RoundingMode.HALF_UP);
+        if (promedio.compareTo(BigDecimal.ZERO) <= 0) {
+            return "-";
+        }
+        int dias = BigDecimal.valueOf(e.stock()).divide(promedio, 0, RoundingMode.DOWN).intValue();
+        return String.valueOf(Math.max(0, dias));
+    }
+
+    /** Reposición sugerida bruta para el horizonte pedido. */
+    private static int cantidadSugerida(@Nonnull EstadisticaArticulo e, int dias) {
+        BigDecimal promedio = e.promedioDiario().setScale(2, RoundingMode.HALF_UP);
+        return Math.max(0, promedio.multiply(BigDecimal.valueOf(dias))
+                .setScale(0, RoundingMode.HALF_UP).intValue() - e.stock());
+    }
+
+    /** El filtro por departamento/familia (vacío = todos). */
+    private static boolean coincide(@Nonnull String departamentoArticulo,
+                                    @Nonnull String familiaArticulo,
+                                    @Nonnull String departamento,
+                                    @Nonnull String familia) {
+        if (!departamento.isEmpty()
+                && !departamento.equalsIgnoreCase(departamentoArticulo.trim())) {
+            return false;
+        }
+        return familia.isEmpty() || familia.equalsIgnoreCase(familiaArticulo.trim());
+    }
+
+    @Nonnull
+    private static String normalizarFiltro(@Nullable String valor) {
+        return valor == null ? "" : valor.trim();
+    }
+
+    private static long numeroLargo(@Nullable Object valor) {
+        return valor instanceof Number numero ? numero.longValue() : 0L;
+    }
+
+    private static int numeroEntero(@Nullable Object valor) {
+        return valor instanceof Number numero ? numero.intValue() : 0;
+    }
+
+    @Nonnull
+    private static BigDecimal decimal(@Nullable Object valor) {
+        if (valor instanceof BigDecimal exacto) {
+            return exacto;
+        }
+        return valor instanceof Number numero
+                ? BigDecimal.valueOf(numero.doubleValue()) : BigDecimal.ZERO;
+    }
+
+    @Nonnull
+    private static String texto(@Nullable Object valor) {
+        return valor == null ? "" : String.valueOf(valor);
     }
 
     @CacheResult(cacheName = "analytics-forecast")

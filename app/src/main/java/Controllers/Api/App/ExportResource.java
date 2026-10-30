@@ -343,18 +343,24 @@ public class ExportResource {
                         diasPronostico = valor;
                     }
                 } catch (NumberFormatException e) {
-                    // default
+                    LOG.debug("Exportacion de pronosticos: 'dias' invalido (" + dias
+                            + "); se usa 30", e);
                 }
                 String vista = (seccion == null || seccion.isBlank()) ? "pronosticos" : seccion;
+                // Una sola lectura del catalogo alimenta el pronostico y los
+                // contadores de salud: antes cada uno pagaba la consulta
+                // agregada completa.
+                List<Services.StockForecastService.EstadisticaArticulo> catalogo =
+                        stockForecastService.estadisticasCatalogo();
                 Services.StockForecastService.InventoryHealthReport salud =
-                        stockForecastService.getInventoryHealthReport();
+                        Services.StockForecastService.saludDe(catalogo);
                 if ("salud".equals(vista)) {
                     yield !wantsPdf
                             ? ReportExporter.exportPronosticosExcel(vista, diasPronostico, null, salud)
                             : unsupported(dataset, type);
                 }
                 List<Services.StockForecastService.ProductForecast> pronosticos =
-                        stockForecastService.generateBulkForecast(diasPronostico);
+                        stockForecastService.generateBulkForecast(catalogo, diasPronostico);
                 yield !wantsPdf
                         ? ReportExporter.exportPronosticosExcel(vista, diasPronostico, pronosticos, salud)
                         : unsupported(dataset, type);

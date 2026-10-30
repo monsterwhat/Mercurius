@@ -75,6 +75,9 @@ public class PronosticosResource {
 
     private static final String BASE_URL = "/app/reportes/inventario/pronosticos";
 
+    /** Tope de filas por página (mismo límite que el resto de reportes). */
+    private static final int TAMANO_MAXIMO = 200;
+
     /** Marcador de un artículo sin filas de precisión (nunca celda vacía). */
     private static final String SIN_EVALUAR = "sin evaluar";
 
@@ -124,90 +127,74 @@ public class PronosticosResource {
             filtros.put("familia", familiaSel);
         }
 
-        // Departamento y familia de cada articulo (una consulta para todo el
-        // catalogo) + las listas para los selectores del formulario.
-        Map<Long, String[]> grupos = gruposPorArticulo();
-        List<String> departamentos = grupos.values().stream()
-                .map(g -> g[0]).filter(s -> !s.isEmpty()).distinct().sorted().toList();
-        List<String> familias = grupos.values().stream()
-                .map(g -> g[1]).filter(s -> !s.isEmpty()).distinct().sorted().toList();
+        // Una sola lectura agregada del catálogo: reemplaza la hidratación de
+        // 252k artículos (con sus precios EAGER) más el historial y el stock
+        // por separado. Antes esta página superaba los 30 s.
+        int tamanoPagina = Math.min(Math.max(size, 1), TAMANO_MAXIMO);
+        int paginaActual = Math.max(page, 1);
+        StockForecastService.ReportePronosticos reporte =
+                stockForecastService.reportePronosticos(
+                        diasPronostico, vista, deptoSel, familiaSel);
+        StockForecastService.InventoryHealthReport salud = reporte.salud();
 
-        List<Map<String, Object>> filas = new ArrayList<>();
-        StockForecastService.InventoryHealthReport salud = null;
-        if ("pronosticos".equals(vista)) {
-            List<StockForecastService.ProductForecast> pronosticos =
-                    stockForecastService.generateBulkForecast(diasPronostico);
-            if (pronosticos != null) {
-                for (StockForecastService.ProductForecast pronostico : pronosticos) {
-                    String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
-                    if (!coincide(grupo, deptoSel, familiaSel)) {
-                        continue;
-                    }
-                    filas.add(Tablas.fila(
-                            "articuloCodigo", pronostico.articuloId(),
-                            "articulo", pronostico.articuloNombre(),
-                            "departamento", grupo[0],
-                            "familia", grupo[1],
-                            "stockActual", String.valueOf(pronostico.currentStock()),
-                            "demandaEstimada", String.valueOf(pronostico.predictedSales()),
-                            "diasRestantes", diasRestantes(pronostico),
-                            "recomendacion", recomendacion(pronostico)));
+        // La gráfica usa las primeras filas en el orden de la consulta, antes
+        // de ordenar para la tabla, igual que antes.
+        List<StockForecastService.FilaPronostico> filas =
+                new ArrayList<>(reporte.filas());
+        List<Map<String, Object>> chartData = new ArrayList<>();
+        if (!"salud".equals(vista)) {
+            String chartKey = "reorden".equals(vista) ? "cantidadSugerida" : "demandaEstimada";
+            for (StockForecastService.FilaPronostico fila : filas) {
+                if (chartData.size() >= 12) {
+                    break;
                 }
-            }
-        } else if ("salud".equals(vista)) {
-            salud = stockForecastService.getInventoryHealthReport();
-            // The service report carries aggregate counters + critical item names.
-            // Those rows are NAMES, not articles, so there is no key to join the
-            // precision table on: this section stays accuracy-free on purpose.
-            if (salud != null && salud.criticalItems() != null) {
-                Map<String, String[]> porNombre = gruposPorNombre();
-                for (String critico : salud.criticalItems()) {
-                    String[] grupo = porNombre.getOrDefault(critico, new String[]{"", ""});
-                    if (!coincide(grupo, deptoSel, familiaSel)) {
-                        continue;
-                    }
-                    filas.add(Tablas.fila(
-                            "articulo", critico,
-                            "departamento", grupo[0],
-                            "familia", grupo[1],
-                            "estado", "Cr\u00edtico"));
-                }
-            }
-        } else {
-            List<StockForecastService.ProductForecast> pronosticos =
-                    stockForecastService.generateBulkForecast(diasPronostico);
-            if (pronosticos != null) {
-                for (StockForecastService.ProductForecast pronostico : pronosticos) {
-                    String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
-                    if (!coincide(grupo, deptoSel, familiaSel)) {
-                        continue;
-                    }
-                    int sugerido = Math.max(0,
-                            pronostico.avgDailySales().multiply(
-                                    BigDecimal.valueOf(diasPronostico))
-                                    .setScale(0, java.math.RoundingMode.HALF_UP).intValue()
-                            - pronostico.currentStock());
-                    filas.add(Tablas.fila(
-                            "articuloCodigo", pronostico.articuloId(),
-                            "articulo", pronostico.articuloNombre(),
-                            "departamento", grupo[0],
-                            "familia", grupo[1],
-                            "stockActual", String.valueOf(pronostico.currentStock()),
-                            "cantidadSugerida", String.valueOf(sugerido),
-                            "prioridad", recomendacion(pronostico)));
-                }
+                Object valor = "cantidadSugerida".equals(chartKey)
+                        ? fila.cantidadSugerida() : fila.demandaEstimada();
+                chartData.add(Map.of(
+                        "label", fila.articulo(),
+                        "value", String.valueOf(valor)));
             }
         }
 
-        Tablas.ordenar(filas, sort, dir);
-        long totalFilas = filas.size();
-        int totalPages = Tablas.totalPaginas(totalFilas, size);
+        // Solo se materializan las filas visibles: la lista compacta se ordena
+        // y se recorta antes de construir los mapas de la tabla.
+        long totalFilas;
+        List<Map<String, Object>> paginaVisible;
+        if ("salud".equals(vista)) {
+            List<StockForecastService.FilaCritico> criticos = reporte.criticos();
+            List<Map<String, Object>> saludFilas = new ArrayList<>(criticos.size());
+            for (StockForecastService.FilaCritico critico : criticos) {
+                saludFilas.add(Tablas.fila(
+                        "articuloCodigo", critico.articuloCodigo(),
+                        "articulo", critico.articulo(),
+                        "departamento", critico.departamento(),
+                        "familia", critico.familia(),
+                        "estado", "Cr\u00edtico"));
+            }
+            Tablas.ordenar(saludFilas, sort, dir);
+            totalFilas = saludFilas.size();
+            paginaVisible = Tablas.paginaDe(saludFilas, paginaActual, tamanoPagina);
+        } else {
+            Tablas.ordenar(filas, sort, dir, fila -> valorOrden(fila, sort));
+            totalFilas = filas.size();
+            List<StockForecastService.FilaPronostico> recorte =
+                    Tablas.paginaDe(filas, paginaActual, tamanoPagina);
+            paginaVisible = new ArrayList<>(recorte.size());
+            for (StockForecastService.FilaPronostico fila : recorte) {
+                paginaVisible.add(Tablas.fila(
+                        "articuloCodigo", fila.articuloCodigo(),
+                        "articulo", fila.articulo(),
+                        "departamento", fila.departamento(),
+                        "familia", fila.familia(),
+                        "stockActual", String.valueOf(fila.stockActual()),
+                        "demandaEstimada", String.valueOf(fila.demandaEstimada()),
+                        "diasRestantes", fila.diasRestantes(),
+                        "cantidadSugerida", String.valueOf(fila.cantidadSugerida()),
+                        "recomendacion", fila.recomendacion(),
+                        "prioridad", fila.recomendacion()));
+            }
 
-        // Accuracy is only rendered in the visible page. Loading it for the whole
-        // catalog was the 45-50 s step on the real database: the table shows ten
-        // rows, so ask the database for ten articles, not every article.
-        List<Map<String, Object>> paginaVisible = Tablas.paginaDe(filas, page, size);
-        if (!"salud".equals(vista)) {
+            // Accuracy solo de la página visible (máximo `size` artículos).
             Map<Long, Exactitud> exactitudes = exactitudPorArticulo(codigosDe(paginaVisible));
             for (Map<String, Object> fila : paginaVisible) {
                 Exactitud acc = exactitudDe(fila, exactitudes);
@@ -217,29 +204,7 @@ public class PronosticosResource {
             }
         }
 
-        if (salud == null) {
-            salud = stockForecastService.getInventoryHealthReport();
-        }
-
-        // The chart used to fetch /api/stock-forecast/bulk-forecast, which is a
-        // JWT-only public API and answered 401 to the session-authenticated UI.
-        // Render the chart dataset from the same rows the page already built.
-        List<Map<String, Object>> chartData = new ArrayList<>();
-        if (!"salud".equals(vista)) {
-            String chartKey = "reorden".equals(vista) ? "cantidadSugerida" : "demandaEstimada";
-            for (Map<String, Object> fila : filas) {
-                if (chartData.size() >= 12) {
-                    break;
-                }
-                Object valor = fila.get(chartKey);
-                if (valor == null) {
-                    continue;
-                }
-                chartData.add(Map.of(
-                        "label", String.valueOf(fila.get("articulo")),
-                        "value", String.valueOf(valor)));
-            }
-        }
+        int totalPages = Tablas.totalPaginas(totalFilas, tamanoPagina);
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Pron\u00f3sticos de Inventario");
@@ -248,17 +213,17 @@ public class PronosticosResource {
         model.put("filas", paginaVisible);
         model.put("sortKey", sort);
         model.put("sortDir", dir);
-        model.put("page", Math.max(page, 1));
-        model.put("size", size);
+        model.put("page", paginaActual);
+        model.put("size", tamanoPagina);
         model.put("total", totalFilas);
         model.put("totalPages", totalPages);
-        model.put("pages", Tablas.ventanaPaginas(page, totalPages));
+        model.put("pages", Tablas.ventanaPaginas(paginaActual, totalPages));
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("seccion", vista);
         model.put("dias", diasPronostico);
-        model.put("departamentos", departamentos);
-        model.put("familias", familias);
+        model.put("departamentos", reporte.departamentos());
+        model.put("familias", reporte.familias());
         model.put("departamentoSeleccionado", deptoSel);
         model.put("familiaSeleccionada", familiaSel);
         model.put("totalProductos", salud != null ? salud.totalProducts() : 0);
@@ -314,30 +279,6 @@ public class PronosticosResource {
         return 30;
     }
 
-    /** Legacy tag semantics: Comprar (danger) / Pronto (warning) / OK (success). */
-    @Nonnull
-    private static String recomendacion(@Nonnull StockForecastService.ProductForecast p) {
-        if (p.shouldReorder() && p.predictedStock() <= 0) {
-            return "Comprar";
-        }
-        if (p.shouldReorder()) {
-            return "Pronto";
-        }
-        return "OK";
-    }
-
-    /** Days of cover left at the average daily sales rate. */
-    @Nonnull
-    private static String diasRestantes(@Nonnull StockForecastService.ProductForecast p) {
-        BigDecimal promedio = p.avgDailySales();
-        if (promedio == null || promedio.compareTo(BigDecimal.ZERO) <= 0) {
-            return "-";
-        }
-        int dias = BigDecimal.valueOf(p.currentStock())
-                .divide(promedio, 0, java.math.RoundingMode.DOWN).intValue();
-        return String.valueOf(Math.max(0, dias));
-    }
-
     @Nonnull
     private static List<Map<String, Object>> columnas(@Nonnull String vista) {
         if ("salud".equals(vista)) {
@@ -371,69 +312,30 @@ public class PronosticosResource {
     }
 
     /**
-     * Departamento y familia de cada articulo, en una sola consulta.
+     * Valor ordenable de una fila de pronóstico.
      *
-     * <p>El grupo es un dato del propio articulo (no del pronostico), asi que
-     * se trae aparte para no repetir la consulta por fila.</p>
-     *
-     * @return id del articulo -&gt; {departamento, familia}
+     * <p>Se usan los mismos tipos que la celda muestra ({@code stockActual} y
+     * {@code demandaEstimada} como números, el resto como texto) para que
+     * {@code Tablas} aplique exactamente el comparador que usaba con los mapas
+     * de presentación, sin materializar 200k mapas.</p>
      */
-    @Nonnull
-    private Map<Long, String[]> gruposPorArticulo() {
-        Map<Long, String[]> mapa = new java.util.HashMap<>();
-        for (Object[] fila : consultaGrupos()) {
-            Long id = fila[0] instanceof Number n ? n.longValue() : null;
-            if (id == null) {
-                continue;
-            }
-            mapa.put(id, new String[]{
-                    fila[2] == null ? "" : String.valueOf(fila[2]),
-                    fila[3] == null ? "" : String.valueOf(fila[3])});
+    @Nullable
+    private static Object valorOrden(@Nonnull StockForecastService.FilaPronostico fila,
+                                     @Nullable String sortKey) {
+        if (sortKey == null) {
+            return null;
         }
-        return mapa;
-    }
-
-    /**
-     * Los mismos grupos indexados por nombre de articulo.
-     *
-     * <p>La seccion de salud solo trae nombres de articulos criticos (no ids),
-     * asi que para poder filtrarla por grupo hace falta el nombre.</p>
-     */
-    @Nonnull
-    private Map<String, String[]> gruposPorNombre() {
-        Map<String, String[]> porNombre = new java.util.HashMap<>();
-        for (Object[] fila : consultaGrupos()) {
-            String nombre = fila[1] == null ? "" : String.valueOf(fila[1]);
-            if (nombre.isEmpty()) {
-                continue;
-            }
-            porNombre.put(nombre, new String[]{
-                    fila[2] == null ? "" : String.valueOf(fila[2]),
-                    fila[3] == null ? "" : String.valueOf(fila[3])});
-        }
-        return porNombre;
-    }
-
-    /** id, nombre, departamento y familia de todo el catalogo (una consulta). */
-    @Nonnull
-    private List<Object[]> consultaGrupos() {
-        return entityManager.createQuery(
-                        "SELECT a.codigo, a.nombre, d.nombre, f.nombre FROM Articulos a "
-                                + "LEFT JOIN a.departamento d "
-                                + "LEFT JOIN a.familia f",
-                        Object[].class)
-                .getResultList();
-    }
-
-    /** El filtro por departamento/familia (vacio = todos). */
-    private static boolean coincide(@Nonnull String[] grupo,
-                                    @Nonnull String departamento,
-                                    @Nonnull String familia) {
-        if (!departamento.isEmpty()
-                && !departamento.equalsIgnoreCase(grupo[0].trim())) {
-            return false;
-        }
-        return familia.isEmpty() || familia.equalsIgnoreCase(grupo[1].trim());
+        return switch (sortKey) {
+            case "articulo" -> fila.articulo();
+            case "departamento" -> fila.departamento();
+            case "familia" -> fila.familia();
+            case "stockActual" -> fila.stockActual();
+            case "demandaEstimada" -> fila.demandaEstimada();
+            case "diasRestantes" -> fila.diasRestantes();
+            case "cantidadSugerida" -> fila.cantidadSugerida();
+            case "recomendacion", "prioridad" -> fila.recomendacion();
+            default -> null;
+        };
     }
 
     /**

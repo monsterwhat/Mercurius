@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import Utils.FormatoVista;
 import jakarta.annotation.Nonnull;
@@ -84,10 +85,43 @@ final class Tablas {
         if (sortKey == null || sortKey.isBlank()) {
             return;
         }
+        ordenar(filas, sortKey, dir, fila -> fila.get(sortKey));
+    }
+
+    /**
+     * Same ordering contract over any row type.
+     *
+     * <p>Los reportes que calculan las filas en memoria (pronósticos) no
+     * construyen 200k mapas de presentación: ordenan su lista compacta pasando
+     * el valor de la columna, y solo materializan la página visible.</p>
+     */
+    static <T> void ordenar(@Nonnull List<T> filas,
+                            @Nullable String sortKey,
+                            @Nullable String dir,
+                            @Nonnull Function<T, Object> valor) {
+        if (sortKey == null || sortKey.isBlank() || filas.size() < 2) {
+            return;
+        }
         boolean desc = "desc".equalsIgnoreCase(dir);
-        Comparator<Map<String, Object>> comparator =
-                Comparator.comparing(fila -> ValorOrden.de(fila.get(sortKey)));
-        filas.sort(desc ? comparator.reversed() : comparator);
+
+        // La clave se calcula UNA vez por fila. Con Comparator.comparing el
+        // extractor se reevalúa en cada comparación (n log n): ordenar 148k
+        // pronósticos por nombre eran ~2,5M parseos y otros tantos
+        // NumberFormatException, 13 s extra sobre la misma página.
+        List<FilaOrdenada<T>> ordenadas = new ArrayList<>(filas.size());
+        for (T fila : filas) {
+            ordenadas.add(new FilaOrdenada<>(fila, ValorOrden.de(valor.apply(fila))));
+        }
+        Comparator<FilaOrdenada<T>> comparator =
+                Comparator.comparing(ordenada -> ordenada.clave());
+        ordenadas.sort(desc ? comparator.reversed() : comparator);
+        for (int i = 0; i < ordenadas.size(); i++) {
+            filas.set(i, ordenadas.get(i).fila());
+        }
+    }
+
+    /** Fila con su clave de orden ya calculada (ordenamientos estables). */
+    private record FilaOrdenada<T>(T fila, ValorOrden clave) {
     }
 
     /**
@@ -135,11 +169,43 @@ final class Tablas {
             } else if (ultimaComa >= 0) {
                 limpio = limpio.replace(',', '.');
             }
+            if (!esNumero(limpio)) {
+                return new ValorOrden(null, text);
+            }
             try {
                 return new ValorOrden(new BigDecimal(limpio), null);
             } catch (NumberFormatException e) {
                 return new ValorOrden(null, text);
             }
+        }
+
+        /**
+         * Descarte barato antes de {@code new BigDecimal}: sobre texto (nombres
+         * de artículo, departamentos) el constructor siempre lanza
+         * NumberFormatException, y en una página de 148k filas esas excepciones
+         * dominaban el tiempo de ordenamiento.
+         */
+        private static boolean esNumero(@Nonnull String texto) {
+            int inicio = 0;
+            if (!texto.isEmpty() && (texto.charAt(0) == '-' || texto.charAt(0) == '+')) {
+                inicio = 1;
+            }
+            if (inicio >= texto.length()) {
+                return false;
+            }
+            boolean punto = false;
+            for (int i = inicio; i < texto.length(); i++) {
+                char c = texto.charAt(i);
+                if (c == '.') {
+                    if (punto) {
+                        return false;
+                    }
+                    punto = true;
+                } else if (c < '0' || c > '9') {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override
