@@ -737,6 +737,8 @@ public class StockForecastService {
              .getSingleResult();
             return stock != null ? stock.intValue() : 0;
         } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("getCurrentStock: no se pudo leer el stock del articulo "
+                    + articuloId + "; se asume 0", e);
             return 0;
         }
     }
