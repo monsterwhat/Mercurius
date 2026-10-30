@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -21,6 +23,7 @@ import jakarta.xml.bind.annotation.XmlTransient;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -154,5 +157,29 @@ public class LineaDetalle {
     @XmlElement(name = "MontoTotalLinea")
     @Column(name = "monto_total_de_linea", precision = 18, scale = 5)
     private BigDecimal montoTotalLinea;
-            
+
+    // ── Auditoria del ajuste manual de precio POS ─────────────────────────
+    // Columnas persistentes, deliberadamente @XmlTransient: son una nota
+    // interna del sistema, no parte del XML fiscal de Hacienda.
+    @XmlTransient
+    @Column(name = "precio_original", precision = 18, scale = 2)
+    private BigDecimal precioOriginal;
+
+    @XmlTransient
+    @Column(name = "precio_ajustado", precision = 18, scale = 2)
+    private BigDecimal precioAjustado;
+
+    @XmlTransient
+    @Column(name = "motivo_ajuste_precio", length = 255)
+    private String motivoAjustePrecio;
+
+    @XmlTransient
+    @Column(name = "ajustado_por", length = 100)
+    private String ajustadoPor;
+
+    @XmlTransient
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "fecha_ajuste_precio")
+    private Date fechaAjustePrecio;
+
 }

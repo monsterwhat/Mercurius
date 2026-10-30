@@ -19,6 +19,7 @@ import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Services.Strategies.DocumentoStrategyFactory;
+import Utils.CarritoCalculations;
 import Utils.PDFGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -461,6 +462,39 @@ class ComprobanteTaxMathTest {
         // ImpuestoNeto still carries the FULL computed tax.
         assertThat(linea.getImpuestoNeto()).isEqualByComparingTo("13.00");
         assertThat(imp.getMonto()).isEqualByComparingTo("13.00");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Manual price override: the entered amount is FINAL (IVA included)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void manualPriceOverrideChargesEnteredFinalAmountWithoutAddingTaxOnTop() {
+        // El cajero digita ₡1000 finales sobre un articulo de 13%. La base se
+        // EXTRAE del mismo monto (1000 / 1.13 = 884.96) y el IVA es la parte
+        // contenida (115.04): el cliente paga ₡1000, nunca ₡1130.
+        ArticuloCarrito linea = item(151L, "501010121", "13", "884.96", "1");
+        linea.setPrecioAjustadoFinal(new BigDecimal("1000.00"));
+
+        assertThat(CarritoCalculations.calculateTotalCarrito(List.of(linea)))
+                .isEqualByComparingTo("1000.00");
+
+        ResumenFactura resumen = service.resumenComprobante(List.of(linea));
+        assertThat(resumen).isNotNull();
+        assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo("884.96");
+        assertThat(resumen.getTotalImpuesto()).isEqualByComparingTo("115.04");
+        assertThat(resumen.getTotalVentaNeta().add(resumen.getTotalImpuesto()))
+                .isEqualByComparingTo("1000.00");
+
+        DetalleServicio detalles = service.detallesComprobante(List.of(linea), "04");
+        assertThat(detalles).isNotNull();
+        LineaDetalle detalle = detalles.getLineasDetalle().get(0);
+        assertThat(detalle.getPrecioUnitario()).isEqualByComparingTo("884.96");
+        assertThat(detalle.getMontoTotal()).isEqualByComparingTo("884.96");
+        assertThat(detalle.getMontoTotalLinea()).isEqualByComparingTo("884.96");
+        assertThat(detalle.getImpuestos()).hasSize(1);
+        assertThat(detalle.getImpuestos().get(0).getMonto()).isEqualByComparingTo("115.04");
+        assertThat(detalle.getImpuestoNeto()).isEqualByComparingTo("115.04");
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

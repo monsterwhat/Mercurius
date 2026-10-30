@@ -78,19 +78,13 @@ public class PosPageResource {
     }
 
     /** Shared view model + render for the two POS templates. */
-    /** Shared view model + render for the two POS templates. */
     private Response html(@Nonnull Template template) {
         String username = currentUsername();
-        Map<String, Object> authInicial = new LinkedHashMap<>();
-        authInicial.put("exito", false);
-        authInicial.put("errorGeneral", null);
-        authInicial.put("panelHtml", null);
 
         Map<String, Object> page = new LinkedHashMap<>();
         page.put("panel", posResource.panelModel(username, null));
         page.put("badge", posResource.tipoCambioBadge());
         page.put("usuario", username);
-        page.put("authInicial", authInicial);
         String html = template.data(page).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))

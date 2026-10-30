@@ -297,7 +297,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 // dialogs + tipo-cambio badge + keyboard-first refocus glue
                 .body(containsString("id=\"modal-pago\""))
                 .body(containsString("id=\"modal-cliente\""))
-                .body(containsString("id=\"modal-autorizacion-body\""))
+                .body(containsString("id=\"modal-precio\""))
                 .body(containsString("id=\"badge-tipo-cambio\""))
                 .body(containsString("id=\"forma-tipo-documento\""))
                 .body(containsString("htmx:afterSwap"));
@@ -749,7 +749,7 @@ authed(session)
                 .statusCode(200)
                 .body(containsString("Autorización registrada"))
                 .body(containsString("hx-swap-oob=\"true\""))
-                .body(containsString("Autoriza: admin"));
+                .body(containsString("Precios ajustados en esta venta"));
 
         authed(session)
                 .when().get(POS + "/cart")

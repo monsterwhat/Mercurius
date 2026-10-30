@@ -31,11 +31,13 @@ import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
 import Models.Cabys;
 import Models.Clientes;
+import Models.Detalles.LineaDetalle;
 import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CabysService;
 import Services.ClientService;
+import Services.Facturas.LineaDetalleService;
 import Services.LoginService;
 import Services.cart.CartSessionStore;
 import org.junit.jupiter.api.MethodOrderer;
@@ -102,6 +104,9 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     @Inject
     Services.ComprobantesEmitidosService emitidosService;
+
+    @Inject
+    LineaDetalleService lineaDetalleService;
 
     @Inject
     Services.DirectoryService dirService;
@@ -734,66 +739,83 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     @Test
     @Order(16)
-    void priceOverrideRequiresSupervisorAuthorization() {
+    void cashierCanInvoicePriceOverrideWithoutSupervisorAuthorization() {
         ensureAppSettings();
         Set<Long> idsPrevios = new HashSet<>();
         emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
         try {
-        Map<String, String> session = adminSession();
-        cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(productoReal(), "1000");
+            Map<String, String> session = adminSession();
+            cartSessionStore.remove("admin");
+            Articulos articulo = seedArticulo(productoReal(), "1000");
 
-        // Supervisor-priced line (₡500 instead of ₡1000).
-        authed(session)
-                .contentType(ContentType.JSON)
-                .body("{\"articuloId\":" + articulo.getCodigo()
-                        + ",\"cantidad\":1,\"precioPersonalizado\":500}")
-                .when().post(POS + "/add")
-                .then().statusCode(200);
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{\"articuloId\":" + articulo.getCodigo() + ",\"cantidad\":1}")
+                    .when().post(POS + "/add")
+                    .then().statusCode(200);
 
-        authed(session)
-                .contentType(ContentType.JSON)
-                .body("{\"tipoDocumento\":\"04\","
-                        + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}]}")
-                .when().post(POS + "/facturar")
-                .then()
-                .statusCode(403)
-                .body("error.code", equalTo("SUPERVISOR_REQUIRED"));
+            // Ajuste manual a ₡500 (precio final con IVA) sin supervisor: la
+            // etiqueta física manda y el ajuste aplica solo a esta venta.
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "La etiqueta física mostraba 500")
+                    .when().post(POS + "/item/price-form")
+                    .then()
+                    .statusCode(200)
+                    .body(containsString("Precio ajustado solo para esta venta"))
+                    .body(containsString("La etiqueta física mostraba 500"));
 
-        // Wrong supervisor credentials → 401 envelope (AppAuthResource shape).
-        authed(session)
-                .contentType(ContentType.JSON)
-                .body("{\"username\":\"admin\",\"password\":\"wrong-pass\"}")
-                .when().post(POS + "/override-authorize")
-                .then()
-                .statusCode(401)
-                .body("error.code", equalTo("INVALID_CREDENTIALS"));
+            authed(session)
+                    .when().get(POS + "/cart")
+                    .then()
+                    .body("data.hasOverrides", is(true))
+                    .body("data.authorizedBy", nullValue())
+                    .body("data.items[0].precioFinal", equalTo(500))
+                    .body("data.items[0].motivoAjustePrecio",
+                            equalTo("La etiqueta física mostraba 500"))
+                    .body("data.items[0].ajustadoPor", equalTo("admin"));
 
-        // Correct credentials record the authorization on the caller's session.
-        authed(session)
-                .contentType(ContentType.JSON)
-                .body("{\"username\":\"admin\",\"password\":\"admin123\"}")
-                .when().post(POS + "/override-authorize")
-                .then()
-                .statusCode(200)
-                .body("data.authorizedBy", equalTo("admin"))
-                .body("data.roles", hasSize(6));
+            // No supervisor authorization: the cashier invoices directly.
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"04\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}]}")
+                    .when().post(POS + "/facturar")
+                    .then()
+                    .statusCode(200)
+                    .body("data.pdfUrl", notNullValue());
 
-        authed(session)
-                .when().get(POS + "/cart")
-                .then()
-                .body("data.hasOverrides", is(true))
-                .body("data.authorizedBy", equalTo("admin"));
+            // The audit note is persisted on the invoice line.
+            LineaDetalle linea = lineaDetalleService.listAll().stream()
+                    .filter(l -> articulo.getNombre().equals(l.getDetalle()))
+                    .findFirst().orElseThrow();
+            assertThat(linea.getPrecioOriginal()).isEqualByComparingTo("1130.00");
+            assertThat(linea.getPrecioAjustado()).isEqualByComparingTo("500");
+            assertThat(linea.getMotivoAjustePrecio()).isEqualTo("La etiqueta física mostraba 500");
+            assertThat(linea.getAjustadoPor()).isEqualTo("admin");
+            assertThat(linea.getFechaAjustePrecio()).isNotNull();
 
-        // Authorized facturar now flows through the whole pipeline.
-        authed(session)
-                .contentType(ContentType.JSON)
-                .body("{\"tipoDocumento\":\"04\","
-                        + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}]}")
-                .when().post(POS + "/facturar")
-                .then()
-                .statusCode(200)
-                .body("data.pdfUrl", notNullValue());
+            // El monto digitado es FINAL (IVA incluido): ₡500, no ₡565. La base
+            // imponible y el IVA se extraen del mismo monto y suman exactamente
+            // lo cobrado.
+            assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("442.48");
+            assertThat(linea.getMontoTotal()).isEqualByComparingTo("442.48");
+            assertThat(linea.getImpuestoNeto()).isEqualByComparingTo("57.52");
+
+            Models.ComprobantesEmitidos emitido = emitidosService.listAll().stream()
+                    .filter(c -> !idsPrevios.contains(c.getId()))
+                    .findFirst().orElseThrow();
+            assertThat(emitido.getResumen().getTotalVentaNeta()).isEqualByComparingTo("442.48");
+            assertThat(emitido.getResumen().getTotalImpuesto()).isEqualByComparingTo("57.52");
+            assertThat(emitido.getResumen().getTotalComprobante()).isEqualByComparingTo("500.00");
+
+            // El precio maestro del articulo NO cambio (sigue en ₡1000 + IVA).
+            Articulos recargado = articulosService.findByBarCode(articulo.getCodigoBarra());
+            assertThat(recargado.getPrecios()).hasSize(1);
+            assertThat(recargado.getLastPrecio().getPrecioConUtilidad())
+                    .isEqualByComparingTo("1000");
         } finally {
             limpiarFacturas(idsPrevios);
         }
@@ -839,5 +861,149 @@ class PosResourceTest extends support.ContextPathIsolation {
                 .body("data.items", hasSize(0))
                 .body("data.totalPagado", equalTo(0))
                 .body("data.authorizedBy", nullValue());
+    }
+
+    @Test
+    @Order(18)
+    void priceFormRequiresMotivoAndRestoreClearsOverride() {
+        Map<String, String> session = adminSession();
+        cartSessionStore.remove("admin");
+        Articulos articulo = seedExemptArticulo(productoReal(), "1000");
+
+        authed(session)
+                .contentType(ContentType.JSON)
+                .body("{\"articuloId\":" + articulo.getCodigo() + ",\"cantidad\":1}")
+                .when().post(POS + "/add")
+                .then().statusCode(200);
+
+        // Sin motivo no se registra el ajuste: la nota de auditoría es
+        // obligatoria.
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("codigo", articulo.getCodigo())
+                .formParam("precio", "750")
+                .when().post(POS + "/item/price-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Indique el motivo del ajuste"));
+
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .body("data.hasOverrides", is(false));
+
+        // Ajuste válido: ₡750 finales (0% IVA ⇒ base = 750).
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("codigo", articulo.getCodigo())
+                .formParam("precio", "750")
+                .formParam("motivo", "Etiqueta física desactualizada")
+                .when().post(POS + "/item/price-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Precio ajustado solo para esta venta"));
+
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .body("data.hasOverrides", is(true))
+                .body("data.items[0].precioEfectivo", equalTo(750.0f))
+                .body("data.items[0].precioFinal", equalTo(750));
+
+        // Restaurar vuelve al precio del sistema y limpia la auditoría.
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("codigo", articulo.getCodigo())
+                .formParam("restaurar", "true")
+                .when().post(POS + "/item/price-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Precio del sistema restaurado"));
+
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .body("data.hasOverrides", is(false))
+                .body("data.items[0].precioEfectivo", equalTo(1000.0f))
+                .body("data.items[0].precioPersonalizado", nullValue());
+    }
+
+    @Test
+    @Order(19)
+    void enteredFinalPriceIsChargedVerbatimAndMasterPriceStaysUntouched() {
+        ensureAppSettings();
+        Set<Long> idsPrevios = new HashSet<>();
+        emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
+        try {
+            Map<String, String> session = adminSession();
+            cartSessionStore.remove("admin");
+            // Precio del sistema: ₡1000 + 13% = ₡1130.
+            Articulos articulo = seedArticulo(productoReal(), "1000");
+
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{\"articuloId\":" + articulo.getCodigo() + ",\"cantidad\":1}")
+                    .when().post(POS + "/add")
+                    .then().statusCode(200);
+
+            // El cajero digita ₡1000: ese es el precio FINAL. El IVA (₡115.04)
+            // va DENTRO de los ₡1000; jamás se suma encima (no se cobra ₡1130).
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "1000")
+                    .formParam("motivo", "Etiqueta fisica 1000")
+                    .when().post(POS + "/item/price-form")
+                    .then()
+                    .statusCode(200)
+                    .body(containsString("Precio ajustado solo para esta venta"))
+                    .body(containsString("IVA incluido; no se suma nada encima"));
+
+            var cartJson = authed(session)
+                    .when().get(POS + "/cart")
+                    .then()
+                    .statusCode(200)
+                    .body("data.hasOverrides", is(true))
+                    .body("data.totalCarrito", equalTo(1000))
+                    .body("data.items[0].precioFinal", equalTo(1000))
+                    .extract().jsonPath();
+            assertThat(new BigDecimal(cartJson.getString("data.items[0].precioEfectivo")))
+                    .isEqualByComparingTo("884.96");
+
+            // Pagar exactamente ₡1000 alcanza: no hay faltante por IVA.
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"04\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":1000}]}")
+                    .when().post(POS + "/facturar")
+                    .then()
+                    .statusCode(200)
+                    .body("data.pdfUrl", notNullValue())
+                    .body("data.vuelto", equalTo(0));
+
+            Models.ComprobantesEmitidos emitido = emitidosService.listAll().stream()
+                    .filter(c -> !idsPrevios.contains(c.getId()))
+                    .findFirst().orElseThrow();
+            assertThat(emitido.getResumen().getTotalVentaNeta()).isEqualByComparingTo("884.96");
+            assertThat(emitido.getResumen().getTotalImpuesto()).isEqualByComparingTo("115.04");
+            assertThat(emitido.getResumen().getTotalComprobante()).isEqualByComparingTo("1000.00");
+
+            LineaDetalle linea = lineaDetalleService.listAll().stream()
+                    .filter(l -> articulo.getNombre().equals(l.getDetalle()))
+                    .findFirst().orElseThrow();
+            assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("884.96");
+            assertThat(linea.getMontoTotal()).isEqualByComparingTo("884.96");
+            assertThat(linea.getImpuestoNeto()).isEqualByComparingTo("115.04");
+            assertThat(linea.getPrecioAjustado()).isEqualByComparingTo("1000.00");
+            assertThat(linea.getMotivoAjustePrecio()).isEqualTo("Etiqueta fisica 1000");
+
+            // El artículo NO cambió de precio: sigue con su base de ₡1000.
+            Articulos recargado = articulosService.findByBarCode(articulo.getCodigoBarra());
+            assertThat(recargado.getPrecios()).hasSize(1);
+            assertThat(recargado.getLastPrecio().getPrecioConUtilidad())
+                    .isEqualByComparingTo("1000");
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
     }
 }

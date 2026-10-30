@@ -25,6 +25,8 @@ import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
 import Services.TipoCambioService;
 import Services.cart.CartSessionStore;
+import Utils.CarritoCalculations;
+import Utils.FormatoVista;
 import Utils.PDFGenerator;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -53,6 +55,7 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -520,14 +523,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
         CartSessionContext ctx = entry.getCartContext();
 
-        // 1. Price-override gate (controller lines 438-442): overrides need a
-        //    supervisor authorization recorded via POST /override-authorize.
-        if (hasOverridesInCarrito(ctx) && entry.getAuthorizedBy() == null) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(ApiResponse.error("SUPERVISOR_REQUIRED",
-                            "El carrito tiene precios personalizados; se requiere autorización de supervisor"))
-                    .build();
-        }
+        // 1. Precios ajustados: el cajero puede corregir una linea para ESTA
+        //    venta sin autorizacion de supervisor (decision de producto: la
+        //    etiqueta fisica manda al cobrar). El ajuste no toca el precio del
+        //    articulo; queda auditado en la LineaDetalle y en el log.
 
         // 2. Settings gate (controller lines 443-446). Delta vs the controller's
         //    NPE-on-null: an explicit envelope instead (see evidence notes).
@@ -973,11 +972,12 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     // ── Supervisor price-override authorization ─────────────────────────
 
     /**
-     * Supervisor re-authorization for price overrides, mirroring
+     * LEGACY: supervisor re-authorization for price overrides, mirroring
      * {@code AppAuthResource.supervisorAuthorize} (LoginService lookup + BCrypt
-     * verify + role derivation). On success the supervisor username is recorded
-     * on the CALLER's cart session so POST /facturar may proceed past the
-     * override gate (the REST twin of CrearTiqueteController.authorize()).
+     * verify + role derivation). Kept for API compatibility; POST /facturar no
+     * longer checks this authorization — the cashier may adjust a line price
+     * for the current sale without a supervisor. On success the supervisor
+     * username is still recorded on the CALLER's cart session.
      */
     @POST
     @Path("/override-authorize")
@@ -1216,6 +1216,124 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         return htmlOk(cartPanelTemplate
                 .data("panel", panelModel(username,
                         message("CANTIDAD_ACTUALIZADA", "info", "Cantidad actualizada", null))).render());
+    }
+
+    /**
+     * Ajuste manual del precio de una linea del carrito. El cajero escribe el
+     * precio FINAL (IVA incluido) que muestra la etiqueta fisica; la linea
+     * guarda la base sin IVA para que la matematica fiscal existente cobre ese
+     * valor. El ajuste aplica SOLO a esta venta: nunca toca el precio maestro
+     * del articulo. La nota (motivo, usuario, fecha y ambos precios) se copia a
+     * la LineaDetalle al facturar y queda ademas en el log estructurado.
+     *
+     * <p>{@code restaurar=true} limpia el ajuste y vuelve al precio del
+     * sistema.</p>
+     */
+    @POST
+    @Path("/item/price-form")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Override a cart line price for this sale only and return the refreshed cart panel")
+    public Response priceForm(
+            @FormParam("codigo") @Nullable Long codigo,
+            @FormParam("precio") @Nullable String precio,
+            @FormParam("motivo") @Nullable String motivo,
+            @FormParam("restaurar") @Nullable String restaurar) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        if (codigo == null) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("VALIDATION_ERROR", "error",
+                            "codigo es requerido", null))).render());
+        }
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
+        if (target == null) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("LINEA_NO_ENCONTRADA", "error",
+                            "El artículo no está en el carrito", null))).render());
+        }
+        if (target.isPromo()) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("AJUSTE_NO_PERMITIDO", "warn",
+                            "Las líneas de promoción no admiten ajuste manual", null))).render());
+        }
+
+        String nombre = target.getArticulo() != null ? target.getArticulo().getNombre() : null;
+
+        if (restaurar != null && !restaurar.isBlank()) {
+            BigDecimal restaurado = target.getPrecioFinalSistema();
+            clearPriceOverride(target);
+            LOG.info("Ajuste de precio POS restaurado | cajero=" + username
+                    + " | articulo=" + codigo
+                    + " | nombre=" + nombre
+                    + " | precioRestaurado=" + restaurado);
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("PRECIO_RESTAURADO", "info",
+                            "Precio del sistema restaurado",
+                            restaurado == null ? null : "₡" + restaurado.toPlainString()))).render());
+        }
+
+        BigDecimal precioFinal = parseDecimal(precio);
+        if (precioFinal.compareTo(BigDecimal.ZERO) <= 0) {
+            LOG.warn("Precio inválido en ajuste POS | cajero=" + username
+                    + " | articulo=" + codigo + " | valor=" + precio);
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("PRECIO_INVALIDO", "error",
+                            "El precio debe ser mayor a cero", null))).render());
+        }
+        if (motivo == null || motivo.isBlank()) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("MOTIVO_REQUERIDO", "error",
+                            "Indique el motivo del ajuste",
+                            "Ej.: la etiqueta física muestra otro precio"))).render());
+        }
+        String motivoLimpio = motivo.trim();
+        if (motivoLimpio.length() > 200) {
+            motivoLimpio = motivoLimpio.substring(0, 200);
+        }
+
+        BigDecimal precioSistema = target.getPrecioFinalSistema();
+        BigDecimal baseSinIva = CarritoCalculations.getPrecioBaseDesdeFinal(target, precioFinal);
+        if (baseSinIva.compareTo(BigDecimal.ZERO) <= 0) {
+            LOG.warn("No se pudo derivar la base sin IVA en ajuste POS | cajero=" + username
+                    + " | articulo=" + codigo + " | precioFinal=" + precioFinal);
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("PRECIO_INVALIDO", "error",
+                            "No se pudo calcular el precio sin IVA", null))).render());
+        }
+
+        target.setPrecioPersonalizado(baseSinIva);
+        target.setPrecioOriginalSistema(precioSistema);
+        target.setPrecioAjustadoFinal(precioFinal);
+        target.setMotivoAjustePrecio(motivoLimpio);
+        target.setAjustePrecioPor(username);
+        target.setAjustePrecioFecha(new Date());
+
+        LOG.info("Ajuste manual de precio POS | cajero=" + username
+                + " | articulo=" + codigo
+                + " | nombre=" + nombre
+                + " | precioSistema=" + precioSistema
+                + " | precioAplicado=" + precioFinal
+                + " | motivo=" + motivoLimpio);
+
+        String detalle = (precioSistema == null ? "" : "Sistema: ₡" + precioSistema.toPlainString() + " → ")
+                + "se cobrará ₡" + precioFinal.toPlainString()
+                + " (IVA incluido; no se suma nada encima). Queda registrado en la factura.";
+        return htmlOk(cartPanelTemplate.data("panel",
+                panelModel(username, message("PRECIO_AJUSTADO", "warn",
+                        "Precio ajustado solo para esta venta", detalle))).render());
+    }
+
+    private static void clearPriceOverride(@Nonnull ArticuloCarrito target) {
+        target.setPrecioPersonalizado(null);
+        target.setPrecioOriginalSistema(null);
+        target.setPrecioAjustadoFinal(null);
+        target.setMotivoAjustePrecio(null);
+        target.setAjustePrecioPor(null);
+        target.setAjustePrecioFecha(null);
     }
 
     /**
@@ -1532,10 +1650,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     }
 
     /**
-     * Form twin of {@link #overrideAuthorize}: same BCrypt-backed supervisor
-     * check and alertas trail; success answers a toast plus an out-of-band
-     * refresh of {@code #cart-panel} (the authorization badge lives there),
-     * failure re-renders the form with the error.
+     * LEGACY form twin of {@link #overrideAuthorize}: same BCrypt-backed
+     * supervisor check. Kept for API compatibility; the POS page no longer
+     * mounts the dialog and /facturar no longer requires this authorization.
+     * Success still records the supervisor and answers an out-of-band refresh
+     * of {@code #cart-panel}; failure re-renders the form with the error.
      */
     @POST
     @Path("/override-authorize-form")
@@ -1668,10 +1787,17 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             row.put("codigo", item.getArticulo() != null ? item.getArticulo().getCodigo() : null);
             row.put("nombre", item.getArticulo() != null ? item.getArticulo().getNombre() : null);
             row.put("cantidad", item.getCantidad());
+            // precioEfectivo sigue siendo la base SIN IVA (contrato del JSON
+            // /cart); la vista del cajero usa el precio final con IVA.
             row.put("precioEfectivo", item.getPrecioEfectivo());
-            row.put("totalLinea", item.getTotalArticulo());
+            row.put("precioMostrado", item.getPrecioFinalEfectivo());
+            row.put("precioSistema", item.getPrecioFinalSistema());
+            row.put("precioSistemaTexto", FormatoVista.moneda(item.getPrecioFinalSistema()));
+            row.put("totalLinea", CarritoCalculations.getTotalLineaFinal(item));
             row.put("promo", item.isPromo());
             row.put("precioPersonalizado", item.getPrecioPersonalizado());
+            row.put("motivoAjuste", item.getMotivoAjustePrecio());
+            row.put("ajustadoPor", item.getAjustePrecioPor());
             items.add(row);
         }
 
@@ -1944,17 +2070,25 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
     private @Nullable ArticuloCarrito findLineByArticuloCodigo(
             @Nonnull CartSessionContext ctx, long articuloCodigo) {
+        ArticuloCarrito promo = null;
         for (ArticuloCarrito item : ctx.getCarrito()) {
             if (item.getArticulo() != null
                     && item.getArticulo().getCodigo() != null
                     && item.getArticulo().getCodigo() == articuloCodigo) {
-                return item;
+                // Preferir la linea normal: las lineas de promocion comparten
+                // el codigo del articulo y no admiten ajuste de precio.
+                if (!item.isPromo()) {
+                    return item;
+                }
+                if (promo == null) {
+                    promo = item;
+                }
             }
         }
-        return null;
+        return promo;
     }
 
-    /** Controller parity: any row with a custom price requires supervisor auth. */
+    /** Any row carries a manual price adjustment (cart banner / audit flag). */
     private boolean hasOverridesInCarrito(@Nonnull CartSessionContext ctx) {
         for (ArticuloCarrito item : ctx.getCarrito()) {
             if (item.getPrecioPersonalizado() != null) {
@@ -1998,8 +2132,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             line.nombre = item.getArticulo() != null ? item.getArticulo().getNombre() : null;
             line.cantidad = item.getCantidad();
             line.precioEfectivo = item.getPrecioEfectivo();
+            line.precioFinal = item.getPrecioFinalEfectivo();
             line.descuento = item.getDescuento();
             line.precioPersonalizado = item.getPrecioPersonalizado();
+            line.motivoAjustePrecio = item.getMotivoAjustePrecio();
+            line.ajustadoPor = item.getAjustePrecioPor();
             line.promo = item.isPromo();
             summary.items.add(line);
         }
@@ -2176,8 +2313,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         public @Nullable String nombre;
         public @Nullable BigDecimal cantidad;
         public @Nullable BigDecimal precioEfectivo;
+        public @Nullable BigDecimal precioFinal;
         public @Nullable BigDecimal descuento;
         public @Nullable BigDecimal precioPersonalizado;
+        public @Nullable String motivoAjustePrecio;
+        public @Nullable String ajustadoPor;
         public boolean promo;
     }
 

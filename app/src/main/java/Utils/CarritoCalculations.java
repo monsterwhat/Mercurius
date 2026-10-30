@@ -68,6 +68,74 @@ public class CarritoCalculations {
         }
     }
 
+    /**
+     * Precio unitario FINAL (IVA incluido) de una linea, aplicando el descuento
+     * de promo cuando corresponda. Es el numero que ve el cajero y el que se
+     * cobra al cliente.
+     */
+    @Nonnull
+    public static BigDecimal getPrecioUnitarioFinal(@Nullable ArticuloCarrito item) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal base = item.getPrecioEfectivo();
+        if (item.isPromo()) {
+            BigDecimal discount = capDiscount(item.getDescuento())
+                    .divide(BigDecimal.valueOf(100), MC);
+            base = base.subtract(base.multiply(discount, MC), MC);
+        }
+        return getPrecioFinalDesdeBase(item, base);
+    }
+
+    /** Aplica la tarifa de IVA del CABYS a una base sin impuesto. */
+    @Nonnull
+    public static BigDecimal getPrecioFinalDesdeBase(
+            @Nullable ArticuloCarrito item, @Nullable BigDecimal baseSinIva) {
+        if (item == null || baseSinIva == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal rate = getImpuestoRate(item).divide(BigDecimal.valueOf(100), MC);
+        return baseSinIva.add(baseSinIva.multiply(rate, MC))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Base sin IVA equivalente a un precio final. Se usa en el ajuste manual:
+     * el cajero escribe el precio de la etiqueta (IVA incluido) y la linea
+     * guarda la base que consume la matematica fiscal existente.
+     *
+     * <p>La base se redondea a centavos a proposito. El IVA de una linea
+     * ajustada se calcula como {@code final - base} (ver
+     * {@link #getTotalImpuesto(ArticuloCarrito)}), no relanzando la tasa: asi
+     * {@code base + IVA} es EXACTAMENTE el precio que el cajero digito. Una
+     * base con mas decimales hacia que el total de la factura derivara unas
+     * diezmilesimas del monto realmente cobrado.</p>
+     */
+    @Nonnull
+    public static BigDecimal getPrecioBaseDesdeFinal(
+            @Nullable ArticuloCarrito item, @Nullable BigDecimal precioFinal) {
+        if (item == null || precioFinal == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal rate = getImpuestoRate(item).divide(BigDecimal.valueOf(100), MC);
+        BigDecimal factor = BigDecimal.ONE.add(rate, MC);
+        if (factor.compareTo(BigDecimal.ZERO) <= 0) {
+            return precioFinal.setScale(2, RoundingMode.HALF_UP);
+        }
+        return precioFinal.divide(factor, 2, RoundingMode.HALF_UP);
+    }
+
+    /** Total de la linea (IVA incluido) para la vista del carrito. */
+    @Nonnull
+    public static BigDecimal getTotalLineaFinal(@Nullable ArticuloCarrito item) {
+        if (item == null || item.getCantidad() == null) {
+            return BigDecimal.ZERO;
+        }
+        return item.getPrecioFinalEfectivo()
+                .multiply(item.getCantidad(), MC)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
     @Nonnull
     public static BigDecimal getTotalArticulos(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null) {
@@ -134,6 +202,13 @@ public class CarritoCalculations {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
+        if (articuloCarrito.hasPrecioAjustado() && !articuloCarrito.isPromo()) {
+            // El cajero digito el precio FINAL (IVA incluido): el impuesto es
+            // la parte YA CONTENIDA en ese monto, no un porcentaje que se sume
+            // encima. base + impuesto = precio digitado, exacto al centavo.
+            return articuloCarrito.getPrecioAjustadoFinal()
+                    .subtract(articuloCarrito.getPrecioEfectivo());
+        }
         var descuento = articuloCarrito.getDescuento();
         var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
         BigDecimal tax = getImpuestoRate(articuloCarrito);
@@ -161,6 +236,12 @@ public class CarritoCalculations {
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
                 var cantidad = item.getCantidad();
+                // Precio final fijado por el cajero: se cobra EXACTAMENTE ese
+                // monto, con el IVA ya incluido (no se suma impuesto encima).
+                if (item.hasPrecioAjustado() && !item.isPromo()) {
+                    total = total.add(item.getPrecioAjustadoFinal().multiply(cantidad, MC));
+                    continue;
+                }
                 var isPromo = item.isPromo();
                 var tax = getImpuestoRate(item);
                 var taxDecimal = tax.divide(BigDecimal.valueOf(100), MC);

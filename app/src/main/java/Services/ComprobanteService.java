@@ -63,6 +63,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.jboss.logging.Logger;
@@ -925,20 +926,6 @@ public class ComprobanteService implements Serializable {
             boolean esServicio = false;
             for (ArticuloCarrito articuloCarrito : carrito) {
                 var articulo = articuloCarrito;
-                BigDecimal precioFinal;
-                if (articuloCarrito.isPromo()) {
-                    BigDecimal precioUnit = articuloCarrito.getPrecioEfectivo();
-                    BigDecimal desc = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
-                    if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
-                    precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
-                            .multiply(articuloCarrito.getCantidad())
-                            // Escala Hacienda: sin esto una promo con % fraccionario
-                            // estira la escala a 7 (p.ej. 99.99 × 0.92500 × 3) y el
-                            // XSD (fractionDigits <= 5) rechaza el documento.
-                            .setScale(5, RoundingMode.HALF_UP);
-                } else {
-                    precioFinal = articuloCarrito.getTotalArticulos();
-                }
 
                 String impuestoStr = articulo.getArticulo().getCodigoCabys().getImpuesto();
                 BigDecimal impuestoPct = BigDecimal.ZERO;
@@ -955,11 +942,41 @@ public class ComprobanteService implements Serializable {
                     }
                 }
                 var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
-                // Misma escala Hacienda que en detallesComprobante: ambas caras
-                // redondean el impuesto de la línea a 5, así el cruce
-                // Σ líneas == TotalImpuesto se mantiene exacto.
-                var totalImpuestoArticulo = precioFinal.multiply(impuesto)
-                        .setScale(5, RoundingMode.HALF_UP);
+
+                BigDecimal precioFinal;
+                BigDecimal totalImpuestoArticulo;
+                if (articuloCarrito.isPromo()) {
+                    BigDecimal precioUnit = articuloCarrito.getPrecioEfectivo();
+                    BigDecimal desc = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
+                    if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
+                    precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
+                            .multiply(articuloCarrito.getCantidad())
+                            // Escala Hacienda: sin esto una promo con % fraccionario
+                            // estira la escala a 7 (p.ej. 99.99 × 0.92500 × 3) y el
+                            // XSD (fractionDigits <= 5) rechaza el documento.
+                            .setScale(5, RoundingMode.HALF_UP);
+                    totalImpuestoArticulo = precioFinal.multiply(impuesto)
+                            .setScale(5, RoundingMode.HALF_UP);
+                } else if (articuloCarrito.hasPrecioAjustado()) {
+                    // El cajero digito un precio FINAL (IVA incluido). La base
+                    // imponible y el impuesto se extraen de ese mismo monto:
+                    // base + IVA = final. Nunca se suma IVA sobre el final.
+                    var cantidad = articuloCarrito.getCantidad();
+                    var totalLinea = articuloCarrito.getPrecioAjustadoFinal()
+                            .multiply(cantidad)
+                            .setScale(5, RoundingMode.HALF_UP);
+                    precioFinal = articuloCarrito.getPrecioEfectivo()
+                            .multiply(cantidad)
+                            .setScale(5, RoundingMode.HALF_UP);
+                    totalImpuestoArticulo = totalLinea.subtract(precioFinal);
+                } else {
+                    precioFinal = articuloCarrito.getTotalArticulos();
+                    // Misma escala Hacienda que en detallesComprobante: ambas caras
+                    // redondean el impuesto de la línea a 5, así el cruce
+                    // Σ líneas == TotalImpuesto se mantiene exacto.
+                    totalImpuestoArticulo = precioFinal.multiply(impuesto)
+                            .setScale(5, RoundingMode.HALF_UP);
+                }
 
                 ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
                         articulo.getArticulo().getCodigo().toString());
@@ -1149,6 +1166,25 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
 
                 LineaDetalle linea = new LineaDetalle();
                 linea.setNumeroLinea(i);
+
+                // Nota interna del ajuste manual de precio POS. Son columnas
+                // @XmlTransient en LineaDetalle: quedan en la base para
+                // auditoria pero NO viajan en el XML fiscal de Hacienda.
+                if (articulo.getPrecioPersonalizado() != null) {
+                    linea.setPrecioOriginal(articulo.getPrecioOriginalSistema() != null
+                            ? articulo.getPrecioOriginalSistema()
+                            : articulo.getPrecioFinalSistema());
+                    linea.setPrecioAjustado(articulo.getPrecioAjustadoFinal() != null
+                            ? articulo.getPrecioAjustadoFinal()
+                            : articulo.getPrecioFinalEfectivo());
+                    linea.setMotivoAjustePrecio(articulo.getMotivoAjustePrecio() != null
+                            ? articulo.getMotivoAjustePrecio()
+                            : "Ajuste manual de precio (sin motivo registrado)");
+                    linea.setAjustadoPor(articulo.getAjustePrecioPor());
+                    linea.setFechaAjustePrecio(articulo.getAjustePrecioFecha() != null
+                            ? articulo.getAjustePrecioFecha()
+                            : new Date());
+                }
 
                 // Fields common to all document types (including REP)
                 linea.setDetalle(articulo.getArticulo().getNombre());

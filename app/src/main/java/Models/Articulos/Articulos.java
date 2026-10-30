@@ -100,6 +100,11 @@ public class Articulos implements Serializable {
     @ToString.Exclude
     @Nullable
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    // El historico se lee por id ascendente: el ultimo elemento es SIEMPRE la
+    // fila de precio mas reciente (getLastPrecio). Sin este orden la coleccion
+    // EAGER llegaba en el orden que devolviera la base y el POS podia cobrar
+    // un precio viejo.
+    @OrderBy("id ASC")
     private List<ArticuloPrecio> precios; // List of pricing details
 
     @EqualsAndHashCode.Exclude
@@ -133,10 +138,23 @@ public class Articulos implements Serializable {
     }
 
     public ArticuloPrecio getLastPrecio() {
-        if (precios != null && !precios.isEmpty()) {
-            return precios.get(precios.size() - 1);
+        if (precios == null || precios.isEmpty()) {
+            return null;
         }
-        return null;
+        // Defensive max-by-id: @OrderBy("id ASC") already sorts the loaded
+        // collection, but a detached/in-memory list (new rows not flushed yet)
+        // is not guaranteed to be sorted. Ties keep the later element, which is
+        // the insertion order for rows whose id is still 0.
+        ArticuloPrecio last = null;
+        for (ArticuloPrecio precio : precios) {
+            if (precio == null) {
+                continue;
+            }
+            if (last == null || precio.getId() >= last.getId()) {
+                last = precio;
+            }
+        }
+        return last;
     }
 
     public BigDecimal getLastPrecioArticulo() {

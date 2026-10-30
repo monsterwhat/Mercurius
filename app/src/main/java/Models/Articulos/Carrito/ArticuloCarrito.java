@@ -15,6 +15,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,6 +47,30 @@ public class ArticuloCarrito {
     @Column
     private BigDecimal precioPersonalizado;
 
+    /**
+     * Auditoria del ajuste manual de precio. Vive solo en memoria: el carrito
+     * POS no se persiste, y el rastro real se copia a la LineaDetalle de la
+     * factura al emitir (ComprobanteService.detallesComprobante).
+     *
+     * <p>Los precios de auditoria son FINALES (IVA incluido), que es lo que el
+     * cajero lee en la etiqueta fisica. {@link #precioPersonalizado} sigue
+     * siendo la base SIN IVA que consume la matematica fiscal existente.</p>
+     */
+    @Transient
+    private BigDecimal precioOriginalSistema;
+
+    @Transient
+    private BigDecimal precioAjustadoFinal;
+
+    @Transient
+    private String motivoAjustePrecio;
+
+    @Transient
+    private String ajustePrecioPor;
+
+    @Transient
+    private Date ajustePrecioFecha;
+
     @Column
     private boolean isPromo;
 
@@ -66,6 +91,47 @@ public class ArticuloCarrito {
             return precioPersonalizado;
         }
         return articulo.getLastPrecio().getPrecioConUtilidad();
+    }
+
+    /**
+     * Precio unitario FINAL (IVA incluido) que paga el cliente. Para una linea
+     * ajustada devuelve exactamente el valor que el cajero escribio; para el
+     * resto lo deriva de la base sin IVA con la tarifa del CABYS, igual que la
+     * matematica de {@link CarritoCalculations}.
+     */
+    public BigDecimal getPrecioFinalEfectivo() {
+        if (precioAjustadoFinal != null) {
+            return precioAjustadoFinal;
+        }
+        return CarritoCalculations.getPrecioUnitarioFinal(this);
+    }
+
+    /**
+     * Precio unitario FINAL del sistema antes de cualquier ajuste manual. Es el
+     * valor que se guarda como {@code precioOriginalSistema} en la auditoria.
+     */
+    public BigDecimal getPrecioFinalSistema() {
+        if (articulo != null) {
+            var last = articulo.getLastPrecio();
+            if (last != null && last.getPrecioFinal() != null) {
+                return last.getPrecioFinal();
+            }
+            if (last != null) {
+                return CarritoCalculations.getPrecioFinalDesdeBase(this, last.getPrecioConUtilidad());
+            }
+        }
+        return CarritoCalculations.getPrecioUnitarioFinal(this);
+    }
+
+    /**
+     * {@code true} cuando el cajero fijo un precio FINAL (IVA incluido) para
+     * esta venta. En ese caso {@link #precioAjustadoFinal} es la fuente de
+     * verdad de lo que se cobra y {@link #precioPersonalizado} es solo su base
+     * sin IVA para la matematica fiscal: el impuesto se EXTRAE del precio final
+     * en lugar de sumarse encima.
+     */
+    public boolean hasPrecioAjustado() {
+        return precioAjustadoFinal != null && precioPersonalizado != null;
     }
 
     public ArticuloCarrito(BigDecimal cantidad, BigDecimal descuento, boolean isPromo, List<Promocion> promociones) {

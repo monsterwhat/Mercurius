@@ -1,10 +1,16 @@
 {!
   pages/facturas/auth-modal-body - supervisor authorization form for price
-  overrides (T37). Initial paint comes from pages/facturas/factura.html
-  (empty model); every POST /api/app/pos/override-authorize-form response
-  re-renders this fragment into #modal-autorizacion-body. On success a toast
-  plus an out-of-band #cart-panel refresh (authorization badge lives there);
-  on failure the error redisplay keeps the typed username.
+  overrides (T37).
+
+  LEGACY / UNMOUNTED: the POS page no longer renders this dialog. The cashier
+  can adjust a line price without supervisor authorization, so the page uses
+  pages/facturas/cart-panel's #modal-precio instead. This fragment and the
+  /override-authorize* endpoints remain only for API compatibility.
+
+  Initial paint came from pages/facturas/factura.html (empty model); every POST
+  /api/app/pos/override-authorize-form response re-renders this fragment into
+  #modal-autorizacion-body. On success a toast plus an out-of-band #cart-panel
+  refresh; on failure the error redisplay keeps the typed username.
 
   Model ("auth" bound key, Map):
     exito         bool

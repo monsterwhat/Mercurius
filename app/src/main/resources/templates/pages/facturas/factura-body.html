@@ -16,7 +16,6 @@
     panel       Map - cart-panel model (see cart-panel.html header)
     badge       Map - {disponible,venta,compra,fecha} tipo-cambio badge
     usuario     String - authenticated cashier
-    authInicial Map - {exito:false,errorGeneral:null,panelHtml:null}
 
   Live values stay in the cart panel: #cart-panel is the hx-target of every POS
   mutation twin (scan / qty / remove / client / puntos / facturar / cancel), so
@@ -171,25 +170,12 @@
 {#include _kit/modal id="modal-articulos" title="Buscar y agregar artículo" triggerClass="is-hidden"
      bodyUrl="/api/app/pos/articulos-picker?q="}{/include}
 
-{! Supervisor authorization: inline Alpine modal (same skeleton as
-   _kit/modal) because its body is painted server-side and re-rendered by
-   POST /override-authorize-form — no bodyUrl fetch. !}
-<div class="modal" id="modal-autorizacion" x-data="{ open:false }"
-     :class="{ 'is-active': open }" @keydown.escape.window="open = false"
-     role="dialog" aria-modal="true" aria-labelledby="modal-autorizacion-title">
-    <div class="modal-background" @click="open = false"></div>
-    <div class="modal-card" tabindex="-1" @keydown.tab="kitTrapTab($event, $el)">
-        <header class="modal-card-head">
-            <p class="modal-card-title" id="modal-autorizacion-title">Autorización requerida</p>
-            <button class="delete" type="button" aria-label="Cerrar" @click="open = false"></button>
-        </header>
-        {! The id lives on the fragment (…-body), not on this section: putting it
-           on both made two elements with the same id before the first POST. !}
-        <section class="modal-card-body">
-            {#include pages/facturas/auth-modal-body auth=authInicial /}
-        </section>
-    </div>
-</div>
+{! Price-override modal lives INSIDE pages/facturas/cart-panel (it travels
+   with every cart swap, so saving closes it by replacing the panel). The
+   legacy supervisor authorization dialog was removed from this screen: the
+   cashier can adjust a line price without authorization. The
+   /override-authorize* endpoints and auth-modal-body.html remain for API
+   compatibility only. !}
 
 {#include _kit/confirm /}
 
@@ -314,6 +300,47 @@
         });
 
         document.addEventListener('click', function (e) {
+            // Price-override row button: prefill the modal from the row's data-*
+            // attributes, then open it. The form posts to /item/price-form and
+            // replaces #cart-panel, which also closes this modal.
+            var priceOpener = e.target.closest('[data-precio-open]');
+            if (priceOpener) {
+                var modalPrecio = document.getElementById(priceOpener.getAttribute('data-precio-open'));
+                if (modalPrecio && window.Alpine) {
+                    var dato = function (name) {
+                        return priceOpener.getAttribute(name) || '';
+                    };
+                    var codigo = modalPrecio.querySelector('#precio-codigo');
+                    var nombre = modalPrecio.querySelector('#precio-nombre');
+                    var sistema = modalPrecio.querySelector('#precio-sistema');
+                    var nuevo = modalPrecio.querySelector('#precio-nuevo');
+                    var motivo = modalPrecio.querySelector('#precio-motivo');
+                    var restaurar = modalPrecio.querySelector('#btn-restaurar-precio');
+                    if (codigo) {
+                        codigo.value = dato('data-precio-codigo');
+                    }
+                    if (nombre) {
+                        nombre.textContent = dato('data-precio-nombre');
+                    }
+                    if (sistema) {
+                        sistema.textContent = dato('data-precio-sistema');
+                    }
+                    if (nuevo) {
+                        nuevo.value = dato('data-precio-actual');
+                    }
+                    if (motivo) {
+                        motivo.value = dato('data-precio-motivo');
+                    }
+                    if (restaurar) {
+                        // Only a line that already carries an override can be
+                        // restored; a normal line has nothing to undo.
+                        restaurar.hidden = !dato('data-precio-ajustado');
+                    }
+                    Alpine.$data(modalPrecio).open = true;
+                    enfocarModal(modalPrecio);
+                }
+                return;
+            }
             var opener = e.target.closest('[data-kit-open]');
             if (opener) {
                 var modal = document.getElementById(opener.getAttribute('data-kit-open'));

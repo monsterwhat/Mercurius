@@ -9,10 +9,11 @@
     POST /api/app/pos/item/{codigo}/qty-form        (delta)
     POST /api/app/pos/item/{codigo}/qty-set-form    (cantidad, decimal directo)
     POST /api/app/pos/item/{codigo}/remove-form
+    POST /api/app/pos/item/price-form               (codigo, precio, motivo, restaurar)
     POST /api/app/pos/client-select-form            (clientCode)
     POST /api/app/pos/puntos-form                   (puntosARedimir)
     POST /api/app/pos/facturar-form                 (OOB refresh from resultado)
-    POST /api/app/pos/override-authorize-form       (OOB refresh on success)
+    POST /api/app/pos/override-authorize-form       (legacy supervisor auth; no longer gates facturar)
     POST /api/app/pos/cancel-form
 
   Classic POS closing order lives here (it cannot move to factura-body.html:
@@ -25,14 +26,23 @@
   push "Facturar" out of reach behind a scrollbar.
 
   Model ("panel" bound key, Map):
-    items            List  - {codigo,nombre,cantidad,precioEfectivo,totalLinea,promo,precioPersonalizado}
+    items            List  - {codigo,nombre,cantidad,precioEfectivo,precioMostrado,
+                              precioSistema,precioSistemaTexto,totalLinea,promo,
+                              precioPersonalizado,motivoAjuste,ajustadoPor}
     vacio            bool
     totalCarrito / totalDescuento / totalImpuesto / descuentoPuntos
     totalPagado / vuelto / vueltoString
-    hasOverrides     bool  - any row carries precioPersonalizado
-    authorizedBy     String|null - supervisor on the session
+    hasOverrides     bool  - any row carries a manual price adjustment
+    authorizedBy     String|null - supervisor on the session (legacy; the
+                                  cashier no longer needs it to adjust a price)
     clienteCode / clienteName / clientePuntos
     mensaje          Map|null - {status,severity,summary,detail}
+
+  Precio ajustado: cada fila puede abrir #modal-precio y fijar un precio SOLO
+  para esta venta. El cajero escribe el precio final (IVA incluido) de la
+  etiqueta; ESE monto es exactamente lo que se cobra y el sistema EXTRAE la
+  base y el IVA de adentro (nunca suma IVA encima). No toca el artículo y se
+  audita en la LineaDetalle de la factura.
 
   Every number comes from CarritoService (server-computed); this template
   performs no math. Quantity +/- and remove are per-row micro-forms so HTMX
@@ -62,15 +72,18 @@
         </div>
         <div class="level-right">
             {#if panel.hasOverrides}
-            {#if panel.authorizedBy}
-            <span class="status-chip is-success">Autoriza: {panel.authorizedBy}</span>
-            {#else}
-            <button type="button" class="button is-small" aria-haspopup="dialog"
-                    data-kit-open="modal-autorizacion">Autorizar precios</button>
-            {/if}
+            <span class="status-chip is-warning">Precios ajustados</span>
             {/if}
         </div>
     </div>
+
+    {#if panel.hasOverrides}
+    <div class="notification is-warning" role="status" style="padding:0.5rem 0.75rem">
+        <strong>Precios ajustados en esta venta.</strong>
+        <span>El ajuste aplica solo a esta venta y queda registrado en la factura
+            con el usuario y el motivo; no cambia el precio del artículo.</span>
+    </div>
+    {/if}
 
     {#if panel.vacio}
     <div class="has-text-centered mercurius-text-muted" style="padding:1.5rem 0">
@@ -99,7 +112,12 @@
             <td>
                 <span class="table-clamp" title="{item.nombre}">{item.nombre}</span>
                 {#if item.promo}<span class="status-chip is-success">Promo</span>{/if}
-                {#if item.precioPersonalizado}<span class="status-chip is-warning">Precio autorizado</span>{/if}
+                {#if item.precioPersonalizado}
+                <span class="status-chip is-warning" title="{item.motivoAjuste}">Precio ajustado</span>
+                {#if item.motivoAjuste}
+                <span class="is-size-7 mercurius-text-muted">{item.motivoAjuste}</span>
+                {/if}
+                {/if}
             </td>
             <td class="has-text-centered" style="white-space:nowrap">
                 <form class="is-inline" style="display:inline">
@@ -128,9 +146,23 @@
                             hx-disabled-elt="this">+</button>
                 </form>
             </td>
-            <td class="num">{fmt:moneda(item.precioEfectivo)}</td>
+            <td class="num">{fmt:moneda(item.precioMostrado)}</td>
             <td class="num has-text-weight-semibold">{fmt:moneda(item.totalLinea)}</td>
-            <td class="has-text-centered">
+            <td class="has-text-centered" style="white-space:nowrap">
+                {! Ajuste manual del precio: solo para ESTA venta. El modal se
+                   precarga desde estos data-* por el puente de factura-body. !}
+                {#if !item.promo}
+                <button type="button" class="button is-small is-warning is-outlined"
+                        aria-label="Ajustar el precio de {item.nombre}"
+                        title="Ajustar precio solo para esta venta"
+                        data-precio-open="modal-precio"
+                        data-precio-codigo="{item.codigo}"
+                        data-precio-nombre="{item.nombre}"
+                        data-precio-sistema="{item.precioSistemaTexto}"
+                        data-precio-actual="{item.precioMostrado}"
+                        data-precio-ajustado="{item.precioPersonalizado ?: ''}"
+                        data-precio-motivo="{item.motivoAjuste ?: ''}">{#include _kit/icon name="edit" /}</button>
+                {/if}
                 <button type="button" class="button is-small is-danger is-outlined"
                         aria-label="Quitar {item.nombre} del carrito"
                         title="Quitar del carrito"
@@ -232,5 +264,70 @@
                 hx-target="#facturar-resultado" hx-swap="innerHTML"
                 hx-disabled-elt="this">{#include _kit/icon name="file" /} Facturar</button>
     </div>
+    </div>
+
+    {! Precio ajustado: modal inline (mismo esqueleto que _kit/modal) porque el
+       cuerpo se precarga desde la fila pulsada. Vive DENTRO del panel para que
+       viaje con cada swap: al guardar, la respuesta reemplaza #cart-panel y el
+       modal vuelve cerrado. El POST no toca el precio del artículo. !}
+    <div class="modal" id="modal-precio" x-data="{ open:false }"
+         :class="{ 'is-active': open }" @keydown.escape.window="open = false"
+         role="dialog" aria-modal="true" aria-labelledby="modal-precio-title">
+        <div class="modal-background" @click="open = false"></div>
+        <div class="modal-card" tabindex="-1" @keydown.tab="kitTrapTab($event, $el)">
+            <header class="modal-card-head">
+                <p class="modal-card-title" id="modal-precio-title">Ajustar precio</p>
+                <button class="delete" type="button" aria-label="Cerrar" @click="open = false"></button>
+            </header>
+            <form id="forma-precio"
+                  hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/price-form"
+                  hx-target="#cart-panel" hx-swap="outerHTML"
+                  hx-disabled-elt="find button[type='submit']">
+                <section class="modal-card-body">
+                    <div class="notification is-warning" role="note" style="padding:0.5rem 0.75rem">
+                        <strong>Este ajuste aplica solo a esta venta.</strong>
+                        <span>No cambia el precio del artículo. Se cobrará el precio
+                            que escriba aquí y el sistema registrará en la factura
+                            quién lo ajustó, cuándo y por qué.</span>
+                    </div>
+                    <input type="hidden" name="codigo" id="precio-codigo" value=""/>
+                    <div class="field">
+                        <p class="is-size-7 mercurius-text-muted" style="margin-bottom:0.25rem">Artículo</p>
+                        <p class="has-text-weight-semibold" id="precio-nombre">&nbsp;</p>
+                    </div>
+                    <div class="field">
+                        <p class="is-size-7 mercurius-text-muted" style="margin-bottom:0.25rem">Precio del sistema (IVA incluido)</p>
+                        <p class="has-text-weight-semibold" id="precio-sistema">&nbsp;</p>
+                    </div>
+                    <div class="field">
+                        <label class="label is-small" for="precio-nuevo">Precio a cobrar (IVA incluido)</label>
+                        <div class="control">
+                            <input class="input is-medium" type="number" id="precio-nuevo"
+                                   name="precio" min="0" step="0.01" inputmode="decimal"
+                                   autocomplete="off" required
+                                   placeholder="Ej.: 1250.00"/>
+                        </div>
+                        <p class="help">El cliente paga exactamente este monto. El IVA ya está
+                            incluido: el sistema no suma nada encima.</p>
+                    </div>
+                    <div class="field">
+                        <label class="label is-small" for="precio-motivo">Motivo del ajuste</label>
+                        <div class="control">
+                            <input class="input" type="text" id="precio-motivo" name="motivo"
+                                   maxlength="200" autocomplete="off" required
+                                   placeholder="Ej.: la etiqueta física muestra otro precio"/>
+                        </div>
+                        <p class="help">Queda registrado en la factura como nota interna.</p>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button type="submit" class="button is-primary">Aplicar precio</button>
+                    <button type="submit" class="button is-warning is-outlined"
+                            id="btn-restaurar-precio" name="restaurar" value="true"
+                            formnovalidate hidden>Restaurar precio del sistema</button>
+                    <button type="button" class="button" @click="open = false">Cancelar</button>
+                </footer>
+            </form>
+        </div>
     </div>
 </div>
