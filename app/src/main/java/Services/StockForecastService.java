@@ -11,12 +11,14 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import io.quarkus.cache.CacheResult;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -107,6 +109,16 @@ public class StockForecastService {
 
     @Inject @Nonnull
     EntityManager entityManager;
+
+    /** Vigencia de la lectura del catálogo en memoria (0 = sin caché). */
+    @ConfigProperty(name = "mercurius.pronostico.catalogo-ttl-ms", defaultValue = "60000")
+    long vigenciaCatalogoMs;
+
+    /** Última lectura agregada del catálogo y hasta cuándo vale. */
+    private final AtomicReference<CatalogoVigente> catalogoVigente = new AtomicReference<>();
+
+    private record CatalogoVigente(List<EstadisticaArticulo> estadisticas, long expiraEn) {
+    }
 
     @Transactional(TxType.SUPPORTS)
     @Nonnull
@@ -318,10 +330,44 @@ public class StockForecastService {
      *
      * <p>Si la lectura falla se registra y se devuelve una lista vacía: el
      * reporte se degrada a "sin datos" en vez de responder 500.</p>
+     *
+     * <p><b>Vigencia.</b> La lectura se guarda en memoria durante
+     * {@code mercurius.pronostico.catalogo-ttl-ms} (60 s por defecto) y la
+     * comparten todas las variantes del reporte (sección, orden, página,
+     * filtros) y la exportación: paginar u ordenar no vuelve a pagar los ~3 s
+     * de consulta. El costo es que el stock mostrado puede tener hasta ese
+     * tiempo de antigüedad. Un fallo de lectura nunca se guarda, y con
+     * {@code 0} la caché queda desactivada.</p>
      */
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public List<EstadisticaArticulo> estadisticasCatalogo() {
+        long ahora = System.currentTimeMillis();
+        CatalogoVigente vigente = catalogoVigente.get();
+        if (vigente != null && vigente.expiraEn() > ahora) {
+            return vigente.estadisticas();
+        }
+
+        // Una sola lectura a la vez: sin esto, N pestañas abriendo el reporte a
+        // la vez lanzan N escaneos de 24M de filas en paralelo.
+        synchronized (this) {
+            vigente = catalogoVigente.get();
+            long solicitado = System.currentTimeMillis();
+            if (vigente != null && vigente.expiraEn() > solicitado) {
+                return vigente.estadisticas();
+            }
+            List<EstadisticaArticulo> leidas = leerCatalogo();
+            if (!leidas.isEmpty() && vigenciaCatalogoMs > 0) {
+                catalogoVigente.set(new CatalogoVigente(
+                        List.copyOf(leidas), solicitado + vigenciaCatalogoMs));
+            }
+            return leidas;
+        }
+    }
+
+    /** Lectura agregada del catálogo, sin caché (ver estadisticasCatalogo). */
+    @Nonnull
+    private List<EstadisticaArticulo> leerCatalogo() {
         LocalDateTime inicio = LocalDate.now().minusDays(DIAS_HISTORIAL).atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(23, 59, 59);
 

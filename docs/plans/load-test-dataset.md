@@ -83,18 +83,21 @@ Fixed after the load exposed them:
 | Resumen de inventario | >20 s | 0.82 s |
 | Facturas Recibidas (50k) | >25 s | 0.60 s |
 | Alertas de stock (200k) | 15.7 s | 0.20 s |
-| Pronósticos de inventario (252k) | >30 s | 4.2 s |
+| Pronósticos de inventario (252k) | >30 s | 0.3 s (catálogo cacheado 60 s) |
 
 Already fast: dashboard 0.56 s, facturas emitidas 0.37 s, órdenes 0.33 s,
 precios 0.22 s, merma 0.46 s, rendimiento 1.43 s, correos 0.14 s, CAByS 0.04 s.
 
 ## Known remaining hotspots
 
-- `pronosticos` (~4.2 s): resuelto el timeout. La página lee el catálogo con
-  una sola consulta agregada (`StockForecastService.estadisticasCatalogo`) y
-  pagina en memoria la lista compacta; el tiempo restante es el escaneo de
-  `linea_detalle` de 90 días (24M de filas, sin índice por
-  `detalle_servicio_id`). Bajarlo más exige índice o cachear el agregado.
+- `pronosticos` (~4 s en la primera carga, ~0,3-0,7 s al navegar): la página
+  lee el catálogo con una sola consulta agregada
+  (`StockForecastService.estadisticasCatalogo`) y pagina en memoria la lista
+  compacta. Esa lectura se guarda 60 s
+  (`mercurius.pronostico.catalogo-ttl-ms`) y la comparten sección, orden,
+  página, filtros y exportación; el primer request de cada minuto sigue
+  pagando el escaneo de `linea_detalle` de 90 días (24M de filas, sin índice
+  por `detalle_servicio_id`).
 - La exportación `dataset=pronosticos` genera las ~148k filas del pronóstico a
   Excel en ~20 s (3.5 MB): es un adjunto completo, no una página.
 - All other pages measured in the final sweep are ≤2.5 s.
@@ -126,14 +129,14 @@ Found in the sweep, now fixed:
 | `/api/app/stock-alert-config/pagina` | 18.9 s | 0.09 s |
 
 Fixed in the sweep's follow-up (pronósticos, served by one aggregate query and
-in-memory pagination):
+in-memory pagination, with the catalog read cached for 60 s):
 
 | Route | Before | After |
 |---|---|---|
-| `/app/reportes/inventario/pronosticos` | >30 s | 4.2 s |
-| `…?sort=articulo` (orden por texto) | — | 4.5 s (antes 17.4 s) |
-| `…?seccion=salud` | — | 4.2 s |
-| `…?dias=60&page=5&size=100` | — | 4.8 s |
+| `/app/reportes/inventario/pronosticos` | >30 s | 4.9 s primera carga / 0.3-0.7 s al navegar |
+| `…?sort=articulo` (orden por texto) | 17.4 s | 1.4 s en página 3 (ordenar 148k filas) |
+| `…?seccion=salud` | — | 0.1 s |
+| `…?dias=60&page=5&size=100` | — | 0.5 s |
 
 `/app/reportes/articulos/ventas-fecha-historica` renders 4.7 MB / 9.5k rows in
 1.5 s; large but not a timeout.
