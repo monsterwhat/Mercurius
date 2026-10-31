@@ -15,8 +15,10 @@
                swap container: every search keystroke replaced it with the
                table fragment and the button disappeared. It is the screen's
                own action, so it lives in the header and survives the swap. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
             {#include _kit/modal id="crear-cliente" title="Nuevo Cliente" triggerLabel="Nuevo Cliente" triggerClass="is-primary"
                  bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
+            {/if}
             {/actions}
         {/include}
 
@@ -60,10 +62,18 @@
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td class="num">{#if c.puntosAcumulados??}{fmt:numero(c.puntosAcumulados)}{#else}0{/if}</td>
                         <td>
+                            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
                             <button type="button" class="button is-small" title="Editar cliente" aria-label="Editar cliente {c.name}"
                                     aria-haspopup="dialog" data-kit-open="editar-cliente"
                                     hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{c.code}"
                                     hx-target="#editar-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
+                            <button type="button" class="button is-small" title="{#if c.status}Desactivar cliente{#else}Activar cliente{/if}"
+                                    aria-label="{#if c.status}Desactivar cliente{#else}Activar cliente{/if}"
+                                    data-archivar
+                                    hx-delete="{config:['quarkus.http.root-path']}/api/app/clientes/{c.code}"
+                                    hx-confirm="{#if c.status}¿Desactivar al cliente {c.name}? Dejará de aparecer como activo.{#else}¿Activar al cliente {c.name}? Volverá a aparecer como activo.{/if}"
+                                    hx-target="#clientes-tabla-container" hx-swap="innerHTML">{#include _kit/icon name="power" /}</button>
+                            {/if}
                         </td>
                     </tr>
                     {/for}
@@ -77,8 +87,10 @@
 
         {! Row-driven dialog shell: it stays OUTSIDE the swap container so the
            row edit buttons can still find it after a search swap. !}
+        {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
         {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerLabel="Editar Cliente" triggerClass="is-hidden"
              bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
+        {/if}
 
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
