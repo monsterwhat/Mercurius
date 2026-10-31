@@ -227,7 +227,7 @@ Out-of-scope screens (listed for referential integrity; do not act on them):
 | `rep.inventario.margenes` | Resumen, Top, Bajo margen | Consultar, Exportar | `admin`, `facturacion` | XLSX `profit-margins` | OK | Mantener | — |
 | `rep.inventario.mermas` | Detalle, Causas, Departamentos | Consultar, Exportar | `admin`, `inventario` | XLSX `merma` | OK | Mantener | — |
 | `rep.inventario.precios` | — | Consultar, Exportar | `admin`, `inventario` | XLSX `precios` | OK | Mantener | — |
-| `ges.articulos` | Activos, Inactivos, Catálogo, Pendientes | Consultar, Crear, Editar, Procesar, Exportar | `admin`, `inventario` | XLSX/PDF `articulos` (tab ignorado) | Parcial | Corregir, Mover | Badge de Catálogo = todos; export no filtra tab (D8). |
+| `ges.articulos` | Activos, Inactivos, Procesados, Pendientes | Consultar, Crear, Editar, Procesar, Exportar | `admin`, `inventario` | XLSX/PDF `articulos` (tab ignorado) | Parcial | Mover | D8 resuelto en `e2cdf20` (badge = tabla); el export sigue ignorando `tab` (D15). |
 | `ges.promociones` | Promociones | Consultar, Crear, Editar, Eliminar, Exportar | `admin`, `inventario` | XLSX `promociones` (**404**) | Roto | Corregir | Entidad aparte; acceso vía pestaña de Artículos; export roto. |
 | `ges.inventarios` | Activos, Pendientes, Procesados, Inactivos | Consultar, Crear, Procesar, Reabrir, Cargar XML, Exportar | `admin`, `inventario` | PDF `inventario` | OK | Mover | Gestión, no reporte. |
 | `ges.categorias.familias` | Familias | Consultar, Crear, Editar, Toggle, Exportar | `admin`, `inventario` | XLSX `familias` | OK | Mover | `?tab=` leído/escrito desde `486c343`. |
@@ -493,7 +493,7 @@ There is no third option.
 
 | ID | Topic | Why it blocks | Status |
 |---|---|---|---|
-| D8 | `Catálogo` semantics | It currently queries `processed=true AND status=true`, i.e. it *is* the "Procesados" view, while its badge counts all articles. Choose: rename to "Procesados" and fix the badge, or redefine as "all articles" and change the query. | Pending |
+| D8 | `Catálogo` semantics | It currently queries `processed=true AND status=true`, i.e. it *is* the "Procesados" view, while its badge counts all articles. Choose: rename to "Procesados" and fix the badge, or redefine as "all articles" and change the query. | Resolved in `e2cdf20`: renamed to Procesados, badge = `countByTab("catalogo", null)`; export remains D15 |
 | D9 | Canonical access for Plantillas / Registros | They are one screen each with two access points (hub + navbar). Decide which surface is canonical; this is an access duplicate, not a screen duplicate. | Pending |
 | D10 | "Todas las Facturas" | It is the read-only emitted report. After the hotfix it will coexist with "Facturas emitidas (gestión)" and both currently render the title "Facturas Emitidas". Confirm D7's naming in Matriz B. | Resolved by D7; Matriz A has distinct functional names, Matriz B rows 5 and 11 are the two accesses |
 
@@ -846,7 +846,7 @@ D15. They changed no files. Findings that refine the matrices:
 - `countActivos/Inactivos/Pendientes` restate the predicates instead of calling
   `countByTab`; only Catálogo diverges today, but the drift is structural.
 - Recommendation: Option A (rename to Procesados, badge = `countByTab`), then fix
-  the export separately.
+  the export separately. **Implemented in `e2cdf20`.**
 
 **D3 — Users / Clients.**
 - Users: create/edit/toggle are `admin`-only (`UsersResource.java:170,255,314`),
@@ -930,3 +930,4 @@ ask the user first.
 | 2026-10-31 | Phase 1 hotfix: "Facturas emitidas" now points to `/app/facturas`; `ReportsHubLinksTest` added; version `2.16.4 → 2.16.5`. |
 | 2026-10-31 | Phase 2, item 2: Categorías reads/writes `?tab=`; hub and navbar links carry the tab; `CategoriasPageTest` added; version `2.16.5 → 2.16.6`. |
 | 2026-10-31 | Five read-only Big Pickle agents re-verified D8/D3/D4/D9/D14/D15; findings consolidated in A.9 and the affected rows/decisions updated. No code changed. |
+| 2026-10-31 | D8: Articles tab renamed to Procesados; badge now uses `countByTab`; version `2.16.6 → 2.16.7`. |
