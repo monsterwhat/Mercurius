@@ -18,7 +18,7 @@ import org.jboss.logging.Logger;
 /**
  * HTML page of the Artículos module for the NEW Qute/HTMX app surface:
  * {@code GET /app/articulos} — the five-tab board (Activos / Inactivos /
- * Catálogo / Pendientes / Promociones). This class only renders HTML; all
+ * Procesados / Pendientes / Promociones). This class only renders HTML; all
  * reads/actions live in the JSON twin {@link ArticuloResource}
  * ({@code /api/app/articulos}), whose full-page model is reused here so page
  * and fragments can never disagree (same split as Recibos/Devoluciones).

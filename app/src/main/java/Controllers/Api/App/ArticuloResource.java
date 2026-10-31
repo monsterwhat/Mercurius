@@ -75,7 +75,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * Artículos module for the NEW Qute/HTMX app surface (plan task T34): the
- * five-tab monster (Activos / Inactivos / Catálogo / Pendientes /
+ * five-tab monster (Activos / Inactivos / Procesados / Pendientes /
  * Promociones) replacing the legacy JSF trio
  * {@code Controllers.ArticulosController} (33 FC),
  * {@code Controllers.PromocionesController} (16 FC) and the precio-update
@@ -110,7 +110,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       parity): pendiente→procesado requires dep+fam, CABYS and a non-null
  *       precioFinal ("No hay precio final..."); skip writes the
  *       "Artículo omitido" alerta and answers "Se omitió el artículo".
- *       Processing moves counts between the Pendientes and Catálogo tabs.</li>
+ *       Processing moves counts between the Pendientes and Procesados tabs.</li>
  *   <li>Price override: NEW-world supervisor gate per task spec — the
  *       dedicated price endpoint verifies a second credential pair exactly
  *       like {@code AppAuthResource.supervisorAuthorize()} (LoginService
@@ -1444,7 +1444,7 @@ public class ArticuloResource {
         model.put("promocionesTabla", promociones.asMap());
         model.put("activosCount", articulosService.countActivos());
         model.put("inactivosCount", articulosService.countInactivos());
-        model.put("catalogoCount", articulosService.count());
+        model.put("catalogoCount", articulosService.countByTab(TAB_CATALOGO, null));
         model.put("pendientesCount", articulosService.countPendientes());
         model.put("promocionesCount", promoService.count());
         model.put("canExport", !identity.isAnonymous() && identity.hasRole("registro"));

@@ -431,7 +431,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         articulosService.create(pendiente);
 
         long pendientesAntes = articulosService.countPendientes();
-        long catalogoAntes = articulosService.count();
+        long catalogoAntes = articulosService.countByTab("catalogo", null);
         org.assertj.core.api.Assertions.assertThat(pendientesAntes).isGreaterThanOrEqualTo(1);
 
         // The rapid-wizard payload surfaces the first pending article.
@@ -461,6 +461,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
 
         org.assertj.core.api.Assertions.assertThat(articulosService.countPendientes())
                 .isBetween(pendientesAntes - 5L, pendientesAntes + 5L);
+        org.assertj.core.api.Assertions.assertThat(articulosService.countByTab("catalogo", null))
+                .isGreaterThan(catalogoAntes);
 
         try {
             authed(session)
@@ -677,5 +679,29 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(400)
                 .body("error.message", equalTo(ArticuloResource.MSG_PROMO_SIN_ARTICULOS));
+    }
+
+    @Test
+    @Order(20)
+    void articulosPageLabelsTheTabAsProcesadosAndItsBadgeMatchesTheTable() {
+        Map<String, String> session = adminSession();
+        long esperado = articulosService.countByTab("catalogo", null);
+
+        String html = authed(session)
+                .when().get(BASE + "/app/articulos")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.HTML)
+                .extract().asString();
+
+        // The badge is the sibling of the label: normalizing whitespace keeps
+        // the assertion tied to this tab instead of matching any count on the
+        // page with the same value.
+        String compacto = html.replaceAll("\\s+", " ");
+        org.assertj.core.api.Assertions.assertThat(compacto)
+                .contains("<span>Procesados</span> <span class=\"view-tab-count\">"
+                        + Utils.FormatoVista.numero(esperado) + "</span>");
+        org.assertj.core.api.Assertions.assertThat(html)
+                .doesNotContain("<span>Catálogo</span>");
     }
 }

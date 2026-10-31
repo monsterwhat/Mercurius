@@ -2,7 +2,7 @@
   pages/articulos/index - Gestión de Artículos (T34).
 
   Qute/HTMX/Bulma port of secured/pages/Articulos/index.xhtml: the five-tab
-  monster (Activos / Inactivos / Catálogo / Pendientes / Promociones). The
+  monster (Activos / Inactivos / Procesados / Pendientes / Promociones). The
   legacy p:tabView + clickable stat-cards became an Alpine tab shell; each
   tab's table lives in its own include so GET /api/app/articulos/table?tab=…
   can swap it independently (docs/ui-kit.md §2.9 dual-mode contract).
@@ -50,7 +50,7 @@
              x-data="{ tab: 'activos' }">
 
         {#include _kit/page-header title="Artículos"
-             subtitle="Inventario, catálogo, revisiones y promociones" /}
+             subtitle="Inventario, procesados, revisiones y promociones" /}
 
         {! One view switcher for the whole app. The counts stay: a number that
            answers "how much is waiting for me" belongs on the switcher. !}
@@ -73,7 +73,7 @@
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'catalogo' }"
                     :aria-current="tab === 'catalogo' ? 'true' : 'false'"
                     aria-controls="panel-catalogo" @click="tab = 'catalogo'">
-                <span>Catálogo</span>
+                <span>Procesados</span>
                 <span class="view-tab-count">{fmt:numero(catalogoCount)}</span>
             </button>
             <button type="button" class="view-tab" :class="{ 'is-active': tab === 'pendientes' }"
@@ -140,9 +140,9 @@
             {/include}
         </div>
 
-        {! ── Tab: Catálogo (legacy Procesados) ───────────────────── !}
+        {! ── Tab: Procesados (key catalogo, processed=true) ───────── !}
         <div id="panel-catalogo" x-show="tab === 'catalogo'" style="display:none">
-            {#include _kit/surface title="Catálogo de Artículos" }
+            {#include _kit/surface title="Artículos Procesados" }
                 {#actions}
                     {#if canExport}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
