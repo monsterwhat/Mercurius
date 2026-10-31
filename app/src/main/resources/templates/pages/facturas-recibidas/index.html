@@ -67,6 +67,18 @@
         {#include pages/facturas-recibidas/tabla modelo=modelo q=q /}
     </section>
 
+    {! Export XLSX for the due-date buckets only (D2). !}
+    {#if (bucket == 'pendientes' || bucket == 'vencidas') && (inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion'))}
+    <div class="buttons mt-4">
+        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
+            <input type="hidden" name="dataset" value="{#if bucket == 'pendientes'}recibos-pendientes{#else}recibos-vencidos{/if}"/>
+            <input type="hidden" name="type" value="xlsx"/>
+            <button class="button" type="submit">Exportar Excel</button>
+        </form>
+    </div>
+    {/if}
+
     {! Shared review drawer: body is filled per-row from the inbox table. !}
     {#include _kit/modal id="detalle-factura" title="Detalle de Factura Recibida" triggerClass="is-hidden"
          bodyUrl="/api/app/facturas-recibidas/0"}{/include}

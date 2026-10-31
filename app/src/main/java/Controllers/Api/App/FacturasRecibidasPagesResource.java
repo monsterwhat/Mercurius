@@ -54,7 +54,8 @@ public class FacturasRecibidasPagesResource {
             String qSafe = q == null ? "" : q;
             return Response.ok(pageIndex.instance()
                             .data("modelo", modelo)
-                            .data("q", qSafe))
+                            .data("q", qSafe)
+                            .data("bucket", modelo.get("bucket")))
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                     .build();
         } catch (RuntimeException e) {
