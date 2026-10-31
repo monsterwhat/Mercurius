@@ -2,9 +2,9 @@
 
 **Project:** Mercurius (`F:\Documents\GitHub\Mercurius`, Maven module in `app/`)
 **Stack:** Quarkus 3.36.2, Java 25, Qute + htmx + Bulma, Hibernate ORM, PostgreSQL
-**Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8, D14 and D15
-(export data + role gate) implemented, and D11 (hub role model). Decisions D2,
-D3 (role mapping), D4, D6, D9, D12 and D13 are still open.**
+**Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8, D14, D15
+(export data + role gate), D11 (hub role model), D2, D3, D4, D6, D9, D12 and
+D13 phase 1 implemented. D13 phase 2 (hub becomes reports-only) remains.**
 **Baseline:** `d25f9a4` (working tree clean on 2026-10-31). Line numbers are anchors,
 not contracts: re-anchor by symbol if a file moved.
 **Audience:** the agent that will execute Phase 0 and, later, the reorganization; the
@@ -483,11 +483,11 @@ There is no third option.
 | ID | Topic | Treatment | Status |
 |---|---|---|---|
 | D1 | Billing group | A **mixed group named "Facturación"** that includes the operational board. The group is not labeled "Reportes". | Approved |
-| D2 | Pending/overdue received invoices | Decide whether the two read-only views survive as tabs of the payables board, and transfer their XLSX exports if they do not. `/app/facturas-recibidas` does not export today. | Pending |
-| D3 | Users / clients | Consolidate respecting **per-operation** permissions, not just per-screen roles. Preserve XLSX. | Approved as constraint; role mapping pending |
-| D4 | Scheduled email reports | Define the role matrix of the unified interface. The two current screens have different gates. | Pending |
+| D2 | Pending/overdue received invoices | Decide whether the two read-only views survive as tabs of the payables board, and transfer their XLSX exports if they do not. `/app/facturas-recibidas` does not export today. | Resolved in `53df511`: the board exports `recibos-pendientes`/`recibos-vencidos` per bucket and the hub points to `?bucket=`; legacy routes kept |
+| D3 | Users / clients | Consolidate respecting **per-operation** permissions, not just per-screen roles. Preserve XLSX. | Resolved in `c4da5a5` (clients unified, archive added, buttons per role) and `e372d64` (users report absorbed; admin-only XLSX moved to `/app/usuarios`; report route retired) |
+| D4 | Scheduled email reports | Define the role matrix of the unified interface. The two current screens have different gates. | Resolved in `3ca5d2a`: management reads `admin,facturacion,tributacion`, mutations stay `admin,tributacion`, XLSX added; legacy report kept |
 | D5 | Supplier ranking | Create an independent screen reusing `DepartamentoMetrico`; do not invent a `Proveedor` entity (supplier = `Departamento`). | Approved |
-| D6 | Purchase orders and labels | Document explicitly their location and nature (management vs tool). Do not leave them implicit. | Pending |
+| D6 | Purchase orders and labels | Document explicitly their location and nature (management vs tool). Do not leave them implicit. | Resolved in `c2ce19c`: real `/app/compras/ordenes`; Órdenes and Etiquetas appear on the Gestión landing. Etiquetas keeps its URL until the phase-2 cleanup. |
 | D7 | Emitted invoices naming | Keep **"Reporte de facturas emitidas"** (`/app/reportes/facturas`) and **"Facturas emitidas (gestión)"** (`/app/facturas`) as distinct IDs and labels. | Approved |
 
 ### 7.2 Additional decisions Phase 0 must close
@@ -495,7 +495,7 @@ There is no third option.
 | ID | Topic | Why it blocks | Status |
 |---|---|---|---|
 | D8 | `Catálogo` semantics | It currently queries `processed=true AND status=true`, i.e. it *is* the "Procesados" view, while its badge counts all articles. Choose: rename to "Procesados" and fix the badge, or redefine as "all articles" and change the query. | Resolved in `e2cdf20`: renamed to Procesados, badge = `countByTab("catalogo", null)`; export remains D15 |
-| D9 | Canonical access for Plantillas / Registros | They are one screen each with two access points (hub + navbar). Decide which surface is canonical; this is an access duplicate, not a screen duplicate. | Pending |
+| D9 | Canonical access for Plantillas / Registros | They are one screen each with two access points (hub + navbar). Decide which surface is canonical; this is an access duplicate, not a screen duplicate. | Resolved in `c2ce19c` + `9657c4d`: Plantillas canonical in the hub (navbar link removed); Registros canonical in Ajustes, which now opens to `admin` or `registro`; hub Registros entry removed |
 | D10 | "Todas las Facturas" | It is the read-only emitted report. After the hotfix it will coexist with "Facturas emitidas (gestión)" and both currently render the title "Facturas Emitidas". Confirm D7's naming in Matriz B. | Resolved by D7; Matriz A has distinct functional names, Matriz B rows 5 and 11 are the two accesses |
 
 A decision marked `Pending` blocks any phase that depends on it. It does not block
@@ -506,8 +506,8 @@ Phase 0 (the audit must record the options and their consequences).
 | ID | Topic | Why it surfaced | Options | Recommendation | Status |
 |---|---|---|---|---|---|
 | D11 | Hub role model | `/app/reportes` is gated `admin, registro, inventario, tributacion`, but 28 of the 31 links a `registro` user can see answer 403; `facturacion` cannot open the hub at all. | (a) filter entries by role; (b) widen the hub to every authenticated user and filter; (c) one hub per role | (a) + align the navbar "Reportes" link with the effective gate | Resolved in `c1d884f`: entries filtered by destination gate; navbar widened to the four hub roles |
-| D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Pending |
-| D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Pending |
+| D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Resolved in `edb1793`: Movimientos moved to the Inventarios group, the shared "Vistas de ventas" tab bar removed, URL unchanged |
+| D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Phase 1 resolved in `c2ce19c`: `/app/gestion` landing + navbar entry, role-gated cards, real `/app/compras/ordenes`. Phase 2 (remove the remaining management entries from the hub) remains |
 | D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Resolved in `6b1654e`: real page route, two cards removed, links repointed; endpoints retained |
 | D15 | Export authorization and correctness | `/api/app/export` is `admin,registro`, while the buttons live on `inventario`/`facturacion`/`@Authenticated` screens; 18 of 25 forms are dead for the page role. | (a) per-dataset authorization + hide/gate the button; (b) widen the class gate; (c) remove the buttons from roles that cannot export | (a) | Resolved: D15a (`9d4fced`) fixed the three 404s, the Articles tab and `ventas`; D15b (`dd5cebe`) added the per-dataset role map (six-role class gate, `usuarios` admin-only) |
 
@@ -829,14 +829,14 @@ Two smaller gate asymmetries:
 | Canonical in-scope screens (Matriz A) | 34 |
 | In-scope accesses (hub + navbar + dashboard + in-page) | 50 |
 | Broken destinations (`Roto`) | 0 after `2ab771e`, `486c343` and `6b1654e` |
-| Access duplicates (`Duplicado`) | 8 (6 hub + 2 navbar) |
+| Access duplicates (`Duplicado`) | 5 after D3/D9 (baseline 8: 6 hub + 2 navbar) |
 | Broken export datasets | 0 after D15a (`9d4fced`); baseline was 3 (`reportes-movimientos`, `inventario-resumen`, `promociones`) |
 | Exports that ignore their tab or `q` | 0 after D15a and the `2.18.1` `q` fix; baseline was 1 tab (`articulos`) and 3 `q` (`usuarios`, `clientes`, `correos`) |
 | Wrong-content export (200) | 0 after D15a; baseline was 1 (`ventas.html` downloaded the article catalogue) |
 | Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
 | Role-model defects | 0 in the hub (D11 fixed) + 2 gate asymmetries; the export gate was fixed in D15b |
-| Open decisions | D2, D3 (role mapping), D4, D6, D9, D12, D13 |
+| Open decisions | D13 phase 2 only (hub becomes reports-only) |
 
 The effective root causes are four: the hub role model (§A.7), the flat tab-as-entry
 hub (Matriz B), the duplicate management/report pairs (§5.4), and three stale export
@@ -1031,3 +1031,11 @@ ask the user first.
 | 2026-10-31 | D15b: six-role class gate + per-dataset `DATASET_ROLES` map (`usuarios` admin-only); export tests cover role allow/deny; version `2.17.0 → 2.17.1`. |
 | 2026-10-31 | D11: hub entries filtered by their destination gate; navbar "Reportes" widened to admin/registro/inventario/tributacion; `ReportsHubRolesTest` added; version `2.17.1 → 2.18.0`. |
 | 2026-10-31 | Export `q` fix: `usuarios`, `clientes` and `correos` now filter with the same predicates as their pages; `ExportResourceTest` covers unmatched-`q` header-only workbooks; version `2.18.0 → 2.18.1`. |
+| 2026-10-31 | Second verification round consolidated in A.10 (D2/D12, D3, D4/D9, D13/D6); version `2.18.1 → 2.18.2`. |
+| 2026-10-31 | D12: Movimientos moved to the Inventarios group; shared sales tab bar removed; version `2.18.2 → 2.18.3`. |
+| 2026-10-31 | D3 clients: one screen with per-operation gates, archive action and preserved XLSX; version `2.18.3 → 2.18.4`. |
+| 2026-10-31 | D2: board exports pendientes/vencidas per bucket; version `2.18.4 → 2.18.5`. |
+| 2026-10-31 | D4: correos management absorbs the union read gate and XLSX; version `2.18.5 → 2.18.6`. |
+| 2026-10-31 | D3 users: report absorbed by `/app/usuarios`; admin-only XLSX moved; report route retired; version `2.18.6 → 2.18.7`. |
+| 2026-10-31 | D6/D13/D9 phase 1: `/app/gestion` landing, real `/app/compras/ordenes`, Ajustes opens to `registro`, Plantillas canonical in the hub; version `2.18.7 → 2.18.8`. |
+| 2026-10-31 | Hub aligned with D2/D3/D4/D9 (bucket links, management destinations, counts); version `2.18.8 → 2.18.9`. |
