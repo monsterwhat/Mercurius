@@ -863,15 +863,15 @@ D15. They changed no files. Findings that refine the matrices:
   but `usuario` sees the buttons and gets 403; there is no password control in the
   UI; the report is a strict subset of management plus XLSX.
 - Clients: the report's create/edit are visible to **any authenticated** user but
-  execute only for `admin/usuario`; export is `admin,registro`; management search
-  is name-only while the report searches email/cédula; the "Activar" button always
-  sets `status=false`.
+  execute only for `admin/usuario`; export allows all six roles after D15b;
+  management search is name-only while the report searches email/cédula; the
+  "Activar" button always sets `status=false`.
 - Recommendation: Users absorbs the report now (move the admin-gated XLSX export);
   Clients fixes the gate and keeps both routes until D3 closes.
 
 **D4 / D9 — Correos, Plantillas, Registros.**
-- The correos report renders 5 headers for 6 cells (status chip has no header) and
-  its export ignores `q`.
+- The correos report renders 5 headers for 6 cells (status chip has no header);
+  its export ignored `q` until `2.18.1`.
 - The management screen also has a third URL:
   `/api/app/reportes-programados/table` (dual-mode, `admin,tributacion`).
 - Delete is admin-only in the UI but `admin,tributacion` in the API.
@@ -899,6 +899,90 @@ D15. They changed no files. Findings that refine the matrices:
 - An unknown dataset and a known dataset with an unsupported type both return 404.
 - Recommendation: per-dataset authorization + hide/gate the button; add the three
   cases and thread `tab`/`q`; add a coverage test that scans template datasets.
+
+### A.10 Second verification round — remaining decisions (2026-10-31)
+
+Four read-only Beam Free dossiers re-verified D2/D12, D3, D4/D9 and D13/D6 against
+`2.18.1`. No files changed. These are the decision inputs; each option preserves
+roles, filters and XLSX unless it says otherwise.
+
+**D2 — Pendientes/Vencidas vs. the received board.**
+- Same service root (`ComprobantesRecibidosService`); report gates and board gates
+  are both `admin,facturacion`. Bucket predicates in
+  `FacturasRecibidasResource.tablaModel` match `countRecibosPorVencimiento`.
+- Report columns add Condición de venta / Plazo de crédito, absent from the board.
+- The board has no export (`facturas-recibidas/index.html:23`); datasets
+  `recibos-pendientes`/`recibos-vencidos` exist and are `FACTURACION_ROLES`.
+- Options: (A) keep the two routes; (B) make them board buckets, repoint the hub to
+  `/app/facturas-recibidas?bucket=pendientes|vencidas`, move the export button to
+  the board, optionally keep 302s; (C) retire views and keep exports only.
+- **Recommendation: B.** No role change; add bucket + export tests.
+
+**D12 — inventory movements inside the sales group.**
+- `FechasResource` (`/app/reportes/articulos/fechas`, `admin,inventario`) uses
+  `InventarioService`; the sales tabs use `ComprobantesEmitidosService`.
+- It shares the "Vistas de ventas" tab bar with Por cajero/Departamento/Familia,
+  and the hub lists "Movimientos" in Facturación.
+- Options: (a) move the hub entry to Inventarios and drop the shared tab bar;
+  (b) keep it as a sales tab.
+- **Recommendation: (a).** Keep the URL to avoid route churn; export
+  `reportes-movimientos` already resolves (D15a).
+
+**D3 — Users / Clients.**
+- Users: management `admin,usuario`, mutations `admin`; report `admin` only,
+  read-only, with admin-only XLSX. Report search is username+groupName; management
+  also searches email. Report is a strict subset.
+- Clients: management `admin,usuario` with create/edit/archive; report
+  `@Authenticated` with create/edit buttons that 403 for other roles, no archive,
+  wider search (name+email+idNumber) and XLSX for all six roles.
+- Options: (1) keep both, hide dead buttons; (2) absorb the report into
+  management (loses any-authenticated client read unless widened); (3) one
+  screen with per-operation gates (read `@Authenticated`/`admin,usuario`,
+  mutations `admin`/`admin,usuario`, exports preserved, union of search/columns).
+- **Recommendation:** option 3 for Clients; absorb the Users report into
+  `/app/usuarios` (move the `usuarios` XLSX there, drop the report route).
+
+**D4 / D9 — Correos, Plantillas, Registros.**
+- Correos report: `admin,facturacion`, read-only, `q` + XLSX.
+- Correos management: `admin,tributacion`, CRUD/toggle, no export; delete is
+  `admin` in the UI and `admin,tributacion` in the API.
+- Plantillas: hub entry and navbar Ajustes point to the same route; destination is
+  `admin,tributacion`, but Ajustes is admin-only, so `tributacion` only sees the hub.
+- Registros: hub entry (admin-only) and Ajustes (admin-only), destination
+  `admin,registro` — `registro` has no visible access.
+- Options D4: keep split; consolidate into management with read gate
+  `admin,facturacion,tributacion`, mutations `admin,tributacion`, plus the XLSX;
+  consolidate into the report (discards CRUD). **Recommendation: management.**
+- Options D9: Plantillas canonical in the hub (remove Ajustes duplicate). Registros
+  either widen Ajustes to `admin||registro` or keep the hub entry canonical with
+  the same condition. **Recommendation: Ajustes widened; remove the hub
+  duplicate**, so reports tooling lives outside the hub.
+
+**D13 / D6 — Gestión module, Órdenes, Etiquetas.**
+- The hub still mixes 7 management screens, 2 tools and 1 embedded report with
+  the 32 entries.
+- Órdenes de compra has no page route: it is the dual-mode
+  `/api/app/ordenes/table` (`OrdenCompraResource`), gated `admin,inventario`.
+- Etiquetas is a client-side tool at `/app/reportes/inventario/etiquetas`.
+- Supplier ranking has no route; it is embedded in `/app/categorias` and capped at
+  200 rows (`CategoriaResource.METRICAS_TOPE`).
+- Options D13: (a) new role-gated Gestión navbar landing, keeping dropdowns as
+  shortcuts, then collapse; (b) keep dropdowns and remove hub management entries;
+  (c) a Gestión group inside the hub. **Recommendation: (a), phased.**
+- D6: Órdenes gets a real `/app/compras/ordenes` page (keep the API table as its
+  HTMX base) and lives in Gestión; Etiquetas moves to the Artículos/Inventario
+  area of Gestión, keeping `admin,inventario`. Supplier ranking becomes its own
+  report route when D5 is implemented.
+
+**Discrepancies corrected in this round.**
+- Matriz A `rep.ventas` export row is now XLSX `reportes-ventas`/`reportes-
+  departamentos`/`reportes-familias`, not PDF `articulos`.
+- `rep.inventario.movimientos` is no longer "Roto"; `reportes-movimientos` resolves.
+- Matriz A Plantillas has no toggle endpoint; the operation list is overstated.
+- Matriz B row 28 (`/app/compras/ordenes`) and row 29 (`/app/reportes/proveedores`)
+  are target routes, not current ones.
+- §9.4 export list gains `reportes-ventas`; A.9's old `clientes` export role note
+  is superseded by D15b (all six roles).
 
 ---
 
