@@ -28,9 +28,9 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Facturas y correo"))
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("Reportes de Usuarios"))
-                .body(containsString("10 informes"))
+                .body(containsString("9 informes"))
                 .body(containsString("6 informes"))
-                .body(containsString("13 informes"))
+                .body(containsString("14 informes"))
                 .body(containsString("3 informes"))
                 .body(containsString("href=\"/Mercurius/app/facturas\""))
                 .body(containsString("href=\"/Mercurius/app/articulos\""))
@@ -43,13 +43,22 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
         given().when().get(HUB).then().statusCode(200)
                 .body(containsString("Reportes de Facturación"))
                 .body(containsString("Reportes de Inventarios"))
-                .body(containsString("8 informes"))
-                .body(containsString("12 informes"))
+                .body(containsString("7 informes"))
+                .body(containsString("13 informes"))
                 .body(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\""))
                 .body(containsString("href=\"/Mercurius/app/articulos\""))
                 .body(not(containsString("Facturas y correo")))
                 .body(not(containsString("href=\"/Mercurius/app/facturas\"")))
                 .body(not(containsString("href=\"/Mercurius/app/tributacion/declaracion\"")));
+    }
+
+    @Test
+    @TestSecurity(user = "inventario", roles = {"inventario"})
+    void movimientosIsAnInventoryReportNotASalesTab() {
+        given().when().get("/Mercurius/app/reportes/articulos/fechas").then().statusCode(200)
+                .body(containsString("Reporte de Movimientos de Inventario"))
+                .body(not(containsString("Vistas de ventas")))
+                .body(not(containsString(">Por fecha<")));
     }
 
     @Test

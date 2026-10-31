@@ -35,7 +35,6 @@
         {#include _kit/view-tabs ariaLabel="Vistas de ventas"}
             {#tabs}
             <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por cajero</a>
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por fecha</a>
             <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por departamento</a>
             <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por familia</a>
             {/tabs}

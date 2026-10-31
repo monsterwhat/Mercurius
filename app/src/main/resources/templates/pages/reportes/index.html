@@ -115,20 +115,11 @@
                         <p class="surface-subtitle">Ventas, artículos e impuestos</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}10{#else if inject:securityIdentity.hasRole('inventario')}8{#else if inject:securityIdentity.hasRole('tributacion')}2{#else}1{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}9{#else if inject:securityIdentity.hasRole('inventario')}7{#else if inject:securityIdentity.hasRole('tributacion')}2{#else}1{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
                     {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Movimientos</span>
-                                <span class="is-size-7 mercurius-text-muted">Por rango de fechas</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
                     <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
@@ -308,10 +299,19 @@
                         <p class="surface-subtitle">Existencias, precios, mermas y compras</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}13{#else}12{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}14{#else}13{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
+                    <li x-show="coincide($el.textContent)">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de inventario por rango de fechas">
+                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
+                                <span class="has-text-weight-medium">Movimientos</span>
+                                <span class="is-size-7 mercurius-text-muted">Por rango de fechas</span>
+                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
+                            </span>
+                        </a>
+                    </li>
                     <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
