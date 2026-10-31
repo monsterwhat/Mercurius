@@ -143,8 +143,10 @@
             </div>
             {/if}
 
-            {! token: registro - legacy: "Reportes" item over pages/Registros !}
-            {#if inject:securityIdentity.hasRole('registro')}
+            {! token: registro - legacy: "Reportes" item over pages/Registros.
+               D11: the hub gate is admin/registro/inventario/tributacion, so the
+               navbar must expose it to the same four roles. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('inventario') || inject:securityIdentity.hasRole('tributacion')}
             <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes" data-planned-route="/app/reportes">Reportes</a>
             {/if}
 

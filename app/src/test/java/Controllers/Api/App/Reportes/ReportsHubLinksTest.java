@@ -24,7 +24,7 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
     private static final String HUB = "/Mercurius/app/reportes";
 
     @Test
-    @TestSecurity(user = "operador", roles = {"registro"})
+    @TestSecurity(user = "admin", roles = {"admin"})
     void emittedInvoicesEntryPointsAtTheEmittedBoard() {
         given()
                 .when().get(HUB)
@@ -37,7 +37,7 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
     }
 
     @Test
-    @TestSecurity(user = "operador", roles = {"registro"})
+    @TestSecurity(user = "admin", roles = {"admin"})
     void familyAndDepartmentEntriesCarryTheirTab() {
         given()
                 .when().get(HUB)
