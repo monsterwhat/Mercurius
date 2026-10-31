@@ -600,6 +600,7 @@ public class ExportResource {
         for (Usuarios usuario : orEmpty(loginService.listAll())) {
             if (needle.isEmpty()
                     || AppRecursoBase.contains(usuario.getUsername(), needle)
+                    || AppRecursoBase.contains(usuario.getEmail(), needle)
                     || AppRecursoBase.contains(usuario.getGroupName(), needle)) {
                 filas.add(usuario);
             }

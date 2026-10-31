@@ -98,6 +98,21 @@
         {/rows}
     {/include}
 
+    {! D3: the admin-only XLSX export moved here from the retired
+       /app/reportes/usuarios page. It forwards the current search so the
+       workbook matches the visible table. !}
+    {#if inject:securityIdentity.hasRole('admin')}
+    <div class="buttons mt-4">
+        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
+            <input type="hidden" name="dataset" value="usuarios"/>
+            <input type="hidden" name="type" value="xlsx"/>
+            <input type="hidden" name="q" value="{q ?: ''}"/>
+            <button class="button" type="submit">Exportar Excel</button>
+        </form>
+    </div>
+    {/if}
+
     {#if toastMessage??}
     <div hx-swap-oob="beforeend:#toast-container">
         {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
