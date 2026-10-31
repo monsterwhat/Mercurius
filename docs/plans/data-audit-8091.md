@@ -10,7 +10,7 @@
 
 **Constraint compliance:** no import, INSERT/UPDATE/DELETE, migration, DDL, code edit, Maven/test run, or commit was performed. The only writes were this report and a throwaway read-only DBF probe under `%TEMP%`. Mercatus surfaces were not touched.
 
-**Security note (2026-10-31):** the credential literals in this report were removed after a secret-scanning alert. WebDAV and database credentials must be supplied through environment variables (`WEBDAV_USER`, `WEBDAV_PASSWORD`, `DB_PASSWORD`). The old values still exist in git history; rotate them and purge the history before treating this repository as clean.
+**Security note (2026-10-31):** the credential literals in this report were removed after a secret-scanning alert. WebDAV and database credentials must be supplied through environment variables (`WEBDAV_USER`, `WEBDAV_PASSWORD`, `DB_PASSWORD`). The old WebDAV value was purged from this repository's history and tags on 2026-10-31; rotate it anyway, and ask GitHub Support to purge cached views of the old commit.
 
 ---
 
