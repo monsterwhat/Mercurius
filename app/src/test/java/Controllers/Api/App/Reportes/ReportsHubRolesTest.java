@@ -29,12 +29,13 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("Reportes de Usuarios"))
                 .body(containsString("9 informes"))
-                .body(containsString("6 informes"))
+                .body(containsString("5 informes"))
                 .body(containsString("14 informes"))
-                .body(containsString("3 informes"))
+                .body(containsString("2 informes"))
                 .body(containsString("href=\"/Mercurius/app/facturas\""))
                 .body(containsString("href=\"/Mercurius/app/articulos\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/usuarios\""));
+                .body(containsString("href=\"/Mercurius/app/facturas-recibidas?bucket=pendientes\""))
+                .body(containsString("href=\"/Mercurius/app/correos/reportes\""));
     }
 
     @Test
@@ -88,6 +89,24 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(not(containsString("Facturas y correo")))
                 .body(not(containsString("Reportes de Inventarios")))
                 .body(not(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\"")));
+    }
+
+    @Test
+    @TestSecurity(user = "registro", roles = {"registro"})
+    void registroReachesRegistrosFromAjustesNotFromTheHub() {
+        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
+                .body(containsString("href=\"/Mercurius/app/registros/log\""))
+                .body(not(containsString("href=\"/Mercurius/app/correos/plantillas\"")));
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void adminKeepsPlantillasInTheHubAndNoLongerInAjustes() {
+        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/Mercurius/app/correos/plantillas\"")));
+
+        given().when().get(HUB).then().statusCode(200)
+                .body(containsString("href=\"/Mercurius/app/correos/plantillas\""));
     }
 
     @Test
