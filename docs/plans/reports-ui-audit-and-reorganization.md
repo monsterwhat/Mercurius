@@ -2,8 +2,8 @@
 
 **Project:** Mercurius (`F:\Documents\GitHub\Mercurius`, Maven module in `app/`)
 **Stack:** Quarkus 3.36.2, Java 25, Qute + htmx + Bulma, Hibernate ORM, PostgreSQL
-**Status:** **Phase 0 completed; Phase 1 and Phase 2 item 2 implemented. Decisions
-D2, D3 (role mapping), D4, D6, D8, D9, D11, D12, D13, D14 and D15 are still open.**
+**Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8 and D14 implemented.
+Decisions D2, D3 (role mapping), D4, D6, D9, D11, D12, D13 and D15 are still open.**
 **Baseline:** `d25f9a4` (working tree clean on 2026-10-31). Line numbers are anchors,
 not contracts: re-anchor by symbol if a file moved.
 **Audience:** the agent that will execute Phase 0 and, later, the reorganization; the
@@ -160,7 +160,7 @@ and an explicit decision in §7.
 | `rep.facturas.emitidas` | Reporte de Facturas Emitidas | Facturas Emitidas / hub "Todas las Facturas" | — | `/app/reportes/facturas` | `FacturasReportesResource` | `pages/reportes/facturas` | `ComprobantesEmitidosService` | Reporte |
 | `ges.facturas.emitidas` | Facturas Emitidas (gestión) | Facturas Emitidas | — | `/app/facturas` | `RecibosPagesResource`, `RecibosResource` | `pages/recibos/index`, `tablero` | `ComprobantesEmitidosService` | Gestión |
 | `rep.facturas.recibidas.aging` | Antigüedad de Facturas Recibidas | Facturas Recibidas Pendientes / Vencidas | grupo pendientes/vencidos | `/app/reportes/recibos/pendientes` | `RecibosReportesResource` | `pages/reportes/recibos-pendientes`, `recibos-vencidos` | `ComprobantesRecibidosService` | Reporte |
-| `ges.facturas.recibidas` | Facturas Recibidas / Cuentas por Pagar | Facturas Recibidas | — | `/api/app/facturas-recibidas/tabla` (dual-mode) | `FacturasRecibidasResource` | `pages/facturas-recibidas/index`, `tabla` | `ComprobantesRecibidosService` | Gestión |
+| `ges.facturas.recibidas` | Facturas Recibidas / Cuentas por Pagar | Facturas Recibidas | — | `/app/facturas-recibidas` | `FacturasRecibidasPagesResource`, `FacturasRecibidasResource` | `pages/facturas-recibidas/index`, `tabla` | `ComprobantesRecibidosService` | Gestión |
 | `rep.correos.programados` | Reportes Programados por Correo (consulta) | Reportes por Correo / Reportes Programados por Correo | — | `/app/reportes/correos` | `CorreosReportesResource` | `pages/reportes/correos` | `ReportesProgramadosService` | Reporte |
 | `ges.correos.programados` | Reportes Programados por Correo (gestión) | Reportes Programados por Correo | — | `/app/correos/reportes` | `CorreosPagesResource`, `ReporteProgramadoResource` | `pages/correos/reportes` | `ReportesProgramadosService` | Gestión |
 | `ges.correos.plantillas` | Plantillas de Correo | Plantillas de Correo Electrónico | — | `/app/correos/plantillas` | `CorreosPagesResource`, `EmailTemplateResource` | `pages/correos/templates` | `EmailTemplateService` | Gestión |
@@ -218,7 +218,7 @@ Out-of-scope screens (listed for referential integrity; do not act on them):
 | `rep.facturas.emitidas` | — | Consultar, Exportar | `admin`, `facturacion` | XLSX `facturas` | OK | Renombrar | D7: "Reporte de facturas emitidas". |
 | `ges.facturas.emitidas` | Todas, Pagadas, Procesadas, Vencidos | Consultar, Procesar, Pagar, Aceptar/Rechazar, Desactivar, Cargar XML | `admin`, `facturacion` | ninguna | Parcial | Corregir, Renombrar | El upload postea a recibidas; D7: "Facturas emitidas (gestión)". |
 | `rep.facturas.recibidas.aging` | Pendientes, Vencidos | Consultar, Exportar | `admin`, `facturacion` | XLSX `recibos-pendientes`, `recibos-vencidos` | OK | Pendiente (D2) | Propuesto: fusionar en `ges.facturas.recibidas`; preservar XLSX. |
-| `ges.facturas.recibidas` | Todas, Activas, Pagadas, Procesadas, Pendientes, Vencidas | Consultar, Cargar XML, Procesar, Pagar, Desactivar, Prevalidar, MensajeReceptor | `admin`, `facturacion` | ninguna | Parcial | Mantener | No exporta; absorber aging (D2). `/app/facturas-recibidas` no es una página: cae en `FallbackResource`; la página real es `/api/app/facturas-recibidas/tabla` (dual-mode). |
+| `ges.facturas.recibidas` | Todas, Activas, Pagadas, Procesadas, Pendientes, Vencidas | Consultar, Cargar XML, Procesar, Pagar, Desactivar, Prevalidar, MensajeReceptor | `admin`, `facturacion` | ninguna | Parcial | Mantener | D14: `/app/facturas-recibidas` is now a real page over the same model as `/api/app/facturas-recibidas/tabla`; the upload is the only visible one. No export; absorb aging (D2). |
 | `rep.correos.programados` | — | Consultar, Exportar | `admin`, `facturacion` | XLSX `correos` | OK | Pendiente (D4) | Propuesto: fusionar con la gestión; los gates difieren. |
 | `ges.correos.programados` | — | Consultar, Crear, Editar, Toggle, Eliminar | `admin`, `tributacion` | ninguna | OK | Pendiente (D4) | Sin export; gate distinto al reporte. |
 | `ges.correos.plantillas` | — | Consultar, Crear, Editar, Toggle, Eliminar | `admin`, `tributacion` | ninguna | OK | Pendiente (D9) | Acceso duplicado hub y navbar: una sola entrada. |
@@ -309,8 +309,8 @@ the per-role count.
 | 9 | Facturación | Estacionalidad | `/app/reportes/estacionalidad` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | admin, inventario (contenedor) | Duplicado | Eliminar | Pestaña de Tendencias. |
 | 10 | Facturación | Resumen de Impuestos | `/app/tributacion/declaracion` | `/app/tributacion/declaracion` | `rep.fiscal.iva` | admin, registro, inventario, tributación | admin, tributacion | Parcial | Renombrar, Mover | Es la D-104; grupo Fiscal. |
 | 11 | Facturas y correo | Facturas emitidas | `/app/recibos` | `/app/facturas` | `ges.facturas.emitidas` | admin, registro, inventario, tributación | admin, facturacion | OK | Renombrar | Corregido en `2ab771e`; D7 naming. |
-| 12 | Facturas y correo | Facturas recibidas pendientes de pago | `/app/reportes/recibos/pendientes` | (D2) `/api/app/facturas-recibidas/tabla?bucket=pendientes` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la ruta de página `/app/facturas-recibidas` no existe. |
-| 13 | Facturas y correo | Facturas recibidas vencidas | `/app/reportes/recibos/vencidos` | (D2) `/api/app/facturas-recibidas/tabla?bucket=vencidas` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la ruta de página `/app/facturas-recibidas` no existe. |
+| 12 | Facturas y correo | Facturas recibidas pendientes de pago | `/app/reportes/recibos/pendientes` | (D2) `/app/facturas-recibidas?bucket=pendientes` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la página real ya existe (D14). |
+| 13 | Facturas y correo | Facturas recibidas vencidas | `/app/reportes/recibos/vencidos` | (D2) `/app/facturas-recibidas?bucket=vencidas` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la página real ya existe (D14). |
 | 14 | Facturas y correo | Reportes por Correo | `/app/reportes/correos` | (D4) `/app/correos/reportes` | `rep.correos.programados` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D4) | Gate distinto; preservar XLSX. |
 | 15 | Facturas y correo | Plantillas de Correo | `/app/correos/plantillas` | `/app/correos/plantillas` | `ges.correos.plantillas` | admin, registro, inventario, tributación | admin, tributacion | Duplicado | Pendiente (D9) | Misma ruta que navbar: una de las dos entradas se elimina. |
 | 16 | Facturas y correo | Registros Internos | `/app/registros/log` | `/app/registros/log` | `tool.registros` | admin | admin, registro | OK | Pendiente (D9) | Misma ruta que navbar: una de las dos entradas se elimina. |
@@ -350,9 +350,9 @@ the per-role count.
 | N13 | navbar | Plantillas | `/app/correos/plantillas` | `/app/correos/plantillas` | `ges.correos.plantillas` | admin | admin, tributacion | Duplicado | Pendiente (D9) | Misma ruta que el hub: una de las dos entradas se elimina. |
 | N14 | navbar | Registro de actividades | `/app/registros/log` | `/app/registros/log` | `tool.registros` | admin | admin, registro | Duplicado | Pendiente (D9) | Misma ruta que el hub: una de las dos entradas se elimina. |
 | D1 | dashboard | Facturas Emitidas | `/app/facturas` | `/app/facturas` | `ges.facturas.emitidas` | todos | admin, facturacion | Parcial | Mantener | 403 para roles sin facturacion. |
-| D2 | dashboard | Facturas Recibidas | `/api/app/facturas-recibidas/tabla` | `/api/app/facturas-recibidas/tabla` | `ges.facturas.recibidas` | todos | admin, facturacion | Parcial | Mantener | Ruta dual-mode; `url_final` queda en la API hasta que exista página (D13/D14). |
-| IP1 | in-page | Ir a facturas recibidas (pendientes) | `/app/facturas-recibidas` | `/api/app/facturas-recibidas/tabla` | `ges.facturas.recibidas` | facturacion, admin | admin, facturacion | Roto | Corregir | `recibos-pendientes.html:28`; `/app/facturas-recibidas` cae en `FallbackResource`. |
-| IP2 | in-page | Ir a facturas recibidas (vencidos) | `/app/facturas-recibidas` | `/api/app/facturas-recibidas/tabla` | `ges.facturas.recibidas` | facturacion, admin | admin, facturacion | Roto | Corregir | `recibos-vencidos.html:29`; misma ruta muerta. |
+| D2 | dashboard | Facturas Recibidas | `/app/facturas-recibidas` | `/app/facturas-recibidas` | `ges.facturas.recibidas` | todos | admin, facturacion | Parcial | Mantener | Corregido en `6b1654e`; solo `admin/facturacion` puede abrirlo. |
+| IP1 | in-page | Ir a facturas recibidas (pendientes) | `/app/facturas-recibidas` | `/app/facturas-recibidas` | `ges.facturas.recibidas` | facturacion, admin | admin, facturacion | OK | Mantener | `recibos-pendientes.html:28`; la ruta ya existe (D14). |
+| IP2 | in-page | Ir a facturas recibidas (vencidos) | `/app/facturas-recibidas` | `/app/facturas-recibidas` | `ges.facturas.recibidas` | facturacion, admin | admin, facturacion | OK | Mantener | `recibos-vencidos.html:29`; la ruta ya existe (D14). |
 
 ### 4.6 Matriz B — out-of-scope accesses (recorded, not acted on)
 
@@ -367,11 +367,11 @@ the per-role count.
 | O7 | navbar | Cerrar sesión | `POST /api/app/auth/logout` | `oos.auth` | Autenticación; fuera de alcance. |
 
 **Summary:** 32 hub + 14 navbar + 2 dashboard + 2 in-page = **50 in-scope accesses**.
-After Phases 1 and 2, the hub has no `Roto` entries; the two remaining `Roto` are the
-in-page links IP1/IP2, which point at the dead `/app/facturas-recibidas` route (A.9).
-The hub keeps 6 `Duplicado` (#3, #4, #9, #15, #24, #25), and the navbar adds 2
-(N13, N14). The root cause of most `Parcial` rows is one defect: the hub's role gate
-does not match its contents (§A.7), not 30 independent bugs.
+After Phases 1 and 2 and D14, there are no `Roto` destinations: `/app/facturas`,
+`/app/categorias?tab=...` and `/app/facturas-recibidas` all resolve. The hub keeps 6
+`Duplicado` (#3, #4, #9, #15, #24, #25), and the navbar adds 2 (N13, N14). The root
+cause of most `Parcial` rows is one defect: the hub's role gate does not match its
+contents (§A.7), not 30 independent bugs.
 
 ---
 
@@ -507,7 +507,7 @@ Phase 0 (the audit must record the options and their consequences).
 | D11 | Hub role model | `/app/reportes` is gated `admin, registro, inventario, tributacion`, but 28 of the 31 links a `registro` user can see answer 403; `facturacion` cannot open the hub at all. | (a) filter entries by role; (b) widen the hub to every authenticated user and filter; (c) one hub per role | (a) + align the navbar "Reportes" link with the effective gate | Pending |
 | D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Pending |
 | D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Pending |
-| D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Pending |
+| D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Resolved in `6b1654e`: real page route, two cards removed, links repointed; endpoints retained |
 | D15 | Export authorization and correctness | `/api/app/export` is `admin,registro`, while the buttons live on `inventario`/`facturacion`/`@Authenticated` screens; 18 of 25 forms are dead for the page role. | (a) per-dataset authorization + hide/gate the button; (b) widen the class gate; (c) remove the buttons from roles that cannot export | (a) | Pending |
 
 ---
@@ -556,7 +556,7 @@ authorized role; no other file changes; the new test fails on the old href.
 
 ### 8.3 Phase 2 — Corrections that depend on decisions
 
-**Status:** item 2 done on 2026-10-31; items 1, 3, 4 and 5 pending (D8, D3, D6 and
+**Status:** items 2 and 4 done on 2026-10-31; items 1, 3 and 5 pending (D8, D3 and
 the export decision respectively).
 
 1. **Catálogo** (D8): apply the chosen semantics and make the badge use the same
@@ -569,12 +569,11 @@ the export decision respectively).
 3. **Clientes permissions**: the report page is `@Authenticated`, but its
    create/edit buttons call `admin/usuario` endpoints. Hide or gate them, or gate
    the page; this is a per-operation decision (D3).
-4. **XML upload surfaces** (D14): there are three forms but two endpoints
-   (`/app/inventarios`, the received board, and the emitted board posting to the
-   received endpoint). The received board's real page route is
-   `/api/app/facturas-recibidas/tabla`; `/app/facturas-recibidas` is dead and the
-   two report pages link to it. Choose the official surface and remove the
-   emitted/inventory cards or repoint them (A.9).
+4. **[x] XML upload surfaces** (D14, done in `6b1654e`): the received board is
+   the only visible upload, at the new real page route `/app/facturas-recibidas`.
+   The emitted and inventory cards were removed, the dashboard and report links
+   were repointed, and `D14UploadSurfacesTest` pins the four cases. The upload
+   endpoints remain for API compatibility.
 5. **Export dataset integrity** (D15): three screens send a `dataset` the endpoint
    does not accept (`reportes-movimientos`, `inventario-resumen`, `promociones`).
    The four Articles tabs send `dataset=articulos` and a `tab` the endpoint ignores
@@ -728,24 +727,22 @@ These facts are the seed for Phase 0. They are **not** the populated matrices.
 | Emails | `facturacion,admin` (`CorreosReportesResource.java:45`) | `admin,tributacion` (`CorreosPagesResource.java:30`) | XLSX (`reportes/correos.html:56-59`) | none |
 | Received pending/overdue | `facturacion,admin` (`RecibosReportesResource.java:54`) | `admin,facturacion` (`FacturasRecibidasResource.java:164`) | XLSX (`recibos-pendientes.html:76`, `recibos-vencidos.html:78`) | none |
 
-### A.4 Cross-upload (corrected by the Phase 0 addendum, A.9)
+### A.4 Cross-upload (closed by D14)
 
-There are **three forms but only two endpoints**:
+Before D14 there were **three forms but only two endpoints**; D14 removed the two
+misplaced forms and added the missing page route:
 
-- `/app/facturas` (emitted board) posts to `/api/app/facturas-recibidas/upload`
-  (`recibos/index.html:59`). The parser creates `ComprobantesRecibidos`, never
-  emitted invoices (`Parser.java:1376-1379`), so the uploaded file never appears on
-  the board that uploaded it.
-- The received board is served by `/api/app/facturas-recibidas/tabla` (dual-mode);
-  `/app/facturas-recibidas` is **not a page route** and falls through to
-  `FallbackResource` (`FallbackResource.java:46,84-90`). The two report templates
-  link to that dead route (`recibos-pendientes.html:28`, `recibos-vencidos.html:29`).
-- `/app/inventarios` posts to its own `/api/app/inventario/upload`
-  (`inventario/index.html:71`), which creates the **same received-invoice graph**,
-  creates no `Inventario` rows, and is invisible to the `inventario` role once
-  created (the received board is `admin,facturacion`).
+- `/app/facturas-recibidas` is now the real received-board page
+  (`FacturasRecibidasPagesResource`), rendering the same model as the dual-mode
+  `/api/app/facturas-recibidas/tabla`. Its upload card is the only visible one.
+- The emitted board (`/app/facturas`) and the inventory board (`/app/inventarios`)
+  no longer render upload cards. Historically both posted to received endpoints
+  (`recibos/index.html:59`, `inventario/index.html:71`), and the inventory endpoint
+  created no `Inventario` rows.
+- The upload endpoints remain for API compatibility. `D14UploadSurfacesTest`
+  pins the page route, the role gate and the two removed cards.
 
-This is D14, not D6.
+This was D14, not D6.
 
 ### A.5 Baseline counts
 
@@ -818,15 +815,15 @@ Two smaller gate asymmetries:
 |---|---|
 | Canonical in-scope screens (Matriz A) | 34 |
 | In-scope accesses (hub + navbar + dashboard + in-page) | 50 |
-| Broken destinations (`Roto`) | 0 in the hub after `2ab771e` and `486c343`; 2 in-page (IP1/IP2) to the dead `/app/facturas-recibidas` route |
+| Broken destinations (`Roto`) | 0 after `2ab771e`, `486c343` and `6b1654e` |
 | Access duplicates (`Duplicado`) | 8 (6 hub + 2 navbar) |
 | Broken export datasets | 3 (`reportes-movimientos`, `inventario-resumen`, `promociones`) |
 | Exports that ignore their tab | 1 (`articulos`); `q` is also dropped by `articulos`, `usuarios`, `clientes`, `correos` |
 | Wrong-content export (200) | 1 (`ventas.html` sends `dataset=articulos&type=pdf`, downloads the article catalogue) |
-| Dead page routes | 1 (`/app/facturas-recibidas`; the board is `/api/app/facturas-recibidas/tabla`) |
+| Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
 | Role-model defects | 1 (hub) + 2 gate asymmetries + the export gate (`admin,registro` vs its callers) |
-| Open decisions | D2, D3 (role mapping), D4, D6, D8, D9, D11, D12, D13, D14, D15 |
+| Open decisions | D2, D3 (role mapping), D4, D6, D9, D11, D12, D13, D15 |
 
 The effective root causes are four: the hub role model (§A.7), the flat tab-as-entry
 hub (Matriz B), the duplicate management/report pairs (§5.4), and three stale export
@@ -871,14 +868,15 @@ D15. They changed no files. Findings that refine the matrices:
   Plantillas canonical in the hub; Registros canonical in Ajustes.
 
 **D14 — XML uploads.**
-- Three forms, two endpoints. The emitted board and the inventory board both write
-  `ComprobantesRecibidos`; the inventory upload creates no `Inventario` rows and is
+- Three forms, two endpoints. The emitted board and the inventory board both wrote
+  `ComprobantesRecibidos`; the inventory upload created no `Inventario` rows and was
   invisible to the `inventario` role.
-- `/app/facturas-recibidas` is dead (fallback); the board is
+- `/app/facturas-recibidas` was dead (fallback); the board was
   `/api/app/facturas-recibidas/tabla`.
 - Recommendation U1: keep only the received-board upload, remove the other two
-  cards, retire the duplicate endpoint, and give the received board a real page
-  route (or repoint the links).
+  cards, and give the received board a real page route. **Implemented in `6b1654e`**:
+  the page route exists, both cards are gone, links are repointed, and the upload
+  endpoints remain for compatibility.
 
 **D15 — Exports.**
 - 25 forms, 26 dataset values; the three 404s plus the `articulos` tab issue plus
@@ -931,3 +929,4 @@ ask the user first.
 | 2026-10-31 | Phase 2, item 2: Categorías reads/writes `?tab=`; hub and navbar links carry the tab; `CategoriasPageTest` added; version `2.16.5 → 2.16.6`. |
 | 2026-10-31 | Five read-only Big Pickle agents re-verified D8/D3/D4/D9/D14/D15; findings consolidated in A.9 and the affected rows/decisions updated. No code changed. |
 | 2026-10-31 | D8: Articles tab renamed to Procesados; badge now uses `countByTab`; version `2.16.6 → 2.16.7`. |
+| 2026-10-31 | D14: real `/app/facturas-recibidas` page, both misplaced upload cards removed, links repointed, `D14UploadSurfacesTest` added; version `2.16.9 → 2.16.10`. |
