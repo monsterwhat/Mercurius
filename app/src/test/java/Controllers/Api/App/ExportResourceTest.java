@@ -25,8 +25,20 @@ class ExportResourceTest {
     private static final String EXPORT = "/api/app/export";
 
     private byte[] export(String dataset, String type, Map<String, String> params) {
+        return exportFrom(PAGE, dataset, type, params);
+    }
+
+    private byte[] exportFrom(String mintPage, String dataset, String type, Map<String, String> params) {
+        Response response = postExport(mintPage, dataset, type, params);
+        response.then()
+                .statusCode(200)
+                .header(HttpHeaders.CONTENT_DISPOSITION, notNullValue());
+        return response.asByteArray();
+    }
+
+    private Response postExport(String mintPage, String dataset, String type, Map<String, String> params) {
         String token = given()
-                .when().get(PAGE)
+                .when().get(mintPage)
                 .then().statusCode(200)
                 .extract().cookie("csrf-token");
         assertThat(token).as("csrf-token minted by the safe GET").isNotBlank();
@@ -38,12 +50,11 @@ class ExportResourceTest {
                 .formParam("dataset", dataset)
                 .formParam("type", type);
         params.forEach(request::formParam);
+        return request.when().post(EXPORT);
+    }
 
-        Response response = request.when().post(EXPORT);
-        response.then()
-                .statusCode(200)
-                .header(HttpHeaders.CONTENT_DISPOSITION, notNullValue());
-        return response.asByteArray();
+    private void forbiddenFrom(String mintPage, String dataset, String type) {
+        postExport(mintPage, dataset, type, Map.of()).then().statusCode(403);
     }
 
     private static void assertXlsx(byte[] bytes) {
@@ -79,6 +90,54 @@ class ExportResourceTest {
     @TestSecurity(user = "admin", roles = {"admin"})
     void ventasDatasetNoLongerDownloadsTheArticleCatalogue() {
         assertXlsx(export("reportes-ventas", "xlsx", Map.of()));
+    }
+
+    @Test
+    @TestSecurity(user = "facturador", roles = {"facturacion"})
+    void facturacionCanExportFacturas() {
+        assertXlsx(exportFrom("/app/facturas", "facturas", "xlsx", Map.of()));
+    }
+
+    @Test
+    @TestSecurity(user = "facturador", roles = {"facturacion"})
+    void facturacionCannotExportUsuarios() {
+        forbiddenFrom("/app/facturas", "usuarios", "xlsx");
+    }
+
+    @Test
+    @TestSecurity(user = "inventario", roles = {"inventario"})
+    void inventarioCanExportArticulos() {
+        assertXlsx(exportFrom("/app/reportes/inventario/alertas", "articulos", "xlsx", Map.of()));
+    }
+
+    @Test
+    @TestSecurity(user = "inventario", roles = {"inventario"})
+    void inventarioCannotExportFacturas() {
+        forbiddenFrom("/app/reportes/inventario/alertas", "facturas", "xlsx");
+    }
+
+    @Test
+    @TestSecurity(user = "usuario", roles = {"usuario"})
+    void usuarioCanExportClientes() {
+        assertXlsx(exportFrom("/app/usuarios", "clientes", "xlsx", Map.of()));
+    }
+
+    @Test
+    @TestSecurity(user = "usuario", roles = {"usuario"})
+    void usuarioCannotExportUsuarios() {
+        forbiddenFrom("/app/usuarios", "usuarios", "xlsx");
+    }
+
+    @Test
+    @TestSecurity(user = "operador", roles = {"registro"})
+    void registroCanExportArticulos() {
+        assertXlsx(exportFrom("/app/reportes", "articulos", "xlsx", Map.of()));
+    }
+
+    @Test
+    @TestSecurity(user = "operador", roles = {"registro"})
+    void registroCannotExportUsuarios() {
+        forbiddenFrom("/app/reportes", "usuarios", "xlsx");
     }
 
     @Test

@@ -29,6 +29,7 @@ import Services.UserService;
 import Services.StockForecastService;
 import Services.SeasonalityService;
 import Utils.ReportExporter;
+import io.quarkus.security.identity.SecurityIdentity;
 import com.lowagie.text.DocumentException;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.security.RolesAllowed;
@@ -54,6 +55,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -78,17 +80,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>{@code reportes-departamentos} → "Ventas por Departamento" workbook (xlsx)</li>
  * </ul>
  *
- * <p>This resource carries its OWN authorization gate
- * ({@code @RolesAllowed({"admin","registro"})}) instead of depending on the HTTP
- * permission policy. That matters because the policy no longer blanket-covers
- * {@code /api/app/*}: it enumerates the real sub-APIs so an unknown path can
- * 404 as JSON, and this resource must therefore never rely on a prefix it is
- * not named after. {@code registro} is the role the export buttons check in the
- * templates, and {@code admin} is listed explicitly as in every other
- * {@code @RolesAllowed} of this surface (51 sites).</p>
+ * <p>This resource carries its OWN authorization gate instead of depending on
+ * the HTTP permission policy. The class gate admits the six application roles;
+ * each dataset is then checked against {@link #DATASET_ROLES}, so a role can
+ * only export the datasets its page can open. That matters because the policy
+ * no longer blanket-covers {@code /api/app/*}: it enumerates the real sub-APIs,
+ * so an unknown path can 404 as JSON and this resource must never rely on a
+ * prefix it is not named after. {@code admin} is listed explicitly in every
+ * dataset, as in the rest of this surface.</p>
  */
 @Path("/api/app/export")
-@RolesAllowed({"admin", "registro"})
+@RolesAllowed({"admin", "registro", "facturacion", "inventario", "usuario", "tributacion"})
 @Produces(MediaType.APPLICATION_OCTET_STREAM)
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Tag(name = "App - Export")
@@ -99,9 +101,48 @@ public class ExportResource {
     private static final String TYPE_XLSX = "xlsx";
     private static final String TYPE_PDF = "pdf";
 
+    private static final Set<String> ALL_ROLES = Set.of(
+            "admin", "registro", "facturacion", "inventario", "usuario", "tributacion");
+    private static final Set<String> INVENTARIO_ROLES = Set.of("admin", "inventario", "registro");
+    private static final Set<String> FACTURACION_ROLES = Set.of("admin", "facturacion", "registro");
+
+    /** Dataset → roles that may export it; mirrors the page gate of each screen. */
+    private static final Map<String, Set<String>> DATASET_ROLES = Map.ofEntries(
+            Map.entry("articulos", INVENTARIO_ROLES),
+            Map.entry("inventario", INVENTARIO_ROLES),
+            Map.entry("inventario-resumen", INVENTARIO_ROLES),
+            Map.entry("stock-alerts", INVENTARIO_ROLES),
+            Map.entry("familias", INVENTARIO_ROLES),
+            Map.entry("departamentos", INVENTARIO_ROLES),
+            Map.entry("reportes-familias", INVENTARIO_ROLES),
+            Map.entry("reportes-departamentos", INVENTARIO_ROLES),
+            Map.entry("precios", INVENTARIO_ROLES),
+            Map.entry("merma", INVENTARIO_ROLES),
+            Map.entry("tendencias", INVENTARIO_ROLES),
+            Map.entry("rendimiento", INVENTARIO_ROLES),
+            Map.entry("pronosticos", INVENTARIO_ROLES),
+            Map.entry("etiquetas", INVENTARIO_ROLES),
+            Map.entry("ventas-fecha-historica", INVENTARIO_ROLES),
+            Map.entry("promociones", INVENTARIO_ROLES),
+            Map.entry("reportes-movimientos", INVENTARIO_ROLES),
+            Map.entry("reportes-ventas", INVENTARIO_ROLES),
+            Map.entry("facturas", FACTURACION_ROLES),
+            Map.entry("recibos-pendientes", FACTURACION_ROLES),
+            Map.entry("recibos-vencidos", FACTURACION_ROLES),
+            Map.entry("correos", FACTURACION_ROLES),
+            Map.entry("profit-margins", FACTURACION_ROLES),
+            Map.entry("clientes", ALL_ROLES),
+            Map.entry("loyalty", ALL_ROLES),
+            Map.entry("estacionalidad", ALL_ROLES),
+            Map.entry("usuarios", Set.of("admin")));
+
     /** {dataset}-{yyyyMMdd HH:mm}.ext, quoted in Content-Disposition. */
     private static final DateTimeFormatter FILE_STAMP =
             DateTimeFormatter.ofPattern("yyyyMMdd HH:mm").withLocale(Locale.ROOT);
+
+    @Nonnull
+    @Inject
+    SecurityIdentity identity;
 
     @Nonnull
     @Inject
@@ -230,6 +271,14 @@ public class ExportResource {
         }
 
         String key = dataset.trim().toLowerCase(Locale.ROOT);
+        Set<String> allowedRoles = DATASET_ROLES.get(key);
+        if (allowedRoles == null) {
+            return notFound("Dataset desconocido: " + key);
+        }
+        if (allowedRoles.stream().noneMatch(identity::hasRole)) {
+            return forbidden("No autorizado para exportar el dataset '" + key + "'");
+        }
+
         byte[] bytes;
         try {
             bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias, month, day, yearsBack, dimension, items,
@@ -792,6 +841,14 @@ public class ExportResource {
         return Response.status(Response.Status.NOT_FOUND)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(ApiResponse.error("NOT_FOUND", message))
+                .build();
+    }
+
+    @Nonnull
+    private static Response forbidden(@Nonnull String message) {
+        return Response.status(Response.Status.FORBIDDEN)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(ApiResponse.error("FORBIDDEN", message))
                 .build();
     }
 
