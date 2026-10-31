@@ -16,6 +16,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -768,6 +769,7 @@ public class ReporteProgramadoResource {
      * without duplicating the table-building logic (ArticuloResource#fullPageModel
      * pattern — page and fragments can never disagree).
      */
+    @PermitAll
     public Map<String, Object> fullPageModel() {
         TableModel tr = buildTableModel(1, 20, null, "asc", null);
         Map<String, Object> model = new LinkedHashMap<>();

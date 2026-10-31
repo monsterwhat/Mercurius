@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
  */
 @Path("/app/correos")
 @Produces(MediaType.TEXT_HTML)
-@RolesAllowed({"admin", "tributacion"})
 public class CorreosPagesResource {
     private static final Logger LOG = Logger.getLogger(CorreosPagesResource.class);
 
@@ -51,6 +50,7 @@ public class CorreosPagesResource {
 
     @GET
     @Path("/reportes")
+    @RolesAllowed({"admin", "tributacion", "facturacion"})
     public Response reportes() {
         return render(reportesPage, reportes.fullPageModel(),
                 "No se pudieron cargar los reportes programados");
@@ -58,6 +58,7 @@ public class CorreosPagesResource {
 
     @GET
     @Path("/plantillas")
+    @RolesAllowed({"admin", "tributacion"})
     public Response plantillas() {
         return render(plantillasPage, plantillas.fullPageModel(),
                 "No se pudieron cargar las plantillas de correo");

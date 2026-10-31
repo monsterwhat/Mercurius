@@ -60,8 +60,19 @@
         {#include _kit/page-header title="Reportes Programados por Correo"
              subtitle="Envío automático de reportes por correo electrónico" }
             {#actions}
+                {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
                 {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-primary"
                      bodyUrl="/api/app/reportes-programados/formularios/nueva" /}
+                {/if}
+                {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion') || inject:securityIdentity.hasRole('tributacion')}
+                <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
+                    <input type="hidden" name="dataset" value="correos"/>
+                    <input type="hidden" name="type" value="xlsx"/>
+                    <input type="hidden" name="q" value="{tablaReportes.q ?: ''}"/>
+                    <button class="button" type="submit">Exportar Excel</button>
+                </form>
+                {/if}
             {/actions}
         {/include}
 

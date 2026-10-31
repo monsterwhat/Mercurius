@@ -107,6 +107,7 @@ public class ExportResource {
             "admin", "registro", "facturacion", "inventario", "usuario", "tributacion");
     private static final Set<String> INVENTARIO_ROLES = Set.of("admin", "inventario", "registro");
     private static final Set<String> FACTURACION_ROLES = Set.of("admin", "facturacion", "registro");
+    private static final Set<String> CORREOS_ROLES = Set.of("admin", "facturacion", "tributacion", "registro");
 
     /** Dataset → roles that may export it; mirrors the page gate of each screen. */
     private static final Map<String, Set<String>> DATASET_ROLES = Map.ofEntries(
@@ -131,7 +132,7 @@ public class ExportResource {
             Map.entry("facturas", FACTURACION_ROLES),
             Map.entry("recibos-pendientes", FACTURACION_ROLES),
             Map.entry("recibos-vencidos", FACTURACION_ROLES),
-            Map.entry("correos", FACTURACION_ROLES),
+            Map.entry("correos", CORREOS_ROLES),
             Map.entry("profit-margins", FACTURACION_ROLES),
             Map.entry("clientes", ALL_ROLES),
             Map.entry("loyalty", ALL_ROLES),
@@ -589,9 +590,9 @@ public class ExportResource {
     }
 
     /**
-     * Mirrors {@code UsuariosReportesResource.filterAndSort}: the export must
-     * contain exactly the rows the on-screen table shows, so {@code q}
-     * searches username + groupName (never the password).
+     * Mirrors the Users management table (the export now lives there after
+     * D3): the workbook must contain exactly the rows the screen shows, so
+     * {@code q} searches username + email + groupName (never the password).
      */
     private @Nonnull List<Usuarios> filtrarUsuarios(@Nullable String q) {
         String needle = needle(q);

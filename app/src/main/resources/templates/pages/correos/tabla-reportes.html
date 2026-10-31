@@ -65,6 +65,7 @@
                 <td>{#if reporte.reportes??}{reporte.reportes}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
+                        {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
                         <button type="button" class="button is-small" title="Editar reporte programado"
                                 aria-label="Editar reporte programado {reporte.perfil}"
                                 aria-haspopup="dialog" data-kit-open="editar-reporte"
@@ -77,14 +78,13 @@
                                 hx-confirm="¿{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} el reporte programado {reporte.perfil}?"
                                 hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
-                        {#if isAdmin??}{#if isAdmin}
                         <button type="button" class="button is-small is-danger" title="Eliminar reporte programado"
                                 aria-label="Eliminar reporte programado {reporte.perfil}"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}"
                                 hx-confirm="¿Eliminar el reporte programado {reporte.perfil}? Esta acción no se puede deshacer."
                                 hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
-                        {/if}{/if}
+                        {/if}
                     </div>
                 </td>
             </tr>
@@ -95,7 +95,7 @@
                     <span class="kit-empty">No hay reportes que coincidan con «{q}».</span>
                     <a class="button is-small is-text mt-2" href="{config:['quarkus.http.root-path']}{modelo.baseUrl}">Ver todos los reportes</a>
                     {#else}
-                    <span class="kit-empty">Todavía no hay reportes programados. Cree el primero con «Crear Reporte Programado».</span>
+                    <span class="kit-empty">Todavía no hay reportes programados.</span>
                     {/if}
                 </td>
             </tr>
