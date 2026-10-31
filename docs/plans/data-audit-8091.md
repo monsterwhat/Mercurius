@@ -10,6 +10,8 @@
 
 **Constraint compliance:** no import, INSERT/UPDATE/DELETE, migration, DDL, code edit, Maven/test run, or commit was performed. The only writes were this report and a throwaway read-only DBF probe under `%TEMP%`. Mercatus surfaces were not touched.
 
+**Security note (2026-10-31):** the credential literals in this report were removed after a secret-scanning alert. WebDAV and database credentials must be supplied through environment variables (`WEBDAV_USER`, `WEBDAV_PASSWORD`, `DB_PASSWORD`). The old values still exist in git history; rotate them and purge the history before treating this repository as clean.
+
 ---
 
 ## 0. TL;DR
@@ -48,7 +50,7 @@ Mid-audit, an external actor (not this audit) processed one received invoice thr
 ### 1.1 Local DB
 
 ```powershell
-$env:PGPASSWORD='Mercurius@1!'
+$env:PGPASSWORD=$env:DB_PASSWORD
 & 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -h 127.0.0.1 -p 5433 -U mercurius -d mercurius -t -A -F '|' -c "<SELECT only>"
 ```
 
@@ -108,8 +110,8 @@ DBF `D` fields are `YYYYMMDD` text; `T` fields are binary timestamps; header dat
 ### 1.4 WebDAV and ZIPs
 
 ```powershell
-curl.exe -s -u '<REDACTED>' -X PROPFIND -H 'Depth: 1' --max-time 30 'http://192.168.100.99:9200/webdav/'
-curl.exe -sI -u '<REDACTED>' --max-time 20 'http://192.168.100.99:9200/webdav/Facturas/<file>.zip'
+curl.exe -s -u '<WEBDAV_USER>:<WEBDAV_PASSWORD>' -X PROPFIND -H 'Depth: 1' --max-time 30 'http://192.168.100.99:9200/webdav/'
+curl.exe -sI -u '<WEBDAV_USER>:<WEBDAV_PASSWORD>' --max-time 20 'http://192.168.100.99:9200/webdav/Facturas/<file>.zip'
 tar -tf <local copy>.zip          # listing only, no extraction
 ```
 
@@ -1646,7 +1648,7 @@ The script prompts for the password (or reads `MER_PASSWORD`). Expected duration
 
 ```powershell
 # ---------- local DB ----------
-$env:PGPASSWORD='Mercurius@1!'
+$env:PGPASSWORD=$env:DB_PASSWORD
 $P = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
 & $P -h 127.0.0.1 -p 5433 -U mercurius -d mercurius -c "select count(*) from articulos;"
 & $P -h 127.0.0.1 -p 5433 -U mercurius -d mercurius -c "select to_char(fecha_emision,'YYYY-MM') m, count(*) from encabezado group by 1 order by 1;"
@@ -1695,8 +1697,8 @@ python "$env:TEMP\opencode\xml_probe.py" ucmp "$env:TEMP\opencode\db_claves.txt"
 python "$env:TEMP\opencode\dbf_probe.py" summary 'E:\VPALMERAS'
 
 # ---------- WebDAV ----------
-curl.exe -s -u '<REDACTED>' -X PROPFIND -H 'Depth: 1' 'http://192.168.100.99:9200/webdav/Facturas/'
-curl.exe -sI -u '<REDACTED>' 'http://192.168.100.99:9200/webdav/Facturas/Facturas_2026-09.zip'
+curl.exe -s -u '<WEBDAV_USER>:<WEBDAV_PASSWORD>' -X PROPFIND -H 'Depth: 1' 'http://192.168.100.99:9200/webdav/Facturas/'
+curl.exe -sI -u '<WEBDAV_USER>:<WEBDAV_PASSWORD>' 'http://192.168.100.99:9200/webdav/Facturas/Facturas_2026-09.zip'
 Get-ChildItem "$env:TEMP\mercurius-webdav-facturas" -Filter *.zip | ForEach-Object { & tar -tf $_.FullName }
 ```
 
