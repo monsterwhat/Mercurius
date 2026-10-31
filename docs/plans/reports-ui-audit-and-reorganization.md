@@ -2,8 +2,9 @@
 
 **Project:** Mercurius (`F:\Documents\GitHub\Mercurius`, Maven module in `app/`)
 **Stack:** Quarkus 3.36.2, Java 25, Qute + htmx + Bulma, Hibernate ORM, PostgreSQL
-**Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8 and D14 implemented.
-Decisions D2, D3 (role mapping), D4, D6, D9, D11, D12, D13 and D15 are still open.**
+**Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8, D14 and D15a
+(export data) implemented. Decisions D2, D3 (role mapping), D4, D6, D9, D11, D12,
+D13 and D15b (export role gate) are still open.**
 **Baseline:** `d25f9a4` (working tree clean on 2026-10-31). Line numbers are anchors,
 not contracts: re-anchor by symbol if a file moved.
 **Audience:** the agent that will execute Phase 0 and, later, the reorganization; the
@@ -508,7 +509,7 @@ Phase 0 (the audit must record the options and their consequences).
 | D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Pending |
 | D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Pending |
 | D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Resolved in `6b1654e`: real page route, two cards removed, links repointed; endpoints retained |
-| D15 | Export authorization and correctness | `/api/app/export` is `admin,registro`, while the buttons live on `inventario`/`facturacion`/`@Authenticated` screens; 18 of 25 forms are dead for the page role. | (a) per-dataset authorization + hide/gate the button; (b) widen the class gate; (c) remove the buttons from roles that cannot export | (a) | Pending |
+| D15 | Export authorization and correctness | `/api/app/export` is `admin,registro`, while the buttons live on `inventario`/`facturacion`/`@Authenticated` screens; 18 of 25 forms are dead for the page role. | (a) per-dataset authorization + hide/gate the button; (b) widen the class gate; (c) remove the buttons from roles that cannot export | (a) | Partially resolved: D15a (`9d4fced`) fixed the three 404s, the Articles tab and `ventas`; D15b (role gate) pending |
 
 ---
 
@@ -556,8 +557,8 @@ authorized role; no other file changes; the new test fails on the old href.
 
 ### 8.3 Phase 2 — Corrections that depend on decisions
 
-**Status:** items 2 and 4 done on 2026-10-31; items 1, 3 and 5 pending (D8, D3 and
-the export decision respectively).
+**Status:** items 2 and 4 done on 2026-10-31, plus the data half of item 5 (D15a);
+items 1 and 3 remain (D8, D3), and D15b (export role gate) is still open.
 
 1. **Catálogo** (D8): apply the chosen semantics and make the badge use the same
    predicate as the table. `catalogo` and `procesados` are the same query today
@@ -574,14 +575,13 @@ the export decision respectively).
    The emitted and inventory cards were removed, the dashboard and report links
    were repointed, and `D14UploadSurfacesTest` pins the four cases. The upload
    endpoints remain for API compatibility.
-5. **Export dataset integrity** (D15): three screens send a `dataset` the endpoint
-   does not accept (`reportes-movimientos`, `inventario-resumen`, `promociones`).
-   The four Articles tabs send `dataset=articulos` and a `tab` the endpoint ignores
-   (Activos is right, the other three wrong). `ventas.html` sends
-   `dataset=articulos&type=pdf` and downloads the article catalogue instead of
-   sales. Separately, `/api/app/export` is `admin,registro`, so most pages show a
-   button their role cannot execute. Add the missing datasets, honour `tab`/`q`,
-   and decide the export gate; record both in Matriz A (A14).
+5. **[x] Export dataset integrity, data half** (D15a, `9d4fced`): the three missing
+   datasets (`reportes-movimientos`, `inventario-resumen`, `promociones`) now
+   resolve; the Articles export honours `tab`/`q`; and `ventas.html` uses the new
+   `reportes-ventas` dataset instead of downloading the article catalogue.
+   `ExportResourceTest` covers all of them. The remaining half is D15b:
+   `/api/app/export` is still `admin,registro`, so pages owned by
+   `inventario`/`facturacion` show a button their role cannot execute.
 
 **Exit gate:** each item has a test or a documented manual verification, and no
 role sees a control it cannot use.
@@ -750,7 +750,11 @@ This was D14, not D6.
 - Non-admin view: 31 links (Registros is admin-only, `reportes/index.html:275`).
 - Estimated screen families behind the hub: ~23 (to be confirmed by Matriz A).
 
-### A.6 Export datasets that do not resolve
+### A.6 Export datasets: baseline and resolution
+
+**Resolution (D15a, `9d4fced`):** the three 404s, the `articulos` tab and the
+`ventas` wrong-content export are fixed; `ExportResourceTest` covers them. The
+role gate (D15b) is still open.
 
 | Screen | Template sends | Endpoint accepts | Result |
 |---|---|---|---|
@@ -817,13 +821,13 @@ Two smaller gate asymmetries:
 | In-scope accesses (hub + navbar + dashboard + in-page) | 50 |
 | Broken destinations (`Roto`) | 0 after `2ab771e`, `486c343` and `6b1654e` |
 | Access duplicates (`Duplicado`) | 8 (6 hub + 2 navbar) |
-| Broken export datasets | 3 (`reportes-movimientos`, `inventario-resumen`, `promociones`) |
-| Exports that ignore their tab | 1 (`articulos`); `q` is also dropped by `articulos`, `usuarios`, `clientes`, `correos` |
-| Wrong-content export (200) | 1 (`ventas.html` sends `dataset=articulos&type=pdf`, downloads the article catalogue) |
+| Broken export datasets | 0 after D15a (`9d4fced`); baseline was 3 (`reportes-movimientos`, `inventario-resumen`, `promociones`) |
+| Exports that ignore their tab | 0 after D15a; baseline was 1 (`articulos`). `q` is still dropped by `usuarios`, `clientes`, `correos` |
+| Wrong-content export (200) | 0 after D15a; baseline was 1 (`ventas.html` downloaded the article catalogue) |
 | Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
 | Role-model defects | 1 (hub) + 2 gate asymmetries + the export gate (`admin,registro` vs its callers) |
-| Open decisions | D2, D3 (role mapping), D4, D6, D9, D11, D12, D13, D15 |
+| Open decisions | D2, D3 (role mapping), D4, D6, D9, D11, D12, D13, D15b |
 
 The effective root causes are four: the hub role model (§A.7), the flat tab-as-entry
 hub (Matriz B), the duplicate management/report pairs (§5.4), and three stale export
@@ -930,3 +934,4 @@ ask the user first.
 | 2026-10-31 | Five read-only Big Pickle agents re-verified D8/D3/D4/D9/D14/D15; findings consolidated in A.9 and the affected rows/decisions updated. No code changed. |
 | 2026-10-31 | D8: Articles tab renamed to Procesados; badge now uses `countByTab`; version `2.16.6 → 2.16.7`. |
 | 2026-10-31 | D14: real `/app/facturas-recibidas` page, both misplaced upload cards removed, links repointed, `D14UploadSurfacesTest` added; version `2.16.9 → 2.16.10`. |
+| 2026-10-31 | D15a: added `reportes-movimientos`, `inventario-resumen`, `promociones` and `reportes-ventas`; Articles export honours `tab`/`q`; `ExportResourceTest` added; version `2.16.10 → 2.17.0`. |
