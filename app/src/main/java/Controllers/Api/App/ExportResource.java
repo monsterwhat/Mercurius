@@ -3,8 +3,10 @@ package Controllers.Api.App;
 import Models.DTO.ApiResponse;
 import Models.Articulos.Articulos;
 import Models.Articulos.Promocion;
+import Models.Clientes;
 import Models.CorteMargen;
 import Models.ComprobantesEmitidos;
+import Models.Correos.ReporteProgramado;
 import Models.Detalles.LineaDetalle;
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
@@ -310,19 +312,19 @@ public class ExportResource {
 
         return switch (dataset) {
             case "correos" -> !wantsPdf
-                    ? ReportExporter.exportCorreosExcel(orEmpty(reportesProgramadosService.listAll()))
+                    ? ReportExporter.exportCorreosExcel(filtrarCorreos(q))
                     : unsupported(dataset, type);
             case "precios" -> !wantsPdf
                     ? ReportExporter.exportPreciosExcel(orEmpty(precioService.listAll()))
                     : unsupported(dataset, type);
             case "clientes" -> !wantsPdf
-                    ? ReportExporter.exportClientesExcel(orEmpty(clientService.listAll()))
+                    ? ReportExporter.exportClientesExcel(filtrarClientes(q))
                     : unsupported(dataset, type);
             case "recibos-pendientes" -> !wantsPdf
                     ? ReportExporter.exportRecibosExcel("Recibos Pendientes", orEmpty(recibidosService.listPendientes()))
                     : unsupported(dataset, type);
             case "usuarios" -> !wantsPdf
-                    ? ReportExporter.exportUsuariosExcel(orEmpty(loginService.listAll()))
+                    ? ReportExporter.exportUsuariosExcel(filtrarUsuarios(q))
                     : unsupported(dataset, type);
             case "recibos-vencidos" -> !wantsPdf
                     ? ReportExporter.exportRecibosExcel("Recibos Vencidos", orEmpty(recibidosService.listVencidas()))
@@ -584,6 +586,65 @@ public class ExportResource {
                     tab.trim().toLowerCase(Locale.ROOT);
             default -> "activos";
         };
+    }
+
+    /**
+     * Mirrors {@code UsuariosReportesResource.filterAndSort}: the export must
+     * contain exactly the rows the on-screen table shows, so {@code q}
+     * searches username + groupName (never the password).
+     */
+    private @Nonnull List<Usuarios> filtrarUsuarios(@Nullable String q) {
+        String needle = needle(q);
+        List<Usuarios> filas = new ArrayList<>();
+        for (Usuarios usuario : orEmpty(loginService.listAll())) {
+            if (needle.isEmpty()
+                    || AppRecursoBase.contains(usuario.getUsername(), needle)
+                    || AppRecursoBase.contains(usuario.getGroupName(), needle)) {
+                filas.add(usuario);
+            }
+        }
+        return filas;
+    }
+
+    /**
+     * Mirrors {@code ClientesReportesResource.filterAndSort}: name, email and
+     * idNumber contains-match.
+     */
+    private @Nonnull List<Clientes> filtrarClientes(@Nullable String q) {
+        String needle = needle(q);
+        List<Clientes> filas = new ArrayList<>();
+        for (Clientes cliente : orEmpty(clientService.listAll())) {
+            if (needle.isEmpty()
+                    || AppRecursoBase.contains(cliente.getName(), needle)
+                    || AppRecursoBase.contains(cliente.getEmail(), needle)
+                    || AppRecursoBase.contains(cliente.getIdNumber(), needle)) {
+                filas.add(cliente);
+            }
+        }
+        return filas;
+    }
+
+    /**
+     * Mirrors {@code CorreosReportesResource.filterAndSort}: perfil plus the
+     * string form of the correos/reportes/frecuencia lists.
+     */
+    private @Nonnull List<ReporteProgramado> filtrarCorreos(@Nullable String q) {
+        String needle = needle(q);
+        List<ReporteProgramado> filas = new ArrayList<>();
+        for (ReporteProgramado reporte : orEmpty(reportesProgramadosService.listAll())) {
+            if (needle.isEmpty()
+                    || AppRecursoBase.contains(reporte.getPerfil(), needle)
+                    || AppRecursoBase.contains(String.valueOf(reporte.getCorreos()), needle)
+                    || AppRecursoBase.contains(String.valueOf(reporte.getReportes()), needle)
+                    || AppRecursoBase.contains(String.valueOf(reporte.getFrecuencia()), needle)) {
+                filas.add(reporte);
+            }
+        }
+        return filas;
+    }
+
+    private static @Nonnull String needle(@Nullable String q) {
+        return q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
     }
 
     private byte[] exportPromociones(@Nullable String q) throws IOException {

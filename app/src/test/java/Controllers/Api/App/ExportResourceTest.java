@@ -5,7 +5,11 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.ws.rs.core.HttpHeaders;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Map;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -60,6 +64,11 @@ class ExportResourceTest {
     private static void assertXlsx(byte[] bytes) {
         assertThat(bytes.length).isGreaterThan(4);
         assertThat(new String(bytes, 0, 2, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("PK");
+    }
+
+    /** Opens the first sheet of an exported workbook; caller closes it. */
+    private static XSSFWorkbook workbook(byte[] bytes) throws IOException {
+        return new XSSFWorkbook(new ByteArrayInputStream(bytes));
     }
 
     @Test
@@ -138,6 +147,55 @@ class ExportResourceTest {
     @TestSecurity(user = "operador", roles = {"registro"})
     void registroCannotExportUsuarios() {
         forbiddenFrom("/app/reportes", "usuarios", "xlsx");
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void usuariosExportHonoursQ() throws IOException {
+        try (XSSFWorkbook wb = workbook(export("usuarios", "xlsx", Map.of("q", "admin")))) {
+            Sheet sheet = wb.getSheetAt(0);
+            // The test DB seeds "admin" and LoginService bootstraps "Admin", so
+            // the assertion is on the predicate, not on a row count.
+            assertThat(sheet.getLastRowNum()).isGreaterThanOrEqualTo(1);
+            for (int fila = 1; fila <= sheet.getLastRowNum(); fila++) {
+                assertThat(sheet.getRow(fila).getCell(0).getStringCellValue().toLowerCase())
+                        .contains("admin");
+            }
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void usuariosExportWithUnmatchedQIsHeaderOnly() throws IOException {
+        try (XSSFWorkbook wb = workbook(export("usuarios", "xlsx", Map.of("q", "zzz-no-such-user-zzz")))) {
+            assertThat(wb.getSheetAt(0).getLastRowNum()).isZero();
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void clientesExportHonoursQ() throws IOException {
+        try (XSSFWorkbook wb = workbook(export("clientes", "xlsx", Map.of("q", "Contado")))) {
+            Sheet sheet = wb.getSheetAt(0);
+            assertThat(sheet.getLastRowNum()).isEqualTo(1);
+            assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("Cliente Contado");
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void clientesExportWithUnmatchedQIsHeaderOnly() throws IOException {
+        try (XSSFWorkbook wb = workbook(export("clientes", "xlsx", Map.of("q", "zzz-no-such-client-zzz")))) {
+            assertThat(wb.getSheetAt(0).getLastRowNum()).isZero();
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void correosExportAcceptsQWithoutBreakingTheWorkbook() throws IOException {
+        try (XSSFWorkbook wb = workbook(export("correos", "xlsx", Map.of("q", "zzz-no-such-report-zzz")))) {
+            assertThat(wb.getSheetAt(0).getLastRowNum()).isZero();
+        }
     }
 
     @Test

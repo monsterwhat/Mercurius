@@ -752,9 +752,9 @@ This was D14, not D6.
 
 ### A.6 Export datasets: baseline and resolution
 
-**Resolution (D15a `9d4fced`, D15b `dd5cebe`):** the three 404s, the `articulos`
-tab, the `ventas` wrong-content export and the role gate are fixed;
-`ExportResourceTest` covers 14 cases.
+**Resolution (D15a `9d4fced`, D15b `dd5cebe`, q filters `2.18.1`):** the three
+404s, the `articulos` tab, the `ventas` wrong-content export, the role gate and the
+three `q`-ignoring exports are fixed; `ExportResourceTest` covers 19 cases.
 
 | Screen | Template sends | Endpoint accepts | Result |
 |---|---|---|---|
@@ -776,9 +776,10 @@ reportes-departamentos). Three caveats:
   `admin,facturacion,registro`; `clientes`, `loyalty` and `estacionalidad` allow
   all six; `usuarios` is `admin` only. The old `admin,registro` gate made 18 of 25
   page buttons dead for their own role; that is resolved.
-- **Filters:** several datasets forward `q`/dates but the exporter calls
-  `listAll()` (`ExportResource.java:237-251`), so the export is unfiltered
-  (articulos, usuarios, clientes, correos).
+- **Filters (now fixed):** `articulos` honors `tab`/`q` (D15a), and
+  `usuarios`, `clientes` and `correos` now apply the same predicates as their
+  pages (username+groupName, name+email+idNumber, perfil+lists). The baseline
+  exported `listAll()` regardless of `q`.
 - **404 conflation:** an unknown dataset and a known dataset with an unsupported
   type both return 404 (`ExportResource.java:214-215,524-527`), so a 404 alone does
   not prove the key is missing.
@@ -830,7 +831,7 @@ Two smaller gate asymmetries:
 | Broken destinations (`Roto`) | 0 after `2ab771e`, `486c343` and `6b1654e` |
 | Access duplicates (`Duplicado`) | 8 (6 hub + 2 navbar) |
 | Broken export datasets | 0 after D15a (`9d4fced`); baseline was 3 (`reportes-movimientos`, `inventario-resumen`, `promociones`) |
-| Exports that ignore their tab | 0 after D15a; baseline was 1 (`articulos`). `q` is still dropped by `usuarios`, `clientes`, `correos` |
+| Exports that ignore their tab or `q` | 0 after D15a and the `2.18.1` `q` fix; baseline was 1 tab (`articulos`) and 3 `q` (`usuarios`, `clientes`, `correos`) |
 | Wrong-content export (200) | 0 after D15a; baseline was 1 (`ventas.html` downloaded the article catalogue) |
 | Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
@@ -945,3 +946,4 @@ ask the user first.
 | 2026-10-31 | D15a: added `reportes-movimientos`, `inventario-resumen`, `promociones` and `reportes-ventas`; Articles export honours `tab`/`q`; `ExportResourceTest` added; version `2.16.10 → 2.17.0`. |
 | 2026-10-31 | D15b: six-role class gate + per-dataset `DATASET_ROLES` map (`usuarios` admin-only); export tests cover role allow/deny; version `2.17.0 → 2.17.1`. |
 | 2026-10-31 | D11: hub entries filtered by their destination gate; navbar "Reportes" widened to admin/registro/inventario/tributacion; `ReportsHubRolesTest` added; version `2.17.1 → 2.18.0`. |
+| 2026-10-31 | Export `q` fix: `usuarios`, `clientes` and `correos` now filter with the same predicates as their pages; `ExportResourceTest` covers unmatched-`q` header-only workbooks; version `2.18.0 → 2.18.1`. |
