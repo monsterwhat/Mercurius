@@ -105,20 +105,20 @@
             </div>
             {/if}
 
-            {! token: usuario - legacy: plain "Usuarios" item (gated here per T11 six-token mandate) !}
-            {#if inject:securityIdentity.hasRole('usuario')}
+            {! token: usuario - legacy: plain "Usuarios" item (gated here per T11 six-token mandate).
+               D3: the dropdown is the management entry point; it must be reachable
+               by both roles that can open /app/usuarios and /app/clientes. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
             <div class="navbar-item has-dropdown is-hoverable">
                 <button type="button" class="navbar-link"
                         aria-haspopup="true" aria-expanded="false">Usuarios</button>
                 <div class="navbar-dropdown">
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios">Usuarios</a>
-                    {! The clientes board is a PAGE at GET /api/app/clientes (it
-                       renders pages/clientes/index.html when the request is not
-                       an HX-Request). The old href pointed at
-                       /api/app/clientes/table, which returns the bare tbody
-                       fragment: the operator landed on a table with no layout,
-                       no navigation and no way back. !}
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/clientes/table" data-planned-route="/api/app/clientes/table">Clientes</a>
+                    {! D3: the unified client screen is the real page at
+                       /app/reportes/clientes (read @Authenticated, mutations
+                       admin/usuario, XLSX export), not the bare table fragment
+                       at /api/app/clientes/table. !}
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" data-planned-route="/app/reportes/clientes">Clientes</a>
                 </div>
             </div>
             {/if}
@@ -144,22 +144,33 @@
             {/if}
 
             {! token: registro - legacy: "Reportes" item over pages/Registros.
+               D13: Gestión is the management landing; its gate matches the four
+               roles that can manage at least one of its cards. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('inventario') || inject:securityIdentity.hasRole('tributacion')}
+            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/gestion" data-planned-route="/app/gestion">Gestión</a>
+            {/if}
+
+            {! token: registro - legacy: "Reportes" item over pages/Registros.
                D11: the hub gate is admin/registro/inventario/tributacion, so the
                navbar must expose it to the same four roles. !}
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('inventario') || inject:securityIdentity.hasRole('tributacion')}
             <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/reportes" data-planned-route="/app/reportes">Reportes</a>
             {/if}
 
-            {! token: admin - legacy: "Ajustes" dropdown !}
-            {#if inject:securityIdentity.hasRole('admin')}
+            {! token: admin - legacy: "Ajustes" dropdown.
+               D9: Registros is canonical here and its destination gate is
+               admin+registro, so the dropdown is open to both. The remaining
+               entries stay admin-only. Plantillas lives in the Reports hub now. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro')}
             <div class="navbar-item has-dropdown is-hoverable">
                 <button type="button" class="navbar-link" aria-haspopup="true" aria-expanded="false">Ajustes</button>
                 <div class="navbar-dropdown">
+                    {#if inject:securityIdentity.hasRole('admin')}
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/correos/reportes" data-planned-route="/app/correos/reportes">Menú de correos</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" data-planned-route="/app/correos/plantillas">Plantillas</a>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/aplicacion" data-planned-route="/app/aplicacion">Menú de aplicación</a>
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/backups" data-planned-route="/app/backups">Respaldos</a>
                     <hr class="navbar-divider"/>
+                    {/if}
                     <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/registros/log" data-planned-route="/app/registros/log">Registro de actividades</a>
                 </div>
             </div>

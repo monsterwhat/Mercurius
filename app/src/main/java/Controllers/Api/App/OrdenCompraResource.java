@@ -624,6 +624,22 @@ public class OrdenCompraResource {
         }
     }
 
+    /**
+     * Public renderer used by {@code OrdenesPagesResource} to expose the same
+     * full orders page under {@code /app/compras/ordenes} without duplicating
+     * any business logic. Defaults to the first page, ascending, no filters.
+     */
+    public Response renderOrdersFullPage() {
+        try {
+            return htmlOk(renderFullPage(1, 20, null, "asc", null, null, null, null));
+        } catch (Exception e) {
+            LOG.warn("Error renderizando la página de órdenes", e);
+            return Response.serverError()
+                    .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
+                    .build();
+        }
+    }
+
     /** Empty creation form (stage 2 — replaces CrearOrdenDialog). */
     @GET
     @Path("/formularios/nueva")

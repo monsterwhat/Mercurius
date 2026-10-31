@@ -1,0 +1,238 @@
+{!
+  pages/gestion/index - Gestión landing page (D13 phase 1).
+
+  Navigation hub for the management screens. Each card is individually
+  role-gated so a user only sees the screens they can actually open.
+!}
+{#include layout}
+    {#title}Gestión | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        {#include _kit/page-header title="Gestión"
+             subtitle="Administración de artículos, inventarios, compras, usuarios y más" /}
+
+        <nav class="columns is-multiline" aria-label="Secciones de Gestión">
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="package" /}</span>
+                            <span>Artículos</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Catálogo y gestión de artículos del inventario.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/articulos">
+                        Ir a Artículos
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="folder" /}</span>
+                            <span>Categorías</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Familias y departamentos del catálogo.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/categorias?tab=familias">
+                        Ir a Categorías
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="package" /}</span>
+                            <span>Inventarios</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Gestión e historial de inventarios.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/inventarios">
+                        Ir a Inventarios
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="package" /}</span>
+                            <span>Órdenes de compra</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Órdenes de compra a proveedores.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/compras/ordenes">
+                        Ir a Órdenes
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="tag" /}</span>
+                            <span>Etiquetas</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Generación de etiquetas de precio.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas">
+                        Ir a Etiquetas
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="user" /}</span>
+                            <span>Usuarios</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Usuarios del sistema.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/usuarios">
+                        Ir a Usuarios
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="user" /}</span>
+                            <span>Clientes</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Gestión de clientes.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/reportes/clientes">
+                        Ir a Clientes
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="mail" /}</span>
+                            <span>Plantillas</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Plantillas de correo electrónico.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/correos/plantillas">
+                        Ir a Plantillas
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="mail" /}</span>
+                            <span>Menú de correos</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Reportes programados por correo.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/correos/reportes">
+                        Ir a Menú de correos
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="file" /}</span>
+                            <span>Registros</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Registros internos del sistema.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/registros/log">
+                        Ir a Registros
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+        </nav>
+    </section>
+    {/body}
+{/include}
