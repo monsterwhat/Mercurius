@@ -35,4 +35,19 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
                                 + " title=\"Lista completa de facturas emitidas\">"))
                 .body(not(containsString("href=\"/Mercurius/app/recibos\"")));
     }
+
+    @Test
+    @TestSecurity(user = "operador", roles = {"registro"})
+    void familyAndDepartmentEntriesCarryTheirTab() {
+        given()
+                .when().get(HUB)
+                .then()
+                .statusCode(200)
+                .body(containsString(
+                        "href=\"/Mercurius/app/categorias?tab=departamentos\""
+                                + " title=\"Reporte de artículos por departamento\""))
+                .body(containsString(
+                        "href=\"/Mercurius/app/categorias?tab=familias\""
+                                + " title=\"Reporte de artículos por familia\""));
+    }
 }

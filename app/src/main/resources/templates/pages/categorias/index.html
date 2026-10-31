@@ -43,7 +43,9 @@
     {#title}Gestión de Categorías | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem" x-data="{ tab: 'familias' }">
+    <section class="section" style="padding-top:1rem"
+             x-data="{ tab: (['familias','departamentos'].includes(new URLSearchParams(location.search).get('tab')) ? new URLSearchParams(location.search).get('tab') : 'familias') }"
+             x-effect="history.replaceState(null, '', '?tab=' + tab)">
         {#include _kit/page-header title="Gestión de Categorías"
              subtitle="Familias y departamentos del catálogo" /}
 
