@@ -355,7 +355,6 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .body(containsString("Gestión de Inventario"))
                 .body(containsString("id=\"inventario-badges\""))
                 .body(containsString("hx-trigger=\"every 30s\""))
-                .body(containsString("multipart/form-data"))
                 .body(containsString("toast-container"));
 
         authed(session)

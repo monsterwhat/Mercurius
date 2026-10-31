@@ -3,10 +3,10 @@
 
   Qute/HTMX/Bulma port of secured/pages/Inventario/index.xhtml (Activos /
   Inactivos / Procesados / Pendientes tabs became visible sections; the
-  legacy clickable stat-cards are now a polled badges fragment) plus the
-  upload card of fragments/Inventario/Upload/subirFacturas.xhtml and the
+  legacy clickable stat-cards are now a polled badges fragment) and the
   PendientesRevision dialogs (revision, quick-process wizard, details,
-  create adjustment).
+  create adjustment). The XML upload card moved to the received-invoices
+  board (`/app/facturas-recibidas`) in D14.
 
   Model keys supplied by Controllers.Api.App.InventarioResource#renderFullPage:
     tablaActivos / tablaInactivos / tablaProcesados / tablaPendientes  Map
@@ -16,8 +16,6 @@
 
   Interactions:
     - Badges: hx-get every 30s into #inventario-badges (stock badges).
-    - Upload: hx-encoding="multipart/form-data" POST with progress bar;
-      result fragment surfaces parser errors as Bulma danger notifications.
     - Revision dialogs: shared _kit/modal instances filled per-row via
       hx-get + the data-kit-open bridge (same recipe as T18).
     - State changes: hx-post with hx-confirm handled inside tabla-*.html.
@@ -60,39 +58,7 @@
             {#include pages/inventario/badges badges=badges /}
         </div>
 
-        {! ── Subir XML (subirFacturas.xhtml parity: uploadController → Parser).
-            hx-encoding="multipart/form-data" POST with progress bar; the
-            upload-resultado fragment surfaces parser errors. ── !}
-        {#include _kit/surface title="Subir Facturas Electrónicas"
-             subtitle="Cada XML se valida por separado y genera movimientos pendientes de revisión" }
-            {#content}
-            <form id="inventario-upload-forma"
-                  data-upload-progress="#inventario-upload-progreso"
-                  hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/upload"
-                  hx-encoding="multipart/form-data"
-                  hx-target="#inventario-upload-resultado" hx-swap="innerHTML">
-                <div class="field">
-                    <label class="label" for="inventario-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
-                    <div class="control">
-                        <input class="input" type="file" id="inventario-upload-archivos"
-                               name="files" accept=".xml" multiple required
-                               aria-describedby="inventario-upload-ayuda"/>
-                    </div>
-                    <p class="help" id="inventario-upload-ayuda">Puede seleccionar varios archivos .xml a la vez. El resultado de cada uno se muestra al terminar.</p>
-                </div>
-                {! Hidden until a request starts: an idle 0 % bar reads as "stuck". !}
-                <progress id="inventario-upload-progreso" class="progress is-primary"
-                          value="0" max="100" hidden
-                          aria-label="Progreso de la carga">0%</progress>
-                <div class="field">
-                    <button class="button is-primary" type="submit" hx-disabled-elt="this">Procesar Facturas</button>
-                </div>
-            </form>
-            {! role=status: the per-file result (and its errors) must be
-               announced, not just painted. !}
-            <div id="inventario-upload-resultado" role="status" aria-atomic="true"></div>
-            {/content}
-        {/include}
+        {! D14: the XML upload lives only on the received-invoices board. !}
 
         {! ── Ajustes Activos ──────────────────────────────────────── !}
         <div x-show="tab === 'activos'">
@@ -185,23 +151,6 @@
             }
         });
 
-        {! Upload progress: the bar exists only while a request is running. !}
-        (function () {
-            var forma = document.getElementById('inventario-upload-forma');
-            var barra = document.getElementById('inventario-upload-progreso');
-            if (!forma || !barra) {
-                return;
-            }
-            forma.addEventListener('htmx:beforeRequest', function () {
-                barra.value = 0;
-                barra.textContent = '0%';
-                barra.hidden = false;
-            });
-            forma.addEventListener('htmx:afterRequest', function () {
-                barra.hidden = true;
-            });
-        })();
-
         {! Keyboard: the dialog body is replaced on every swap (next
            movement, validation failure), so focus would otherwise fall back
            to the document. !}
@@ -242,7 +191,7 @@
             }
             var destino = detalle.target.id || '';
             if (destino === 'crear-ajuste-body' || destino === 'revision-ajuste-body'
-                    || destino === 'rapido-inventario-body' || destino === 'inventario-upload-resultado') {
+                    || destino === 'rapido-inventario-body') {
                 detalle.shouldSwap = true;
                 detalle.isError = false;
             }

@@ -52,35 +52,7 @@
         {#include _kit/page-header title="Facturas Emitidas"
              subtitle="Las facturas que el negocio emite y tiene que cobrar" /}
 
-        {! ── Subir XML (facturas electrónicas) — port of legacy subirFacturas dialog ── !}
-        {#include _kit/surface id="recibos-upload-panel" title="Subir Facturas Electrónicas"}
-            {#content}
-            <form id="recibos-upload-forma"
-                  hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/upload"
-                  hx-encoding="multipart/form-data"
-                  hx-target="#upload-resultado-recibos" hx-swap="innerHTML"
-                  hx-disabled-elt="find button[type='submit']">
-                <div class="field">
-                    <label class="label" for="recibos-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
-                    <div class="control">
-                        <input class="input" type="file" id="recibos-upload-archivos"
-                               name="files" accept=".xml" multiple required
-                               aria-describedby="recibos-upload-ayuda"/>
-                    </div>
-                    <p id="recibos-upload-ayuda" class="help mercurius-text-muted">
-                        Puede seleccionar varios archivos .xml a la vez. Cada archivo se procesa por separado.
-                    </p>
-                </div>
-                <progress id="upload-progreso-recibos" class="progress is-primary" value="0" max="100"
-                          aria-label="Progreso de la carga" hidden>0%</progress>
-                <div class="field">
-                    <button class="button is-primary" type="submit">Procesar Facturas</button>
-                </div>
-            </form>
-            <div id="upload-resultado-recibos" role="status" aria-live="polite"></div>
-            {/content}
-        {/include}
-
+        {! D14: the XML upload lives only on the received-invoices board. !}
         {#include pages/recibos/tablero /}
 
         {#include _kit/surface id="recibo-detalle-panel" title="Detalle de la factura"}
@@ -97,16 +69,5 @@
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
     {#include _kit/confirm /}
 
-    {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
-    <script>
-        document.addEventListener('htmx:xhr:progress', function (evt) {
-            var bar = document.getElementById('upload-progreso-recibos');
-            if (bar && evt.detail.lengthComputable) {
-                // La barra no ocupa espacio hasta que hay una subida real.
-                bar.hidden = false;
-                bar.value = (evt.detail.loaded / evt.detail.total) * 100;
-            }
-        });
-    </script>
     {/body}
 {/include}
