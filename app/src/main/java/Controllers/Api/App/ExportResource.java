@@ -1,9 +1,14 @@
 package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
+import Models.Articulos.Articulos;
+import Models.Articulos.Promocion;
 import Models.CorteMargen;
 import Models.ComprobantesEmitidos;
+import Models.Detalles.LineaDetalle;
+import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
+import Models.Usuarios;
 import Services.ArticulosService;
 import Services.ArticuloPrecioService;
 import Services.ClientService;
@@ -17,8 +22,10 @@ import Services.LoginService;
 import Services.ProductPerformanceService;
 import Services.FamiliaService;
 import Services.InventarioService;
+import Services.PromocionesService;
 import Services.ProfitAnalysisService;
 import Services.StockAlertService;
+import Services.UserService;
 import Services.StockForecastService;
 import Services.SeasonalityService;
 import Utils.ReportExporter;
@@ -36,6 +43,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -45,6 +53,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -156,6 +165,14 @@ public class ExportResource {
 
     @Nonnull
     @Inject
+    PromocionesService promocionesService;
+
+    @Nonnull
+    @Inject
+    UserService userService;
+
+    @Nonnull
+    @Inject
     StockAlertService stockAlertService;
 
     @Nonnull
@@ -194,7 +211,12 @@ public class ExportResource {
             @FormParam("day") @Nullable String day,
             @FormParam("yearsBack") @Nullable String yearsBack,
             @FormParam("dimension") @Nullable String dimension,
-            @FormParam("items") @Nullable String items) {
+            @FormParam("items") @Nullable String items,
+            @FormParam("tab") @Nullable String tab,
+            @FormParam("usuario") @Nullable String usuario,
+            @FormParam("familia") @Nullable String familia,
+            @FormParam("departamento") @Nullable String departamento,
+            @FormParam("vista") @Nullable String vista) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -210,7 +232,8 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias, month, day, yearsBack, dimension, items);
+            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias, month, day, yearsBack, dimension, items,
+                    tab, usuario, familia, departamento, vista);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -229,7 +252,10 @@ public class ExportResource {
                                @Nullable String q, @Nullable String seccion,
                                @Nullable String dias, @Nullable String month,
                                @Nullable String day, @Nullable String yearsBack,
-                               @Nullable String dimension, @Nullable String items)
+                               @Nullable String dimension, @Nullable String items,
+                               @Nullable String tab, @Nullable String usuario,
+                               @Nullable String familia, @Nullable String departamento,
+                               @Nullable String vistaResumen)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
@@ -431,9 +457,24 @@ public class ExportResource {
                         ? ReportExporter.exportVentasFechaHistoricaExcel(resultado)
                         : unsupported(dataset, type);
             }
-            case "articulos" -> wantsPdf
-                    ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
-                    : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));
+            case "articulos" -> {
+                List<Articulos> filas = fetchArticulos(tab, q);
+                yield wantsPdf
+                        ? ReportExporter.exportArticulosPdf(filas)
+                        : ReportExporter.exportArticulosExcel(filas);
+            }
+            case "promociones" -> !wantsPdf
+                    ? exportPromociones(q)
+                    : unsupported(dataset, type);
+            case "reportes-movimientos" -> !wantsPdf
+                    ? exportMovimientos(desde, hasta, usuario)
+                    : unsupported(dataset, type);
+            case "inventario-resumen" -> !wantsPdf
+                    ? exportInventarioResumen(vistaResumen, familia, departamento, q)
+                    : unsupported(dataset, type);
+            case "reportes-ventas" -> !wantsPdf
+                    ? exportVentasCajero(usuario, desde, hasta)
+                    : unsupported(dataset, type);
             case "inventario" -> wantsPdf
                     ? ReportExporter.exportInventarioPdf(orEmpty(inventarioService.ListAllEnabled()))
                     : unsupported(dataset, type);
@@ -457,6 +498,198 @@ public class ExportResource {
                     : unsupported(dataset, type);
             default -> unsupported(dataset, type);
         };
+    }
+
+    // ── D15: missing datasets and tab-aware Articles export ───────────────
+
+    /** Fetches the Articles tab's rows (capped) so the export matches the table. */
+    private @Nonnull List<Articulos> fetchArticulos(@Nullable String tab, @Nullable String q) {
+        String key = normalizeArticulosTab(tab);
+        int size = 1000;
+        int cap = 50000;
+        List<Articulos> filas = new ArrayList<>();
+        int offset = 0;
+        while (filas.size() < cap) {
+            List<Articulos> page = articulosService.pageByTab(key, q, null, "asc", offset, size);
+            if (page == null || page.isEmpty()) {
+                break;
+            }
+            filas.addAll(page);
+            offset += page.size();
+            if (page.size() < size) {
+                break;
+            }
+        }
+        if (filas.size() >= cap) {
+            LOG.warn("Export de artículos truncado a " + cap + " filas");
+        }
+        return filas;
+    }
+
+    private static @Nonnull String normalizeArticulosTab(@Nullable String tab) {
+        if (tab == null || tab.isBlank()) {
+            return "activos";
+        }
+        return switch (tab.trim().toLowerCase(Locale.ROOT)) {
+            case "inactivos", "catalogo", "procesados", "pendientes", "activos" ->
+                    tab.trim().toLowerCase(Locale.ROOT);
+            default -> "activos";
+        };
+    }
+
+    private byte[] exportPromociones(@Nullable String q) throws IOException {
+        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
+        List<Object[]> rows = new ArrayList<>();
+        for (Promocion promocion : orEmpty(promocionesService.listAll())) {
+            String nombre = promocion.getNombre() == null ? "" : promocion.getNombre();
+            if (!needle.isEmpty() && !nombre.toLowerCase(Locale.ROOT).contains(needle)) {
+                continue;
+            }
+            rows.add(new Object[]{
+                    nombre,
+                    promocion.getDescuento(),
+                    fmtFecha(promocion.getFechaInicio()),
+                    fmtFecha(promocion.getFechaFin()),
+                    promocion.isActiva()
+            });
+        }
+        return ReportExporter.exportGenericExcel("Promociones",
+                new String[]{"Nombre", "Descuento", "Inicio", "Fin", "Activa"}, rows);
+    }
+
+    private byte[] exportMovimientos(@Nullable String desde, @Nullable String hasta,
+                                     @Nullable String usuario) throws IOException {
+        Date inicio = fecha(desde, false);
+        Date fin = fecha(hasta, true);
+        if (inicio == null) {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, -7);
+            inicio = cal.getTime();
+        }
+        if (fin == null) {
+            fin = new Date();
+        }
+        Long userId = parseLong(usuario);
+        List<Object[]> rows = new ArrayList<>();
+        for (Inventario movimiento : orEmpty(inventarioService.findByDateRangeAndUserId(inicio, fin, userId))) {
+            rows.add(new Object[]{
+                    fmtFechaHora(movimiento.getFechaMovimiento()),
+                    movimiento.getArticulo() != null ? movimiento.getArticulo().getCodigoBarra() : "",
+                    movimiento.getArticulo() != null ? movimiento.getArticulo().getNombre() : "",
+                    movimiento.getCantidad(),
+                    movimiento.getUsuario() != null ? movimiento.getUsuario().getUsername() : "",
+                    movimiento.getTipoMovimiento(),
+                    movimiento.getNotas()
+            });
+        }
+        return ReportExporter.exportGenericExcel("Movimientos de Inventario",
+                new String[]{"Fecha", "Cod. Barra", "Artículo", "Cantidad", "Usuario", "Tipo", "Detalles"}, rows);
+    }
+
+    private byte[] exportInventarioResumen(@Nullable String vista, @Nullable String familia,
+                                           @Nullable String departamento, @Nullable String q) throws IOException {
+        String vistaKey = vista == null || vista.isBlank() ? "todos" : vista.trim().toLowerCase(Locale.ROOT);
+        if (!vistaKey.equals("todos") && !vistaKey.equals("cero") && !vistaKey.equals("negativos")) {
+            vistaKey = "todos";
+        }
+        Integer familiaId = parseInt(familia);
+        Integer departamentoId = parseInt(departamento);
+        long total = inventarioService.countResumenInventario(vistaKey, familiaId, departamentoId, q);
+        int cap = 50000;
+        int size = 1000;
+        List<Object[]> rows = new ArrayList<>();
+        for (int offset = 0; offset < Math.min(total, cap); offset += size) {
+            List<Object[]> page = inventarioService.pageResumenInventario(
+                    vistaKey, familiaId, departamentoId, q, null, "asc", offset, size);
+            if (page == null || page.isEmpty()) {
+                break;
+            }
+            List<Long> codigos = new ArrayList<>(page.size());
+            for (Object[] fila : page) {
+                codigos.add(((Number) fila[0]).longValue());
+            }
+            Map<Long, BigDecimal> precios = inventarioService.ultimosPreciosPorArticulo(codigos);
+            for (Object[] fila : page) {
+                long codigo = ((Number) fila[0]).longValue();
+                rows.add(new Object[]{fila[0], fila[1], fila[2], fila[3], fila[4], fila[5], fila[6], precios.get(codigo)});
+            }
+        }
+        if (total > cap) {
+            LOG.warn("Export de resumen de inventario truncado a " + cap + " filas de " + total);
+        }
+        return ReportExporter.exportGenericExcel("Resumen de Inventario",
+                new String[]{"Código", "Nombre", "Código Barra", "Familia", "Departamento", "Stock Actual", "Stock Óptimo", "Precio"}, rows);
+    }
+
+    private byte[] exportVentasCajero(@Nullable String usuario, @Nullable String desde,
+                                      @Nullable String hasta) throws IOException {
+        Date inicio = fecha(desde, false);
+        Date fin = fecha(hasta, true);
+        if (inicio == null) {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            inicio = cal.getTime();
+        }
+        if (fin == null) {
+            fin = new Date();
+        }
+        Long userId = parseLong(usuario);
+        List<Object[]> rows = new ArrayList<>();
+        if (userId != null) {
+            Usuarios cajero = userService.find(userId);
+            if (cajero != null) {
+                for (ComprobantesEmitidos comprobante : orEmpty(comprobantesService.listAllEmitidosBy(cajero, inicio, fin))) {
+                    if (comprobante.getDetalles() == null || comprobante.getDetalles().getLineasDetalle() == null) {
+                        continue;
+                    }
+                    for (LineaDetalle linea : comprobante.getDetalles().getLineasDetalle()) {
+                        rows.add(new Object[]{linea.getDetalle(), linea.getCantidad(), linea.getMontoTotalLinea()});
+                    }
+                }
+            }
+        }
+        return ReportExporter.exportGenericExcel("Ventas por Cajero",
+                new String[]{"Nombre", "Cantidad", "Precio"}, rows);
+    }
+
+    private static @Nullable Long parseLong(@Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(value.trim());
+        } catch (NumberFormatException e) {
+            LOG.debug("Export: valor numérico inválido: " + value);
+            return null;
+        }
+    }
+
+    private static @Nullable Integer parseInt(@Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException e) {
+            LOG.debug("Export: valor numérico inválido: " + value);
+            return null;
+        }
+    }
+
+    private static @Nonnull String fmtFechaHora(@Nullable Date date) {
+        if (date == null) {
+            return "";
+        }
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    private static @Nonnull String fmtFecha(@Nullable Date date) {
+        if (date == null) {
+            return "";
+        }
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
     /**

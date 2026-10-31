@@ -104,6 +104,7 @@
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="activos"/>
+                            <input type="hidden" name="q" value="{activosTabla.q ?: ''}"/>
                             <button class="button" type="submit"
                                     aria-label="Exportar los artículos activos a Excel">Exportar Excel</button>
                         </form>
@@ -129,6 +130,7 @@
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="inactivos"/>
+                        <input type="hidden" name="q" value="{inactivosTabla.q ?: ''}"/>
                         <button class="button" type="submit"
                                 aria-label="Exportar los artículos inactivos a Excel">Exportar Excel</button>
                     </form>
@@ -150,6 +152,7 @@
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="catalogo"/>
+                        <input type="hidden" name="q" value="{catalogoTabla.q ?: ''}"/>
                         <button class="button" type="submit"
                                 aria-label="Exportar el catálogo de artículos a Excel">Exportar Excel</button>
                     </form>
@@ -181,6 +184,7 @@
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="pendientes"/>
+                            <input type="hidden" name="q" value="{pendientesTabla.q ?: ''}"/>
                             <button class="button" type="submit"
                                     aria-label="Exportar los artículos pendientes a Excel">Exportar Excel</button>
                         </form>
@@ -208,6 +212,7 @@
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>
+                            <input type="hidden" name="q" value="{promocionesTabla.q ?: ''}"/>
                             <button class="button" type="submit"
                                     aria-label="Exportar las promociones a Excel">Exportar Excel</button>
                         </form>
