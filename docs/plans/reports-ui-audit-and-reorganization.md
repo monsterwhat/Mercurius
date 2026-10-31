@@ -3,8 +3,8 @@
 **Project:** Mercurius (`F:\Documents\GitHub\Mercurius`, Maven module in `app/`)
 **Stack:** Quarkus 3.36.2, Java 25, Qute + htmx + Bulma, Hibernate ORM, PostgreSQL
 **Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8, D14 and D15
-(export data + role gate) implemented. Decisions D2, D3 (role mapping), D4, D6,
-D9, D11, D12 and D13 are still open.**
+(export data + role gate) implemented, and D11 (hub role model). Decisions D2,
+D3 (role mapping), D4, D6, D9, D12 and D13 are still open.**
 **Baseline:** `d25f9a4` (working tree clean on 2026-10-31). Line numbers are anchors,
 not contracts: re-anchor by symbol if a file moved.
 **Audience:** the agent that will execute Phase 0 and, later, the reorganization; the
@@ -307,7 +307,7 @@ the per-role count.
 | 6 | Facturación | Tendencias de Ventas | `/app/reportes/articulos/tendencias` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica; Estacionalidad es pestaña. |
 | 7 | Facturación | Ventas por Fecha Histórica | `/app/reportes/articulos/ventas-fecha-historica` | `/app/reportes/articulos/ventas-fecha-historica` | `rep.ventas.historica` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
 | 8 | Facturación | Productos Destacados | `/app/reportes/articulos/rendimiento` | `/app/reportes/articulos/rendimiento` | `rep.productos.destacados` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
-| 9 | Facturación | Estacionalidad | `/app/reportes/estacionalidad` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | admin, inventario (contenedor) | Duplicado | Eliminar | Pestaña de Tendencias. |
+| 9 | Facturación | Estacionalidad | `/app/reportes/estacionalidad` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | cualquier autenticado | Duplicado | Eliminar | Pestaña de Tendencias. |
 | 10 | Facturación | Resumen de Impuestos | `/app/tributacion/declaracion` | `/app/tributacion/declaracion` | `rep.fiscal.iva` | admin, registro, inventario, tributación | admin, tributacion | Parcial | Renombrar, Mover | Es la D-104; grupo Fiscal. |
 | 11 | Facturas y correo | Facturas emitidas | `/app/recibos` | `/app/facturas` | `ges.facturas.emitidas` | admin, registro, inventario, tributación | admin, facturacion | OK | Renombrar | Corregido en `2ab771e`; D7 naming. |
 | 12 | Facturas y correo | Facturas recibidas pendientes de pago | `/app/reportes/recibos/pendientes` | (D2) `/app/facturas-recibidas?bucket=pendientes` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la página real ya existe (D14). |
@@ -505,7 +505,7 @@ Phase 0 (the audit must record the options and their consequences).
 
 | ID | Topic | Why it surfaced | Options | Recommendation | Status |
 |---|---|---|---|---|---|
-| D11 | Hub role model | `/app/reportes` is gated `admin, registro, inventario, tributacion`, but 28 of the 31 links a `registro` user can see answer 403; `facturacion` cannot open the hub at all. | (a) filter entries by role; (b) widen the hub to every authenticated user and filter; (c) one hub per role | (a) + align the navbar "Reportes" link with the effective gate | Pending |
+| D11 | Hub role model | `/app/reportes` is gated `admin, registro, inventario, tributacion`, but 28 of the 31 links a `registro` user can see answer 403; `facturacion` cannot open the hub at all. | (a) filter entries by role; (b) widen the hub to every authenticated user and filter; (c) one hub per role | (a) + align the navbar "Reportes" link with the effective gate | Resolved in `c1d884f`: entries filtered by destination gate; navbar widened to the four hub roles |
 | D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Pending |
 | D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Pending |
 | D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Resolved in `6b1654e`: real page route, two cards removed, links repointed; endpoints retained |
@@ -807,6 +807,13 @@ The three links that work for `registro` are Estacionalidad (`@Authenticated`),
 Clientes and Loyalty. The hub is therefore a page that shows an operator 31 buttons
 and denies 28 of them. This is not a per-link bug; it is D11.
 
+**Resolution (D11, `c1d884f`):** the hub now renders only the entries whose
+destination gate includes the current role, and the navbar link is shown to the
+four hub roles. The baseline table above is historical; the current visible links
+are admin 32, `inventario` 22, `tributacion` 5 and `registro` 3.
+`facturacion` and `usuario` still cannot open the hub (option a).
+`ReportsHubRolesTest` pins the four role views.
+
 Two smaller gate asymmetries:
 
 - `rep.tendencias`: the Tendencias tab is `admin,inventario`; the Estacionalidad tab
@@ -827,8 +834,8 @@ Two smaller gate asymmetries:
 | Wrong-content export (200) | 0 after D15a; baseline was 1 (`ventas.html` downloaded the article catalogue) |
 | Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
-| Role-model defects | 1 (hub) + 2 gate asymmetries; the export gate was fixed in D15b |
-| Open decisions | D2, D3 (role mapping), D4, D6, D9, D11, D12, D13 |
+| Role-model defects | 0 in the hub (D11 fixed) + 2 gate asymmetries; the export gate was fixed in D15b |
+| Open decisions | D2, D3 (role mapping), D4, D6, D9, D12, D13 |
 
 The effective root causes are four: the hub role model (§A.7), the flat tab-as-entry
 hub (Matriz B), the duplicate management/report pairs (§5.4), and three stale export
@@ -937,3 +944,4 @@ ask the user first.
 | 2026-10-31 | D14: real `/app/facturas-recibidas` page, both misplaced upload cards removed, links repointed, `D14UploadSurfacesTest` added; version `2.16.9 → 2.16.10`. |
 | 2026-10-31 | D15a: added `reportes-movimientos`, `inventario-resumen`, `promociones` and `reportes-ventas`; Articles export honours `tab`/`q`; `ExportResourceTest` added; version `2.16.10 → 2.17.0`. |
 | 2026-10-31 | D15b: six-role class gate + per-dataset `DATASET_ROLES` map (`usuarios` admin-only); export tests cover role allow/deny; version `2.17.0 → 2.17.1`. |
+| 2026-10-31 | D11: hub entries filtered by their destination gate; navbar "Reportes" widened to admin/registro/inventario/tributacion; `ReportsHubRolesTest` added; version `2.17.1 → 2.18.0`. |
