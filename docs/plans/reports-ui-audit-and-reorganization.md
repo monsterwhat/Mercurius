@@ -553,12 +553,16 @@ authorized role; no other file changes; the new test fails on the old href.
 
 ### 8.3 Phase 2 — Corrections that depend on decisions
 
+**Status:** item 2 done on 2026-10-31; items 1, 3, 4 and 5 pending (D8, D3, D6 and
+the export decision respectively).
+
 1. **Catálogo** (D8): apply the chosen semantics and make the badge use the same
    predicate as the table. `catalogo` and `procesados` are the same query today
    (`ArticulosService:354-359`); the badge uses `count()` (all rows).
-2. **Familias / Departamentos**: make the container read and write `?tab=` so
-   refresh and back/forward work; carry the parameter in both hub entries.
-   Today `/app/categorias` always starts on Familias (`categorias/index.html:46`).
+2. **[x] Familias / Departamentos** (done 2026-10-31): the container reads and
+   writes `?tab=`; both hub entries and the navbar link carry the parameter.
+   `CategoriasPageTest` and the two `ReportsHubLinksTest` cases pass. Today
+   `/app/categorias` starts on Familias when no parameter is present.
 3. **Clientes permissions**: the report page is `@Authenticated`, but its
    create/edit buttons call `admin/usuario` endpoints. Hide or gate them, or gate
    the page; this is a per-operation decision (D3).
@@ -831,3 +835,4 @@ ask the user first.
 | 2026-10-31 | Initial specification and Phase 0 template. Method approved; matrices not populated; no code. |
 | 2026-10-31 | Phase 0 executed on `d25f9a4`: Matriz A (34 in-scope screens + 2 containers + 6 out-of-scope), Matriz B (50 accesses), duplicate classification, role-model audit, export audit. No code changed. |
 | 2026-10-31 | Phase 1 hotfix: "Facturas emitidas" now points to `/app/facturas`; `ReportsHubLinksTest` added; version `2.16.4 → 2.16.5`. |
+| 2026-10-31 | Phase 2, item 2: Categorías reads/writes `?tab=`; hub and navbar links carry the tab; `CategoriasPageTest` added; version `2.16.5 → 2.16.6`. |
