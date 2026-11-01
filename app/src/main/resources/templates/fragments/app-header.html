@@ -1,0 +1,51 @@
+{!
+  fragments/app-header - cabecera del nuevo shell (ui-modernization).
+
+  Reubica del navbar anterior: el lanzador POS (facturacion) y el bloque de
+  identidad/cuenta (Perfil + logout real). El titulo contextual lo rellena el
+  JS de layout.html con el title del enlace activo del sidebar.
+
+  No hay buscador global ni campana de notificaciones: el backend no expone
+  esos servicios y un control decorativo esta prohibido por la spec (§8.1).
+!}
+<header class="app-header">
+    <button type="button" class="app-header-menu" data-sidebar-toggle
+            aria-label="Abrir menú" aria-controls="app-sidebar" aria-expanded="false">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+    </button>
+
+    <span class="app-header-title" id="app-header-context" aria-live="polite"></span>
+
+    <div class="app-header-actions">
+        {! Lanzador POS: mismo contrato declarativo que el navbar (kitPopup). !}
+        {#if inject:securityIdentity.hasRole('facturacion')}
+        <a class="button is-dark"
+           href="{config:['quarkus.http.root-path']}/app/pos/standalone"
+           target="_blank" rel="noopener" data-planned-route="/app/facturas/nueva"
+           data-kit-popup="nuevaFactura"
+           data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
+           aria-haspopup="dialog">Nueva Factura</a>
+        {/if}
+
+        {! Identidad y cuenta: mismo destino que el navbar (Perfil + logout). !}
+        {#if inject:securityIdentity.username}
+        <div class="app-header-user-wrap">
+            <button type="button" class="app-header-user" data-header-user
+                    aria-expanded="false" aria-haspopup="menu" aria-controls="app-header-user-menu"
+                    title="{inject:securityIdentity.username}">
+                {#include _kit/icon name="user" /}
+                <span class="app-header-user-name">{inject:securityIdentity.username}</span>
+            </button>
+            <div class="app-header-user-menu" id="app-header-user-menu" data-header-user-menu role="menu">
+                <a role="menuitem" href="{config:['quarkus.http.root-path']}/app/perfil" data-planned-route="/app/perfil">Perfil</a>
+                <form method="post" action="{config:['quarkus.http.root-path']}/api/app/auth/logout">
+                    <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
+                    <button type="submit" role="menuitem">Cerrar sesión</button>
+                </form>
+            </div>
+        </div>
+        {/if}
+    </div>
+</header>

@@ -1,27 +1,32 @@
 <!DOCTYPE html>
 {!
-  Mercurius - base Qute layout for the NEW app surface (plan task T11).
+  Mercurius - base Qute layout for the NEW app surface.
 
   Structure contract for pages:
     {#include layout}
       {#title}...{/title}          optional, defaults to "Mercurius"
-      {#navbar}...{/navbar}        optional override; default renders fragments/navbar
+      {#sidebar}...{/sidebar}      optional override; default renders fragments/app-sidebar
+      {#header}...{/header}        optional override; default renders fragments/app-header
       {#body}...{/body}            REQUIRED page content
     {/include}
+
+  Shell (docs/plans/ui-modernization-spec.md §4): a 160px navy sidebar, a
+  56px sticky header and a light content area. The sidebar replaces the old
+  top navbar; every entry and role gate it carried is re-homed in
+  fragments/app-sidebar.html, and the POS launcher + identity moved to
+  fragments/app-header.html.
 
   Data-model contract:
     "toasts" (optional): list of {severity, message}; when present the
     fragments/toasts stack is rendered into #toast-container (see toasts.html
     for accepted severity values).
 
-  CSRF (quarkus-rest-csrf, added in T11):
+  CSRF (quarkus-rest-csrf):
     The hx-headers attribute below is the EXACT pattern documented in the
     Quarkus "Cross-Site Request Forgery Prevention" guide (section
     "CSRF Request Header"):
         body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'
     It makes every HTMX request carry the CSRF header automatically.
-    DORMANT UNTIL T14: no quarkus.rest-csrf.* properties are set yet; the
-    header/token injection becomes meaningful once T14 lands the csrf config.
     Do not reformat this attribute - the literal pattern is intentional.
 !}
 <html lang="es">
@@ -39,31 +44,32 @@
 
     {!
       Skip link: the first thing the keyboard reaches, so an operator can jump
-      past the eight-entry navbar on every screen without tabbing through it.
-      It is visually hidden until focused; the target is <main> itself, which
-      is focusable programmatically (tabindex="-1") but not in the tab order.
+      past the sidebar and the header on every screen without tabbing through
+      them. It is visually hidden until focused; the target is <main> itself,
+      which is focusable programmatically (tabindex="-1") but not in the tab
+      order.
     !}
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
 
-    {!
-      Navbar slot: pages may override; default is the shared role-gated navbar.
-    !}
-    {#insert navbar}
-        {#include fragments/navbar /}
-    {/insert}
+    <div class="app-shell" id="app-shell">
+        {#insert sidebar}
+            {#include fragments/app-sidebar /}
+        {/insert}
 
-    <main id="contenido-principal" class="section" tabindex="-1">
-        <div class="container">
-            {#insert body}{/insert}
-        </div>
-    </main>
+        <div class="app-main">
+            {#insert header}
+                {#include fragments/app-header /}
+            {/insert}
 
-    <footer class="footer">
-        <div class="content has-text-centered">
-            <p>{#include fragments/logo-img alt="Mercurius" style="width:28px;height:28px;vertical-align:middle;" /}
-                <strong>Mercurius</strong> &mdash; Inventario, facturación y Hacienda</p>
+            <main id="contenido-principal" class="app-content" tabindex="-1">
+                {#insert body}{/insert}
+            </main>
+
+            <footer class="app-footer">
+                <strong>Mercurius</strong> &mdash; Inventario, facturación y Hacienda
+            </footer>
         </div>
-    </footer>
+    </div>
 
     {!
       Toast stack: rendered only when the page supplies a "toasts" data model.
@@ -71,12 +77,123 @@
       used by HTMX swaps in later tasks). The ?? suffix is the documented Qute
       "safe expression": it yields null when the key was not provided, so pages
       that pass no toasts render an empty container instead of failing.
-
-      W1: the markup moved verbatim into _kit/toast-container.html, which is
-      also the definition the standalone POS page (factura-standalone.html)
-      should converge on in W6.
     !}
     {#include _kit/toast-container /}
+
+    {!
+      Shell behaviour (vanilla JS, no framework):
+        - mobile: the header button toggles the off-canvas sidebar;
+        - group buttons expand/collapse their sub-list;
+        - the current page is marked in the sidebar and its section name is
+          copied into the header context;
+        - the identity menu opens/closes;
+        - the connection dot follows the browser's online/offline events,
+          which is the only "system status" the backend actually exposes.
+      Braces live on their own lines so Qute never parses them as expressions.
+    !}
+    <script>
+    (function () {
+        function onReady(fn) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fn);
+            } else {
+                fn();
+            }
+        }
+
+        onReady(function () {
+            var shell = document.getElementById('app-shell');
+            var toggle = document.querySelector('[data-sidebar-toggle]');
+
+            if (toggle && shell) {
+                toggle.addEventListener('click', function () {
+                    var open = shell.classList.toggle('is-sidebar-open');
+                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            }
+
+            var groupButtons = document.querySelectorAll('[data-sidebar-group]');
+            Array.prototype.forEach.call(groupButtons, function (btn) {
+                var target = document.getElementById(btn.getAttribute('aria-controls'));
+                btn.addEventListener('click', function () {
+                    var open = btn.getAttribute('aria-expanded') === 'true';
+                    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                    if (target) {
+                        target.classList.toggle('is-open', !open);
+                    }
+                });
+            });
+
+            // Current page: longest matching href wins, so /app/reportes/x
+            // does not mark /app/reportes while a deeper entry exists.
+            var path = window.location.pathname.replace(/\/+$/, '');
+            var links = document.querySelectorAll('.app-sidebar a[href]');
+            var best = null;
+            var bestLen = -1;
+            Array.prototype.forEach.call(links, function (link) {
+                var url = new URL(link.href, window.location.origin);
+                var candidate = url.pathname.replace(/\/+$/, '');
+                if (candidate === path || (path.indexOf(candidate + '/') === 0)) {
+                    if (candidate.length > bestLen) {
+                        best = link;
+                        bestLen = candidate.length;
+                    }
+                }
+            });
+
+            var context = document.getElementById('app-header-context');
+            if (best) {
+                best.classList.add('is-active');
+                best.setAttribute('aria-current', 'page');
+                var group = best.closest('[data-sidebar-sub]');
+                if (group) {
+                    group.classList.add('is-open');
+                    var owner = document.querySelector('[data-sidebar-group][aria-controls="' + group.id + '"]');
+                    if (owner) {
+                        owner.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                if (context) {
+                    context.textContent = best.getAttribute('title') || best.textContent.trim();
+                }
+            }
+
+            var userButton = document.querySelector('[data-header-user]');
+            var userMenu = document.querySelector('[data-header-user-menu]');
+            if (userButton && userMenu) {
+                userButton.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    var open = userMenu.classList.toggle('is-open');
+                    userButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+                document.addEventListener('click', function (event) {
+                    if (!userMenu.contains(event.target)) {
+                        userMenu.classList.remove('is-open');
+                        userButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        userMenu.classList.remove('is-open');
+                        userButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            var status = document.querySelector('[data-connection-status]');
+            if (status) {
+                function paint() {
+                    var online = navigator.onLine;
+                    status.textContent = online ? 'En línea' : 'Sin conexión';
+                    status.setAttribute('data-connection-status', online ? 'online' : 'offline');
+                }
+                paint();
+                window.addEventListener('online', paint);
+                window.addEventListener('offline', paint);
+            }
+        });
+    })();
+    </script>
 
     {!
       Global keyboard accelerator: / focuses the first search field on any

@@ -158,8 +158,8 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
     void launcherStaysBehindTheFacturacionRole() {
         String body = html(BASE + REPORTES_URL);
 
-        assertTrue(body.contains("<nav class=\"navbar\""),
-                "the navbar itself must render, so the absence below is the gate and not a blank page");
+        assertTrue(body.contains("<aside class=\"app-sidebar\""),
+                "the sidebar itself must render, so the absence below is the gate and not a blank page");
         assertFalse(body.contains("data-kit-popup"),
                 "the launcher is facturacion-gated and this identity holds only registro");
         assertFalse(body.contains("Nueva Factura"),
@@ -210,23 +210,20 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
 
     // ── the navigation itself is reachable with the keyboard ─────────────────
     //
-    // The dropdown headers used to be <a class="navbar-link"> with no href.
-    // An anchor without an href is not focusable and cannot be activated, so
-    // on a desktop the Articulos / Usuarios / Tributacion / Ajustes menus
-    // were reachable with a mouse only. They are now real buttons that carry
-    // aria-expanded, which is also what tells a screen reader whether the
-    // menu is open.
+    // The sidebar groups ("Gestión", "Hacienda", "Usuarios", "Ajustes") are
+    // real buttons carrying aria-expanded, so a keyboard can open them and a
+    // screen reader says whether the sub-list is open.
 
     @Test
     @TestSecurity(user = "almacenero", roles = {"inventario"})
-    @DisplayName("the dropdown headers are real buttons, so the keyboard can open them")
+    @DisplayName("the sidebar group headers are real buttons, so the keyboard can open them")
     void dropdownHeadersAreKeyboardReachable() {
-        // The "Articulos" dropdown is gated by the `inventario` role, so this
-        // identity is the one that gets a dropdown header on the page.
+        // The "Gestión" group is gated for the `inventario` role, so this
+        // identity is the one that gets a group header on the page.
         String body = html(BASE + REPORTES_URL);
 
-        assertTrue(body.contains("<button type=\"button\" class=\"navbar-link\""),
-                "a dropdown header must be a button: an anchor without href is not focusable");
+        assertTrue(body.contains("<button type=\"button\" class=\"app-sidebar-group\""),
+                "a group header must be a button: an anchor without href is not focusable");
         assertTrue(body.contains("aria-haspopup=\"true\""),
                 "the header must announce that it opens a menu");
         assertTrue(body.contains("aria-expanded=\"false\""),
@@ -235,12 +232,15 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
 
     @Test
     @TestSecurity(user = "cajero", roles = {"facturacion"})
-    @DisplayName("the navigation sits on the page ground, it is not a dark bar")
-    void navigationIsNotADarkBar() {
+    @DisplayName("navigation is the navy sidebar and the content sits on the light canvas")
+    void navigationIsASidebarAndTheCanvasStaysLight() {
         String body = html(BASE + RECIBOS_URL);
 
+        assertTrue(body.contains("class=\"app-sidebar\""),
+                "the shell renders the vertical sidebar");
+        assertTrue(body.contains("class=\"app-content\""),
+                "the page content lives in its own container next to the sidebar");
         assertFalse(body.contains("navbar is-black"),
-                "a saturated dark bar over a light canvas is the one navigation treatment "
-                        + "no screen in the app's own reference set uses");
+                "the old saturated top bar must not come back");
     }
 }

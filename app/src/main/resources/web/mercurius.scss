@@ -223,6 +223,401 @@
 }
 
 // =============================================================================
+// 3.9 UI modernization palette + shell (docs/plans/ui-modernization-spec.md)
+//
+// The ONE block allowed to carry literal colours: components below (and every
+// page) consume the tokens. Light values are the design reference; the dark
+// scheme keeps Bulma's own surfaces so contrast still works, while the navy
+// sidebar stays navy in both schemes.
+// =============================================================================
+:root {
+    --ui-navy: #17294B;
+    --ui-navy-2: #21385F;
+    --ui-navy-ink: #E8EDF7;
+    --ui-navy-muted: #A9B6D0;
+    --ui-primary: #3766E8;
+    --ui-primary-hover: #2B55CF;
+    --ui-purple: #7055DB;
+    --ui-bg: #F3F6FC;
+    --ui-surface: #FFFFFF;
+    --ui-border: #DCE4F2;
+    --ui-text: #172442;
+    --ui-success: #20B981;
+    --ui-warning: #F5A623;
+    --ui-danger: #E65B65;
+    --ui-muted: #8290A8;
+    --ui-on-accent: #FFFFFF;
+
+    // Density (spec §4): compact rows, compact controls.
+    --ui-row-h: 2.25rem;
+    --ui-control-h: 2rem;
+    --ui-gap: .75rem;
+    --ui-pad: 1.25rem;
+    --ui-sidebar-w: 160px;
+    --ui-header-h: 56px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ui-bg: var(--bulma-scheme-main);
+        --ui-surface: var(--bulma-scheme-main-bis);
+        --ui-border: var(--bulma-border);
+        --ui-text: var(--bulma-text);
+        --ui-muted: var(--bulma-text-weak);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.1 Shell: sidebar (160px) + header (56px) + content
+// -----------------------------------------------------------------------------
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+}
+
+.app-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0; // lets wide tables scroll instead of pushing the sidebar
+}
+
+.app-content {
+    flex: 1 1 auto;
+    padding: var(--ui-pad);
+    width: 100%;
+}
+
+.app-footer {
+    padding: .75rem var(--ui-pad);
+    border-top: 1px solid var(--ui-border);
+    color: var(--ui-muted);
+    font-size: .75rem;
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.2 Sidebar
+// -----------------------------------------------------------------------------
+.app-sidebar {
+    display: flex;
+    flex: 0 0 var(--ui-sidebar-w);
+    flex-direction: column;
+    width: var(--ui-sidebar-w);
+    background: var(--ui-navy);
+    color: var(--ui-navy-ink);
+    border-right: 1px solid var(--ui-navy-2);
+}
+
+.app-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    height: var(--ui-header-h);
+    padding: 0 .875rem;
+    color: var(--ui-navy-ink);
+    font-weight: 700;
+    border-bottom: 1px solid var(--ui-navy-2);
+    text-decoration: none;
+}
+
+.app-sidebar-brand:hover {
+    color: var(--ui-on-accent);
+}
+
+.app-sidebar-nav {
+    flex: 1 1 auto;
+    padding: .5rem;
+    overflow-y: auto;
+}
+
+.app-sidebar-link,
+.app-sidebar-group {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    min-height: 2.125rem;
+    padding: .375rem .5rem;
+    border: 0;
+    border-radius: var(--mercurius-radius-sm);
+    background: transparent;
+    color: var(--ui-navy-muted);
+    font: inherit;
+    font-size: .8125rem;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+// A row with a landing link plus a disclosure button: the link takes the
+// width, the button is a single chevron.
+.app-sidebar-row {
+    display: flex;
+    align-items: stretch;
+    gap: .125rem;
+}
+
+.app-sidebar-row .app-sidebar-link {
+    flex: 1 1 auto;
+}
+
+.app-sidebar-row .app-sidebar-group {
+    width: 1.75rem;
+    min-width: 1.75rem;
+    padding: 0;
+    justify-content: center;
+}
+
+.app-sidebar-group::after {
+    content: "";
+    width: .375rem;
+    height: .375rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform var(--mercurius-dur-fast) var(--mercurius-ease-out);
+}
+
+.app-sidebar-group[aria-expanded="true"]::after {
+    transform: rotate(-135deg);
+}
+
+.app-sidebar-group--full {
+    flex: 1 1 auto;
+    justify-content: space-between;
+}
+
+.app-sidebar-link:hover,
+.app-sidebar-group:hover {
+    background: var(--ui-navy-2);
+    color: var(--ui-navy-ink);
+}
+
+.app-sidebar-link.is-active,
+.app-sidebar-group.is-active {
+    background: var(--ui-primary);
+    color: var(--ui-on-accent);
+    font-weight: 600;
+}
+
+.app-sidebar-link:focus-visible,
+.app-sidebar-group:focus-visible {
+    outline: 2px solid var(--ui-on-accent);
+    outline-offset: -2px;
+}
+
+.app-sidebar-sub {
+    display: none;
+    margin: 0 0 .25rem;
+    padding: 0 0 0 .25rem;
+    list-style: none;
+}
+
+.app-sidebar-sub.is-open {
+    display: block;
+}
+
+.app-sidebar-sub .app-sidebar-link {
+    min-height: 1.875rem;
+    padding-left: .75rem;
+    font-size: .78125rem;
+}
+
+.app-sidebar-meta {
+    display: flex;
+    flex-direction: column;
+    gap: .125rem;
+    padding: .625rem .875rem;
+    border-top: 1px solid var(--ui-navy-2);
+    color: var(--ui-navy-muted);
+    font-size: .6875rem;
+}
+
+.app-sidebar-meta [data-connection-status]::before {
+    content: "";
+    display: inline-block;
+    width: .375rem;
+    height: .375rem;
+    margin-right: .25rem;
+    border-radius: 50%;
+    background: var(--ui-success);
+    vertical-align: middle;
+}
+
+.app-sidebar-meta [data-connection-status="offline"]::before {
+    background: var(--ui-danger);
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.3 Header
+// -----------------------------------------------------------------------------
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: var(--ui-header-h);
+    padding: 0 var(--ui-pad);
+    background: var(--ui-surface);
+    border-bottom: 1px solid var(--ui-border);
+}
+
+.app-header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ui-text);
+    font-size: .875rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.app-header-menu {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 3px;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--mercurius-radius-sm);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    cursor: pointer;
+}
+
+.app-header-menu .icon-bar {
+    display: block;
+    width: .875rem;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
+}
+
+.app-header-user-wrap {
+    position: relative;
+}
+
+.app-header-user {
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    max-width: 12rem;
+    height: var(--ui-control-h);
+    padding: 0 .5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--mercurius-radius-pill);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-size: .8125rem;
+    cursor: pointer;
+}
+
+.app-header-user-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-header-user-menu {
+    position: absolute;
+    top: calc(100% + .25rem);
+    right: 0;
+    z-index: 40;
+    display: none;
+    min-width: 10rem;
+    padding: .375rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--mercurius-radius-md);
+    background: var(--ui-surface);
+    box-shadow: var(--mercurius-shadow-raised);
+}
+
+.app-header-user-menu.is-open {
+    display: block;
+}
+
+.app-header-user-menu a,
+.app-header-user-menu button {
+    display: block;
+    width: 100%;
+    padding: .375rem .5rem;
+    border: 0;
+    border-radius: var(--mercurius-radius-sm);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: .8125rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.app-header-user-menu a:hover,
+.app-header-user-menu button:hover {
+    background: var(--ui-bg);
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.4 Primary action: the legacy `.is-dark` button is the POS launcher and
+// the PDF download; the design direction makes those electric blue, so the
+// class keeps its name and loses its black fill.
+// -----------------------------------------------------------------------------
+.button.is-dark {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+    color: var(--ui-on-accent);
+}
+
+.button.is-dark:hover,
+.button.is-dark:focus {
+    background: var(--ui-primary-hover);
+    border-color: var(--ui-primary-hover);
+    color: var(--ui-on-accent);
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.5 Responsive: off-canvas sidebar under 1024px
+// -----------------------------------------------------------------------------
+@media (max-width: 1023px) {
+    .app-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform var(--mercurius-dur-fast) var(--mercurius-ease-out);
+    }
+
+    .app-shell.is-sidebar-open .app-sidebar {
+        transform: none;
+        box-shadow: var(--mercurius-shadow-raised);
+    }
+
+    .app-header-menu {
+        display: inline-flex;
+    }
+
+    .app-content {
+        padding: var(--ui-gap);
+    }
+}
+
+
+// =============================================================================
 // 4. PageHeader — ONE component replaces 12 gradient banners, the reportes
 //    hub's colored header-bars, and the bare <h1 class="title is-3"> headings.
 // =============================================================================
