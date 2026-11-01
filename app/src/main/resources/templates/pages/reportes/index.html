@@ -113,7 +113,7 @@
                         <p class="surface-subtitle">Ventas, artículos e impuestos</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}9{#else if inject:securityIdentity.hasRole('inventario')}7{#else if inject:securityIdentity.hasRole('tributacion')}2{#else}1{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}7{#else if inject:securityIdentity.hasRole('inventario')}5{#else if inject:securityIdentity.hasRole('tributacion')}2{#else}1{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
@@ -127,28 +127,12 @@
                             </span>
                         </a>
                     </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Ventas por Familia</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Ventas por Departamento</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
                     {/if}
                     {#if inject:securityIdentity.hasRole('admin')}
                     <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Todas las Facturas</span>
+                                <span class="has-text-weight-medium">Reporte de facturas emitidas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
                         </a>
@@ -227,9 +211,9 @@
                 <ul class="menu-list">
                     {#if inject:securityIdentity.hasRole('admin')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas" title="Lista completa de facturas emitidas">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas" title="Facturas emitidas: gestión y operación">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Facturas emitidas</span>
+                                <span class="has-text-weight-medium">Facturas emitidas (gestión)</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
                         </a>

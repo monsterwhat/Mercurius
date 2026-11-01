@@ -32,7 +32,7 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body(containsString(
                         "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/facturas\""
-                                + " title=\"Lista completa de facturas emitidas\">"))
+                                + " title=\"Facturas emitidas: gestión y operación\">"))
                 .body(not(containsString("href=\"/Mercurius/app/recibos\"")));
     }
 

@@ -36,7 +36,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Facturas y correo"))
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("Reportes de Usuarios"))
-                .body(containsString("9 informes"))
+                .body(containsString("7 informes"))
                 .body(containsString("5 informes"))
                 .body(containsString("8 informes"))
                 .body(containsString("2 informes"))
@@ -51,7 +51,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
         given().when().get(HUB).then().statusCode(200)
                 .body(containsString("Reportes de Facturación"))
                 .body(containsString("Reportes de Inventarios"))
-                .body(containsString("7 informes"))
+                .body(containsString("5 informes"))
                 .body(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\""))
                 .body(not(containsString(MENU_LINK + "/app/articulos\"")))
                 .body(not(containsString("Facturas y correo")))
@@ -81,6 +81,38 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
         given().when().get(HUB).then().statusCode(200)
                 .body(containsString(MENU_LINK + "/app/reportes/proveedores\""))
                 .body(not(containsString(MENU_LINK + "/app/categorias\"")));
+    }
+
+    /**
+     * Phase 4 (Matriz B rows 3–4): "Por familia" and "Por departamento" are
+     * cuts of the sales screen, reachable from its shared tab bar. The hub must
+     * carry exactly one entry for {@code rep.ventas}.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void salesScreenHasOneHubEntryAndItsCutsLiveInTheTabBar() {
+        given().when().get(HUB).then().statusCode(200)
+                .body(containsString(MENU_LINK + "/app/reportes/articulos/ventas\""))
+                .body(not(containsString(MENU_LINK + "/app/reportes/articulos/familias\"")))
+                .body(not(containsString(MENU_LINK + "/app/reportes/articulos/departamentos\"")));
+
+        // The cuts are still one click away from the canonical screen.
+        given().when().get("/Mercurius/app/reportes/articulos/ventas").then().statusCode(200)
+                .body(containsString("href=\"/Mercurius/app/reportes/articulos/familias?"))
+                .body(containsString("href=\"/Mercurius/app/reportes/articulos/departamentos?"));
+    }
+
+    /**
+     * D7: the report and the operational board keep distinct names. "Todas las
+     * Facturas" and a bare "Facturas emitidas" were the same label to a reader.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void emittedInvoicesUseTheD7Names() {
+        given().when().get(HUB).then().statusCode(200)
+                .body(containsString("Reporte de facturas emitidas"))
+                .body(containsString("Facturas emitidas (gestión)"))
+                .body(not(containsString(">Todas las Facturas<")));
     }
 
     @Test

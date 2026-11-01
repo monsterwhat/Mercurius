@@ -301,9 +301,9 @@ the per-role count.
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Facturación | Movimientos | `/app/reportes/articulos/fechas` | `/app/reportes/articulos/fechas` | `rep.inventario.movimientos` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover, Renombrar | 403 para registro/tributación; label vago; export 404. |
 | 2 | Facturación | Facturación de Artículos | `/app/reportes/articulos/ventas` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica de la pantalla de ventas. |
-| 3 | Facturación | Ventas por Familia | `/app/reportes/articulos/familias` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Duplicado | Eliminar | Es la pestaña "Por familia". |
-| 4 | Facturación | Ventas por Departamento | `/app/reportes/articulos/departamentos` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Duplicado | Eliminar | Es la pestaña "Por departamento". |
-| 5 | Facturación | Todas las Facturas | `/app/reportes/facturas` | `/app/reportes/facturas` | `rep.facturas.emitidas` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Renombrar | D7: "Reporte de facturas emitidas". |
+| 3 | Facturación | Ventas por Familia | `/app/reportes/articulos/familias` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de la pantalla de ventas | Es la pestaña "Por familia". |
+| 4 | Facturación | Ventas por Departamento | `/app/reportes/articulos/departamentos` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de la pantalla de ventas | Es la pestaña "Por departamento". |
+| 5 | Facturación | Reporte de facturas emitidas | `/app/reportes/facturas` | `/app/reportes/facturas` | `rep.facturas.emitidas` | admin, registro, inventario, tributación | admin, facturacion | OK | Renombrado (D7) | D7: "Reporte de facturas emitidas". |
 | 6 | Facturación | Tendencias de Ventas | `/app/reportes/articulos/tendencias` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica; Estacionalidad es pestaña. |
 | 7 | Facturación | Ventas por Fecha Histórica | `/app/reportes/articulos/ventas-fecha-historica` | `/app/reportes/articulos/ventas-fecha-historica` | `rep.ventas.historica` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
 | 8 | Facturación | Productos Destacados | `/app/reportes/articulos/rendimiento` | `/app/reportes/articulos/rendimiento` | `rep.productos.destacados` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
@@ -601,6 +601,8 @@ update Matriz A/B in the same change.
 approved justification), and the capability diff is empty or approved.
 
 ### 8.5 Phase 4 — Hub reorganization
+
+**Status:** parcial — 2026-10-31: una sola entrada de hub para `rep.ventas` (las pestañas "Por familia"/"Por departamento" viven en la barra de la pantalla) y nombres D7 aplicados a las dos superficies de facturas emitidas. Pendiente: criterios 1–7 de §10 sobre el resto de la matriz.
 
 Build the groups from the completed Matriz A/B. Rules:
 
@@ -1040,5 +1042,6 @@ ask the user first.
 | 2026-10-31 | D6/D13/D9 phase 1: `/app/gestion` landing, real `/app/compras/ordenes`, Ajustes opens to `registro`, Plantillas canonical in the hub; version `2.18.7 → 2.18.8`. |
 | 2026-10-31 | Hub aligned with D2/D3/D4/D9 (bucket links, management destinations, counts); version `2.18.8 → 2.18.9`. |
 | 2026-10-31 | D13 phase 2: the hub is reports-only (Artículos, Departamentos, Familias, Inventarios, Etiquetas and Órdenes moved to `/app/gestion`); Gestión exposes both catalog tabs; version `2.18.10 -> 2.18.11`. |
-| 2026-10-31 | D5: supplier ranking becomes /app/reportes/proveedores (dmin,inventario), reusing DepartamentoMetrico; the hub entry points there; version `2.18.11 -> 2.18.12`. |
+| 2026-10-31 | D5: supplier ranking becomes `/app/reportes/proveedores` (`admin,inventario`), reusing `DepartamentoMetrico`; the hub entry points there; version `2.18.11 -> 2.18.12`. |
 | 2026-10-31 | D5 cierre: el ranking de proveedores deja de estar embebido en `/app/categorias` (queda solo el enlace); `CategoriaResource` y `CategoriasPagesResource` dejan de construir `metricasFilas`; version `2.18.12 -> 2.18.13`. |
+| 2026-10-31 | Fase 4: hub con una sola entrada para `rep.ventas`; nombres D7 en facturas emitidas; contadores 9/7 → 7/5; version `2.18.15 -> 2.18.16`. |
