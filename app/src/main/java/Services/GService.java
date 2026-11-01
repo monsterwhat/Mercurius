@@ -191,7 +191,12 @@ public abstract class GService<T> implements Serializable{
         }
     }
     
-    @Transactional(TxType.SUPPORTS)
+    // REQUIRED, not SUPPORTS: this method flushes and clears the persistence
+    // context, and both throw when no transaction is active. With SUPPORTS a
+    // caller outside a transaction got the flush warning plus a null result
+    // (the clear() failure surfaced as a PersistenceException and was
+    // swallowed), so a plain lookup looked like "row does not exist".
+    @Transactional
     public @Nullable T find(@Nonnull Object id) {
         try {
             try {

@@ -166,12 +166,20 @@ function Assert-Journey([bool]$Condition, [string]$Detail) {
 
 function Assert-Status([hashtable]$Response, [int[]]$Expected) {
     $hit = $Expected -contains $Response.Status
+    if (-not $hit -and $Response.ContainsKey('Text')) {
+        # The body carries the server's validation message; without it a red
+        # journey only says "400" and the cause stays in the server log.
+        $snippet = $Response.Text
+        if ($snippet.Length -gt 400) { $snippet = $snippet.Substring(0, 400) }
+        Write-Host ("  body: " + $snippet)
+    }
     Assert-Journey $hit ("expected status {0}, got {1}" -f ($Expected -join '|'), $Response.Status)
 }
 
 # -- Multipart builder (PS 5.1 has no -Form; build RFC 2046 by hand) ---
 function Send-MultipartXml {
-    param([hashtable]$Session, [string]$Path, [string]$FileName, [byte[]]$FileBytes)
+    param([hashtable]$Session, [string]$Path, [string]$FileName, [byte[]]$FileBytes,
+          [hashtable]$Headers = @{})
     $boundary = '----e2eJourney' + [Guid]::NewGuid().ToString('N')
     $nl = "`r`n"
     $partHead = "--$boundary$nl" +
@@ -181,8 +189,11 @@ function Send-MultipartXml {
     $body = [System.Text.Encoding]::UTF8.GetBytes($partHead) +
         $FileBytes +
         [System.Text.Encoding]::UTF8.GetBytes($partTail)
+    # CSRF: a multipart POST is exactly what quarkus-rest-csrf guards, so the
+    # token header the JSON calls already carry must travel here too.
     return Invoke-E2E -Session $Session -Method POST -Path $Path `
-        -BodyBytes $body -ContentType "multipart/form-data; boundary=$boundary"
+        -BodyBytes $body -ContentType "multipart/form-data; boundary=$boundary" `
+        -Headers $Headers
 }
 
 # ======================================================================
@@ -244,10 +255,17 @@ try {
     Assert-Journey (Test-CookiePresent $session 'quarkus-credential') `
         '302 + quarkus-credential cookie issued'
 
-    # CSRF token (defensive parity with the test suite: header sent only
-    # when the quarkus-rest-csrf cookie exists).
+    # CSRF token: the cookie is not always issued, so fall back to the token
+    # the layout embeds in hx-headers. Without it a multipart POST is a 400.
     $csrf = Get-CookieValue $session 'csrftoken'
     if (-not $csrf) { $csrf = Get-CookieValue $session 'csrf-token' }
+    if (-not $csrf) {
+        $shell = Invoke-E2E -Session $session -Method GET -Path '/Mercurius/app/dashboard'
+        if ($shell.Status -eq 200) {
+            $m = [regex]::Match($shell.Text, '"X-CSRF-Token"\s*:\s*"([^"]+)"', 'IgnoreCase')
+            if ($m.Success) { $csrf = $m.Groups[1].Value }
+        }
+    }
     $postHeaders = @{}
     if ($csrf) { $postHeaders['X-CSRF-TOKEN'] = $csrf }
 
@@ -295,11 +313,11 @@ try {
     # -- STEP 5: upload valid v4.4 XML fixture + prevalidation PASS -----
     Start-Step 'Facturas recibidas upload v4.4 fixture + prevalidation PASS'
     $upContado = Send-MultipartXml -Session $session -Path '/Mercurius/api/app/facturas-recibidas/upload' `
-        -FileName 'e2e-contado.xml' -FileBytes ([System.Text.Encoding]::UTF8.GetBytes($xmlContado))
+        -FileName 'e2e-contado.xml' -FileBytes ([System.Text.Encoding]::UTF8.GetBytes($xmlContado)) -Headers $postHeaders
     Assert-Status $upContado @(200, 201)
     $upJson = Get-Json $upContado
     Assert-Journey ($upJson.data.resultados[0].exito -eq $true) 'upload exitoso=true'
-    Assert-Journey ($upJson.data.exitosos -ge 1) "exitosos=$($upJson.data.exitosos)"
+    Assert-Journey ($upJson.data.procesados -ge 1) "procesados=$($upJson.data.procesados)"
 
     function Find-FacturaId([hashtable]$Sess, [string]$Consecutivo) {
         $resp = Invoke-E2E -Session $Sess -Method GET `
@@ -333,7 +351,7 @@ try {
     # Credit variant for the Recibos step (7): CondicionVenta 02 + plazo 30.
     Start-Step 'Seed credito receipt for Recibos (upload variant)'
     $upCredito = Send-MultipartXml -Session $session -Path '/Mercurius/api/app/facturas-recibidas/upload' `
-        -FileName 'e2e-credito.xml' -FileBytes ([System.Text.Encoding]::UTF8.GetBytes($xmlCredito))
+        -FileName 'e2e-credito.xml' -FileBytes ([System.Text.Encoding]::UTF8.GetBytes($xmlCredito)) -Headers $postHeaders
     Assert-Status $upCredito @(200, 201)
     Assert-Journey (((Get-Json $upCredito).data.resultados[0].exito) -eq $true) 'credito upload exitoso=true'
     $reciboId = Find-FacturaId $session $consecCredito
