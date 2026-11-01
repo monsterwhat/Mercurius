@@ -1,0 +1,34 @@
+{!
+  _kit/drawer - panel lateral derecho para detalle de registro.
+
+  Misma idea que _kit/modal, pero anclado a la derecha. El boton que abre el
+  detalle (una fila de tabla, normalmente) lleva LOS TRES atributos:
+      data-kit-open="<id>"
+      hx-get="<fragmento>"
+      hx-target="#<id>-body"
+  El bridge global pone open = true y htmx llena el cuerpo. Por eso el kit no
+  recibe bodyUrl: la URL vive en el control que abre, como en cualquier fila.
+
+  PARAMS:
+    id    String - REQUIRED. Id del root y prefijo de los ids derivados.
+    title String - REQUIRED. Texto del encabezado.
+    size  String - OPTIONAL. sm | md | lg. Default md.
+
+  SLOTS: ninguno.
+!}
+{@java.lang.String id}
+{@java.lang.String title}
+<div class="kit-drawer-root" id="{id}" x-data="{ open: false }">
+    <div class="kit-drawer-overlay" x-show="open" x-cloak @click="open = false"></div>
+    <aside class="kit-drawer{#if size??} kit-drawer-{size}{/if}" role="dialog" aria-modal="true"
+           aria-labelledby="{id}-title" x-show="open" x-cloak>
+        <header class="kit-drawer-header">
+            <h2 class="kit-drawer-title" id="{id}-title">{title}</h2>
+            <button type="button" class="kit-drawer-close" data-kit-close aria-label="Cerrar"
+                    @click="open = false">&times;</button>
+        </header>
+        <div class="kit-drawer-body" id="{id}-body">
+            {! El cuerpo lo llena el hx-get del boton que abre. !}
+        </div>
+    </aside>
+</div>

@@ -1,0 +1,21 @@
+{!
+  _kit/form-section - seccion de formulario.
+
+  PARAMS:
+    title       String - REQUIRED. Titulo de la seccion.
+    description String - OPTIONAL. Texto de apoyo bajo el titulo.
+    columns     String - OPTIONAL. 1 | 2 | 3. Default 2.
+
+  SLOTS:
+    {#content} - campos del formulario.
+!}
+{@java.lang.String title}
+<section class="form-section">
+    <header class="form-section-header">
+        <h2 class="form-section-title">{title}</h2>
+        {#if description??}<p class="form-section-desc">{description}</p>{/if}
+    </header>
+    <div class="form-section-body form-grid{#if columns??} form-grid-{columns}{#else} form-grid-2{/if}">
+        {#insert content}{/insert}
+    </div>
+</section>

@@ -1,0 +1,19 @@
+{!
+  _kit/empty-state - estado vacio reutilizable.
+
+  PARAMS:
+    title       String - REQUIRED. Titulo del estado vacio.
+    message     String - OPTIONAL. Texto de apoyo.
+    icon        String - OPTIONAL. Clave valida de _kit/icon.
+    actionHref  String - OPTIONAL. URL context-relative (sin root) de la accion.
+    actionLabel String - OPTIONAL. Texto del boton de accion.
+
+  SLOTS: ninguno.
+!}
+{@java.lang.String title}
+<div class="empty-state">
+    {#if icon??}<span class="empty-state-icon">{#include _kit/icon name=icon /}</span>{/if}
+    <p class="empty-state-title">{title}</p>
+    {#if message??}<p class="empty-state-text">{message}</p>{/if}
+    {#if actionHref?? && actionLabel??}<a class="button is-small" href="{config:['quarkus.http.root-path']}{actionHref}">{actionLabel}</a>{/if}
+</div>

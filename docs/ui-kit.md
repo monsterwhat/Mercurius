@@ -89,6 +89,17 @@ Violating any of these breaks the app.
 
 W1 changed **no** existing public contract. `layout.html` now calls `_kit/toast-container.html` with byte-identical markup.
 
+### 3.2 UI-modernization primitives (new; shell companions)
+
+| File | Replaces | Purpose |
+| --- | --- | --- |
+| `_kit/drawer.html` | `p:dialog` side panels, loyalty history drawer | Right-anchored detail drawer; body filled by the opener's `hx-get` |
+| `_kit/empty-state.html` | ad-hoc empty blocks | Reusable empty state with optional icon and action |
+| `_kit/loading-state.html` | spinner placeholders | Skeleton loading block (3 fixed rows) |
+| `_kit/form-section.html` | ad-hoc `.box` form groups | Sectioned form block with 1/2/3-column grid |
+
+See §10 for the parameter contract and §13 for the shell that hosts them.
+
 ---
 
 ## 4. `_kit/data-table` — Purpose
@@ -437,7 +448,10 @@ All eight are documented in full at the top of each template. Common rules:
 | `action-bar` | — | `count`, `countLabel`, `id` | `{#left}`, `{#actions}` |
 | `chart-card` | `title` | `subtitle`, `size` (`short`/`tall`), `canvasId`, `height` | `{#actions}`, `{#chartBody}` |
 | `icon` | `name` | `label`, `size` | — |
-
+| `drawer` | `id`, `title` | `size` (`sm`/`md`/`lg`) | — (body filled by opener) |
+| `empty-state` | `title` | `message`, `icon`, `actionHref`, `actionLabel` | — |
+| `loading-state` | — | `label` (default `Cargando…`; always 3 skeleton rows) | — |
+| `form-section` | `title` | `description`, `columns` (`1`/`2`/`3`, default `2`) | `{#content}` |
 > **`page-header` no longer takes an `eyebrow`.** The kicker above the title was a small uppercase label repeating the title in smaller, greyer, tracked type. No page ever passed one, and it is a banned pattern. A caller that still passes `eyebrow` gets silence, not a kicker.
 >
 > **`metric` gained `detailSuffix`.** A composed detail ("+8.2% vs ayer") cannot be passed as one include parameter without relying on how Qute resolves an expression inside a string literal. The suffix is passed as its own literal instead. The separating space lives in the component, not in the caller's value.
@@ -669,3 +683,96 @@ Contract: `{dataset}-{yyyyMMdd}.xlsx|.pdf`, magic bytes `PK\x03\x04` / `%PDF-`; 
 | **UX2** | **The second UI/UX pass — the one the browser found.** UX1 was driven by reading the code; UX2 was driven by the app running in a real browser at 1440/768/390, and it found what the code could not: a **dark-mode contrast failure nobody could see** (the legacy layer used `--bulma-text-title-l`, a bare lightness component, as a colour — an invalid value, so the declaration was dropped and the text fell back to black; the footers and the legacy inputs were black on near-black), **`HX-Redirect` targets that 404'd** because they omitted the deployment root path (the browser resolves the header against the origin, not the app), the **Tributación screen's own title rendered at 1:1** because a legacy banner wrapper framed the whole dashboard, the **active tab count badge at 1.95:1**, the **input placeholders at 2.5:1**, **seven accent hues in one product** (Bulma's `is-link` blue on the POS and the pager's current page, indigo on the login and the profile), **emoji and numeric entities as icons** in the users table and the POS, and the **dashboard's charts deciding the page height** (the canvas sized its wrapper, the wrapper sized the canvas, and a full-page screenshot never settled). Every screen now carries exactly one real `<h1>` at ≤32px with a sane heading order. | ✅ landed |
 
 **Definition of done for the redesign:** redesign the 10–15 primitives, then migrate pages onto them. That yields one visual language while preserving the existing Qute/HTMX architecture, server-side pagination, CSRF model, role gating, routes, business logic and `_kit` contracts.
+
+---
+
+## 13. Application shell (ui-modernization)
+
+Shell nuevo de la rama `ui-modernization`: sidebar navy de 160 px + cabecera pegajosa de 56 px sobre un área de contenido clara. Reemplaza al antiguo `fragments/navbar.html` (que ya no existe): toda entrada y gate de rol se reubicó en `fragments/app-sidebar.html`, y el lanzador POS + la identidad/cuenta se movieron a `fragments/app-header.html`.
+
+### 13.1 Estructura
+
+`layout.html` define:
+
+```
+.app-shell
+  .app-sidebar          (160 px, navy)   ← {#insert sidebar} default fragments/app-sidebar
+  .app-main
+    .app-header         (56 px, sticky)   ← {#insert header}  default fragments/app-header
+    .app-content        (padding --ui-pad)
+    .app-footer
+```
+
+Slots expuestos por el layout: `{#sidebar}` y `{#header}` (sobrescribibles; por defecto `fragments/app-sidebar` y `fragments/app-header`). El contenido de página va en `{#body}` (requerido). El shell también monta `_kit/toast-container` una sola vez por documento.
+
+### 13.2 Regla de no-shell
+
+**Ninguna página escribe su propio shell ni su propia navegación.** Toda página incluye `layout.html` y solo aporta `{#body}` (y, si hace falta, `{#sidebar}`/`{#header}`). `fragments/navbar.html` ya no existe; no reintroducir un navbar saturado encima del contenido.
+
+### 13.3 Tokens nuevos (`mercurius.scss` §3.9)
+
+ÚNICO bloque con colores literales del sistema; los componentes consumen tokens, nunca hex.
+
+| Token | Valor (light) | Uso |
+| --- | --- | --- |
+| `--ui-navy` | `#17294B` | Fondo del sidebar |
+| `--ui-navy-2` | `#21385F` | Hover / superficie anidada del sidebar |
+| `--ui-navy-ink` | `#E8EDF7` | Texto del sidebar |
+| `--ui-navy-muted` | `#A9B6D0` | Texto secundario del sidebar |
+| `--ui-primary` | `#3766E8` | Nav activo, acción primaria, enlaces |
+| `--ui-primary-hover` | `#2B55CF` | Hover de la acción primaria |
+| `--ui-purple` | `#7055DB` | Acción primaria secundaria |
+| `--ui-bg` | `#F3F6FC` (dark: `--bulma-scheme-main`) | Fondo de la aplicación |
+| `--ui-surface` | `#FFFFFF` (dark: `--bulma-scheme-main-bis`) | Tarjetas, tablas, modales |
+| `--ui-border` | `#DCE4F2` (dark: `--bulma-border`) | Bordes, divisores |
+| `--ui-text` | `#172442` (dark: `--bulma-text`) | Texto primario |
+| `--ui-success` | `#20B981` | Confirmaciones, emitido/cobrado |
+| `--ui-warning` | `#F5A623` | Pendiente |
+| `--ui-danger` | `#E65B65` | Errores, rechazado |
+| `--ui-muted` | `#8290A8` (dark: `--bulma-text-weak`) | Texto secundario, metadatos |
+| `--ui-on-accent` | `#FFFFFF` | Texto sobre acento |
+| `--ui-overlay` | `rgba(23, 41, 75, .45)` | Overlay de drawer/modal |
+
+Densidad:
+
+| Token | Valor |
+| --- | --- |
+| `--ui-row-h` | `2.25rem` |
+| `--ui-control-h` | `2rem` |
+| `--ui-gap` | `.75rem` |
+| `--ui-pad` | `1.25rem` |
+| `--ui-sidebar-w` | `160px` |
+| `--ui-header-h` | `56px` |
+
+### 13.4 Comportamiento del shell (JS en `layout.html`)
+
+Vanilla JS, sin framework, ejecutado tras `DOMContentLoaded`:
+
+- **Toggle móvil:** el botón con `data-sidebar-toggle` alterna `.is-sidebar-open` en `#app-shell` y actualiza `aria-expanded`.
+- **Grupos:** los botones con `data-sidebar-group` + `aria-controls` expanden/colapsan la lista `#<id>` (clase `.is-open`) y actualizan `aria-expanded`.
+- **Enlace activo:** el enlace cuyo `href` coincide más específicamente con la ruta actual recibe `.is-active` + `aria-current="page"`; se abre el grupo contenedor y se copia su `title` (o texto) a `#app-header-context`.
+- **Menú de cuenta:** `data-header-user` / `data-header-user-menu` abren/cierran el dropdown (click fuera, `Escape`).
+- **Estado de conexión:** `data-connection-status` refleja `navigator.onLine` real (`En línea` / `Sin conexión`), con listeners `online`/`offline`.
+
+### 13.5 Modo oscuro
+
+Las superficies y el texto siguen a Bulma (`--ui-bg`, `--ui-surface`, `--ui-border`, `--ui-text`, `--ui-muted` se redefinen en `@media (prefers-color-scheme: dark)`). El sidebar permanece navy en ambos esquemas (sus tokens no cambian).
+
+### 13.6 Responsive
+
+- Por debajo de **1024 px** el sidebar es off-canvas (`.app-sidebar` fijo con `transform: translateX(-100%)`, activado por `.app-shell.is-sidebar-open`); aparece el botón de menú (`.app-header-menu`).
+- Por debajo de **768 px** los grids de formulario (`.form-grid-2`, `.form-grid-3`) colapsan a 1 columna.
+
+### 13.7 Primitivas que acompañan al shell
+
+Las cuatro primitivas de la ola ui-modernization y su contrato están en §3.2 y §10:
+
+- `_kit/drawer` (`id`, `title`; `size` opcional `sm`/`md`/`lg`). El botón que abre lleva `data-kit-open` + `hx-get` + `hx-target="#<id>-body"`.
+- `_kit/empty-state` (`title`; `message`, `icon`, `actionHref`, `actionLabel` opcionales).
+- `_kit/loading-state` (`label` opcional, default `Cargando…`; 3 filas esqueleto fijas).
+- `_kit/form-section` (`title`; `description`, `columns` `1`/`2`/`3` opcionales; slot `{#content}`).
+
+### 13.8 Tests que fijan esto
+
+- `NavbarPopupLauncherTest` — shell renderizado + lanzador POS declarativo (`data-kit-popup`/`data-kit-popup-features`, href con raíz resuelta, sin `onclick` inline, gate `facturacion`).
+- `UiShellPrimitivesTest` — las cuatro primitivas anteriores (diálogo/semántica del drawer, empty-state sin opcionales y raíz prefijada, loading-state con 3 filas, form-section con 2/3 columnas).

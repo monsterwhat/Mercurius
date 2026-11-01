@@ -247,6 +247,7 @@
     --ui-danger: #E65B65;
     --ui-muted: #8290A8;
     --ui-on-accent: #FFFFFF;
+    --ui-overlay: rgba(23, 41, 75, .45);
 
     // Density (spec §4): compact rows, compact controls.
     --ui-row-h: 2.25rem;
@@ -591,7 +592,166 @@
 }
 
 // -----------------------------------------------------------------------------
-// 3.9.5 Responsive: off-canvas sidebar under 1024px
+// 3.10 Drawer, empty/loading states, form sections (ui-modernization primitives)
+// -----------------------------------------------------------------------------
+[x-cloak] {
+    display: none !important;
+}
+
+.kit-drawer-root {
+    position: relative;
+}
+
+.kit-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--ui-overlay);
+}
+
+.kit-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 61;
+    width: 28rem;
+    max-width: 92vw;
+    background: var(--ui-surface);
+    border-left: 1px solid var(--ui-border);
+    box-shadow: var(--mercurius-shadow-raised);
+}
+
+.kit-drawer-sm { width: 22rem; }
+.kit-drawer-lg { width: 40rem; }
+
+.kit-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-gap);
+    padding: .875rem var(--ui-pad);
+    border-bottom: 1px solid var(--ui-border);
+}
+
+.kit-drawer-title {
+    margin: 0;
+    color: var(--ui-text);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.kit-drawer-close {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--mercurius-radius-sm);
+    background: var(--ui-surface);
+    color: var(--ui-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.kit-drawer-body {
+    flex: 1 1 auto;
+    padding: var(--ui-pad);
+    overflow-y: auto;
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    margin-bottom: .5rem;
+    color: var(--ui-muted);
+}
+
+.empty-state-title {
+    margin: 0 0 .25rem;
+    color: var(--ui-text);
+    font-size: .9375rem;
+    font-weight: 600;
+}
+
+.empty-state-text {
+    margin: 0 0 .875rem;
+    color: var(--ui-muted);
+    font-size: .8125rem;
+}
+
+.loading-state {
+    padding: 1rem 0;
+}
+
+.loading-state-label {
+    display: block;
+    margin-bottom: .5rem;
+    color: var(--ui-muted);
+    font-size: .75rem;
+}
+
+.loading-state-rows {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.loading-state-row {
+    display: block;
+    height: .75rem;
+    border-radius: var(--mercurius-radius-sm);
+    background: var(--ui-bg);
+}
+
+.loading-state-row:nth-child(2n) {
+    width: 80%;
+}
+
+.form-section {
+    margin-bottom: var(--ui-pad);
+}
+
+.form-section-header {
+    margin-bottom: .75rem;
+}
+
+.form-section-title {
+    margin: 0;
+    color: var(--ui-text);
+    font-size: .9375rem;
+    font-weight: 600;
+}
+
+.form-section-desc {
+    margin: .125rem 0 0;
+    color: var(--ui-muted);
+    font-size: .8125rem;
+}
+
+.form-section-body.form-grid {
+    display: grid;
+    gap: var(--ui-gap);
+}
+
+.form-grid-1 { grid-template-columns: 1fr; }
+.form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 767px) {
+    .form-grid-2,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 3.11 Responsive: off-canvas sidebar under 1024px
 // -----------------------------------------------------------------------------
 @media (max-width: 1023px) {
     .app-sidebar {
