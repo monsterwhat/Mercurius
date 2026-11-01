@@ -61,6 +61,13 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+# Windows PowerShell 5.1 does not load System.Net.Http automatically, so the
+# HttpClientHandler type below is unknown until the assembly is loaded. pwsh 7
+# already has it; the guard keeps the script working on both.
+if (-not ('System.Net.Http.HttpClientHandler' -as [type])) {
+    Add-Type -AssemblyName System.Net.Http
+}
+
 # ======================================================================
 # Tiny HttpClient harness: exact status codes (no redirect following),
 # automatic cookie collection, byte-accurate bodies for magic-byte checks.
