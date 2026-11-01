@@ -24,9 +24,16 @@ import org.jboss.logging.Logger;
  * {@link EmailTemplateResource} ({@code /api/app/email-templates}), whose
  * full-page models are reused here so page and fragments can never disagree
  * (same split as ArticulosPagesResource / ArticuloResource).
+ *
+ * <p><b>Role gate</b> (D4): the class carries the read gate
+ * {@code admin,facturacion,tributacion} so a new method is never born open;
+ * each method narrows it to its own matrix ({@code /plantillas} stays
+ * {@code admin,tributacion}). Method-level {@code @RolesAllowed} overrides the
+ * class-level one, which is why the class annotation can be the union.</p>
  */
 @Path("/app/correos")
 @Produces(MediaType.TEXT_HTML)
+@RolesAllowed({"admin", "facturacion", "tributacion"})
 public class CorreosPagesResource {
     private static final Logger LOG = Logger.getLogger(CorreosPagesResource.class);
 
