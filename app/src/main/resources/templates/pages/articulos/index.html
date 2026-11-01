@@ -115,7 +115,6 @@
                     {#include pages/articulos/tabla-articulos modelo=activosTabla q=activosTabla.q /}
                 {/content}
             {/include}
-            {!$1!}
             {#include _kit/modal id="editar-articulo" title="Editar Artículo" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
         </div>
@@ -195,7 +194,6 @@
                     {#include pages/articulos/tabla-articulos modelo=pendientesTabla q=pendientesTabla.q /}
                 {/content}
             {/include}
-            {!$1!}
             {#include _kit/modal id="revision-articulo" title="Revisión de Artículo" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/revision/siguiente" /}
         </div>
@@ -223,10 +221,8 @@
                     {#include pages/articulos/tabla-promociones modelo=promocionesTabla q=promocionesTabla.q /}
                 {/content}
             {/include}
-            {!$1!}
             {#include _kit/modal id="editar-promocion" title="Editar Promoción" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}
-            {!$1!}
             {#include _kit/modal id="selector-articulo-promo" title="Seleccionar Artículo" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/formularios/promociones/articulos" /}
         </div>
