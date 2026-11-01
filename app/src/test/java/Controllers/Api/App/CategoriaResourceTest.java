@@ -322,7 +322,10 @@ class CategoriaResourceTest extends support.ContextPathIsolation {
                 .body(containsString("<html"))
                 .body(containsString("Gestión de Categorías"))
                 .body(containsString("toast-container"))
-                .body(containsString("Ranking de Rendimiento de Proveedores"));
+                // D5: the ranking is its own report now; the page links to it
+                // instead of rendering a duplicate leaderboard.
+                .body(containsString("href=\"/Mercurius/app/reportes/proveedores\""))
+                .body(not(containsString("Ranking de Rendimiento de Proveedores")));
     }
 
     @Test

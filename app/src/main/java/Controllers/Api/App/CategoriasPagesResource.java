@@ -2,9 +2,7 @@ package Controllers.Api.App;
 
 import static Controllers.Api.App.AppRecursoBase.*;
 import Models.Departamento;
-import Models.DepartamentoMetrico;
 import Models.Familia;
-import Services.DepartamentoMetricoService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import io.quarkus.qute.Location;
@@ -33,12 +31,16 @@ import org.jboss.logging.Logger;
  * {@code GET /app/categorias} — the route the T11 navbar reserved for the
  * legacy secured/pages/Categorias/index.xhtml.
  *
- * <p>Read-only page renderer: builds the full-page model (both data tables,
- * stat counters and the supplier-metrics summary) exactly like
+ * <p>Read-only page renderer: builds the full-page model (both data tables and
+ * the stat counters) exactly like
  * {@link CategoriaResource#renderFullPage()} and renders
  * {@code pages/categorias/index.html}. All mutation, fragment and JSON
  * endpoints live in the API twin {@link CategoriaResource}
  * ({@code /api/app/categorias}).</p>
+ *
+ * <p><b>D5</b>: the supplier ranking is no longer part of this page; it is the
+ * independent report {@code /app/reportes/proveedores}. This management screen
+ * only links to it.</p>
  *
  * <p><b>Role gate</b>: {@code admin} + {@code inventario}, mirroring the
  * module's managing roles (the métricas recalcular button narrows to
@@ -57,16 +59,6 @@ public class CategoriasPagesResource {
     /** Legacy p:dataTable rows=20 on the Categorias tabs. */
     private static final int PAGE_SIZE = 20;
 
-    /**
-     * Hard cap on the supplier-ranking rows rendered in the page. The table is
-     * one row per department (its latest stored metric), so this is only a
-     * safety net for a pathological department count: the page used to render
-     * every stored metric (200k snapshot rows → 136 MB / 200k {@code <tr>},
-     * repeating the same supplier thousands of times). The KPI keeps the real
-     * supplier total through a SQL {@code COUNT(DISTINCT)}.
-     */
-    private static final int METRICAS_TOPE = 200;
-
     @Inject
     @Nonnull
     DepartamentoService departamentoService;
@@ -74,10 +66,6 @@ public class CategoriasPagesResource {
     @Inject
     @Nonnull
     FamiliaService familiaService;
-
-    @Inject
-    @Nonnull
-    DepartamentoMetricoService departamentoMetricoService;
 
     @Inject
     @Nonnull
@@ -109,7 +97,6 @@ public class CategoriasPagesResource {
     // ════════════════════════════════════════════════════════════════════
 
     private Map<String, Object> model() {
-        List<Map<String, Object>> metricasFilas = metricasFilas();
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("familiasTabla", tableModel(TAB_FAMILIAS));
         model.put("departamentosTabla", tableModel(TAB_DEPARTAMENTOS));
@@ -120,10 +107,6 @@ public class CategoriasPagesResource {
         model.put("departamentosActivosCount", departamentoService.countActivos());
         model.put("departamentosInactivosCount", departamentoService.countInactivos());
         model.put("isAdmin", isAdmin());
-        model.put("metricasTotalProveedores", departamentoMetricoService.countDepartamentosConMetricas());
-        model.put("metricasScorePromedio", departamentoMetricoService.avgScore());
-        model.put("metricasComprasTotales", departamentoMetricoService.sumMontoTotalCompras());
-        model.put("metricasFilas", metricasFilas);
         return model;
     }
 
@@ -178,63 +161,6 @@ public class CategoriasPagesResource {
         model.put("filtros", filtros);
         model.put("q", null);
         return model;
-    }
-
-    /**
-     * Supplier-metrics rows for the ranking table (score chips/bars).
-     *
-     * <p>One row per department (its latest metric), capped at
-     * {@link #METRICAS_TOPE} in SQL: the ranking used to render every stored
-     * metric, which is what turned this page into a 136 MB / 200k-row response
-     * on a real database.</p>
-     */
-    private List<Map<String, Object>> metricasFilas() {
-        List<Map<String, Object>> filas = new ArrayList<>();
-        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listUltimasPorDepartamento(METRICAS_TOPE))) {
-            Map<String, Object> fila = new LinkedHashMap<>();
-            fila.put("id", m.getId());
-            fila.put("proveedor", m.getDepartamento() != null && m.getDepartamento().getNombre() != null
-                    ? m.getDepartamento().getNombre() : "Sin nombre");
-            fila.put("score", m.getScore());
-            fila.put("scoreSeverity", scoreSeverity(m.getScore()));
-            fila.put("barWidth", barWidth(m.getScore()));
-            fila.put("barColor", barColor(m.getScore()));
-            fila.put("facturas", m.getTotalFacturasRecibidas());
-            fila.put("pagadas", m.getFacturasPagadas());
-            fila.put("montoTotal", m.getMontoTotalCompras());
-            fila.put("onTime", m.getTasaOnTimeDelivery());
-            filas.add(fila);
-        }
-        return filas;
-    }
-
-    /** Column definition helper (label + nullable sort key) as a map. */
-    /** Server-computed pager window: current ±2 clamped to [1,totalPages]. */
-    /** Legacy getScoreSeverity parity. */
-    private static String scoreSeverity(double score) {
-        if (score >= 80) {
-            return "success";
-        }
-        if (score >= 60) {
-            return "warning";
-        }
-        return "danger";
-    }
-
-    /** Legacy getBarColor parity. */
-    private static String barColor(double score) {
-        if (score >= 80) {
-            return "is-success";
-        }
-        if (score >= 60) {
-            return "is-warning";
-        }
-        return "is-danger";
-    }
-
-    /** Legacy getBarWidth parity. */
-    private static String barWidth(double score) {
-        return "width: " + Math.min(Math.max(score, 0), 100) + "%";
     }
 
     /** Legacy SessionController.admin parity (recalcular gate). */

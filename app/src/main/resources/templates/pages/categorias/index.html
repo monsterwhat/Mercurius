@@ -9,10 +9,10 @@
     familiaCount / departamentoCount    Long  - stat cards
     familiasActivasCount ...            Long  - reportes badges parity
     isAdmin                             Boolean - recalcular gate (legacy admin)
-    metricasTotalProveedores            int
-    metricasScorePromedio               double
-    metricasComprasTotales              BigDecimal
-    metricasFilas                       List<Map> - precomputed score chips/bars
+
+  D5: the supplier ranking is a report now (`/app/reportes/proveedores`), so
+  this page renders management only and links to it; the metricas* model keys
+  were removed from both renderers.
 
   Interactions:
     - Create dialogs: _kit/modal default triggers (hx-get form fragments).
@@ -129,48 +129,16 @@
              bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
         </div>
 
-        {! ── Ranking de Rendimiento de Proveedores ─────────────── !
-            Parity with the legacy supplier scoreboard: precomputed chips/bars
-            from renderFullPage (metricasFilas + totals). !}
-        {#include _kit/surface title="Ranking de Rendimiento de Proveedores"
-             subtitle=("Proveedores: " + metricasTotalProveedores + " · Score promedio: " + fmt:numero(metricasScorePromedio) + " · Compras totales: " + fmt:moneda(metricasComprasTotales))}
-            {#content}
-                {#if metricasFilas?? && metricasFilas.size() > 0}
-                <div class="table-container">
-                <table class="table is-hoverable is-fullwidth" aria-label="Rendimiento de proveedores">
-                    <thead>
-                        <tr>
-                            <th scope="col">Proveedor</th>
-                            <th scope="col" class="num">Score</th>
-                            <th scope="col">Rendimiento</th>
-                            <th scope="col" class="num">Facturas</th>
-                            <th scope="col" class="num">Pagadas</th>
-                            <th scope="col" class="num">Monto total</th>
-                            <th scope="col" class="num">A tiempo %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#for fila in metricasFilas}
-                        <tr>
-                            <td>{#if fila.proveedor??}<span class="table-clamp" title="{fila.proveedor}">{fila.proveedor}</span>{#else}&mdash;{/if}</td>
-                            <td class="num">{fmt:numero(fila.score)}</td>
-                            <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100"
-                                          aria-label="Rendimiento de {fila.proveedor}: {fmt:numero(fila.score)} de 100">{fmt:numero(fila.score)}</progress></td>
-                            <td class="num">{fila.facturas}</td>
-                            <td class="num">{fila.pagadas}</td>
-                            <td class="num">{fmt:moneda(fila.montoTotal)}</td>
-                            <td class="num">{fmt:porcentaje(fila.onTime)}</td>
-                        </tr>
-                        {/for}
-                    </tbody>
-                </table>
-                </div>
-                {#else}
-                <p class="has-text-weight-semibold">Aún no hay métricas de proveedores</p>
-                <p class="help">Aparecen cuando existan compras registradas en el período.</p>
-                {/if}
-            {/content}
-        {/include}
+        {! D5: the supplier ranking is a report of its own
+           (/app/reportes/proveedores). This screen is management only, so the
+           ranking is no longer duplicated here; the button keeps it one click
+           away. !}
+        <p class="mt-5">
+            <a class="button is-light" href="{config:['quarkus.http.root-path']}/app/reportes/proveedores" title="Ranking de rendimiento de proveedores">
+                <span class="icon is-small mr-2">{#include _kit/icon name="chart" size="small" /}</span>
+                <span>Ver ranking de proveedores</span>
+            </a>
+        </p>
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

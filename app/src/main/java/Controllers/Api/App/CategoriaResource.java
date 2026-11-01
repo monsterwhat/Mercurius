@@ -86,13 +86,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       {@code alertas.registrarAlerta} audit entries with DiffUtils
  *       snapshots.</li>
  *   <li>Métricas: read model of
- *       {@link DepartamentoMetricoService#listUltimasPorDepartamento(int)}
- *       (the page's leaderboard is one row per department, capped at
- *       {@link #METRICAS_TOPE}, with the real supplier total from
- *       {@code countDepartamentosConMetricas()}; {@code /metricas} keeps the
- *       full {@link DepartamentoMetricoService#listAll()} read model) + avgScore
- *       / sumMontoTotalCompras summary cards and the admin-only recalculation
- *       trigger that used to live on the JSF page.</li>
+ *       {@link DepartamentoMetricoService#listAll()} plus avgScore /
+ *       sumMontoTotalCompras summary cards and the admin-only recalculation
+ *       trigger that used to live on the JSF page. <b>D5</b>: the supplier
+ *       leaderboard that used to be rendered inside this page is now the
+ *       independent report {@code /app/reportes/proveedores}.</li>
  * </ul>
  *
  * <p><b>Paging/sorting contract</b> follows docs/ui-kit.md §3.1:
@@ -130,13 +128,6 @@ public class CategoriaResource {
     private static final String MSG_NOMBRE_REQUERIDO = "El nombre no puede estar vacío";
     /** Legacy duplicate-name warning parity (FamiliaController.createFamiliaDialog). */
     private static final String MSG_FAMILIA_DUPLICADA = "Ya existe una familia con ese nombre!";
-
-    /**
-     * Hard cap on the supplier-ranking rows of the full page (identical to
-     * {@code CategoriasPagesResource}): one row per department, so the cap only
-     * guards a pathological department count.
-     */
-    private static final int METRICAS_TOPE = 200;
 
     @Nonnull
     @Inject
@@ -891,27 +882,10 @@ public class CategoriaResource {
                 .data("toastMessage", toastMessage));
     }
 
-    /** Full-page model: both tables + stat counters + metrics summary. */
+    /** Full-page model: both tables + stat counters. */
     private TemplateInstance renderFullPage() {
         TableModel tf = buildTableModel(TAB_FAMILIAS, 1, 20, null, "asc", null);
         TableModel td = buildTableModel(TAB_DEPARTAMENTOS, 1, 20, null, "asc", null);
-
-        List<Map<String, Object>> metricasFilas = new ArrayList<>();
-        for (DepartamentoMetrico m : orEmpty(departamentoMetricoService.listUltimasPorDepartamento(METRICAS_TOPE))) {
-            Map<String, Object> fila = new LinkedHashMap<>();
-            fila.put("id", m.getId());
-            fila.put("proveedor", m.getDepartamento() != null && m.getDepartamento().getNombre() != null
-                    ? m.getDepartamento().getNombre() : "Sin nombre");
-            fila.put("score", m.getScore());
-            fila.put("scoreSeverity", scoreSeverity(m.getScore()));
-            fila.put("barWidth", barWidth(m.getScore()));
-            fila.put("barColor", barColor(m.getScore()));
-            fila.put("facturas", m.getTotalFacturasRecibidas());
-            fila.put("pagadas", m.getFacturasPagadas());
-            fila.put("montoTotal", m.getMontoTotalCompras());
-            fila.put("onTime", m.getTasaOnTimeDelivery());
-            metricasFilas.add(fila);
-        }
 
         return pageIndex
                 .data("familiasTabla", tf.asMap())
@@ -922,11 +896,7 @@ public class CategoriaResource {
                 .data("familiasInactivasCount", familiaService.countInactivas())
                 .data("departamentosActivosCount", departamentoService.countActivos())
                 .data("departamentosInactivosCount", departamentoService.countInactivos())
-                .data("isAdmin", isAdmin())
-                .data("metricasTotalProveedores", departamentoMetricoService.countDepartamentosConMetricas())
-                .data("metricasScorePromedio", departamentoMetricoService.avgScore())
-                .data("metricasComprasTotales", departamentoMetricoService.sumMontoTotalCompras())
-                .data("metricasFilas", metricasFilas);
+                .data("isAdmin", isAdmin());
     }
 
     /** Immutable view of everything one tabla-*.html include needs. */
@@ -1168,33 +1138,6 @@ public class CategoriaResource {
     }
 
     // ── Legacy presentation helpers (score chips / progress bars) ───────
-
-    /** Legacy getScoreSeverity parity. */
-    private static String scoreSeverity(double score) {
-        if (score >= 80) {
-            return "success";
-        }
-        if (score >= 60) {
-            return "warning";
-        }
-        return "danger";
-    }
-
-    /** Legacy getBarColor parity. */
-    private static String barColor(double score) {
-        if (score >= 80) {
-            return "is-success";
-        }
-        if (score >= 60) {
-            return "is-warning";
-        }
-        return "is-danger";
-    }
-
-    /** Legacy getBarWidth parity. */
-    private static String barWidth(double score) {
-        return "width: " + Math.min(Math.max(score, 0), 100) + "%";
-    }
 
     // ── Current-user resolution (SessionController.getCurrentUser parity) ──
 

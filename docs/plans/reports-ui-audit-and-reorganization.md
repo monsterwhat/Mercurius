@@ -175,7 +175,7 @@ and an explicit decision in §7.
 | `ges.inventarios` | Inventarios | Gestión de Inventario | — | `/app/inventarios` | `InventariosPagesResource`, `InventarioResource` | `pages/inventario/index` | `InventarioService` | Gestión |
 | `ges.categorias.familias` | Familias | Familias | `/app/categorias` | `/app/categorias` (tab familias) | `CategoriasPagesResource`, `CategoriaResource` | `pages/categorias/index` | `FamiliaService` | Gestión |
 | `ges.categorias.departamentos` | Departamentos | Departamentos | `/app/categorias` | `/app/categorias` (tab departamentos) | `CategoriasPagesResource`, `CategoriaResource` | `pages/categorias/index` | `DepartamentoService` | Gestión |
-| `rep.proveedores.ranking` | Ranking de Rendimiento de Proveedores | Ranking de Rendimiento de Proveedores | `/app/categorias` | `/app/categorias` (sección) | `CategoriaResource` (a extraer) | `pages/categorias/index` (a extraer) | `DepartamentoMetricoService` | Reporte |
+| `rep.proveedores.ranking` | Ranking de Rendimiento de Proveedores | Ranking de Rendimiento de Proveedores | `/app/categorias` | `/app/reportes/proveedores` | `ProveedoresReportesResource` | `pages/reportes/proveedores` | `DepartamentoMetricoService` | Reporte |
 | `ges.usuarios` | Usuarios del Sistema | Usuarios del Sistema | — | `/app/usuarios` | `UsuariosPagesResource`, `UsersResource` | `pages/usuarios/index` | `LoginService` | Gestión |
 | `rep.usuarios` | Reporte de Usuarios | Gestión de Usuarios | — | `/app/reportes/usuarios` | `UsuariosReportesResource` | `pages/reportes/usuarios` | `LoginService` | Reporte |
 | `ges.clientes` | Gestión de Clientes | Gestión de Clientes | — | `/api/app/clientes/table` | `ClientsResource` | `pages/clientes/index` | `ClientService` | Gestión |
@@ -439,7 +439,7 @@ says which behavior wins.
 | Ventas: cajero + familia + departamento | Same responsibility, three hub entries | Three tabs of one screen; the hub lists each tab | One hub entry |
 | Análisis de inventario: resumen + alertas + pronósticos | Same responsibility, three hub entries | Three tabs of one screen; the hub lists each tab | One hub entry |
 | Tendencias + estacionalidad | Same responsibility, two hub entries | Two tabs of one screen; the hub lists each tab | One hub entry |
-| `/app/categorias` | Mixed container | Familias + Departamentos (management) + supplier ranking (report) | Split; D5 for the ranking |
+| `/app/categorias` | Split (D5) | Familias + Departamentos (management) only; the supplier ranking moved to `/app/reportes/proveedores` | Done |
 | `/app/articulos` | Mixed container | Articles management + Promociones (separate entity) + review workflow | Two rows; keep the tab if the product wants it |
 | `/app/facturas` upload | Capability mismatch, not a duplicate | Emitted board posts its XML to the received upload endpoint | Phase 2 |
 | Dashboard `Facturas Emitidas` / `Facturas Recibidas` | Cross-surface shortcuts, not duplicates | A different navigation surface; allowed if intentional | Keep; note the 403s for roles without `facturacion` |
@@ -486,7 +486,7 @@ There is no third option.
 | D2 | Pending/overdue received invoices | Decide whether the two read-only views survive as tabs of the payables board, and transfer their XLSX exports if they do not. `/app/facturas-recibidas` does not export today. | Resolved in `53df511`: the board exports `recibos-pendientes`/`recibos-vencidos` per bucket and the hub points to `?bucket=`; legacy routes kept |
 | D3 | Users / clients | Consolidate respecting **per-operation** permissions, not just per-screen roles. Preserve XLSX. | Resolved in `c4da5a5` (clients unified, archive added, buttons per role) and `e372d64` (users report absorbed; admin-only XLSX moved to `/app/usuarios`; report route retired) |
 | D4 | Scheduled email reports | Define the role matrix of the unified interface. The two current screens have different gates. | Resolved in `3ca5d2a`: management reads `admin,facturacion,tributacion`, mutations stay `admin,tributacion`, XLSX added; legacy report kept |
-| D5 | Supplier ranking | Create an independent screen reusing `DepartamentoMetrico`; do not invent a `Proveedor` entity (supplier = `Departamento`). | Implemented: `/app/reportes/proveedores` (`admin,inventario`), hub entry repointed; the ranking stays embedded in `/app/categorias` until a later removal |
+| D5 | Supplier ranking | Create an independent screen reusing `DepartamentoMetrico`; do not invent a `Proveedor` entity (supplier = `Departamento`). | Resolved in `ed2e0bc`: `/app/reportes/proveedores` (`admin,inventario`) + hub entry repointed; the embedded copy removed from `/app/categorias` (management only, keeps a link). `/api/app/categorias/metricas` and `/metricas/recalcular` untouched |
 | D6 | Purchase orders and labels | Document explicitly their location and nature (management vs tool). Do not leave them implicit. | Resolved in `c2ce19c`: real `/app/compras/ordenes`; Órdenes and Etiquetas appear on the Gestión landing. Etiquetas keeps its URL until the phase-2 cleanup. |
 | D7 | Emitted invoices naming | Keep **"Reporte de facturas emitidas"** (`/app/reportes/facturas`) and **"Facturas emitidas (gestión)"** (`/app/facturas`) as distinct IDs and labels. | Approved |
 
@@ -1041,3 +1041,4 @@ ask the user first.
 | 2026-10-31 | Hub aligned with D2/D3/D4/D9 (bucket links, management destinations, counts); version `2.18.8 → 2.18.9`. |
 | 2026-10-31 | D13 phase 2: the hub is reports-only (Artículos, Departamentos, Familias, Inventarios, Etiquetas and Órdenes moved to `/app/gestion`); Gestión exposes both catalog tabs; version `2.18.10 -> 2.18.11`. |
 | 2026-10-31 | D5: supplier ranking becomes /app/reportes/proveedores (dmin,inventario), reusing DepartamentoMetrico; the hub entry points there; version `2.18.11 -> 2.18.12`. |
+| 2026-10-31 | D5 cierre: el ranking de proveedores deja de estar embebido en `/app/categorias` (queda solo el enlace); `CategoriaResource` y `CategoriasPagesResource` dejan de construir `metricasFilas`; version `2.18.12 -> 2.18.13`. |
