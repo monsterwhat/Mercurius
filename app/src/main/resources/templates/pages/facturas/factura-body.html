@@ -54,8 +54,8 @@
     {! Two columns (spec §5 B): capture on the left, cart on the right. The
        wrapper is the only change: every form, id and hx-* below is untouched,
        and the cart keeps its own scroll viewport. !}
-    <div class="columns is-variable is-4">
-    <div class="column is-12 is-7-desktop">
+    <div class="columns is-variable is-4 is-multiline">
+    <div class="column is-full is-7-desktop">
 
     <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
@@ -106,7 +106,7 @@
                        name="cantidad" value="1" min="0" step="any" inputmode="decimal"
                        aria-describedby="ayuda-escaneo" autocomplete="off"/>
             </div>
-            <div class="column is-7">
+            <div class="column is-6">
                 <label class="label is-small" for="barcode-input">Código de barras</label>
                 <input class="input is-medium" type="text" id="barcode-input"
                        name="codigoBarra" value="" autocomplete="off" autofocus
@@ -114,8 +114,8 @@
                        autocapitalize="off" spellcheck="false"
                        placeholder="Escanee el código o escríbalo y presione Enter"/>
             </div>
-            <div class="column is-3">
-                <div class="field is-grouped" style="margin-bottom:0">
+            <div class="column is-4">
+                <div class="field is-grouped is-grouped-multiline" style="margin-bottom:0">
                     <p class="control is-expanded">
                         <button type="submit" id="btn-agregar-scan"
                                 class="button is-medium is-primary is-fullwidth">Agregar</button>
@@ -135,7 +135,7 @@
 
     </div>
 
-    <div class="column is-12 is-5-desktop">
+    <div class="column is-full is-5-desktop">
     {! Classic scrollable cart. The include is the single source of truth for
        the markup, so every mutation endpoint and row form keeps working; the
        scroll viewport now lives INSIDE the panel around the rows table, so the
