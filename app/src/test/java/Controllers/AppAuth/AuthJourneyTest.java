@@ -82,7 +82,7 @@ import org.junit.jupiter.api.Test;
 @Tag("auth-matrix")
 class AuthJourneyTest {
 
-    private static final String BASE = "http://localhost:8081/Mercurius";
+    private static final String BASE = "http://localhost:" + System.getProperty("quarkus.http.test-port", "8081") + "/Mercurius";
     private static final String SESSION_COOKIE = "quarkus-credential";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
