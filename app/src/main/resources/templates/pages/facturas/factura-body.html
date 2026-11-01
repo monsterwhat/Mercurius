@@ -51,6 +51,12 @@
         {/actions}
     {/include}
 
+    {! Two columns (spec §5 B): capture on the left, cart on the right. The
+       wrapper is the only change: every form, id and hx-* below is untouched,
+       and the cart keeps its own scroll viewport. !}
+    <div class="columns is-variable is-4">
+    <div class="column is-12 is-7-desktop">
+
     <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
             <div class="column is-6">
@@ -127,11 +133,16 @@
         <p class="help mercurius-text-muted" id="ayuda-escaneo">El lector envía Enter solo; la cantidad por defecto es 1.</p>
     </form>
 
+    </div>
+
+    <div class="column is-12 is-5-desktop">
     {! Classic scrollable cart. The include is the single source of truth for
        the markup, so every mutation endpoint and row form keeps working; the
        scroll viewport now lives INSIDE the panel around the rows table, so the
        totals and the two closing actions never scroll out of reach. !}
     {#include pages/facturas/cart-panel panel=panel /}
+    </div>
+    </div>
 
     {! Facturar outcome (PDF link / error envelope) swaps here. The empty
        wrapper is the persistent aria-live region: the response repaints its
