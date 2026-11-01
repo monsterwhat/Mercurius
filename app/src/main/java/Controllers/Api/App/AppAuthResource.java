@@ -3,6 +3,7 @@ package Controllers.Api.App;
 import Models.DTO.ApiResponse;
 import Models.Usuarios;
 import Services.LoginService;
+import Services.auth.SesionCerradaService;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.FormAuthenticationMechanism;
 import jakarta.annotation.Nonnull;
@@ -10,6 +11,7 @@ import jakarta.annotation.Nullable;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -67,6 +69,11 @@ public class AppAuthResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    /** Server-side tombstones for stateless form sessions (logout replay). */
+    @Nonnull
+    @Inject
+    SesionCerradaService sesionesCerradas;
 
     /** Bounds password guessing against {@link #supervisorAuthorize}. */
     @Nonnull
@@ -221,7 +228,13 @@ public class AppAuthResource {
         @APIResponse(responseCode = "303", description = "Session invalidated; redirect to /login"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
-    public Response logout(@Context UriInfo uriInfo) {
+    public Response logout(@Context UriInfo uriInfo,
+            @CookieParam(SesionCerradaService.COOKIE_NAME) @Nullable String credencial) {
+        if (credencial != null && !credencial.isBlank()) {
+            // Stateless form sessions: recording the tombstone is the only way
+            // to make the old cookie stop working (see LogoutDenylistFilter).
+            sesionesCerradas.registrar(credencial);
+        }
         if (securityIdentity != null && !securityIdentity.isAnonymous()) {
             FormAuthenticationMechanism.logout(securityIdentity);
         }

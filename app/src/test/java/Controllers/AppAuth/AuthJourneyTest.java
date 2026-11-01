@@ -299,6 +299,9 @@ class AuthJourneyTest {
                         + "(quarkus-rest-csrf create-token default)");
 
         // -- logout with the CSRF double-submit header ----------------------
+        // Keep the exact cookies the browser had: the replay below proves the
+        // server, not the client, forgot the session.
+        Map<String, String> cookieAntesDelLogout = new LinkedHashMap<>(jar);
         Response logout = given().redirects().follow(false)
                 .cookies(jar)
                 .contentType(io.restassured.http.ContentType.URLENC)
@@ -329,6 +332,16 @@ class AuthJourneyTest {
                 .then()
                 .statusCode(401)
                 .body("error.code", equalTo("UNAUTHENTICATED"));
+
+        // -- replay of the OLD cookie: stateless form sessions keep working
+        // after the browser drops them unless the server remembers the logout.
+        // The tombstone filter must answer as unauthenticated. --------------
+        given().redirects().follow(false)
+                .cookies(cookieAntesDelLogout)
+                .when().get(BASE + "/api/app/auth/me")
+                .then()
+                .statusCode(401)
+                .body("error.code", equalTo("SESSION_CLOSED"));
     }
 
     @Test
