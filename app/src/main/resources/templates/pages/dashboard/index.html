@@ -56,11 +56,9 @@
         {/include}
 
         {#if esKpi}
-        {! One strip, one answer, one colour - and one row that divides evenly.
-           Seven cards in one auto-fit strip left a single orphan card on the
-           second row at desktop and at 2-column mobile widths. The strip now
-           answers the screen's question first (what happened TODAY) and puts
-           the comparison periods in a second row. !}
+        {! Four KPI first (spec §5.A / §15: four cards without scrolling), then
+           a secondary strip with the operational numbers. The old layout split
+           seven cards over two rows of 3+4, which read as one broken grid. !}
         <div class="metric-strip">
             {! A zero change is not growth: "+0.0% vs ayer" reads as a signal
                on a day with no sales. The word replaces the number only when
@@ -72,13 +70,13 @@
             {#include _kit/metric label="Ventas hoy" value=ventasHoy
                  detail=crecimientoDiario detailSuffix="vs ayer" /}
             {/if}
-            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
-            {#include _kit/metric label="Artículos vendidos hoy" value=articulosVendidos /}
-        </div>
-        <div class="metric-strip mt-4">
             {#include _kit/metric label="Ventas ayer" value=ventasAyer /}
             {#include _kit/metric label="Esta semana" value=ventasSemana /}
             {#include _kit/metric label="Últimos 30 días" value=ventasMes /}
+        </div>
+        <div class="metric-strip mt-4">
+            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
+            {#include _kit/metric label="Artículos vendidos hoy" value=articulosVendidos /}
             {#include _kit/metric label="Ticket promedio (30 días)" value=ticketPromedio /}
         </div>
 
@@ -263,6 +261,21 @@
             });
         })();
         </script>
+
+        {! System status: the only truthful signals this backend exposes are the
+           last transaction and the Hacienda entry point (gated, because its
+           destination is admin/tributacion). No invented "Hacienda: conectado"
+           badge: that state has no endpoint on this page. !}
+        {#include _kit/surface title="Estado del sistema" subtitle="Última actividad registrada"}
+            {#content}
+            <p class="has-text-weight-medium mb-3">{ultimaTransaccion}</p>
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
+            <a class="button is-small" href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard">
+                Ver estado de Hacienda
+            </a>
+            {/if}
+            {/content}
+        {/include}
         {/if}
 
         {#if !esKpi}

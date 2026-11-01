@@ -231,23 +231,66 @@
 // sidebar stays navy in both schemes.
 // =============================================================================
 :root {
-    --ui-navy: #17294B;
-    --ui-navy-2: #21385F;
-    --ui-navy-ink: #E8EDF7;
-    --ui-navy-muted: #A9B6D0;
-    --ui-primary: #3766E8;
-    --ui-primary-hover: #2B55CF;
-    --ui-purple: #7055DB;
-    --ui-bg: #F3F6FC;
-    --ui-surface: #FFFFFF;
-    --ui-border: #DCE4F2;
-    --ui-text: #172442;
-    --ui-success: #20B981;
-    --ui-warning: #F5A623;
-    --ui-danger: #E65B65;
-    --ui-muted: #8290A8;
-    --ui-on-accent: #FFFFFF;
-    --ui-overlay: rgba(23, 41, 75, .45);
+    /* Brand */
+    --merc-navy: #17294B;
+    --merc-navy-light: #21385F;
+    --merc-navy-ink: #E8EDF7;
+    --merc-navy-muted: #A9B6D0;
+    --merc-primary: #3766E8;
+    --merc-primary-hover: #2B55CF;
+    --merc-accent: #7055DB;
+
+    /* Backgrounds */
+    --merc-background: #F3F6FC;
+    --merc-surface: #FFFFFF;
+    --merc-surface-hover: #F7F9FD;
+
+    /* Text */
+    --merc-text: #172442;
+    --merc-text-secondary: #60708B;
+    --merc-text-muted: #8290A8;
+
+    /* Borders */
+    --merc-border: #DCE4F2;
+    --merc-border-strong: #C8D4E8;
+
+    /* Semantic */
+    --merc-success: #20B981;
+    --merc-warning: #F5A623;
+    --merc-danger: #E65B65;
+    --merc-info: #4388E8;
+
+    /* On accent / overlay */
+    --merc-on-accent: #FFFFFF;
+    --merc-overlay: rgba(23, 41, 75, .45);
+
+    /* Radius */
+    --merc-radius-sm: 5px;
+    --merc-radius-md: 8px;
+    --merc-radius-lg: 11px;
+    --merc-radius-xl: 14px;
+
+    /* Shadows */
+    --merc-shadow-sm: 0 1px 3px rgba(23, 41, 75, .05);
+    --merc-shadow-md: 0 3px 10px rgba(23, 41, 75, .07);
+
+    /* Layout */
+    --merc-sidebar-width: 156px;
+    --merc-header-height: 58px;
+    --merc-content-padding: 20px;
+
+    /* Spacing */
+    --merc-space-1: 4px;
+    --merc-space-2: 8px;
+    --merc-space-3: 12px;
+    --merc-space-4: 16px;
+    --merc-space-5: 20px;
+    --merc-space-6: 24px;
+    --merc-space-8: 32px;
+
+    /* Density (legacy) */
+    --merc-row-h: 2.25rem;
+    --merc-control-h: 2rem;
 
     // The design's electric blue replaces Bulma's teal as the single accent.
     // Every derived token (charts, focus ring, pills, links) follows from
@@ -258,23 +301,17 @@
     --bulma-link-h: 224;
     --bulma-link-s: 80%;
     --bulma-link-l: 56%;
-
-    // Density (spec §4): compact rows, compact controls.
-    --ui-row-h: 2.25rem;
-    --ui-control-h: 2rem;
-    --ui-gap: .75rem;
-    --ui-pad: 1.25rem;
-    --ui-sidebar-w: 160px;
-    --ui-header-h: 56px;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --ui-bg: var(--bulma-scheme-main);
-        --ui-surface: var(--bulma-scheme-main-bis);
-        --ui-border: var(--bulma-border);
-        --ui-text: var(--bulma-text);
-        --ui-muted: var(--bulma-text-weak);
+        --merc-background: var(--bulma-scheme-main);
+        --merc-surface: var(--bulma-scheme-main-bis);
+        --merc-surface-hover: var(--bulma-scheme-main-ter);
+        --merc-border: var(--bulma-border);
+        --merc-text: var(--bulma-text);
+        --merc-text-secondary: var(--bulma-text-weak);
+        --merc-text-muted: var(--bulma-text-weak);
     }
 }
 
@@ -284,8 +321,8 @@
 .app-shell {
     display: flex;
     min-height: 100vh;
-    background: var(--ui-bg);
-    color: var(--ui-text);
+    background: var(--merc-background);
+    color: var(--merc-text);
 }
 
 .app-main {
@@ -297,14 +334,14 @@
 
 .app-content {
     flex: 1 1 auto;
-    padding: var(--ui-pad);
+    padding: var(--merc-content-padding);
     width: 100%;
 }
 
 .app-footer {
-    padding: .75rem var(--ui-pad);
-    border-top: 1px solid var(--ui-border);
-    color: var(--ui-muted);
+    padding: .75rem var(--merc-content-padding);
+    border-top: 1px solid var(--merc-border);
+    color: var(--merc-text-muted);
     font-size: .75rem;
 }
 
@@ -312,7 +349,7 @@
 // paints with the scheme background (!important). Inside the shell the section
 // is a transparent block: the shell owns the canvas and the padding.
 body {
-    background: var(--ui-bg) !important;
+    background: var(--merc-background) !important;
 }
 
 .app-content .section {
@@ -325,28 +362,28 @@ body {
 // -----------------------------------------------------------------------------
 .app-sidebar {
     display: flex;
-    flex: 0 0 var(--ui-sidebar-w);
+    flex: 0 0 var(--merc-sidebar-width);
     flex-direction: column;
-    width: var(--ui-sidebar-w);
-    background: var(--ui-navy);
-    color: var(--ui-navy-ink);
-    border-right: 1px solid var(--ui-navy-2);
+    width: var(--merc-sidebar-width);
+    background: var(--merc-navy);
+    color: var(--merc-navy-ink);
+    border-right: 1px solid var(--merc-navy-light);
 }
 
 .app-sidebar-brand {
     display: flex;
     align-items: center;
     gap: .5rem;
-    height: var(--ui-header-h);
-    padding: 0 .875rem;
-    color: var(--ui-navy-ink);
+    height: var(--merc-header-height); /* §18.2 logo 58px */
+    padding: 0 .625rem;
+    color: var(--merc-navy-ink);
     font-weight: 700;
-    border-bottom: 1px solid var(--ui-navy-2);
+    border-bottom: 1px solid var(--merc-navy-light);
     text-decoration: none;
 }
 
 .app-sidebar-brand:hover {
-    color: var(--ui-on-accent);
+    color: var(--merc-on-accent);
 }
 
 .app-sidebar-nav {
@@ -361,14 +398,14 @@ body {
     align-items: center;
     gap: .5rem;
     width: 100%;
-    min-height: 2.125rem;
-    padding: .375rem .5rem;
+    min-height: 2.25rem; /* §18.2 nav item 36px */
+    padding: .375rem .625rem; /* §18.2 horizontal 10px */
     border: 0;
-    border-radius: var(--mercurius-radius-sm);
+    border-radius: 7px; /* §18.2 nav item radius 7px */
     background: transparent;
-    color: var(--ui-navy-muted);
+    color: var(--merc-navy-muted);
     font: inherit;
-    font-size: .8125rem;
+    font-size: .78125rem; /* §18.2 sidebar text 12.5px */
     font-weight: 500;
     text-align: left;
     text-decoration: none;
@@ -415,20 +452,20 @@ body {
 
 .app-sidebar-link:hover,
 .app-sidebar-group:hover {
-    background: var(--ui-navy-2);
-    color: var(--ui-navy-ink);
+    background: var(--merc-navy-light);
+    color: var(--merc-navy-ink);
 }
 
 .app-sidebar-link.is-active,
 .app-sidebar-group.is-active {
-    background: var(--ui-primary);
-    color: var(--ui-on-accent);
+    background: var(--merc-primary);
+    color: var(--merc-on-accent);
     font-weight: 600;
 }
 
 .app-sidebar-link:focus-visible,
 .app-sidebar-group:focus-visible {
-    outline: 2px solid var(--ui-on-accent);
+    outline: 2px solid var(--merc-on-accent);
     outline-offset: -2px;
 }
 
@@ -453,10 +490,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: .125rem;
-    padding: .625rem .875rem;
-    border-top: 1px solid var(--ui-navy-2);
-    color: var(--ui-navy-muted);
+    min-height: 55px; /* §18.2 bottom status block 55-65px */
+    padding: .625rem .625rem;
+    border-top: 1px solid var(--merc-navy-light);
+    color: var(--merc-navy-muted);
     font-size: .6875rem;
+}
+
+.app-sidebar .mi-icon {
+    font-size: 1.0625rem; /* §18.2 icon 16-18px */
 }
 
 .app-sidebar-meta [data-connection-status]::before {
@@ -466,12 +508,12 @@ body {
     height: .375rem;
     margin-right: .25rem;
     border-radius: 50%;
-    background: var(--ui-success);
+    background: var(--merc-success);
     vertical-align: middle;
 }
 
 .app-sidebar-meta [data-connection-status="offline"]::before {
-    background: var(--ui-danger);
+    background: var(--merc-danger);
 }
 
 // -----------------------------------------------------------------------------
@@ -484,17 +526,17 @@ body {
     position: sticky;
     top: 0;
     z-index: 30;
-    height: var(--ui-header-h);
-    padding: 0 var(--ui-pad);
-    background: var(--ui-surface);
-    border-bottom: 1px solid var(--ui-border);
+    height: var(--merc-header-height);
+    padding: 0 var(--merc-content-padding);
+    background: var(--merc-surface);
+    border-bottom: 1px solid var(--merc-border);
 }
 
 .app-header-title {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
-    color: var(--ui-text);
+    color: var(--merc-text);
     font-size: .875rem;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -516,10 +558,10 @@ body {
     width: 2rem;
     height: 2rem;
     padding: 0;
-    border: 1px solid var(--ui-border);
+    border: 1px solid var(--merc-border);
     border-radius: var(--mercurius-radius-sm);
-    background: var(--ui-surface);
-    color: var(--ui-text);
+    background: var(--merc-surface);
+    color: var(--merc-text);
     cursor: pointer;
 }
 
@@ -540,12 +582,12 @@ body {
     align-items: center;
     gap: .375rem;
     max-width: 12rem;
-    height: var(--ui-control-h);
+    height: var(--merc-control-h);
     padding: 0 .5rem;
-    border: 1px solid var(--ui-border);
+    border: 1px solid var(--merc-border);
     border-radius: var(--mercurius-radius-pill);
-    background: var(--ui-surface);
-    color: var(--ui-text);
+    background: var(--merc-surface);
+    color: var(--merc-text);
     font-size: .8125rem;
     cursor: pointer;
 }
@@ -564,9 +606,9 @@ body {
     display: none;
     min-width: 10rem;
     padding: .375rem;
-    border: 1px solid var(--ui-border);
+    border: 1px solid var(--merc-border);
     border-radius: var(--mercurius-radius-md);
-    background: var(--ui-surface);
+    background: var(--merc-surface);
     box-shadow: var(--mercurius-shadow-raised);
 }
 
@@ -582,7 +624,7 @@ body {
     border: 0;
     border-radius: var(--mercurius-radius-sm);
     background: transparent;
-    color: var(--ui-text);
+    color: var(--merc-text);
     font: inherit;
     font-size: .8125rem;
     text-align: left;
@@ -592,7 +634,7 @@ body {
 
 .app-header-user-menu a:hover,
 .app-header-user-menu button:hover {
-    background: var(--ui-bg);
+    background: var(--merc-background);
 }
 
 // -----------------------------------------------------------------------------
@@ -601,16 +643,16 @@ body {
 // class keeps its name and loses its black fill.
 // -----------------------------------------------------------------------------
 .button.is-dark {
-    background: var(--ui-primary);
-    border-color: var(--ui-primary);
-    color: var(--ui-on-accent);
+    background: var(--merc-primary);
+    border-color: var(--merc-primary);
+    color: var(--merc-on-accent);
 }
 
 .button.is-dark:hover,
 .button.is-dark:focus {
-    background: var(--ui-primary-hover);
-    border-color: var(--ui-primary-hover);
-    color: var(--ui-on-accent);
+    background: var(--merc-primary-hover);
+    border-color: var(--merc-primary-hover);
+    color: var(--merc-on-accent);
 }
 
 // -----------------------------------------------------------------------------
@@ -628,7 +670,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: 60;
-    background: var(--ui-overlay);
+    background: var(--merc-overlay);
 }
 
 .kit-drawer {
@@ -639,28 +681,28 @@ body {
     right: 0;
     bottom: 0;
     z-index: 61;
-    width: 28rem;
+    width: 480px; /* §18.8 drawer 420-540px */
     max-width: 92vw;
-    background: var(--ui-surface);
-    border-left: 1px solid var(--ui-border);
+    background: var(--merc-surface);
+    border-left: 1px solid var(--merc-border);
     box-shadow: var(--mercurius-shadow-raised);
 }
 
-.kit-drawer-sm { width: 22rem; }
-.kit-drawer-lg { width: 40rem; }
+.kit-drawer-sm { width: 420px; } /* §18.8 */
+.kit-drawer-lg { width: 540px; } /* §18.8 */
 
 .kit-drawer-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--ui-gap);
-    padding: .875rem var(--ui-pad);
-    border-bottom: 1px solid var(--ui-border);
+    gap: var(--merc-space-3);
+    padding: .875rem var(--merc-content-padding);
+    border-bottom: 1px solid var(--merc-border);
 }
 
 .kit-drawer-title {
     margin: 0;
-    color: var(--ui-text);
+    color: var(--merc-text);
     font-size: 1rem;
     font-weight: 600;
 }
@@ -668,10 +710,10 @@ body {
 .kit-drawer-close {
     width: 1.75rem;
     height: 1.75rem;
-    border: 1px solid var(--ui-border);
+    border: 1px solid var(--merc-border);
     border-radius: var(--mercurius-radius-sm);
-    background: var(--ui-surface);
-    color: var(--ui-muted);
+    background: var(--merc-surface);
+    color: var(--merc-text-muted);
     font-size: 1rem;
     line-height: 1;
     cursor: pointer;
@@ -679,7 +721,7 @@ body {
 
 .kit-drawer-body {
     flex: 1 1 auto;
-    padding: var(--ui-pad);
+    padding: var(--merc-content-padding);
     overflow-y: auto;
 }
 
@@ -691,19 +733,19 @@ body {
 .empty-state-icon {
     display: inline-flex;
     margin-bottom: .5rem;
-    color: var(--ui-muted);
+    color: var(--merc-text-muted);
 }
 
 .empty-state-title {
     margin: 0 0 .25rem;
-    color: var(--ui-text);
+    color: var(--merc-text);
     font-size: .9375rem;
     font-weight: 600;
 }
 
 .empty-state-text {
     margin: 0 0 .875rem;
-    color: var(--ui-muted);
+    color: var(--merc-text-muted);
     font-size: .8125rem;
 }
 
@@ -714,7 +756,7 @@ body {
 .loading-state-label {
     display: block;
     margin-bottom: .5rem;
-    color: var(--ui-muted);
+    color: var(--merc-text-muted);
     font-size: .75rem;
 }
 
@@ -728,7 +770,7 @@ body {
     display: block;
     height: .75rem;
     border-radius: var(--mercurius-radius-sm);
-    background: var(--ui-bg);
+    background: var(--merc-background);
 }
 
 .loading-state-row:nth-child(2n) {
@@ -736,7 +778,7 @@ body {
 }
 
 .form-section {
-    margin-bottom: var(--ui-pad);
+    margin-bottom: var(--merc-content-padding);
 }
 
 .form-section-header {
@@ -745,20 +787,20 @@ body {
 
 .form-section-title {
     margin: 0;
-    color: var(--ui-text);
+    color: var(--merc-text);
     font-size: .9375rem;
     font-weight: 600;
 }
 
 .form-section-desc {
     margin: .125rem 0 0;
-    color: var(--ui-muted);
+    color: var(--merc-text-muted);
     font-size: .8125rem;
 }
 
 .form-section-body.form-grid {
     display: grid;
-    gap: var(--ui-gap);
+    gap: var(--merc-space-3);
 }
 
 .form-grid-1 { grid-template-columns: 1fr; }
@@ -809,17 +851,17 @@ body {
     display: none !important;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) { /* §18.2 sidebar off-canvas <=1024px */
     .app-shell.is-sidebar-open .app-sidebar-backdrop {
         display: block;
         position: fixed;
         inset: 0;
         z-index: 45;
-        background: var(--ui-overlay);
+        background: var(--merc-overlay);
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) { /* §18.2 sidebar off-canvas <=1024px */
     .app-sidebar {
         position: fixed;
         inset: 0 auto 0 0;
@@ -838,7 +880,7 @@ body {
     }
 
     .app-content {
-        padding: var(--ui-gap);
+        padding: var(--merc-space-3);
     }
 }
 
@@ -851,7 +893,7 @@ body {
     background: var(--bulma-scheme-main-bis);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-lg);
-    margin-bottom: var(--mercurius-space-5);
+    margin-bottom: var(--merc-space-5); /* §18.3 margin below header 20px */
     overflow: hidden;
 }
 
@@ -861,7 +903,7 @@ body {
     flex-wrap: wrap;
     gap: var(--mercurius-space-4);
     justify-content: space-between;
-    padding: var(--ui-pad);
+    padding: var(--merc-content-padding);
 }
 
 // The text column takes the free space and may shrink below its content
@@ -886,7 +928,8 @@ body {
 // the page title is capped at 1.75rem (28px): still the largest thing on
 // the screen, still one clear h1, and still inside the app range.
 .page-header .page-title {
-    font-size: 1.5rem;
+    font-size: 1.5rem; /* §18.3 title 24px */
+    font-weight: 650; /* §18.3 */
     line-height: 1.2;
     margin-bottom: var(--mercurius-space-1);
     // A title is often a composed identifier ("Facturas recibidas · agosto
@@ -970,13 +1013,14 @@ body {
 .metric-card {
     background: var(--mercurius-surface);
     border: 1px solid var(--mercurius-border);
-    border-radius: var(--mercurius-radius-md);
+    border-radius: 10px; /* §18.4 radius 9-11px */
     color: var(--bulma-text);
     display: flex;
     flex-direction: column;
     gap: var(--mercurius-space-1);
+    min-height: 100px; /* §18.4 min height 100px */
     min-width: 0;
-    padding: var(--mercurius-space-4);
+    padding: var(--merc-space-4); /* §18.4 padding 16px */
     text-align: left;
     transition: border-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
                 background-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
@@ -1760,12 +1804,17 @@ fieldset[disabled] .select select::placeholder,
 }
 
 .table thead th {
+    background: var(--merc-surface-hover); /* §18.5 header bg #F7F9FD */
     color: var(--mercurius-text-muted);
-    font-size: .75rem;
-    font-weight: 500;
+    font-size: .71875rem; /* §18.5 header font 11.5px */
+    font-weight: 600; /* §18.5 */
+    height: 40px; /* §18.5 header 38-42px */
     letter-spacing: 0;
+    padding: 0 11px; /* §18.5 cell padding 10-12px */
     text-transform: none;
-    vertical-align: bottom;
+    vertical-align: middle;
+    border-left: none;
+    border-right: none;
 }
 
 .table thead th a {
@@ -1776,6 +1825,35 @@ fieldset[disabled] .select select::placeholder,
 
 .table thead th a:hover {
     color: var(--mercurius-accent-ink);
+}
+
+/* §18.5 tables */
+.table {
+    font-size: .78125rem; /* 12.5px */
+}
+
+.table th,
+.table td {
+    padding: 11px; /* §18.5 cell padding 10-12px */
+    border-left: none;
+    border-right: none;
+}
+
+.table tbody tr {
+    height: 44px; /* §18.5 row 42-48px */
+}
+
+.table tbody tr:hover {
+    background: var(--merc-surface-hover); /* §18.5 row hover */
+}
+
+.table {
+    border-color: #E5EAF3; /* §18.5 separators */
+}
+
+.table td,
+.table th {
+    border-color: #E5EAF3; /* §18.5 separators */
 }
 
 .kit-sort {
@@ -1962,6 +2040,40 @@ h1.title.is-3 {
 }
 
 // =============================================================================
+// §18.6 Forms / §18.7 Buttons
+.input,
+.textarea,
+.select select {
+    font-size: .8125rem; /* 13px */
+    min-height: 38px; /* §18.6 input height 38-40px */
+    padding: 11px; /* §18.6 */
+    border-radius: 6px; /* §18.6 */
+}
+
+.label {
+    font-size: .75rem; /* 12px */
+    font-weight: 600; /* §18.6 */
+}
+
+.button {
+    min-height: 38px; /* §18.7 standard 36-40px */
+}
+
+.button.is-small {
+    min-height: 31px; /* §18.7 small 30-32px */
+}
+
+.button.is-large {
+    min-height: 45px; /* §18.7 large 44-46px */
+}
+
+@media (max-width: 480px) { /* §18.2 drawer breakpoint */
+    .kit-drawer {
+        width: 100vw;
+        max-width: 100vw;
+    }
+}
+
 // 21. Responsive
 // =============================================================================
 @media screen and (max-width: 768px) {

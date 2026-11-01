@@ -214,3 +214,140 @@ Every screen composes these. No module-specific button, table or modal.
 | 3 | Reports, Hacienda, settings and administration |
 
 After each delivery: compare against the reference screens, verify interactions still work, run the suite.
+
+
+---
+
+## 18. Advanced styling specification (design system v1.0)
+
+This section fixes the exact measurements. Where it disagrees with sections 1–9, this section wins.
+
+### 18.1 Tokens (single block in `web/mercurius.scss` §3.9)
+
+```scss
+:root {
+  /* Brand */
+  --merc-navy: #17294B;
+  --merc-navy-light: #21385F;
+  --merc-primary: #3766E8;
+  --merc-accent: #7055DB;
+
+  /* Backgrounds */
+  --merc-background: #F3F6FC;
+  --merc-surface: #FFFFFF;
+  --merc-surface-hover: #F7F9FD;
+
+  /* Text */
+  --merc-text: #172442;
+  --merc-text-secondary: #60708B;
+  --merc-text-muted: #8290A8;
+
+  /* Borders */
+  --merc-border: #DCE4F2;
+  --merc-border-strong: #C8D4E8;
+
+  /* Semantic */
+  --merc-success: #20B981;
+  --merc-warning: #F5A623;
+  --merc-danger: #E65B65;
+  --merc-info: #4388E8;
+
+  /* Radius */
+  --merc-radius-sm: 5px;
+  --merc-radius-md: 8px;
+  --merc-radius-lg: 11px;
+  --merc-radius-xl: 14px;
+
+  /* Shadows */
+  --merc-shadow-sm: 0 1px 3px rgba(23, 41, 75, .05);
+  --merc-shadow-md: 0 3px 10px rgba(23, 41, 75, .07);
+
+  /* Layout */
+  --merc-sidebar-width: 156px;
+  --merc-header-height: 58px;
+  --merc-content-padding: 20px;
+
+  /* Spacing */
+  --merc-space-1: 4px;
+  --merc-space-2: 8px;
+  --merc-space-3: 12px;
+  --merc-space-4: 16px;
+  --merc-space-5: 20px;
+  --merc-space-6: 24px;
+  --merc-space-8: 32px;
+}
+```
+
+### 18.2 Shell
+
+| Property | Value |
+|---|---|
+| Sidebar width | 156 px |
+| Logo section | 58 px |
+| Nav item height | 36 px |
+| Nav horizontal padding | 10 px |
+| Nav item radius | 7 px |
+| Icon size | 16–18 px |
+| Sidebar text | 12–13 px |
+| Bottom status block | 55–65 px |
+| Header height | 58 px |
+| Content padding | 20 px |
+
+Active item: primary fill. Hover: `--merc-navy-light`. Inactive: muted. Labels never wrap.
+Breakpoints: **1024** collapsible sidebar, 768 tablet, 480 drawer, below 480 single column.
+
+### 18.3 Page header
+
+- Title 23–25 px, weight 650–700.
+- Breadcrumb 11–12 px; description 12–13 px.
+- Main action right-aligned; margin below header 18–22 px.
+
+### 18.4 KPI cards
+
+- Minimum height 100 px, padding 15–18 px, radius 9–11 px, 1 px border.
+- Structure: label → value → optional comparison → optional icon chip.
+
+### 18.5 Tables
+
+| Property | Value |
+|---|---|
+| Header height | 38–42 px |
+| Row height | 42–48 px |
+| Cell padding | 10–12 px |
+| Font | 12–13 px |
+| Header font | 11–12 px, 600 |
+| Header background | #F7F9FD |
+| Border | #E5EAF3 |
+
+Numeric columns right-aligned; tabular numerals for money; row hover `--merc-surface-hover`; no vertical rules; compact icon actions; delete differentiated + confirm.
+
+### 18.6 Forms
+
+- Input height 38–40 px, radius 6 px, 1 px `--merc-border`, padding 11 px, font 13 px.
+- Label 12 px / 600. Focus ring primary; error red + message; disabled muted; read-only tinted.
+- Desktop: two columns for related fields, full-width for long text, section titles, footer with Cancel/Save.
+
+### 18.7 Buttons
+
+Small 30–32 px, standard 36–40 px, large 44–46 px. One dominant action per page/section. Hover darker, focus ring, disabled reduced, loading spinner.
+
+### 18.8 Modal and drawer
+
+- Modal: 440–600 px (large forms 700–850), centered, translucent overlay, footer actions.
+- Drawer: 420–540 px, right-anchored, full height, sticky header/footer, independent scroll.
+
+### 18.9 Charts
+
+Chart.js only. White surface, no frame, light gridlines, minimal labels, small legend, rounded bars, smooth lines, subtle fill, formatted tooltips. No 3D, no heavy animation.
+
+### 18.10 Icons
+
+One outline set (the existing `web/icons.js`). Stroke 1.8–2 px, 16–18 px standard, 17–18 px sidebar, 19–22 px KPI icons. No emoji, no mixed styles.
+
+### 18.11 Micro-interactions
+
+150 ms ease for hover/press; drawer slides from the right; modal fades + slight scale; skeleton or spinner for loading; discreet success toast.
+
+### 18.12 Quality checklist (per page)
+
+1. Uses the shared shell. 2. Correct heading hierarchy. 3. Consistent cards/spacing. 4. Palette. 5. Typography. 6. Tables per §18.5. 7. Forms per §18.6. 8. Button hierarchy. 9. Semantic badges. 10. Shared modal/drawer. 11. Loading/empty/error states. 12. Responsive. 13. No horizontal overflow. 14. HTMX works. 15. Alpine works. 16. Permissions intact. 17. No fake data or decorative controls. 18. No duplicate CSS/components.
