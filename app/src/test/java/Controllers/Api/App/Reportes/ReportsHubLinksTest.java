@@ -36,18 +36,21 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
                 .body(not(containsString("href=\"/Mercurius/app/recibos\"")));
     }
 
+    /**
+     * D13 phase 2: the two catalog tabs moved to the Gestión landing, so the
+     * hub must no longer link to the Categorías management screen at all.
+     * {@code GestionPagesTest} pins the {@code ?tab=} contract on the landing.
+     */
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
-    void familyAndDepartmentEntriesCarryTheirTab() {
+    void hubNoLongerLinksToTheCatalogManagementTabs() {
         given()
                 .when().get(HUB)
                 .then()
                 .statusCode(200)
-                .body(containsString(
-                        "href=\"/Mercurius/app/categorias?tab=departamentos\""
-                                + " title=\"Reporte de artículos por departamento\""))
-                .body(containsString(
-                        "href=\"/Mercurius/app/categorias?tab=familias\""
-                                + " title=\"Reporte de artículos por familia\""));
+                .body(not(containsString(
+                        "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/categorias?tab=departamentos\"")))
+                .body(not(containsString(
+                        "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/categorias?tab=familias\"")));
     }
 }

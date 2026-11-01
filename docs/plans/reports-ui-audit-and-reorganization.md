@@ -3,8 +3,8 @@
 **Project:** Mercurius (`F:\Documents\GitHub\Mercurius`, Maven module in `app/`)
 **Stack:** Quarkus 3.36.2, Java 25, Qute + htmx + Bulma, Hibernate ORM, PostgreSQL
 **Status:** **Phase 0 completed; Phase 1, Phase 2 item 2, D8, D14, D15
-(export data + role gate), D11 (hub role model), D2, D3, D4, D6, D9, D12 and
-D13 phase 1 implemented. D13 phase 2 (hub becomes reports-only) remains.**
+(export data + role gate), D11 (hub role model), D2, D3, D4, D6, D9, D12, D13
+(both phases) and D5 implemented. No open decisions remain.**
 **Baseline:** `d25f9a4` (working tree clean on 2026-10-31). Line numbers are anchors,
 not contracts: re-anchor by symbol if a file moved.
 **Audience:** the agent that will execute Phase 0 and, later, the reorganization; the
@@ -507,7 +507,7 @@ Phase 0 (the audit must record the options and their consequences).
 |---|---|---|---|---|---|
 | D11 | Hub role model | `/app/reportes` is gated `admin, registro, inventario, tributacion`, but 28 of the 31 links a `registro` user can see answer 403; `facturacion` cannot open the hub at all. | (a) filter entries by role; (b) widen the hub to every authenticated user and filter; (c) one hub per role | (a) + align the navbar "Reportes" link with the effective gate | Resolved in `c1d884f`: entries filtered by destination gate; navbar widened to the four hub roles |
 | D12 | Split inventory movements from sales | The "Por fecha" tab of the sales screen uses `InventarioService` and shows inventory movements, not sales. | (a) `rep.inventario.movimientos` as its own report under Inventario; (b) keep it as a tab of `rep.ventas` | (a) | Resolved in `edb1793`: Movimientos moved to the Inventarios group, the shared "Vistas de ventas" tab bar removed, URL unchanged |
-| D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Phase 1 resolved in `c2ce19c`: `/app/gestion` landing + navbar entry, role-gated cards, real `/app/compras/ordenes`. Phase 2 (remove the remaining management entries from the hub) remains |
+| D13 | Where the Gestión screens live | The plan removes Artículos, Inventarios, Categorías, Órdenes and Etiquetas from the hub, but there is no Gestión section today (the navbar has separate Artículos/Usuarios dropdowns). | (a) a new "Gestión" navbar entry/landing; (b) keep the existing dropdowns and only remove the hub entries; (c) a Gestión group inside the hub | (a) | Resolved in `c2ce19c` (phase 1: `/app/gestion` landing + navbar entry, role-gated cards, real `/app/compras/ordenes`) and phase 2: the hub shed Artículos, Departamentos, Familias, Inventarios, Etiquetas and Órdenes; the Gestión Categorías card now carries both `?tab=` links |
 | D14 | Official XML upload surface | Three forms, two endpoints; the emitted board and the inventory board both write received invoices; `/app/facturas-recibidas` is dead. | (a) keep only the received board upload, remove the other two cards, retire the inventory endpoint; (b) keep an inventory shortcut repointed to the received endpoint and gate it; (c) build a real emitted upload; (d) status quo | (a) | Resolved in `6b1654e`: real page route, two cards removed, links repointed; endpoints retained |
 | D15 | Export authorization and correctness | `/api/app/export` is `admin,registro`, while the buttons live on `inventario`/`facturacion`/`@Authenticated` screens; 18 of 25 forms are dead for the page role. | (a) per-dataset authorization + hide/gate the button; (b) widen the class gate; (c) remove the buttons from roles that cannot export | (a) | Resolved: D15a (`9d4fced`) fixed the three 404s, the Articles tab and `ventas`; D15b (`dd5cebe`) added the per-dataset role map (six-role class gate, `usuarios` admin-only) |
 
@@ -836,7 +836,7 @@ Two smaller gate asymmetries:
 | Dead page routes | 0 (`/app/facturas-recibidas` now resolves; D14) |
 | Mixed surfaces decomposed | 4 (`/app/categorias`, `/app/articulos`, `/app/facturas`, clientes report/board) |
 | Role-model defects | 0 in the hub (D11 fixed) + 2 gate asymmetries; the export gate was fixed in D15b |
-| Open decisions | D13 phase 2 only (hub becomes reports-only) |
+| Open decisions | None (D13 phase 2 closed the last one) |
 
 The effective root causes are four: the hub role model (§A.7), the flat tab-as-entry
 hub (Matriz B), the duplicate management/report pairs (§5.4), and three stale export
@@ -1039,3 +1039,4 @@ ask the user first.
 | 2026-10-31 | D3 users: report absorbed by `/app/usuarios`; admin-only XLSX moved; report route retired; version `2.18.6 → 2.18.7`. |
 | 2026-10-31 | D6/D13/D9 phase 1: `/app/gestion` landing, real `/app/compras/ordenes`, Ajustes opens to `registro`, Plantillas canonical in the hub; version `2.18.7 → 2.18.8`. |
 | 2026-10-31 | Hub aligned with D2/D3/D4/D9 (bucket links, management destinations, counts); version `2.18.8 → 2.18.9`. |
+| 2026-10-31 | D13 phase 2: the hub is reports-only (Artículos, Departamentos, Familias, Inventarios, Etiquetas and Órdenes moved to `/app/gestion`); Gestión exposes both catalog tabs; version `2.18.10 -> 2.18.11`. |

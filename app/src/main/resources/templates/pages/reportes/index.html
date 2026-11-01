@@ -6,19 +6,17 @@
   Inventarios / Usuarios with colored header bars), repointed at the real
   /app routes of the new surface.
 
-  Button parity notes:
-    - Every legacy button appears, mapped to its new route (Órdenes de
-      Compra -> /api/app/ordenes/table, full page when opened without HTMX;
-      Resumen de Impuestos -> /app/tributacion/declaracion, etc.).
-    - Legacy Departamentos/Familias catalog reports and the Scorecard de
-      Proveedores had no dedicated new route; /app/categorias is the closest
-      equivalent (it renders the departamentos, familias and supplier-metrics
-      sections), so those buttons point there.
-    - New-only reports added into their matching group (Estacionalidad,
-      Recibos Pendientes/Vencidos, Mermas, Histórico de Precios).
-    - Visibility mirrors the legacy page: buttons are shown to every role and
-      the destination pages enforce their own gates; only "Registros Internos"
-      stays admin-gated (as in legacy rendered="#{SessionController.admin}").
+  D13 phase 2 — the hub is REPORTS ONLY:
+    - The management screens and tools that used to sit here (Artículos,
+      Departamentos, Familias, Inventarios, Generar Etiquetas, Órdenes de
+      Compra) now live on the Gestión landing (/app/gestion) and are no longer
+      duplicated in this list.
+    - Plantillas and Correos Programados stay: D9/D4 made this hub the
+      canonical access point for the email surfaces.
+    - "Métricas de proveedores" is a report (D5) and keeps its entry; it points
+      at /app/reportes/proveedores, not at the Categorías management screen.
+    - Every remaining row is a report or a tool whose destination is a report
+      route; the destination pages enforce their own gates.
 
   WHAT CHANGED IN THE UI PASS
   ---------------------------
@@ -288,7 +286,7 @@
                         <p class="surface-subtitle">Existencias, precios, mermas y compras</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}14{#else}13{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}8{#else}7{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
@@ -302,54 +300,9 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Artículos</span>
-                                <span class="is-size-7 mercurius-text-muted">Catálogo completo</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Resumen de Inventario</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/categorias?tab=departamentos" title="Reporte de artículos por departamento">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Departamentos</span>
-                                <span class="is-size-7 mercurius-text-muted">Artículos por departamento</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/categorias?tab=familias" title="Reporte de artículos por familia">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Familias</span>
-                                <span class="is-size-7 mercurius-text-muted">Artículos por familia</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Inventarios</span>
-                                <span class="is-size-7 mercurius-text-muted">Historial de conteos</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Generar Etiquetas</span>
-                                <span class="is-size-7 mercurius-text-muted">Etiquetas de precio</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
                         </a>
@@ -394,15 +347,6 @@
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Histórico de precios</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/compras/ordenes" title="Órdenes de compra a proveedores">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Órdenes de Compra</span>
-                                <span class="is-size-7 mercurius-text-muted">Compras a proveedores</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
                         </a>

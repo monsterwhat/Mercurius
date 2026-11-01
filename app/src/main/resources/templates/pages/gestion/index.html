@@ -48,9 +48,16 @@
                     <p class="mercurius-text-muted mb-4">
                         Familias y departamentos del catálogo.
                     </p>
-                    <a class="button is-fullwidth"
+                    {! D13 phase 2: the hub no longer carries the two catalog
+                       tabs, so this card must expose BOTH of them, each with
+                       its explicit ?tab= (the screen's canonical entry). !}
+                    <a class="button is-fullwidth mb-2"
                        href="{config:['quarkus.http.root-path']}/app/categorias?tab=familias">
-                        Ir a Categorías
+                        Ir a Familias
+                    </a>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/categorias?tab=departamentos">
+                        Ir a Departamentos
                     </a>
                     {/content}
                 {/include}

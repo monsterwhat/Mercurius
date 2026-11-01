@@ -28,7 +28,10 @@ class GestionPagesTest extends support.ContextPathIsolation {
                 .body(containsString("href=\"/Mercurius/app/articulos\""))
                 .body(containsString("href=\"/Mercurius/app/compras/ordenes\""))
                 .body(containsString("href=\"/Mercurius/app/usuarios\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/clientes\""));
+                .body(containsString("href=\"/Mercurius/app/reportes/clientes\""))
+                .body(containsString("href=\"/Mercurius/app/categorias?tab=familias\""))
+                .body(containsString("href=\"/Mercurius/app/categorias?tab=departamentos\""))
+                .body(containsString("href=\"/Mercurius/app/reportes/inventario/etiquetas\""));
 
         given().when().get(ORDENES).then().statusCode(200)
                 .body(containsString("Órdenes de Compra"))

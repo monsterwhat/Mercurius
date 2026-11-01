@@ -20,6 +20,14 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
 
     private static final String HUB = "/Mercurius/app/reportes";
 
+    /**
+     * The hub's own rows use this exact markup. Scoping to it is what keeps
+     * these assertions honest: the layout's navbar carries its own links to
+     * /app/articulos and /app/inventarios for the inventory role.
+     */
+    private static final String MENU_LINK =
+            "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius";
+
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void adminSeesEveryGroup() {
@@ -30,10 +38,9 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Usuarios"))
                 .body(containsString("9 informes"))
                 .body(containsString("5 informes"))
-                .body(containsString("14 informes"))
+                .body(containsString("8 informes"))
                 .body(containsString("2 informes"))
                 .body(containsString("href=\"/Mercurius/app/facturas\""))
-                .body(containsString("href=\"/Mercurius/app/articulos\""))
                 .body(containsString("href=\"/Mercurius/app/facturas-recibidas?bucket=pendientes\""))
                 .body(containsString("href=\"/Mercurius/app/correos/reportes\""));
     }
@@ -45,12 +52,22 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Facturación"))
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("7 informes"))
-                .body(containsString("13 informes"))
                 .body(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\""))
-                .body(containsString("href=\"/Mercurius/app/articulos\""))
+                .body(not(containsString(MENU_LINK + "/app/articulos\"")))
                 .body(not(containsString("Facturas y correo")))
                 .body(not(containsString("href=\"/Mercurius/app/facturas\"")))
                 .body(not(containsString("href=\"/Mercurius/app/tributacion/declaracion\"")));
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void hubNoLongerCarriesManagementScreens() {
+        given().when().get(HUB).then().statusCode(200)
+                .body(not(containsString(MENU_LINK + "/app/articulos\"")))
+                .body(not(containsString(MENU_LINK + "/app/inventarios\"")))
+                .body(not(containsString(MENU_LINK + "/app/compras/ordenes\"")))
+                .body(not(containsString(MENU_LINK + "/app/reportes/inventario/etiquetas\"")))
+                .body(not(containsString(MENU_LINK + "/app/categorias?tab=")));
     }
 
     @Test
