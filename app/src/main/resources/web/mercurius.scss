@@ -249,6 +249,16 @@
     --ui-on-accent: #FFFFFF;
     --ui-overlay: rgba(23, 41, 75, .45);
 
+    // The design's electric blue replaces Bulma's teal as the single accent.
+    // Every derived token (charts, focus ring, pills, links) follows from
+    // these three values, so no component needs its own colour rule.
+    --bulma-primary-h: 224;
+    --bulma-primary-s: 80%;
+    --bulma-primary-l: 56%;
+    --bulma-link-h: 224;
+    --bulma-link-s: 80%;
+    --bulma-link-l: 56%;
+
     // Density (spec §4): compact rows, compact controls.
     --ui-row-h: 2.25rem;
     --ui-control-h: 2rem;
@@ -296,6 +306,18 @@
     border-top: 1px solid var(--ui-border);
     color: var(--ui-muted);
     font-size: .75rem;
+}
+
+// Pages still wrap their body in Bulma's `.section`, which the legacy layer
+// paints with the scheme background (!important). Inside the shell the section
+// is a transparent block: the shell owns the canvas and the padding.
+body {
+    background: var(--ui-bg) !important;
+}
+
+.app-content .section {
+    background: transparent !important;
+    padding: 0 !important;
 }
 
 // -----------------------------------------------------------------------------
@@ -751,9 +773,53 @@
 }
 
 // -----------------------------------------------------------------------------
-// 3.11 Responsive: off-canvas sidebar under 1024px
+// 3.11 Page-level headings inside the shell
+//
+// Pages still render section headings as Bulma `.title.is-3/4/5` (2rem/1.5rem).
+// Inside an app screen those are section titles (spec §3: 15-17px), not page
+// titles; `.page-header` owns the only h1. One compact scale replaces the
+// per-page overrides.
 // -----------------------------------------------------------------------------
-@media (max-width: 1023px) {
+.app-content .title.is-3,
+.app-content .title.is-4 {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.app-content .title.is-5,
+.app-content .title.is-6 {
+    font-size: .9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.app-content .title:not(:last-child) {
+    margin-bottom: .5rem;
+}
+
+// -----------------------------------------------------------------------------
+// 3.12 Responsive: off-canvas sidebar under 900px
+// -----------------------------------------------------------------------------
+.app-sidebar-backdrop {
+    display: none;
+}
+
+.app-sidebar-backdrop[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .app-shell.is-sidebar-open .app-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 45;
+        background: var(--ui-overlay);
+    }
+}
+
+@media (max-width: 900px) {
     .app-sidebar {
         position: fixed;
         inset: 0 auto 0 0;
@@ -795,7 +861,7 @@
     flex-wrap: wrap;
     gap: var(--mercurius-space-4);
     justify-content: space-between;
-    padding: var(--mercurius-space-5);
+    padding: var(--ui-pad);
 }
 
 // The text column takes the free space and may shrink below its content
@@ -820,7 +886,7 @@
 // the page title is capped at 1.75rem (28px): still the largest thing on
 // the screen, still one clear h1, and still inside the app range.
 .page-header .page-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     line-height: 1.2;
     margin-bottom: var(--mercurius-space-1);
     // A title is often a composed identifier ("Facturas recibidas · agosto

@@ -52,6 +52,8 @@
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
 
     <div class="app-shell" id="app-shell">
+        <div class="app-sidebar-backdrop" data-sidebar-close hidden></div>
+
         {#insert sidebar}
             {#include fragments/app-sidebar /}
         {/insert}
@@ -104,13 +106,36 @@
         onReady(function () {
             var shell = document.getElementById('app-shell');
             var toggle = document.querySelector('[data-sidebar-toggle]');
+            var backdrop = document.querySelector('[data-sidebar-close]');
+
+            function setSidebar(open) {
+                if (!shell) {
+                    return;
+                }
+                shell.classList.toggle('is-sidebar-open', open);
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                }
+                if (backdrop) {
+                    backdrop.hidden = !open;
+                }
+            }
 
             if (toggle && shell) {
                 toggle.addEventListener('click', function () {
-                    var open = shell.classList.toggle('is-sidebar-open');
-                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    setSidebar(!shell.classList.contains('is-sidebar-open'));
                 });
             }
+
+            if (backdrop) {
+                backdrop.addEventListener('click', function () { setSidebar(false); });
+            }
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && shell && shell.classList.contains('is-sidebar-open')) {
+                    setSidebar(false);
+                }
+            });
 
             var groupButtons = document.querySelectorAll('[data-sidebar-group]');
             Array.prototype.forEach.call(groupButtons, function (btn) {
@@ -127,7 +152,9 @@
             // Current page: longest matching href wins, so /app/reportes/x
             // does not mark /app/reportes while a deeper entry exists.
             var path = window.location.pathname.replace(/\/+$/, '');
-            var links = document.querySelectorAll('.app-sidebar a[href]');
+            // Only the nav list: the brand link points at `/app`, which would
+            // otherwise match every page and hijack the header context.
+            var links = document.querySelectorAll('.app-sidebar-nav a[href]');
             var best = null;
             var bestLen = -1;
             Array.prototype.forEach.call(links, function (link) {
@@ -156,6 +183,14 @@
                 if (context) {
                     context.textContent = best.getAttribute('title') || best.textContent.trim();
                 }
+            } else if (context) {
+                // The screen is not in the sidebar (invoices board, POS, a
+                // report). The h1 the page already renders is the truthful
+                // context; the document title is the fallback.
+                var heading = document.querySelector('#contenido-principal h1');
+                context.textContent = heading
+                    ? heading.textContent.trim()
+                    : document.title.replace(/\s*\|.*$/, '');
             }
 
             var userButton = document.querySelector('[data-header-user]');
