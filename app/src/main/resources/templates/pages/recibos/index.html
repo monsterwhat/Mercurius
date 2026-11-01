@@ -55,7 +55,10 @@
         {! D14: the XML upload lives only on the received-invoices board. !}
         {#include pages/recibos/tablero /}
 
-        {#include _kit/surface id="recibo-detalle-panel" title="Detalle de la factura"}
+        {! Spec §9: record details open in a right-hand drawer without leaving
+           the board. The drawer carries the SAME #recibo-detalle-cuerpo target
+           the row button already posts to, so the fragment contract is intact. !}
+        {#include _kit/drawer id="recibo-detalle" title="Detalle de la factura" size="lg"}
             {#content}
             <div aria-live="polite">
                 <div id="recibo-detalle-cuerpo">

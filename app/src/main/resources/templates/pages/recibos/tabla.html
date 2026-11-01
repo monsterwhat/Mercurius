@@ -63,6 +63,7 @@
                     <button type="button" class="button is-small is-outlined" title="Ver detalles"
                             aria-label="Ver el detalle de la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             aria-haspopup="dialog"
+                            data-kit-open="recibo-detalle"
                             hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
                             hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">{#include _kit/icon name="eye" /}</button>
                     {#if !fila.notaCredito}

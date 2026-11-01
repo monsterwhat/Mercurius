@@ -28,7 +28,9 @@
                     @click="open = false">&times;</button>
         </header>
         <div class="kit-drawer-body" id="{id}-body">
-            {! El cuerpo lo llena el hx-get del boton que abre. !}
+            {! El cuerpo lo llena el hx-get del boton que abre. Si la pagina
+               necesita contenido propio, usa el slot {#content}. !}
+            {#insert content}{/insert}
         </div>
     </aside>
 </div>
