@@ -299,7 +299,7 @@ the per-role count.
 
 | # | Grupo | Etiqueta | URL actual | URL final | ID canónico | Rol visible | Rol destino | Estado | Acción | Notas |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Facturación | Movimientos | `/app/reportes/articulos/fechas` | `/app/reportes/articulos/fechas` | `rep.inventario.movimientos` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover, Renombrar | 403 para registro/tributación; label vago; export 404. |
+| 1 | Facturación | Movimientos de inventario | `/app/reportes/articulos/fechas` | `/app/reportes/articulos/fechas` | `rep.inventario.movimientos` | admin, registro, inventario, tributación | admin, inventario | OK | Movido (D12), Renombrado | Vive en el grupo Inventarios; el export `reportes-movimientos` resuelve (D15a). |
 | 2 | Facturación | Facturación de Artículos | `/app/reportes/articulos/ventas` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica de la pantalla de ventas. |
 | 3 | Facturación | Ventas por Familia | `/app/reportes/articulos/familias` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de la pantalla de ventas | Es la pestaña "Por familia". |
 | 4 | Facturación | Ventas por Departamento | `/app/reportes/articulos/departamentos` | `/app/reportes/articulos/ventas` | `rep.ventas` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de la pantalla de ventas | Es la pestaña "Por departamento". |
@@ -307,14 +307,14 @@ the per-role count.
 | 6 | Facturación | Tendencias de Ventas | `/app/reportes/articulos/tendencias` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica; Estacionalidad es pestaña. |
 | 7 | Facturación | Ventas por Fecha Histórica | `/app/reportes/articulos/ventas-fecha-historica` | `/app/reportes/articulos/ventas-fecha-historica` | `rep.ventas.historica` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
 | 8 | Facturación | Productos Destacados | `/app/reportes/articulos/rendimiento` | `/app/reportes/articulos/rendimiento` | `rep.productos.destacados` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
-| 9 | Facturación | Estacionalidad | `/app/reportes/estacionalidad` | `/app/reportes/articulos/tendencias` | `rep.tendencias` | admin, registro, inventario, tributación | cualquier autenticado | Duplicado | Eliminar | Pestaña de Tendencias. |
+| 9 | Facturación | Estacionalidad | `/app/reportes/estacionalidad` | `/app/reportes/estacionalidad` | `rep.tendencias` | admin, registro, inventario, tributación | cualquier autenticado | Excepción | Mantener entrada propia (gate más amplio que Tendencias) | Pestaña de Tendencias. Excepción aprobada al criterio 2 (§10). |
 | 10 | Facturación | Resumen de Impuestos | `/app/tributacion/declaracion` | `/app/tributacion/declaracion` | `rep.fiscal.iva` | admin, registro, inventario, tributación | admin, tributacion | Parcial | Renombrar, Mover | Es la D-104; grupo Fiscal. |
 | 11 | Facturas y correo | Facturas emitidas | `/app/recibos` | `/app/facturas` | `ges.facturas.emitidas` | admin, registro, inventario, tributación | admin, facturacion | OK | Renombrar | Corregido en `2ab771e`; D7 naming. |
-| 12 | Facturas y correo | Facturas recibidas pendientes de pago | `/app/reportes/recibos/pendientes` | (D2) `/app/facturas-recibidas?bucket=pendientes` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la página real ya existe (D14). |
-| 13 | Facturas y correo | Facturas recibidas vencidas | `/app/reportes/recibos/vencidos` | (D2) `/app/facturas-recibidas?bucket=vencidas` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D2) | Preservar XLSX; la página real ya existe (D14). |
-| 14 | Facturas y correo | Reportes por Correo | `/app/reportes/correos` | (D4) `/app/correos/reportes` | `rep.correos.programados` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Pendiente (D4) | Gate distinto; preservar XLSX. |
-| 15 | Facturas y correo | Plantillas de Correo | `/app/correos/plantillas` | `/app/correos/plantillas` | `ges.correos.plantillas` | admin, registro, inventario, tributación | admin, tributacion | Duplicado | Pendiente (D9) | Misma ruta que navbar: una de las dos entradas se elimina. |
-| 16 | Facturas y correo | Registros Internos | `/app/registros/log` | `/app/registros/log` | `tool.registros` | admin | admin, registro | OK | Pendiente (D9) | Misma ruta que navbar: una de las dos entradas se elimina. |
+| 12 | Facturas y correo | Facturas recibidas pendientes de pago | `/app/reportes/recibos/pendientes` | (D2) `/app/facturas-recibidas?bucket=pendientes` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Resuelto (D2) | Preservar XLSX; la página real ya existe (D14). |
+| 13 | Facturas y correo | Facturas recibidas vencidas | `/app/reportes/recibos/vencidos` | (D2) `/app/facturas-recibidas?bucket=vencidas` | `rep.facturas.recibidas.aging` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Resuelto (D2) | Preservar XLSX; la página real ya existe (D14). |
+| 14 | Facturas y correo | Reportes por Correo | `/app/reportes/correos` | (D4) `/app/correos/reportes` | `rep.correos.programados` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Resuelto (D4) | Gate distinto; preservar XLSX. |
+| 15 | Facturas y correo | Plantillas de Correo | `/app/correos/plantillas` | `/app/correos/plantillas` | `ges.correos.plantillas` | admin, registro, inventario, tributación | admin, tributacion | OK | Resuelto (D9): el hub es la vía canónica | La entrada duplicada de Ajustes se retiró en D9. |
+| 16 | Facturas y correo | Registros Internos | `/app/registros/log` | `/app/registros/log` | `tool.registros` | admin | admin, registro | OK | Resuelto (D9): canónico en Ajustes | La entrada duplicada del hub se retiró en D9. |
 | 17 | Inventarios | Artículos | `/app/articulos` | `/app/articulos` | `ges.articulos` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover | Gestión; badge Catálogo (D8). |
 | 18 | Inventarios | Resumen de Inventario | `/app/reportes/inventario/resumen` | `/app/reportes/inventario/resumen` | `rep.inventario.analisis` | admin, registro, inventario, tributación | admin, inventario | OK | Mantener | Entrada canónica de las 3 pestañas. |
 | 19 | Inventarios | Departamentos | `/app/categorias` | `/app/categorias?tab=departamentos` | `ges.categorias.departamentos` | admin, registro, inventario, tributación | admin, inventario | OK | Mover | Corregido en `486c343`: `?tab=` leído/escrito; abre Departamentos. |
@@ -322,14 +322,14 @@ the per-role count.
 | 21 | Inventarios | Inventarios | `/app/inventarios` | `/app/inventarios` | `ges.inventarios` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover | Gestión. |
 | 22 | Inventarios | Generar Etiquetas | `/app/reportes/inventario/etiquetas` | `/app/reportes/inventario/etiquetas` | `tool.etiquetas` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover | Herramienta. |
 | 23 | Inventarios | Márgenes de Utilidad | `/app/reportes/margenes` | `/app/reportes/margenes` | `rep.inventario.margenes` | admin, registro, inventario, tributación | admin, facturacion | Parcial | Mantener | Solo admin del hub puede abrirlo. |
-| 24 | Inventarios | Alertas de Stock | `/app/reportes/inventario/alertas` | `/app/reportes/inventario/resumen` | `rep.inventario.analisis` | admin, registro, inventario, tributación | admin, inventario | Duplicado | Eliminar | Pestaña de Análisis. |
-| 25 | Inventarios | Pronósticos de Stock | `/app/reportes/inventario/pronosticos` | `/app/reportes/inventario/resumen` | `rep.inventario.analisis` | admin, registro, inventario, tributación | admin, inventario | Duplicado | Eliminar | Pestaña de Análisis. |
+| 24 | Inventarios | Alertas de Stock | `/app/reportes/inventario/alertas` | `/app/reportes/inventario/resumen` | `rep.inventario.analisis` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de Resumen | Pestaña de Análisis. |
+| 25 | Inventarios | Pronósticos de Stock | `/app/reportes/inventario/pronosticos` | `/app/reportes/inventario/resumen` | `rep.inventario.analisis` | admin, registro, inventario, tributación | admin, inventario | Eliminado | Eliminado 2026-10-31: pestaña de Resumen | Pestaña de Análisis. |
 | 26 | Inventarios | Mermas y Pérdidas | `/app/reportes/inventario/merma` | `/app/reportes/inventario/merma` | `rep.inventario.mermas` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
 | 27 | Inventarios | Histórico de precios | `/app/reportes/inventario/precios` | `/app/reportes/inventario/precios` | `rep.inventario.precios` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mantener | — |
 | 28 | Inventarios | Órdenes de Compra | `/api/app/ordenes/table` | `/app/compras/ordenes` | `ges.compras.ordenes` | admin, registro, inventario, tributación | admin, inventario | Parcial | Renombrar, Mover | Ruta de API; Gestión. |
 | 29 | Inventarios | Métricas de proveedores | `/app/categorias` | `/app/reportes/proveedores` | `rep.proveedores.ranking` | admin, registro, inventario, tributación | admin, inventario | Parcial | Mover | Aterriza en la parte superior de categorías; ranking abajo. |
-| 30 | Usuarios | Usuarios Detallados | `/app/reportes/usuarios` | (D3) `/app/usuarios` o mantener | `rep.usuarios` | admin, registro, inventario, tributación | admin | Parcial | Pendiente (D3) | Conservar XLSX. |
-| 31 | Usuarios | Clientes | `/app/reportes/clientes` | (D3) `/api/app/clientes/table` o mantener | `rep.clientes` | admin, registro, inventario, tributación | cualquier autenticado | OK | Pendiente (D3) | CRUD visible para cualquier autenticado. |
+| 30 | Usuarios | Usuarios Detallados | `/app/reportes/usuarios` | `/app/usuarios` | `rep.usuarios` | admin, registro, inventario, tributación | admin | Retirado | Absorbido por /app/usuarios (D3) | Conservar XLSX. |
+| 31 | Usuarios | Clientes | `/app/reportes/clientes` | `/app/reportes/clientes` | `rep.clientes` | admin, registro, inventario, tributación | cualquier autenticado | OK | Consolidado (D3): un listado, gates por operación | CRUD visible para cualquier autenticado. |
 | 32 | Usuarios | Puntos y Recompensas | `/app/reportes/loyalty` | `/app/reportes/loyalty` | `rep.loyalty` | admin, registro, inventario, tributación | cualquier autenticado | OK | Mantener | — |
 
 ### 4.5 Matriz B — navbar, dashboard and in-page populated
@@ -602,7 +602,7 @@ approved justification), and the capability diff is empty or approved.
 
 ### 8.5 Phase 4 — Hub reorganization
 
-**Status:** parcial — 2026-10-31: una sola entrada de hub para `rep.ventas` (las pestañas "Por familia"/"Por departamento" viven en la barra de la pantalla) y nombres D7 aplicados a las dos superficies de facturas emitidas. Pendiente: criterios 1–7 de §10 sobre el resto de la matriz.
+**Status:** parcial — cerrado 2026-10-31: una entrada por pantalla en el hub para `rep.ventas`, `rep.inventario.analisis` y facturas emitidas; nombres D7; botones de facturas del dashboard ocultos a roles sin permiso. Excepción aceptada: Estacionalidad (gate más amplio). Pendiente: criterios 1, 5 y 7 de §10 (matrices y smoke de exports).
 
 Build the groups from the completed Matriz A/B. Rules:
 
@@ -660,6 +660,8 @@ These are hard constraints for every phase:
 | 6 | **Per-role access.** For every role, every visible access returns 200 and the expected screen; no visible control leads to a 403. | Role matrix smoke: one request per (role, access). |
 | 7 | **No capability removed without approval.** Operations, roles, exports and filters in Matriz A match the baseline, or the delta is listed in §7 with `Approved`. Every export dataset resolves (no 404 from `/api/app/export`). | Before/after diff of A12–A14; one export request per screen/dataset. |
 | 8 | **Tests green.** Existing page tests pass and the new hub-link test fails on the pre-fix href. | `mvn test`; targeted `-Dtest=...` for the touched pages. |
+
+**Excepciones aceptadas al criterio 2** (documentadas, no defectos): `rep.tendencias` conserva dos entradas porque "Estacionalidad" tiene un gate más amplio que "Tendencias de Ventas"; y las rutas legacy `/app/reportes/correos`, `/app/reportes/recibos/pendientes` y `/app/reportes/recibos/vencidas` siguen existiendo por D4/D2 aunque el hub apunte a la superficie canónica.
 
 Criterion 0 (implicit): Matriz A and Matriz B are complete. An incomplete matrix
 cannot satisfy 1–7.
@@ -1045,3 +1047,4 @@ ask the user first.
 | 2026-10-31 | D5: supplier ranking becomes `/app/reportes/proveedores` (`admin,inventario`), reusing `DepartamentoMetrico`; the hub entry points there; version `2.18.11 -> 2.18.12`. |
 | 2026-10-31 | D5 cierre: el ranking de proveedores deja de estar embebido en `/app/categorias` (queda solo el enlace); `CategoriaResource` y `CategoriasPagesResource` dejan de construir `metricasFilas`; version `2.18.12 -> 2.18.13`. |
 | 2026-10-31 | Fase 4: hub con una sola entrada para `rep.ventas`; nombres D7 en facturas emitidas; contadores 9/7 → 7/5; version `2.18.15 -> 2.18.16`. |
+| 2026-10-31 | Fase 4: hub con una entrada por pantalla (ventas, inventario, facturas); botones de facturas del dashboard por rol; "Movimientos de inventario"; excepción documentada de Estacionalidad; version `2.18.16 -> 2.18.17`. |

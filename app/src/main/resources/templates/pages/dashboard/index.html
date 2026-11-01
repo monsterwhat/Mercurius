@@ -45,9 +45,13 @@
                 {! The two invoice boards. They used to be reachable only from a
                    navbar dropdown that nobody asked for, and that listed the
                    same board twice. The dashboard is where an operator starts,
-                   and the next job is one click away. !}
+                   and the next job is one click away.
+                   Criterion §10.6: both destinations are `admin,facturacion`, so
+                   every other role would get a 403 from a button it can see. !}
+                {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion')}
                 <a class="button" href="{config:['quarkus.http.root-path']}/app/facturas">Facturas Emitidas</a>
                 <a class="button" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas">Facturas Recibidas</a>
+                {/if}
             {/actions}
         {/include}
 

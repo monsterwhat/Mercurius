@@ -38,7 +38,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Usuarios"))
                 .body(containsString("7 informes"))
                 .body(containsString("5 informes"))
-                .body(containsString("8 informes"))
+                .body(containsString("6 informes"))
                 .body(containsString("2 informes"))
                 .body(containsString("href=\"/Mercurius/app/facturas\""))
                 .body(containsString("href=\"/Mercurius/app/facturas-recibidas?bucket=pendientes\""))
@@ -100,6 +100,48 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
         given().when().get("/Mercurius/app/reportes/articulos/ventas").then().statusCode(200)
                 .body(containsString("href=\"/Mercurius/app/reportes/articulos/familias?"))
                 .body(containsString("href=\"/Mercurius/app/reportes/articulos/departamentos?"));
+    }
+
+    /**
+     * Phase 4: Resumen, Alertas and Pronósticos are three tabs of one inventory
+     * screen, so the hub keeps only the canonical one and the cuts stay in the
+     * tab bar. Estacionalidad is the documented exception (its gate is wider
+     * than Tendencias, so it keeps its own entry for registro/tributación).
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void inventoryCutsLiveInTheirTabBarAndEstacionalidadKeepsItsEntry() {
+        given().when().get(HUB).then().statusCode(200)
+                .body(containsString(MENU_LINK + "/app/reportes/inventario/resumen\""))
+                .body(not(containsString(MENU_LINK + "/app/reportes/inventario/alertas\"")))
+                .body(not(containsString(MENU_LINK + "/app/reportes/inventario/pronosticos\"")))
+                // Rep. tendencias' cross-role cut stays reachable for every role.
+                .body(containsString(MENU_LINK + "/app/reportes/estacionalidad\""));
+
+        given().when().get("/Mercurius/app/reportes/inventario/resumen").then().statusCode(200)
+                .body(containsString("href=\"/Mercurius/app/reportes/inventario/alertas?"))
+                .body(containsString("href=\"/Mercurius/app/reportes/inventario/pronosticos?"));
+    }
+
+    /**
+     * Criterion §10.6: the dashboard's two invoice-board buttons point at
+     * {@code admin,facturacion} destinations, so only those roles may see them.
+     * Every other role used to get a 403 from a visible button.
+     */
+    @Test
+    @TestSecurity(user = "almacenero", roles = {"inventario"})
+    void dashboardHidesInvoiceBoardsFromRolesThatCannotOpenThem() {
+        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/Mercurius/app/facturas\"")))
+                .body(not(containsString("href=\"/Mercurius/app/facturas-recibidas\"")));
+    }
+
+    @Test
+    @TestSecurity(user = "facturador", roles = {"facturacion"})
+    void dashboardShowsInvoiceBoardsToFacturacion() {
+        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
+                .body(containsString("href=\"/Mercurius/app/facturas\""))
+                .body(containsString("href=\"/Mercurius/app/facturas-recibidas\""));
     }
 
     /**

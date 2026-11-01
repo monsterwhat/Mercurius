@@ -270,14 +270,14 @@
                         <p class="surface-subtitle">Existencias, precios, mermas y compras</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}8{#else}7{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}6{#else}5{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
                     <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de inventario por rango de fechas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Movimientos</span>
+                                <span class="has-text-weight-medium">Movimientos de inventario</span>
                                 <span class="is-size-7 mercurius-text-muted">Por rango de fechas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
@@ -301,24 +301,6 @@
                         </a>
                     </li>
                     {/if}
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Alertas de Stock</span>
-                                <span class="is-size-7 mercurius-text-muted">Stock bajo o agotado</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Pronósticos de Stock</span>
-                                <span class="is-size-7 mercurius-text-muted">Necesidades de reposición</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
                     <li x-show="coincide($el.textContent)">
                         <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
