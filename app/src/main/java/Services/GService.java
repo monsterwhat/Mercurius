@@ -191,12 +191,7 @@ public abstract class GService<T> implements Serializable{
         }
     }
     
-    // REQUIRED, not SUPPORTS: this method flushes and clears the persistence
-    // context, and both throw when no transaction is active. With SUPPORTS a
-    // caller outside a transaction got the flush warning plus a null result
-    // (the clear() failure surfaced as a PersistenceException and was
-    // swallowed), so a plain lookup looked like "row does not exist".
-    @Transactional
+    @Transactional(TxType.SUPPORTS)
     public @Nullable T find(@Nonnull Object id) {
         try {
             try {
@@ -208,7 +203,16 @@ public abstract class GService<T> implements Serializable{
                         + flushError.getMessage()
                         + " | source=GService.find() | despues=" + flushError.getMessage());
             }
-            em.clear();
+            try {
+                em.clear();
+            } catch (Exception clearError) {
+                // clear() needs an active transaction too. A lookup outside one
+                // is still valid, so this must not turn the result into null -
+                // which is exactly what happened when the exception escaped to
+                // the PersistenceException catch below.
+                LOG.debug("No se pudo limpiar el contexto antes de find(" + id + "): "
+                        + clearError.getMessage() + " | source=GService.find()");
+            }
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
                         LOG.warn("Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage() + " | source=" + "GService.find()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
