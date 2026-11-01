@@ -233,7 +233,7 @@ Out-of-scope screens (listed for referential integrity; do not act on them):
 | `ges.inventarios` | Activos, Pendientes, Procesados, Inactivos | Consultar, Crear, Procesar, Reabrir, Cargar XML, Exportar | `admin`, `inventario` | PDF `inventario` | OK | Mover | Gestión, no reporte. |
 | `ges.categorias.familias` | Familias | Consultar, Crear, Editar, Toggle, Exportar | `admin`, `inventario` | XLSX `familias` | OK | Mover | `?tab=` leído/escrito desde `486c343`. |
 | `ges.categorias.departamentos` | Departamentos | Consultar, Crear, Editar, Toggle, Exportar | `admin`, `inventario` | XLSX `departamentos` | OK | Mover | `?tab=departamentos` abre la pestaña correcta desde `486c343`. |
-| `rep.proveedores.ranking` | — | Consultar, Recalcular (admin) | `admin`, `inventario` | ninguna | Parcial | Crear (D5) | Sin ruta propia; vive dentro de categorías; tope 200 filas. |
+| `rep.proveedores.ranking` | Ranking de Rendimiento de Proveedores | Consultar | `admin`, `inventario` | ninguna | OK | Creado (D5) | `/app/reportes/proveedores` reutiliza `DepartamentoMetricoService`; tope 200 filas; sin formularios de gestión. |
 | `ges.usuarios` | — | Consultar, Crear, Editar, Toggle, Password | `admin`, `usuario` | ninguna | OK | Pendiente (D3) | Sin export. |
 | `rep.usuarios` | — | Consultar, Exportar | `admin` | XLSX `usuarios` | OK | Pendiente (D3) | Duplica el listado; conservar export. |
 | `ges.clientes` | — | Consultar, Crear, Editar, Archivar | `admin`, `usuario` | ninguna | OK | Pendiente (D3) | Sin export. |
@@ -486,7 +486,7 @@ There is no third option.
 | D2 | Pending/overdue received invoices | Decide whether the two read-only views survive as tabs of the payables board, and transfer their XLSX exports if they do not. `/app/facturas-recibidas` does not export today. | Resolved in `53df511`: the board exports `recibos-pendientes`/`recibos-vencidos` per bucket and the hub points to `?bucket=`; legacy routes kept |
 | D3 | Users / clients | Consolidate respecting **per-operation** permissions, not just per-screen roles. Preserve XLSX. | Resolved in `c4da5a5` (clients unified, archive added, buttons per role) and `e372d64` (users report absorbed; admin-only XLSX moved to `/app/usuarios`; report route retired) |
 | D4 | Scheduled email reports | Define the role matrix of the unified interface. The two current screens have different gates. | Resolved in `3ca5d2a`: management reads `admin,facturacion,tributacion`, mutations stay `admin,tributacion`, XLSX added; legacy report kept |
-| D5 | Supplier ranking | Create an independent screen reusing `DepartamentoMetrico`; do not invent a `Proveedor` entity (supplier = `Departamento`). | Approved |
+| D5 | Supplier ranking | Create an independent screen reusing `DepartamentoMetrico`; do not invent a `Proveedor` entity (supplier = `Departamento`). | Implemented: `/app/reportes/proveedores` (`admin,inventario`), hub entry repointed; the ranking stays embedded in `/app/categorias` until a later removal |
 | D6 | Purchase orders and labels | Document explicitly their location and nature (management vs tool). Do not leave them implicit. | Resolved in `c2ce19c`: real `/app/compras/ordenes`; Órdenes and Etiquetas appear on the Gestión landing. Etiquetas keeps its URL until the phase-2 cleanup. |
 | D7 | Emitted invoices naming | Keep **"Reporte de facturas emitidas"** (`/app/reportes/facturas`) and **"Facturas emitidas (gestión)"** (`/app/facturas`) as distinct IDs and labels. | Approved |
 
@@ -971,8 +971,8 @@ roles, filters and XLSX unless it says otherwise.
   (c) a Gestión group inside the hub. **Recommendation: (a), phased.**
 - D6: Órdenes gets a real `/app/compras/ordenes` page (keep the API table as its
   HTMX base) and lives in Gestión; Etiquetas moves to the Artículos/Inventario
-  area of Gestión, keeping `admin,inventario`. Supplier ranking becomes its own
-  report route when D5 is implemented.
+  area of Gestión, keeping `admin,inventario`. Supplier ranking lives at its own
+  report route (`/app/reportes/proveedores`, D5).
 
 **Discrepancies corrected in this round.**
 - Matriz A `rep.ventas` export row is now XLSX `reportes-ventas`/`reportes-
@@ -1040,3 +1040,4 @@ ask the user first.
 | 2026-10-31 | D6/D13/D9 phase 1: `/app/gestion` landing, real `/app/compras/ordenes`, Ajustes opens to `registro`, Plantillas canonical in the hub; version `2.18.7 → 2.18.8`. |
 | 2026-10-31 | Hub aligned with D2/D3/D4/D9 (bucket links, management destinations, counts); version `2.18.8 → 2.18.9`. |
 | 2026-10-31 | D13 phase 2: the hub is reports-only (Artículos, Departamentos, Familias, Inventarios, Etiquetas and Órdenes moved to `/app/gestion`); Gestión exposes both catalog tabs; version `2.18.10 -> 2.18.11`. |
+| 2026-10-31 | D5: supplier ranking becomes /app/reportes/proveedores (dmin,inventario), reusing DepartamentoMetrico; the hub entry points there; version `2.18.11 -> 2.18.12`. |

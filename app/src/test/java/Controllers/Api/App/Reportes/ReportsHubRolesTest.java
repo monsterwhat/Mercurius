@@ -67,7 +67,20 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(not(containsString(MENU_LINK + "/app/inventarios\"")))
                 .body(not(containsString(MENU_LINK + "/app/compras/ordenes\"")))
                 .body(not(containsString(MENU_LINK + "/app/reportes/inventario/etiquetas\"")))
-                .body(not(containsString(MENU_LINK + "/app/categorias?tab=")));
+                .body(not(containsString(MENU_LINK + "/app/categorias?tab=")))
+                .body(not(containsString(MENU_LINK + "/app/categorias\"")));
+    }
+
+    /**
+     * D5 — the supplier ranking is a report of its own. The hub entry must point
+     * at the extracted screen, never at the Categorías management container.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void supplierMetricsEntryPointsAtItsOwnReport() {
+        given().when().get(HUB).then().statusCode(200)
+                .body(containsString(MENU_LINK + "/app/reportes/proveedores\""))
+                .body(not(containsString(MENU_LINK + "/app/categorias\"")));
     }
 
     @Test
