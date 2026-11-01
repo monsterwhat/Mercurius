@@ -22,6 +22,9 @@
                        danger | link. Renders the `page-header-accent` variant
                        with that semantic colour. Use sparingly: reserve it for
                        pages whose whole surface is one workflow (POS, wizard).
+    breadcrumb String - OPTIONAL. Plain path above the title ("Gestión /
+                       Catálogo"). Text only, never links: a breadcrumb that is
+                       not navigable must not pretend to be.
 
   THE EYEBROW IS GONE
     W1 shipped an `eyebrow` parameter: a small uppercase kicker above the
@@ -59,6 +62,7 @@
 <header class="page-header{#if variant??} page-header-{variant}{/if}{#if accent??} page-header-accent is-{accent}{/if}">
     <div class="page-header-content">
         <div class="page-header-text">
+            {#if breadcrumb??}<nav class="page-breadcrumb" aria-label="Ruta de navegación">{breadcrumb}</nav>{/if}
             <h1 class="title is-3 page-title">{title}</h1>
             {#if subtitle??}<p class="subtitle is-6 page-subtitle">{subtitle}</p>{/if}
         </div>

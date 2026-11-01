@@ -66,7 +66,7 @@
                 normalizar(t) { return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); },
                 coincide(t) { return !this.q || this.normalizar(t).indexOf(this.normalizar(this.q)) !== -1; } }">
 
-            {#include _kit/page-header title="Reportes"
+            {#include _kit/page-header breadcrumb="Inicio / Reportes" title="Reportes"
                  subtitle="Informes de ventas, facturación, inventario y usuarios"}
                 {#actions}
                 <div class="field mb-0" role="search">

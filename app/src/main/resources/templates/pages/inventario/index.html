@@ -38,7 +38,7 @@
     <section class="section" style="padding-top:1rem"
              x-data="{ tab: (['activos','pendientes','procesados','inactivos'].includes(new URLSearchParams(location.search).get('tab')) ? new URLSearchParams(location.search).get('tab') : 'activos') }"
              x-effect="history.replaceState(null, '', '?tab=' + tab)">
-        {#include _kit/page-header title="Gestión de Inventario"
+        {#include _kit/page-header breadcrumb="Gestión / Inventario" title="Gestión de Inventario"
              subtitle="Ajustes, movimientos y su estado"}
             {#actions}
                 {! kitPolling repaints this label once per second after the

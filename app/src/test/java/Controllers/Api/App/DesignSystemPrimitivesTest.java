@@ -99,6 +99,25 @@ class DesignSystemPrimitivesTest {
     }
 
     @Test
+    @DisplayName("page-header: breadcrumb is optional, above the title and text-only")
+    void pageHeaderRendersOptionalBreadcrumb() {
+        String sin = pageHeader.data("title", "Artículos").render();
+        assertFalse(sin.contains("page-breadcrumb"),
+                "a page that does not declare its path must not render an empty one");
+
+        String con = pageHeader.data("title", "Artículos")
+                .data("breadcrumb", "Gestión / Catálogo")
+                .render();
+        assertTrue(con.contains("<nav class=\"page-breadcrumb\" aria-label=\"Ruta de navegación\">"
+                        + "Gestión / Catálogo</nav>"),
+                "the breadcrumb is a labelled nav with the path as text");
+        assertTrue(con.indexOf("page-breadcrumb") < con.indexOf("page-title"),
+                "the path sits above the title");
+        assertFalse(con.contains("<nav class=\"page-breadcrumb\" aria-label=\"Ruta de navegación\"><a"),
+                "text only: a non-navigable crumb must not pretend to be a link");
+    }
+
+    @Test
     @DisplayName("page-header: the eyebrow is gone and a stale one is ignored, not rendered")
     void pageHeaderDropsTheEyebrow() {
         // The eyebrow was a small uppercase kicker above the title. It repeated
