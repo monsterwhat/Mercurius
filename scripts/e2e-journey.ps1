@@ -373,8 +373,13 @@ try {
     $cartResp = Invoke-E2E -Session $session -Method GET -Path '/Mercurius/api/app/pos/cart'
     Assert-Status $cartResp @(200)
     $cart = Get-Json $cartResp
-    $qty = [double]$cart.data.items[0].cantidad
-    Assert-Journey ($qty -eq 2) "items[0].cantidad=$qty (expected 2)"
+    # Two scans must total 2 units. The CART MAY HOLD MORE THAN ONE LINE: a
+    # seeded promotion splits the quantity into a promotional line plus the
+    # normal one (CarritoService.addArticulo merges only non-promo lines), so
+    # reading items[0].cantidad alone reports 1 and looks like a lost scan.
+    $qty = 0.0
+    foreach ($item in $cart.data.items) { $qty += [double]$item.cantidad }
+    Assert-Journey ($qty -eq 2) "total cantidad=$qty (expected 2; $($cart.data.items.Count) line(s))"
 
     Start-Step 'Select client + stage split payments (efectivo + SINPE)'
     $clientBody = @{ clientCode = $ClientCode } | ConvertTo-Json
