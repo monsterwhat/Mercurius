@@ -426,11 +426,14 @@ try {
     Assert-Journey (Test-MagicBytes $pdfResp.Bytes $pdfMagic) 'body starts with %PDF-'
 
     # -- STEP 7: Recibos pay/process flips the seeded receipt -----------
-    Start-Step 'Recibos pagar flips seeded receipt state'
-    $pagar = Invoke-E2E -Session $session -Method POST `
-        -Path "/Mercurius/api/app/recibos/$reciboId/pagar" `
-        -BodyBytes ([System.Text.Encoding]::UTF8.GetBytes('{}')) `
-        -ContentType 'application/json' -Headers $postHeaders
+    # The seeded document is a RECEIVED invoice (step 6 uploads an XML), so the
+    # row action is the received board's PUT /{id}/pagar. The old path paid the
+    # EMITTED receipts board with a received id, which can only 404.
+    Start-Step 'Facturas recibidas: marcar como pagada flips the seeded row'
+    $pagar = Invoke-E2E -Session $session -Method PUT `
+        -Path "/Mercurius/api/app/facturas-recibidas/$reciboId/pagar" `
+        -BodyBytes ([System.Text.Encoding]::ASCII.GetBytes('')) `
+        -ContentType 'application/x-www-form-urlencoded' -Headers $postHeaders
     Assert-Status $pagar @(200)
     Assert-Journey ((Get-PaidFlag $session $consecCredito) -eq $true) `
         'receipt state flipped paid=false -> true'
@@ -439,14 +442,14 @@ try {
     Start-Step 'Export xlsx (stock-alerts) -> ZIP magic bytes'
     $xlsx = Invoke-E2E -Session $session -Method POST -Path '/Mercurius/api/app/export' `
         -BodyBytes ([System.Text.Encoding]::ASCII.GetBytes('type=xlsx&dataset=stock-alerts')) `
-        -ContentType 'application/x-www-form-urlencoded'
+        -ContentType 'application/x-www-form-urlencoded' -Headers $postHeaders
     Assert-Status $xlsx @(200)
     Assert-Journey (Test-MagicBytes $xlsx.Bytes $zipMagic) 'body starts with PKx03x04 (ZIP/xlsx)'
 
     Start-Step 'Export pdf (articulos) -> %PDF- magic bytes'
     $pdfExport = Invoke-E2E -Session $session -Method POST -Path '/Mercurius/api/app/export' `
         -BodyBytes ([System.Text.Encoding]::ASCII.GetBytes('type=pdf&dataset=articulos')) `
-        -ContentType 'application/x-www-form-urlencoded'
+        -ContentType 'application/x-www-form-urlencoded' -Headers $postHeaders
     Assert-Status $pdfExport @(200)
     Assert-Journey (Test-MagicBytes $pdfExport.Bytes $pdfMagic) 'body starts with %PDF-'
 

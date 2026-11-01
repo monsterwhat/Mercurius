@@ -40,3 +40,9 @@ VALUES ('Familia General', TRUE, CURRENT_TIMESTAMP);
 
 INSERT INTO Clients (name, email, idType, idNumber, discount, phoneNumber, taxpayer, zoneCode, TipoIdentificacion, status)
 VALUES ('Cliente Contado', 'cliente@mercurius.local', 'Cedula Fisica', '000000000', 0.0, '8888-8888', FALSE, 0, '01', TRUE);
+
+-- CABYS catalogue row used by scripts/e2e-journey.ps1: the journey creates
+-- articles with this code and the invoice builder dereferences
+-- Articulos.codigoCabys, so the row must exist in the test database.
+INSERT INTO Cabys (codigo, descripcion, categorias, impuesto, uri, estado)
+VALUES ('501010101', 'E2E: articulo de prueba', 'E2E', '13', 'https://www.hacienda.go.cr/', 'Activo');
