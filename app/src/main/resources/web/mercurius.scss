@@ -882,6 +882,15 @@ body {
     .app-content {
         padding: var(--merc-space-3);
     }
+
+    // Bulma's columns pull themselves out by the gutter (1rem) to align with
+    // the container edge. With the narrow padding (12px) that pull is wider
+    // than the padding and every `.columns` block adds 4px of horizontal
+    // scroll. At this width the gutter is not worth the overflow.
+    .app-content .columns {
+        margin-left: 0;
+        margin-right: 0;
+    }
 }
 
 
