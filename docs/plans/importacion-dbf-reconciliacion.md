@@ -186,3 +186,40 @@ recuperados) y 4 cabeceras de 2022 que tienen clave de Hacienda en vez de numero
 - 2 claves de Hacienda sin XML.
 - 3 446 cabeceras huerfanas preexistentes (sin comprobante ni resumen), que no
   afectan totales porque no tienen comprobante asociado.
+
+## 8. Desde cuando existe el desglose por articulo
+
+Se revisaron **todas** las fuentes (unidades E:, F:, C:, Z: y todas las tablas de
+la base). El desglose por articulo no existe antes de agosto de 2015 en ningun
+archivo: el sistema viejo guardaba solo la cabecera del tiquete.
+
+| Archivo | Contenido | Desde | Hasta | Filas |
+|---|---|---|---|---|
+| `E:\VPALMERAS\facturasdiarias.dbf` | cabeceras | 2013-10-01 | 2019-04-13 | 500 720 |
+| `E:\VPALMERAS\DETAFACT.DBF` | lineas | 2018-10-01 | 2018-10-01 | **43** |
+| `E:\VPALMERAS\DETAFACT2.DBF` / `detafac2.DBF` | vacios | - | - | 0 |
+| `E:\VPALMERAS\salidas.dbf` | lineas por articulo, **numero de factura enmascarado (`******`)** | 2015-08-14 | 2019-04-13 | 194 750 |
+| `E:\VPALMERAS\kardex.DBF` | lineas con numero de factura | 2015-10-01 | 2019-04-13 | 386 566 |
+| `E:\VPALMERAS\entradas.dbf` | compras | 2010-04-17 | 2016-09-08 | 24 698 |
+| `E:\VPALMERAS\lineasborradas.dbf` | lineas borradas | 2009 | 2018 | 18 171 |
+| `detafact_respaldo_respaldo.dbf` | lineas | 2022-01-01 | 2024-04 | 488 551 |
+| `detafactbk27022026.DBF` | lineas | 2024-04 | 2026-02 | 325 036 |
+| `DETAFACTMEDIOMARZO.DBF` | lineas | 2024-04 | 2024-04 | 10 526 |
+| `detafact.dbf` (snapshot) | lineas | 2026-01 | 2026-10 | 123 999 |
+
+Las tablas de la propia base confirman lo mismo: `ventas_dia` y
+`profit_margin_history` empiezan el **2015-08**, no antes.
+
+`lineasborradas` demuestra que las facturas de 2013-2014 **si estuvieron
+itemizadas** en su momento (hay lineas borradas con numero de factura), pero el
+`DETAFACT` que las contenia fue purgado: el respaldo de 2019 lo tiene con 43
+registros. Ninguna copia disponible conserva ese archivo completo.
+
+Si aparece un `DETAFACT.DBF` viejo (2013-2015, tipicamente decenas de MB), se
+puede completar sin duplicar nada: `scripts/rellenar_lineas_faltantes.sql` usa la
+clave (anio, numero de factura) y solo toca facturas con cero lineas.
+
+Nota: `salidas.dbf` de `E:` si tiene el articulo, la fecha y la cantidad de
+2015-08 a 2019, pero el numero de factura esta sobrescrito con `******` y no
+trae precios (`PVENTA1`/`VENTAIMP` vacios), asi que no se puede ligar a una
+factura concreta. Por eso no se uso para rellenar detalle.
