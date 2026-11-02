@@ -581,6 +581,23 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     "Para emitir una Factura Electrónica debe seleccionar un cliente.");
         }
 
+        // Un artículo sin CAByS no se puede facturar: el XML exige el código por
+        // línea y sin él la emisión revienta con un error genérico. Se avisa con
+        // el nombre del artículo, antes de tocar nada.
+        for (ArticuloCarrito linea : ctx.getCarrito()) {
+            if (linea != null && linea.getArticulo() != null
+                    && linea.getArticulo().getCodigoCabys() == null) {
+                Articulos sinCabys = linea.getArticulo();
+                LOG.warn("Facturacion bloqueada: articulo sin CAByS | codigo=" + sinCabys.getCodigo()
+                        + " | nombre=" + sinCabys.getNombre()
+                        + " | source=PosResource.doFacturar()"
+                        + " | despues=sin facturar; el carrito se conserva");
+                return badRequest("ARTICULO_SIN_CABYS",
+                        "El artículo «" + sinCabys.getNombre() + "» no tiene código CAByS asignado. "
+                                + "Asígnelo en el artículo (o quítele la línea) antes de facturar.");
+            }
+        }
+
         // 5. Points redemption guards (calcularDescuentoPuntos parity: rate
         //    1 punto = ₡1, clamped to the available balance). Null falls back
         //    to the value staged via POST /puntos-form.

@@ -1,5 +1,6 @@
 package Services.Facturas;
 
+import Models.Encabezado.IdentificacionReceptor;
 import Models.Encabezado.Receptor;
 import Services.GService;
 import org.jboss.logging.Logger;
@@ -103,13 +104,35 @@ public class ReceptorService extends GService<Receptor> {
     @Transactional
     public @Nullable Receptor createIfNotExist(@Nonnull Receptor receptor) {
         try {
-            // Check if a Receptor with the same identification number already exists
-            TypedQuery<Receptor> query = em.createQuery(
-                "SELECT r FROM Receptor r JOIN r.identificacion i WHERE i.numero = :identificacionNumero", 
-                Receptor.class
-            );
-            query.setParameter("identificacionNumero", receptor.getIdentificacion().getNumero());
+            // El receptor puede venir identificado de dos formas: con
+            // Identificacion (cedula/DIMEX/NITE) o con IdentificacionExtranjero.
+            // Antes se hacia receptor.getIdentificacion().getNumero() sin
+            // comprobar null: un cliente sin tipo de identificacion reconocido
+            // tumbaba la emision entera con un NPE.
+            IdentificacionReceptor identificacion = receptor.getIdentificacion();
+            TypedQuery<Receptor> query;
+            if (identificacion != null) {
+                query = em.createQuery(
+                        "SELECT r FROM Receptor r JOIN r.identificacion i WHERE i.numero = :identificacionNumero",
+                        Receptor.class);
+                query.setParameter("identificacionNumero", identificacion.getNumero());
+            } else if (receptor.getIdentificacionExtranjero() != null
+                    && !receptor.getIdentificacionExtranjero().isBlank()) {
+                query = em.createQuery(
+                        "SELECT r FROM Receptor r WHERE r.identificacionExtranjero = :identificacionNumero",
+                        Receptor.class);
+                query.setParameter("identificacionNumero", receptor.getIdentificacionExtranjero());
+            } else {
+                // Sin ninguna identificacion no hay forma de deduplicar: se
+                // guarda tal cual en vez de reventar.
+                em.persist(receptor);
+                em.flush();
+                em.refresh(receptor);
+                return receptor;
+            }
+
             List<Receptor> existingReceptors = query.getResultList();
+
 
 // If no Receptor with the same identification number exists, create a new one
             if (existingReceptors.isEmpty()) {

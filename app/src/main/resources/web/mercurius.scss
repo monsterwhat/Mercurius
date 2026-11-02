@@ -2846,3 +2846,19 @@ button,
     border-radius: 0;
     padding: 0;
 }
+// -----------------------------------------------------------------------------
+// 3.12 Diálogo de cobro: sin fondo oscurecido
+//
+// El cajero sigue viendo el carrito y el total mientras escribe cuánto le
+// pagaron; oscurecer la pantalla obliga a recordar el número. El diálogo
+// flota con su propia sombra y el overlay queda transparente (sigue capturando
+// el clic para cerrar).
+// -----------------------------------------------------------------------------
+#modal-cobro,
+#modal-cobro .modal-background {
+    background: transparent;
+}
+
+#modal-cobro .modal-card {
+    box-shadow: 0 12px 40px rgba(23, 41, 75, .28);
+}
