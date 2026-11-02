@@ -35,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -113,6 +115,7 @@ public class SettingsResource {
      * 404 when no row has estatus=true (GET never creates rows).
      */
     @GET
+    @Transactional
     @Operation(summary = "Current application settings (secrets omitted)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Success"),
@@ -489,6 +492,114 @@ public class SettingsResource {
             LOG.warn("Error updating app settings", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando la configuración"))
+                    .build();
+        }
+    }
+
+    /**
+     * Logo de la empresa: bytes guardados en la configuración.
+     *
+     * <p>El almacenamiento ya existía (columnas {@code Logo}/{@code LogoMimeType}
+     * de {@link ConfiguracionAplicacion} y el viejo
+     * {@code SettingsController.uploadLogo(Part)} de JSF); lo que no existía era
+     * una superficie HTTP en la API nueva. {@code no-store} para que el logo
+     * recién subido no se sirva desde caché.</p>
+     */
+    @GET
+    @Path("/logo")
+    @Produces(MediaType.WILDCARD)
+    @Transactional
+    @Operation(summary = "Current company logo bytes")
+    public Response logo() {
+        try {
+            ConfiguracionAplicacion settings = settingsService.returnCurrent();
+            if (settings == null || settings.getLogo() == null || settings.getLogo().length == 0) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            String tipo = settings.getLogoMimeType() == null || settings.getLogoMimeType().isBlank()
+                    ? "image/png" : settings.getLogoMimeType();
+            return Response.ok(settings.getLogo())
+                    .type(tipo)
+                    .header("Cache-Control", "no-store")
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("No se pudo servir el logo de la configuración", e);
+            return Response.serverError().build();
+        }
+    }
+
+    /** 2 MB: de sobra para un membrete y lejos del límite del cuerpo. */
+    private static final long LOGO_MAX_BYTES = 2L * 1024 * 1024;
+
+    /** SVG queda fuera a propósito: se sirve con su propio content-type y puede traer script. */
+    private static final List<String> LOGO_TIPOS = List.of("image/png", "image/jpeg", "image/webp");
+
+    /**
+     * Sube el logo de la empresa (multipart, campo {@code logo}).
+     *
+     * <p>Paridad con {@link Controllers.SettingsController#uploadLogo}: guarda
+     * bytes + mime type y avanza el paso del asistente (completedSteps 1 -> 2).
+     * No toca nada más de la configuración.</p>
+     */
+    @POST
+    @Path("/logo")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Transactional
+    @Operation(summary = "Upload the company logo (multipart)")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Logo stored"),
+        @APIResponse(responseCode = "400", description = "Missing file, wrong type or too large"),
+        @APIResponse(responseCode = "404", description = "No active settings row")
+    })
+    public Response uploadLogo(@RestForm("logo") @Nullable FileUpload archivo) {
+        if (archivo == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", "Seleccione un archivo de imagen."))
+                    .build();
+        }
+        String tipo = archivo.contentType() == null ? "" : archivo.contentType().toLowerCase(Locale.ROOT);
+        if (!LOGO_TIPOS.contains(tipo)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR",
+                            "El logo debe ser una imagen PNG, JPG o WebP."))
+                    .build();
+        }
+        if (archivo.size() <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", "El archivo está vacío."))
+                    .build();
+        }
+        if (archivo.size() > LOGO_MAX_BYTES) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", "El logo no puede superar 2 MB."))
+                    .build();
+        }
+        try {
+            byte[] bytes = Files.readAllBytes(archivo.uploadedFile());
+            ConfiguracionAplicacion settings = settingsService.returnCurrent();
+            if (settings == null) {
+                return noActiveSettings();
+            }
+            settings.setLogo(bytes);
+            settings.setLogoMimeType(tipo);
+            Integer paso = settings.getCompletedSteps();
+            if (paso != null && paso == 1) {
+                settings.setCompletedSteps(2);
+            }
+            settingsService.update(settings);
+            LOG.info("Logo actualizado: " + bytes.length + " bytes (" + tipo + ")"
+                    + " | user=" + currentUserOrNull()
+                    + " | source=SettingsResource.uploadLogo()");
+            // Respuesta mínima a propósito: toDTO() arrastra los bytes del logo
+            // (hasta 2 MB) y la página recarga para mostrar la imagen nueva.
+            Map<String, Object> resultado = new LinkedHashMap<>();
+            resultado.put("logoMimeType", tipo);
+            resultado.put("bytes", bytes.length);
+            return Response.ok(ApiResponse.ok(resultado)).build();
+        } catch (java.io.IOException e) {
+            LOG.warn("No se pudo leer el archivo de logo subido", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "No se pudo leer el archivo subido"))
                     .build();
         }
     }

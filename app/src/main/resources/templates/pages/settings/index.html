@@ -557,6 +557,48 @@
                 comprobante. Se guardan con «Guardar ajustes», al final de la
                 página.
             </p>
+
+            {! Logo: el almacenamiento ya existía (columna Logo de la
+               configuración) pero no había forma de subirlo desde la app nueva.
+               No es un <form> propio: este bloque vive dentro de #ajustes-forma
+               y HTML descarta formularios anidados; el botón manda el archivo
+               con hx-encoding multipart. !}
+            <div class="field">
+                <span class="label">Logo de la empresa</span>
+                <div class="is-flex is-align-items-flex-start" style="gap:1rem">
+                    <figure class="image is-64x64"
+                            style="border:1px solid var(--merc-border);border-radius:8px;overflow:hidden;background:var(--merc-surface);margin:0">
+                        {#if settings.logoMimeType??}
+                        <img src="{config:['quarkus.http.root-path']}{baseUrl}/logo" alt="Logo actual de la empresa"/>
+                        {#else}
+                        <div class="has-text-centered mercurius-text-muted" style="padding:1.25rem .25rem">
+                            {#include _kit/icon name="file" /}
+                        </div>
+                        {/if}
+                    </figure>
+                    <div>
+                        <input class="input" type="file" id="logo-archivo" name="logo"
+                               accept="image/png,image/jpeg,image/webp"
+                               aria-describedby="logo-ayuda"/>
+                        <button class="button mt-2" type="button"
+                                hx-post="{config:['quarkus.http.root-path']}{baseUrl}/logo"
+                                hx-encoding="multipart/form-data"
+                                hx-include="#logo-archivo"
+                                hx-swap="none"
+                                hx-disabled-elt="this"
+                                hx-on::after-request="if (event.detail.successful) { window.location.reload(); } else { document.getElementById('logo-resultado').textContent = 'No se pudo subir el logo: use PNG, JPG o WebP de hasta 2 MB.'; }">
+                            Subir logo
+                        </button>
+                        <p class="help mercurius-text-muted" id="logo-ayuda">
+                            PNG, JPG o WebP, máximo 2 MB. Se usa en el membrete de los comprobantes.
+                        </p>
+                        <p id="logo-resultado" class="help has-text-danger" role="status" aria-live="polite"></p>
+                    </div>
+                </div>
+            </div>
+
+            <hr/>
+
             <div class="columns is-multiline">
                 <div class="column is-one-third">
                     <div class="field">
