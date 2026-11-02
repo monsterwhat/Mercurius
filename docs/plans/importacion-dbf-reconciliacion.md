@@ -66,3 +66,38 @@ matchea**. Correrlo dos veces no duplica nada (verificado: segunda pasada
 Ejecución (servidor): los CSV se copian a `/tmp/dbf_reconciliacion/` y se corre
 `psql -f` como `postgres`.
 
+## 5. XML de Hacienda (Z:\Facturas)
+
+15 ZIP copiados a temporales y extraídos ahí (**nunca en Z:**):
+40 207 XML, 13 030 claves únicas, 12 404 ya estaban en la base.
+**624 importadas** como comprobantes EMITIDOS (28-30 de octubre de 2026), con
+1 109 líneas: `comprobantesemitidos` 751 869 → **752 493**.
+Quedan 2 claves sin XML.
+
+Dos ZIP (64 MB y 89 MB) no se podían copiar por el límite de 50 MB del cliente
+WebDAV de Windows; se subió `FileSizeLimitInBytes` a 4 GB (UAC) y se reinició
+`WebClient`.
+
+## 6. Fuentes revisadas y lo que queda
+
+| Fuente | Contenido | Estado |
+|---|---|---|
+| `Z:\Sistema\Sistema_vsuper_20261027-163717.zip` | snapshot más nuevo (177 MB, hasta 27-oct) | revisado; la base ya llega al 27-oct |
+| `Z:\Sistema\Sistema_vsuper_20261004.zip` | snapshot usado para todo el import | ✅ |
+| `Z:\Facturas\*.zip` | 40 207 XML | ✅ 624 importadas |
+| `E:\VPALMERAS` | respaldo 2019: `facturasdiarias.dbf` 500 720 ventas | **parcial** |
+| `E:\VPALMERAS\DETAFACT.DBF` | **vacío** (sin líneas) | ❌ |
+
+Faltantes por año según `E:\VPALMERAS`:
+
+| Año | Origen | Base | Falta |
+|---|---|---|---|
+| 2013 | 49 402 | 49 396 | 6 |
+| 2014 | 208 561 | 208 561 | 0 |
+| 2015 | 203 103 | 149 874 | **53 229** |
+| 2016 | 39 552 | 0 | **39 552** |
+| 2017 | no existe en ningún respaldo | 0 | — |
+
+Esas **92 781 ventas de 2015-2016** se pueden importar desde E: pero **sin
+líneas de detalle** (el `DETAFACT` del respaldo está vacío).
+
