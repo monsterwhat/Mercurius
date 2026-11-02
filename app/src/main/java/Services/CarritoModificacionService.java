@@ -79,8 +79,47 @@ public class CarritoModificacionService extends GService<CarritoModificacion> {
         }
     }
 
-    private CarritoModificacion nuevaFila(Usuarios usuario, String accion, String cliente) {
-        CarritoModificacion fila = new CarritoModificacion();
+    /**
+     * Registra un cambio manual de precio en una linea del carrito.
+     *
+     * @param linea          linea afectada
+     * @param precioAnterior precio final que tenia (puede ser null)
+     * @param precioNuevo    precio final aplicado
+     * @param usuario        cajero
+     * @param cliente        cliente seleccionado
+     * @param motivo         motivo del ajuste o texto de restauracion
+     */
+    @Transactional
+    public void registrarPrecioAjustado(ArticuloCarrito linea, BigDecimal precioAnterior,
+                                        BigDecimal precioNuevo, Usuarios usuario, String cliente,
+                                        String motivo) {
+        if (linea == null || usuario == null) {
+            LOG.debug("Se omite el registro de cambio de precio: falta la linea o el usuario"
+                    + " | source=CarritoModificacionService.registrarPrecioAjustado()");
+            return;
+        }
+        CarritoModificacion fila = nuevaFila(usuario, CarritoModificacion.ACCION_PRECIO_AJUSTADO, cliente);
+        fila.setReferencia(UUID.randomUUID().toString());
+        llenarDesdeLinea(fila, linea);
+        fila.setPrecioUnitario(precioNuevo);
+        if (precioNuevo != null && linea.getCantidad() != null) {
+            fila.setImporte(precioNuevo.multiply(linea.getCantidad()));
+        }
+        StringBuilder detalle = new StringBuilder();
+        if (precioAnterior != null) {
+            detalle.append("Precio anterior: ").append(precioAnterior.toPlainString()).append(". ");
+        }
+        if (precioNuevo != null) {
+            detalle.append("Precio nuevo: ").append(precioNuevo.toPlainString()).append(". ");
+        }
+        if (motivo != null && !motivo.isBlank()) {
+            detalle.append("Motivo: ").append(motivo.trim());
+        }
+        fila.setDetalle(detalle.toString().trim());
+        guardar(fila);
+    }
+
+    private CarritoModificacion nuevaFila(Usuarios usuario, String accion, String cliente) {        CarritoModificacion fila = new CarritoModificacion();
         fila.setFecha(LocalDateTime.now());
         fila.setUsuario(usuario.getUsername());
         fila.setAccion(accion);

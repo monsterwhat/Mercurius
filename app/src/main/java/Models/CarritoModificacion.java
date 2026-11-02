@@ -36,6 +36,9 @@ public class CarritoModificacion implements Serializable {
     /** Accion: se cancelo la venta completa (factura a medio hacer). */
     public static final String ACCION_CARRITO_CANCELADO = "CARRITO_CANCELADO";
 
+    /** Accion: el cajero cambio el precio de una linea. */
+    public static final String ACCION_PRECIO_AJUSTADO = "PRECIO_AJUSTADO";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

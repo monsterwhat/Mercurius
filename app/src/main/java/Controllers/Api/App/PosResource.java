@@ -15,6 +15,7 @@ import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CarritoService;
+import Services.CarritoModificacionService;
 import Services.ClientService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
@@ -129,6 +130,10 @@ public class PosResource {
     @Nonnull
     @Inject
     CarritoService carritoService;
+
+    @Nonnull
+    @Inject
+    CarritoModificacionService carritoModificacionService;
 
     @Nonnull
     @Inject
@@ -1285,14 +1290,20 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
 
         String nombre = target.getArticulo() != null ? target.getArticulo().getNombre() : null;
+        Usuarios usuarioAjuste = loginService.findByUsername(username);
+        String clienteAjuste = ctx.getSelectedClient() != null
+                ? ctx.getSelectedClient().getName() : null;
 
         if (restaurar != null && !restaurar.isBlank()) {
             BigDecimal restaurado = target.getPrecioFinalSistema();
+            BigDecimal anterior = target.getPrecioFinalEfectivo();
             clearPriceOverride(target);
             LOG.info("Ajuste de precio POS restaurado | cajero=" + username
                     + " | articulo=" + codigo
                     + " | nombre=" + nombre
                     + " | precioRestaurado=" + restaurado);
+            carritoModificacionService.registrarPrecioAjustado(target, anterior, restaurado,
+                    usuarioAjuste, clienteAjuste, "Restaurado al precio del sistema");
             return htmlOk(cartPanelTemplate.data("panel",
                     panelModel(username, message("PRECIO_RESTAURADO", "info",
                             "Precio del sistema restaurado",
@@ -1341,6 +1352,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 + " | precioSistema=" + precioSistema
                 + " | precioAplicado=" + precioFinal
                 + " | motivo=" + motivoLimpio);
+
+        carritoModificacionService.registrarPrecioAjustado(target, precioSistema, precioFinal,
+                usuarioAjuste, clienteAjuste, motivoLimpio);
 
         String detalle = (precioSistema == null ? "" : "Sistema: ₡" + precioSistema.toPlainString() + " → ")
                 + "se cobrará ₡" + precioFinal.toPlainString()
