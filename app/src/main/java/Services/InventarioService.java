@@ -290,6 +290,25 @@ public class InventarioService extends GService<Inventario> {
         }
     }
 
+    /**
+     * Todos los movimientos de un rango, sin filtrar por usuario. El reporte de
+     * movimientos debe mostrar entradas, salidas y ventas de TODOS cuando no se
+     * elige un cajero; antes la consulta exigía un usuario y sin él la pantalla
+     * salía vacía.
+     */
+    public List<Inventario> findByDateRange(Date startDate, Date endDate) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
+        Root<Inventario> inventario = cq.from(Inventario.class);
+
+        Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startDate, endDate);
+
+        cq.where(datePredicate);
+        cq.orderBy(cb.desc(inventario.get("fechaMovimiento")));
+
+        return em.createQuery(cq).getResultList();
+    }
+
     public List<Inventario> findByDateRangeAndUserId(Date startDate, Date endDate, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);

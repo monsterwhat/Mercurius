@@ -110,12 +110,15 @@ public class FechasResource {
         }
 
         List<Map<String, Object>> filas = new ArrayList<>();
-        boolean consultaCompleta = usuario != null && !usuario.isBlank()
-                && inicio != null && fin != null;
+        // Sin usuario NO se consulta a medias: se listan los movimientos de
+        // todos (entradas, salidas, ventas). Antes hacía falta eligir un cajero
+        // y el reporte salía vacío por omisión.
+        boolean consultaCompleta = inicio != null && fin != null;
 
         if (consultaCompleta) {
-            List<Inventario> movimientos = inventarioService.findByDateRangeAndUserId(
-                    inicio, fin, Long.valueOf(usuario.trim()));
+            List<Inventario> movimientos = usuario == null || usuario.isBlank()
+                    ? inventarioService.findByDateRange(inicio, fin)
+                    : inventarioService.findByDateRangeAndUserId(inicio, fin, Long.valueOf(usuario.trim()));
             if (movimientos != null) {
                 for (Inventario movimiento : movimientos) {
                     filas.add(Tablas.fila(
