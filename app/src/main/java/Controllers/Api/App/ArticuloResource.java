@@ -456,6 +456,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
+            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
             @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
@@ -470,6 +471,7 @@ public class ArticuloResource {
         form.familiaId = parseIntOrNull(familiaId);
         form.cabysCodigo = emptyToNull(cabysCodigo);
         form.precioCostoSinIVA = parseDecimalOrNull(precioCostoSinIVA);
+        form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
         form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
         form.stockOptimo = parseIntOrNull(stockOptimo);
@@ -521,7 +523,11 @@ public class ArticuloResource {
             ArticuloPrecio precio = new ArticuloPrecio();
             precio.setArticulo(nuevo);
             precio.setPrecioCostoSinIVA(form.precioCostoSinIVA);
-            calcularPrecioConUtilidad(precio, form.cabysCodigo);
+            // La fecha del cambio es la que decide el precio vigente
+            // (getLastPrecio ordena por fechaCompra), así que se sella aquí.
+            precio.setFechaCompra(new java.util.Date());
+            precio.setUsuario(currentUser());
+            calcularPrecioConUtilidad(precio, form.cabysCodigo, form.porcentajeUtilidad);
             List<ArticuloPrecio> precios = new ArrayList<>();
             precios.add(precio);
             nuevo.setPrecios(precios);
@@ -584,6 +590,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
+            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
             @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
@@ -598,6 +605,7 @@ public class ArticuloResource {
         form.familiaId = parseIntOrNull(familiaId);
         form.cabysCodigo = emptyToNull(cabysCodigo);
         form.precioCostoSinIVA = parseDecimalOrNull(precioCostoSinIVA);
+        form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
         form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
         form.stockOptimo = parseIntOrNull(stockOptimo);
@@ -644,6 +652,41 @@ public class ArticuloResource {
             }
             articulo.setExento(form.exento);
             articulo.setTipoRefrigeracion(form.tipoRefrigeracion);
+
+            // Precio del artículo: si el operador CAMBIÓ el costo o el margen,
+            // se AGREGA una fila al historial (nunca se reescribe la anterior).
+            // Es lo que permite tener este artículo al 50% cuando el margen
+            // global es 25%. Guardar el formulario sin tocar el precio no
+            // ensucia el historial.
+            ArticuloPrecio vigente = articulo.getLastPrecio();
+            boolean cambiaCosto = form.precioCostoSinIVA != null
+                    && (vigente == null || vigente.getPrecioCostoSinIVA() == null
+                    || vigente.getPrecioCostoSinIVA().compareTo(form.precioCostoSinIVA) != 0);
+            boolean cambiaMargen = form.porcentajeUtilidad != null
+                    && (vigente == null || vigente.getPorcentajeUtilidad() == null
+                    || vigente.getPorcentajeUtilidad().compareTo(form.porcentajeUtilidad) != 0);
+            if (cambiaCosto || cambiaMargen) {
+                BigDecimal costoBase = form.precioCostoSinIVA != null
+                        ? form.precioCostoSinIVA
+                        : (vigente != null ? vigente.getPrecioCostoSinIVA() : null);
+                if (costoBase != null) {
+                    ArticuloPrecio nuevoPrecio = new ArticuloPrecio();
+                    nuevoPrecio.setArticulo(articulo);
+                    nuevoPrecio.setPrecioCostoSinIVA(costoBase);
+                    nuevoPrecio.setFechaCompra(new java.util.Date());
+                    nuevoPrecio.setUsuario(currentUser());
+                    calcularPrecioConUtilidad(nuevoPrecio,
+                            articulo.getCodigoCabys() == null ? null : articulo.getCodigoCabys().getCodigo(),
+                            form.porcentajeUtilidad);
+                    List<ArticuloPrecio> precios = articulo.getPrecios() == null
+                            ? new ArrayList<>() : new ArrayList<>(articulo.getPrecios());
+                    precios.add(nuevoPrecio);
+                    articulo.setPrecios(precios);
+                } else {
+                    LOG.warn("Sin costo no se puede recalcular el precio | articulo=" + codigo
+                            + " | source=ArticuloResource.doUpdate()");
+                }
+            }
 
             articulosService.update(articulo);
 
@@ -766,6 +809,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
+            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
             @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("modo") @Nullable String modo) {
         try {
@@ -937,7 +981,7 @@ public class ArticuloResource {
             nuevo.setPrecioCostoSinIVA(costo);
             nuevo.setPorcentajeUtilidad(utilidad);
             calcularPrecioConUtilidad(nuevo, articulo.getCodigoCabys() == null
-                    ? null : articulo.getCodigoCabys().getCodigo());
+                    ? null : articulo.getCodigoCabys().getCodigo(), utilidad);
 
             List<ArticuloPrecio> precios = articulo.getPrecios() == null
                     ? new ArrayList<>() : new ArrayList<>(articulo.getPrecios());
@@ -1668,13 +1712,29 @@ public class ArticuloResource {
      * HALF_UP at 4dp, CEILING to 0dp, then delegates to the IVA step.
      */
     private void calcularPrecioConUtilidad(@Nonnull ArticuloPrecio precio, @Nullable String cabysCodigo) {
+        calcularPrecioConUtilidad(precio, cabysCodigo, null);
+    }
+
+    /**
+     * Calcula la utilidad y el precio.
+     *
+     * @param margenOverride margen (%) propio del artículo que escribió el
+     *                       operador en el formulario. {@code null} (o
+     *                       negativo) = el margen global (base + ajuste por
+     *                       refrigeración). Es la única forma de tener un
+     *                       artículo al 50% cuando el global es 25%.
+     */
+    private void calcularPrecioConUtilidad(@Nonnull ArticuloPrecio precio,
+            @Nullable String cabysCodigo, @Nullable BigDecimal margenOverride) {
         BigDecimal precioCosto = precio.getPrecioCostoSinIVA();
         if (precioCosto == null) {
             return;
         }
         Articulos articulo = precio.getArticulo();
         BigDecimal porcentajeUtilidad;
-        if (articulo != null) {
+        if (margenOverride != null && margenOverride.compareTo(BigDecimal.ZERO) >= 0) {
+            porcentajeUtilidad = margenOverride;
+        } else if (articulo != null) {
             porcentajeUtilidad = margenCalculadora.calcularMargenPorcentaje(articulo);
         } else {
             ConfiguracionMargen config = configuracionMargenService.findOrCreateDefault();

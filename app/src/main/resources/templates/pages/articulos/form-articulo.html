@@ -93,6 +93,50 @@
             <p class="help">Opcional. Máximo 500 caracteres.</p>
         </div>
 
+        {! Precio: costo y margen. El margen escrito aquí MANDA sobre el global
+           (es la única forma de tener un artículo al 50% cuando el global es
+           25%). Al guardar se agrega una fila al historial de precios; el
+           precio de venta se calcula con el IVA del CAByS. !}
+        <hr class="my-4">
+        <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Precio</p>
+
+        <div class="columns is-multiline">
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="articulo-costo">Costo sin IVA:</label>
+                    <div class="control">
+                        <input class="input" type="number" step="0.01" min="0"
+                               id="articulo-costo" name="precioCostoSinIVA"
+                               inputmode="decimal" autocomplete="off" placeholder="0.00"
+                               value="{#if precio??}{#if precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if}{/if}"/>
+                    </div>
+                    <p class="help">Lo que cuesta el artículo, sin impuesto.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="articulo-margen">Margen de utilidad (%):</label>
+                    <div class="control">
+                        <input class="input" type="number" step="0.01" min="0"
+                               id="articulo-margen" name="porcentajeUtilidad"
+                               inputmode="decimal" autocomplete="off" placeholder="Margen global"
+                               value="{#if precio??}{#if precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}{/if}"/>
+                    </div>
+                    <p class="help">Vacío = margen global. Si lo escribe, este artículo usa SU margen.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="articulo-precio-final">Precio de venta (IVA incluido):</label>
+                    <div class="control">
+                        <input class="input" id="articulo-precio-final" readonly
+                               value="{#if precio??}{#if precio.precioFinal??}{fmt:moneda(precio.precioFinal)}{/if}{/if}"/>
+                    </div>
+                    <p class="help">Se recalcula al guardar: costo × (1 + margen) + IVA del CAByS.</p>
+                </div>
+            </div>
+        </div>
+
         <hr class="my-4">
         <p class="is-size-7 has-text-weight-semibold mercurius-text-muted mb-3">Clasificación</p>
 

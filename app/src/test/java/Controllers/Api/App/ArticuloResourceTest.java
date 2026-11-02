@@ -587,16 +587,19 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200);
 
-        // History grew to two rows; ConfiguracionMargen defaults base 25% (ref +5%, cong +10%)
-        // costo 1000 → precioConUtilidad ceil(1250); IVA 13% (CABYS fixture)
-        // → precioFinal ceil(1250 * 1.13) = 1413.
+        // El margen ENVIADO manda sobre el global: costo 1000 con 20% →
+        // precioConUtilidad 1200; IVA 13% (CABYS fixture) → precioFinal 1356.
+        // (Antes el endpoint ignoraba el margen recibido y aplicaba el global
+        // del 25%, que daba 1413.)
         Response detail = authed(session)
                 .when().get(ARTICULOS + "/" + codigo);
         detail.then()
                 .statusCode(200)
                 .body("data.precios.size()", org.hamcrest.Matchers.anyOf(is(2), is(1)));
         String precioFinal = detail.jsonPath().getString("data.precios[-1].precioFinal");
-        org.assertj.core.api.Assertions.assertThat(precioFinal).isIn("1413", "1413.0", "1413.00");
+        org.assertj.core.api.Assertions.assertThat(precioFinal).isIn("1356", "1356.0", "1356.00");
+        String margen = detail.jsonPath().getString("data.precios[-1].porcentajeUtilidad");
+        org.assertj.core.api.Assertions.assertThat(margen).isIn("20", "20.0", "20.00");
     }
 
     @Test
