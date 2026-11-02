@@ -1,4 +1,4 @@
-{!
+﻿{!
   pages/facturas/factura-body - POS body content shared by the in-layout page
   (pages/facturas/factura.html) and the standalone new-window page
   (pages/facturas/factura-standalone.html). Extracted so both render identical
@@ -8,7 +8,7 @@
     1. _kit/page-header: "Crear Factura - {usuario}" (left-aligned, the only
        h1 on the screen) + the labelled tipo de cambio on the right
     2. Tipo de factura + Cliente row
-    3. Cantidad + código de barras row (scan form)
+    3. Cantidad + cÃ³digo de barras row (scan form)
     4. scrollable cart (pages/facturas/cart-panel include)
     5. facturar outcome (#facturar-resultado)
 
@@ -34,13 +34,13 @@
        other screen: this was the only centred h1 in the app, and it sat on
        the page background instead of in the panel the other screens use.
        The tipo de cambio is the one live reference value on the till, so it
-       sits on the right of the header - with a LABEL. "$1 = ¢457.54" on its
+       sits on the right of the header - with a LABEL. "$1 = Â¢457.54" on its
        own was a bare numeric pair reading as the screen's subtitle. !}
     {! Compact: the till is a working surface, so the header gives its
        vertical space back to the cart instead of shouting the screen name. !}
     {#include _kit/page-header title=("Crear Factura - " + usuario) variant="compact"}
         {#actions}
-        <span id="badge-tipo-cambio" title="Tipo de cambio de venta (dólar)">
+        <span id="badge-tipo-cambio" title="Tipo de cambio de venta (dÃ³lar)">
             {#if badge.disponible}
             <span class="mercurius-text-muted">Tipo de cambio:</span>
             <span class="has-text-weight-semibold">&#36;1 = {fmt:moneda(badge.venta)}</span>
@@ -51,11 +51,11 @@
         {/actions}
     {/include}
 
-    {! Two columns (spec §5 B): capture on the left, cart on the right. The
+    {! Two columns (spec Â§5 B): capture on the left, cart on the right. The
        wrapper is the only change: every form, id and hx-* below is untouched,
        and the cart keeps its own scroll viewport. !}
     <div class="columns is-variable is-4 is-multiline">
-    <div class="column is-full is-7-desktop">
+    <div class="column is-full is-5-desktop">
 
     <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
@@ -64,9 +64,9 @@
                     <label class="label is-small" for="select-tipo-documento">Tipo de factura</label>
                     <div class="control select is-fullwidth is-small">
                         <select id="select-tipo-documento" name="tipoDocumento">
-                            <option value="04" selected>Tiquete electrónico</option>
-                            <option value="01">Factura electrónica</option>
-                            <option value="03">Nota de crédito</option>
+                            <option value="04" selected>Tiquete electrÃ³nico</option>
+                            <option value="01">Factura electrÃ³nica</option>
+                            <option value="03">Nota de crÃ©dito</option>
                         </select>
                     </div>
                 </form>
@@ -95,7 +95,7 @@
        wired to both fields with aria-describedby so the scanner instructions
        are not a caption that only sighted users get. !}
     <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
-          aria-label="Agregar artículo por código de barras"
+          aria-label="Agregar artÃ­culo por cÃ³digo de barras"
           hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
           hx-target="#cart-panel" hx-swap="outerHTML"
           hx-disabled-elt="#btn-agregar-scan">
@@ -107,12 +107,12 @@
                        aria-describedby="ayuda-escaneo" autocomplete="off"/>
             </div>
             <div class="column is-6">
-                <label class="label is-small" for="barcode-input">Código de barras</label>
+                <label class="label is-small" for="barcode-input">CÃ³digo de barras</label>
                 <input class="input is-medium" type="text" id="barcode-input"
                        name="codigoBarra" value="" autocomplete="off" autofocus
                        aria-describedby="ayuda-escaneo" enterkeyhint="go"
                        autocapitalize="off" spellcheck="false"
-                       placeholder="Escanee el código o escríbalo y presione Enter"/>
+                       placeholder="Escanee el cÃ³digo o escrÃ­balo y presione Enter"/>
             </div>
             <div class="column is-4">
                 <div class="field is-grouped is-grouped-multiline" style="margin-bottom:0">
@@ -122,7 +122,7 @@
                     </p>
                     <p class="control">
                         <button type="button" class="button is-medium" aria-haspopup="dialog"
-                                title="Buscar y agregar un artículo"
+                                title="Buscar y agregar un artÃ­culo"
                                 data-kit-open="modal-articulos"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
                                 hx-target="#modal-articulos-body" hx-swap="innerHTML">{#include _kit/icon name="search" /} Buscar</button>
@@ -130,12 +130,12 @@
                 </div>
             </div>
         </div>
-        <p class="help mercurius-text-muted" id="ayuda-escaneo">El lector envía Enter solo; la cantidad por defecto es 1.</p>
+        <p class="help mercurius-text-muted" id="ayuda-escaneo">El lector envÃ­a Enter solo; la cantidad por defecto es 1.</p>
     </form>
 
     </div>
 
-    <div class="column is-full is-5-desktop">
+    <div class="column is-full is-7-desktop">
     {! Classic scrollable cart. The include is the single source of truth for
        the markup, so every mutation endpoint and row form keeps working; the
        scroll viewport now lives INSIDE the panel around the rows table, so the
@@ -178,7 +178,7 @@
 {! Article picker: kit modal shell over the search-as-you-type fragment. The
    "Buscar" button on the scan row opens it via data-kit-open + its own hx-get
    (T18 bridge pattern, same as the client picker). !}
-{#include _kit/modal id="modal-articulos" title="Buscar y agregar artículo" triggerClass="is-hidden"
+{#include _kit/modal id="modal-articulos" title="Buscar y agregar artÃ­culo" triggerClass="is-hidden"
      bodyUrl="/api/app/pos/articulos-picker?q="}{/include}
 
 {! Price-override modal lives INSIDE pages/facturas/cart-panel (it travels
