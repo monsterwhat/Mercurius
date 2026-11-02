@@ -824,6 +824,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 ? comprobante.getEncabezado().getNumeroConsecutivo() : null;
         out.haciendaEstado = comprobante.getHaciendaEstado();
         out.haciendaMensaje = result.haciendaMensaje;
+        out.haciendaAmbiente = settings != null ? settings.getHaciendaEnvironment() : null;
         out.puntosOtorgados = result.puntosOtorgados;
         out.puntosMensaje = result.puntosMensaje;
         out.totalPagado = totalPagado;
@@ -2019,6 +2020,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             resultado.put("comprobanteId", data.comprobanteId);
             resultado.put("haciendaEstado", data.haciendaEstado);
             resultado.put("haciendaMensaje", data.haciendaMensaje);
+            resultado.put("haciendaAmbiente", data.haciendaAmbiente);
             resultado.put("totalPagado", data.totalPagado);
             resultado.put("vuelto", data.vuelto);
             resultado.put("puntosOtorgados", data.puntosOtorgados);
@@ -2430,6 +2432,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         public @Nullable Long comprobanteId;
         public @Nullable String consecutivo;
         public @Nullable String haciendaEstado;
+        public @Nullable String haciendaAmbiente;
         public @Nullable String haciendaMensaje;
         /**
          * false cuando la venta se cobró y facturó pero los puntos ganados no

@@ -821,6 +821,12 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
+                // El sello optimista de ENVIADO se puso antes de llamar a
+                // Hacienda; si la respuesta es un rechazo, el comprobante NO
+                // quedo enviado. Dejarlo en ENVIADO producia el falso exito que
+                // la pantalla mostraba como "Hacienda: ENVIADO" junto al
+                // mensaje "NO enviado". Un rechazo es terminal, no se reencola.
+                comprobante.setHaciendaEstado("RECHAZADO");
                 comprobantesEmitidosService.update(comprobante);
                 LOG.info("Hacienda rechazo comprobante: " + result.errorMessage
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()"

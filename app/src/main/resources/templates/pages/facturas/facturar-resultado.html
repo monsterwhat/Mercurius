@@ -29,7 +29,8 @@
         <p>Consecutivo: <span class="has-text-weight-semibold kit-code">{resultado.consecutivo}</span></p>
         {/if}
         {#if resultado.haciendaEstado??}
-        <p>Hacienda: <span class="status-chip is-neutral">{resultado.haciendaEstado}</span>
+        <p>Hacienda{#if resultado.haciendaAmbiente eq 'sandbox'} <span class="status-chip is-warning" title="Este servidor envía a Hacienda en ambiente de pruebas">Sandbox</span>{/if}:
+            <span class="status-chip {#if resultado.haciendaEstado eq 'ACEPTADO'}is-success{#else if resultado.haciendaEstado eq 'RECHAZADO'}is-danger{#else}is-neutral{/if}">{resultado.haciendaEstado}</span>
             {#if resultado.haciendaMensaje??}{resultado.haciendaMensaje}{/if}</p>
         {/if}
         {#if resultado.puntosOtorgados?? && !resultado.puntosOtorgados}
