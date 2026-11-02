@@ -245,8 +245,10 @@ public class DashboardMetricsService {
         return results.stream()
             .map(row -> new TopProduct(
                 (String) row[0],
-                ((Number) row[1]).longValue(),
-                (BigDecimal) row[2]
+                // SUM() over an empty or fully-cancelled article comes back as
+                // NULL; unboxing that threw a 500 on the dashboard.
+                row[1] == null ? 0L : ((Number) row[1]).longValue(),
+                row[2] == null ? BigDecimal.ZERO : (BigDecimal) row[2]
             ))
             .collect(Collectors.toList());
     }

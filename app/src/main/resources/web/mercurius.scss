@@ -550,7 +550,7 @@ body {
 }
 
 .app-header-menu {
-    display: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -2537,4 +2537,71 @@ button,
     .login-page .card-content {
         padding: var(--mercurius-space-4);
     }
+}
+
+// -----------------------------------------------------------------------------
+// 3.9.6 Collapsed rail (>=1025px)
+//
+// The trigger keeps its label in the DOM and the rail hides it, so the same
+// markup serves both widths. Sub-lists are hidden in the rail: there is no
+// horizontal room for a second level, and the group chevron goes away with
+// them.
+// -----------------------------------------------------------------------------
+@media (min-width: 1025px) {
+.app-shell.is-sidebar-collapsed {
+    .app-sidebar {
+        flex-basis: 58px;
+        width: 58px;
+    }
+
+    .app-sidebar-brand {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .app-sidebar-label {
+        display: none;
+    }
+
+    .app-sidebar-link,
+    .app-sidebar-group {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .app-sidebar-row .app-sidebar-group {
+        display: none;
+    }
+
+    .app-sidebar-sub {
+        display: none;
+    }
+
+    .app-sidebar-meta {
+        align-items: center;
+        font-size: 0;
+    }
+
+    .app-sidebar-meta [data-connection-status]::before {
+        margin-right: 0;
+    }
+}
+.app-sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 1.0625rem;
+    height: 1.0625rem;
+    font-size: 1.0625rem;
+    line-height: 1;
+}
+
+.app-sidebar-sub .app-sidebar-icon {
+    width: .875rem;
+    height: .875rem;
+    font-size: .875rem;
+}
+
 }

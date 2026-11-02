@@ -116,7 +116,44 @@
                 if (toggle) {
                     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 }
-                if (backdrop) {
+                // Desktop: the same button collapses the sidebar to an icon rail
+            // (spec §3). Below 1025px the bubble-phase handler above opens the
+            // off-canvas drawer instead, so this one bows out there.
+            var desktopQuery = window.matchMedia('(min-width: 1025px)');
+            var COLLAPSE_KEY = 'mercurius.sidebar.collapsed';
+
+            function applyCollapsed(collapsed) {
+                shell.classList.toggle('is-sidebar-collapsed', collapsed);
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                }
+                try {
+                    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+                } catch (e) {
+                    console.warn('[shell] no se pudo guardar el estado del sidebar', e);
+                }
+            }
+
+            if (shell) {
+                try {
+                    if (localStorage.getItem(COLLAPSE_KEY) === '1') {
+                        shell.classList.add('is-sidebar-collapsed');
+                    }
+                } catch (e) {
+                    console.warn('[shell] no se pudo leer el estado del sidebar', e);
+                }
+            }
+
+            if (toggle && shell) {
+                toggle.addEventListener('click', function (event) {
+                    if (!desktopQuery.matches) {
+                        return;
+                    }
+                    event.stopImmediatePropagation();
+                    applyCollapsed(!shell.classList.contains('is-sidebar-collapsed'));
+                }, true);
+            }
+            if (backdrop) {
                     backdrop.hidden = !open;
                 }
             }
@@ -127,6 +164,43 @@
                 });
             }
 
+            // Desktop: the same button collapses the sidebar to an icon rail
+            // (spec §3). Below 1025px the bubble-phase handler above opens the
+            // off-canvas drawer instead, so this one bows out there.
+            var desktopQuery = window.matchMedia('(min-width: 1025px)');
+            var COLLAPSE_KEY = 'mercurius.sidebar.collapsed';
+
+            function applyCollapsed(collapsed) {
+                shell.classList.toggle('is-sidebar-collapsed', collapsed);
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                }
+                try {
+                    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+                } catch (e) {
+                    console.warn('[shell] no se pudo guardar el estado del sidebar', e);
+                }
+            }
+
+            if (shell) {
+                try {
+                    if (localStorage.getItem(COLLAPSE_KEY) === '1') {
+                        shell.classList.add('is-sidebar-collapsed');
+                    }
+                } catch (e) {
+                    console.warn('[shell] no se pudo leer el estado del sidebar', e);
+                }
+            }
+
+            if (toggle && shell) {
+                toggle.addEventListener('click', function (event) {
+                    if (!desktopQuery.matches) {
+                        return;
+                    }
+                    event.stopImmediatePropagation();
+                    applyCollapsed(!shell.classList.contains('is-sidebar-collapsed'));
+                }, true);
+            }
             if (backdrop) {
                 backdrop.addEventListener('click', function () { setSidebar(false); });
             }

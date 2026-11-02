@@ -2,43 +2,54 @@
   fragments/app-sidebar - sidebar principal del nuevo shell (ui-modernization).
 
   Reubica todas las entradas del navbar anterior. Etiquetas cortas con el
-  nombre completo en title (spec UI-7: 160px). Los gates de rol son los
-  mismos que tenía fragments/navbar.html.
+  nombre completo en title (spec UI-7). Los gates de rol son los mismos que
+  tenía fragments/navbar.html.
 
-  Comportamiento (layout.html): el JS marca .is-active en el enlace de la
-  página actual, abre el grupo que lo contiene y copia su title al header.
+  ICONOS (spec §11): cada entrada lleva un icono outline de 17px del set
+  propio (web/icons.js). En modo rail el label se oculta y el icono queda
+  solo, con el title como tooltip.
+
+  Comportamiento (layout.html): el JS marca .is-active, abre el grupo que
+  contiene la página actual, copia su title al header y colapsa el sidebar a
+  rail en escritorio.
 !}
 <aside class="app-sidebar" id="app-sidebar" aria-label="Navegación principal">
-    <a class="app-sidebar-brand" href="{config:['quarkus.http.root-path']}/app" data-planned-route="/app">
+    <a class="app-sidebar-brand" href="{config:['quarkus.http.root-path']}/app" data-planned-route="/app" title="Inicio">
         {#include fragments/logo-img alt="Mercurius" style="width:26px;height:26px;" /}
-        <span>Mercurius</span>
+        <span class="app-sidebar-label">Mercurius</span>
     </a>
 
     <nav class="app-sidebar-nav" aria-label="Secciones">
         <ul>
             {! Dashboard: todos los roles autenticados. !}
             <li>
-                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/dashboard" data-planned-route="/app/dashboard" title="Dashboard">Dashboard</a>
+                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/dashboard" data-planned-route="/app/dashboard" title="Dashboard">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="chart" /}</span>
+                    <span class="app-sidebar-label">Dashboard</span>
+                </a>
             </li>
 
             {! Gestión: gate admin || registro || inventario || tributacion.
                El desplegable de catálogo solo tiene sentido para admin/inventario. !}
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('inventario') || inject:securityIdentity.hasRole('tributacion')}
             <li class="app-sidebar-row">
-                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/gestion" data-planned-route="/app/gestion" title="Gestión">Gestión</a>
+                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/gestion" data-planned-route="/app/gestion" title="Gestión">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="package" /}</span>
+                    <span class="app-sidebar-label">Gestión</span>
+                </a>
                 {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
-                <button type="button" class="app-sidebar-group" aria-haspopup="true" aria-expanded="false"
+                <button type="button" class="app-sidebar-group" data-sidebar-group aria-haspopup="true" aria-expanded="false"
                         aria-controls="sidebar-gestion" aria-label="Abrir secciones de Gestión"></button>
                 {/if}
             </li>
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
             <li>
                 <ul id="sidebar-gestion" class="app-sidebar-sub">
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/articulos" data-planned-route="/app/articulos" title="Artículos">Artículos</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/categorias?tab=familias" data-planned-route="/app/categorias" title="Categorías">Categorías</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/inventarios" data-planned-route="/app/inventarios" title="Inventarios">Inventarios</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" data-planned-route="/app/inventarios/alertas" title="Alertas de stock">Alertas</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" data-planned-route="/app/inventarios/mermas" title="Mermas y pérdidas">Mermas</a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/articulos" data-planned-route="/app/articulos" title="Artículos"><span class="app-sidebar-icon">{#include _kit/icon name="package" /}</span><span class="app-sidebar-label">Artículos</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/categorias?tab=familias" data-planned-route="/app/categorias" title="Categorías"><span class="app-sidebar-icon">{#include _kit/icon name="filter" /}</span><span class="app-sidebar-label">Categorías</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/inventarios" data-planned-route="/app/inventarios" title="Inventarios"><span class="app-sidebar-icon">{#include _kit/icon name="barcode" /}</span><span class="app-sidebar-label">Inventarios</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" data-planned-route="/app/inventarios/alertas" title="Alertas de stock"><span class="app-sidebar-icon">{#include _kit/icon name="alert" /}</span><span class="app-sidebar-label">Alertas</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" data-planned-route="/app/inventarios/mermas" title="Mermas y pérdidas"><span class="app-sidebar-icon">{#include _kit/icon name="trash" /}</span><span class="app-sidebar-label">Mermas</span></a></li>
                 </ul>
             </li>
             {/if}
@@ -47,26 +58,35 @@
             {! Reportes: gate admin || registro || inventario || tributacion (D11). !}
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('inventario') || inject:securityIdentity.hasRole('tributacion')}
             <li>
-                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes" data-planned-route="/app/reportes" title="Reportes">Reportes</a>
+                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes" data-planned-route="/app/reportes" title="Reportes">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="file" /}</span>
+                    <span class="app-sidebar-label">Reportes</span>
+                </a>
             </li>
             {/if}
 
             {! Hacienda: gate tributacion. !}
             {#if inject:securityIdentity.hasRole('tributacion')}
             <li class="app-sidebar-row">
-                <button type="button" class="app-sidebar-group app-sidebar-group--full" aria-haspopup="true"
-                        aria-expanded="false" aria-controls="sidebar-hacienda">Hacienda</button>
+                <button type="button" class="app-sidebar-group app-sidebar-group--full" data-sidebar-group aria-haspopup="true"
+                        aria-expanded="false" aria-controls="sidebar-hacienda">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="money" /}</span>
+                    <span class="app-sidebar-label">Hacienda</span>
+                </button>
             </li>
             <li>
                 <ul id="sidebar-hacienda" class="app-sidebar-sub">
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard" data-planned-route="/app/tributacion/dashboard" title="Dashboard Hacienda">Dashboard</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/tributacion/consultas" data-planned-route="/app/tributacion/consultas" title="Consultas">Consultas</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/cabys" data-planned-route="/app/cabys" title="CaByS">CaByS</a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard" data-planned-route="/app/tributacion/dashboard" title="Dashboard Hacienda"><span class="app-sidebar-icon">{#include _kit/icon name="gauge" /}</span><span class="app-sidebar-label">Dashboard</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/tributacion/consultas" data-planned-route="/app/tributacion/consultas" title="Consultas"><span class="app-sidebar-icon">{#include _kit/icon name="search" /}</span><span class="app-sidebar-label">Consultas</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/cabys" data-planned-route="/app/cabys" title="CaByS"><span class="app-sidebar-icon">{#include _kit/icon name="barcode" /}</span><span class="app-sidebar-label">CaByS</span></a></li>
                     <li>
                         <button type="button" class="app-sidebar-link" data-kit-open="modal-tipo-cambio"
                                 hx-get="{config:['quarkus.http.root-path']}/app/tipo-cambio/fragment"
                                 hx-target="#modal-tipo-cambio-body" hx-swap="innerHTML"
-                                aria-haspopup="dialog">Tipo de cambio</button>
+                                aria-haspopup="dialog" title="Tipo de cambio">
+                            <span class="app-sidebar-icon">{#include _kit/icon name="money" /}</span>
+                            <span class="app-sidebar-label">Tipo de cambio</span>
+                        </button>
                     </li>
                 </ul>
             </li>
@@ -75,13 +95,16 @@
             {! Usuarios: gate admin || usuario. !}
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
             <li class="app-sidebar-row">
-                <button type="button" class="app-sidebar-group app-sidebar-group--full" aria-haspopup="true"
-                        aria-expanded="false" aria-controls="sidebar-usuarios">Usuarios</button>
+                <button type="button" class="app-sidebar-group app-sidebar-group--full" data-sidebar-group aria-haspopup="true"
+                        aria-expanded="false" aria-controls="sidebar-usuarios">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span>
+                    <span class="app-sidebar-label">Usuarios</span>
+                </button>
             </li>
             <li>
                 <ul id="sidebar-usuarios" class="app-sidebar-sub">
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios" title="Usuarios">Usuarios</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" data-planned-route="/app/reportes/clientes" title="Clientes">Clientes</a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios" title="Usuarios"><span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span><span class="app-sidebar-label">Usuarios</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" data-planned-route="/app/reportes/clientes" title="Clientes"><span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span><span class="app-sidebar-label">Clientes</span></a></li>
                 </ul>
             </li>
             {/if}
@@ -89,17 +112,20 @@
             {! Ajustes: gate admin || registro (D9). !}
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('registro')}
             <li class="app-sidebar-row">
-                <button type="button" class="app-sidebar-group app-sidebar-group--full" aria-haspopup="true"
-                        aria-expanded="false" aria-controls="sidebar-ajustes">Ajustes</button>
+                <button type="button" class="app-sidebar-group app-sidebar-group--full" data-sidebar-group aria-haspopup="true"
+                        aria-expanded="false" aria-controls="sidebar-ajustes">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="lock" /}</span>
+                    <span class="app-sidebar-label">Ajustes</span>
+                </button>
             </li>
             <li>
                 <ul id="sidebar-ajustes" class="app-sidebar-sub">
                     {#if inject:securityIdentity.hasRole('admin')}
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/correos/reportes" data-planned-route="/app/correos/reportes" title="Menú de correos">Correos</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/aplicacion" data-planned-route="/app/aplicacion" title="Menú de aplicación">Aplicación</a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/backups" data-planned-route="/app/backups" title="Respaldos">Respaldos</a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/correos/reportes" data-planned-route="/app/correos/reportes" title="Menú de correos"><span class="app-sidebar-icon">{#include _kit/icon name="send" /}</span><span class="app-sidebar-label">Correos</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/aplicacion" data-planned-route="/app/aplicacion" title="Menú de aplicación"><span class="app-sidebar-icon">{#include _kit/icon name="file" /}</span><span class="app-sidebar-label">Aplicación</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/backups" data-planned-route="/app/backups" title="Respaldos"><span class="app-sidebar-icon">{#include _kit/icon name="download" /}</span><span class="app-sidebar-label">Respaldos</span></a></li>
                     {/if}
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/registros/log" data-planned-route="/app/registros/log" title="Registro de actividades">Registro</a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/registros/log" data-planned-route="/app/registros/log" title="Registro de actividades"><span class="app-sidebar-icon">{#include _kit/icon name="clock" /}</span><span class="app-sidebar-label">Registro</span></a></li>
                 </ul>
             </li>
             {/if}
@@ -108,7 +134,7 @@
 
     <div class="app-sidebar-meta">
         {#if inject:securityIdentity.username}
-        <span>{inject:securityIdentity.username}</span>
+        <span class="app-sidebar-label">{inject:securityIdentity.username}</span>
         {/if}
         <span data-connection-status>En línea</span>
     </div>
@@ -116,34 +142,7 @@
 
 {!
   Dialog-only surface for Tipo de Cambio: the shared modal lives here (not on a
-  page) so the sidebar item can open it on every page. Same contract as the
-  old navbar fragment.
+  page) so the sidebar item can open it on every page.
 !}
 {#include _kit/modal id="modal-tipo-cambio" title="Tipo de Cambio" triggerClass="is-hidden"
      bodyUrl="/app/tipo-cambio/fragment"}{/include}
-
-{!
-  data-kit-open bridge (mirrors the page-local scripts elsewhere): flips the
-  modal's Alpine state open/close and fires the hx-get that loads the body.
-!}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.addEventListener('click', function (e) {
-            var opener = e.target.closest('[data-kit-open]');
-            if (opener) {
-                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
-                if (modal && window.Alpine) {
-                    Alpine.$data(modal).open = true;
-                }
-                return;
-            }
-            var closer = e.target.closest('[data-kit-close]');
-            if (closer) {
-                var root = closer.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
-                }
-            }
-        });
-    });
-</script>
