@@ -199,7 +199,21 @@ public class SettingsResource {
             @FormParam("imapCorreoHost") @Nullable String imapCorreoHost,
             @FormParam("imapCorreoPuerto") @Nullable String imapCorreoPuerto,
             @FormParam("smtpCorreoHost") @Nullable String smtpCorreoHost,
-            @FormParam("smtpCorreoPuerto") @Nullable String smtpCorreoPuerto) {
+            @FormParam("smtpCorreoPuerto") @Nullable String smtpCorreoPuerto,
+            @FormParam("nombrePerfil") @Nullable String nombrePerfil,
+            @FormParam("nombre") @Nullable String nombre,
+            @FormParam("tipoIdentificacion") @Nullable String tipoIdentificacion,
+            @FormParam("identificacion") @Nullable String identificacion,
+            @FormParam("nombreNegocio") @Nullable String nombreNegocio,
+            @FormParam("razonSocial") @Nullable String razonSocial,
+            @FormParam("codigoActividad") @Nullable String codigoActividad,
+            @FormParam("telefono") @Nullable String telefono,
+            @FormParam("correoElectronicoTributacion") @Nullable String correoElectronicoTributacion,
+            @FormParam("provincia") @Nullable String provincia,
+            @FormParam("canton") @Nullable String canton,
+            @FormParam("distrito") @Nullable String distrito,
+            @FormParam("barrio") @Nullable String barrio,
+            @FormParam("direccionCompleta") @Nullable String direccionCompleta) {
 
         OperationalSettingsRequest request = new OperationalSettingsRequest();
         request.notificarRechazos = casilla(notificarRechazos, notificarRechazosPresente);
@@ -218,12 +232,42 @@ public class SettingsResource {
         request.imapCorreoPuerto = enBlancoNulo(imapCorreoPuerto);
         request.smtpCorreoHost = smtpCorreoHost;
         request.smtpCorreoPuerto = enBlancoNulo(smtpCorreoPuerto);
+        request.nombrePerfil = nombrePerfil;
+        request.nombre = nombre;
+        request.tipoIdentificacion = tipoIdentificacion;
+        request.identificacion = identificacion;
+        request.nombreNegocio = nombreNegocio;
+        request.razonSocial = razonSocial;
+        request.codigoActividad = codigoActividad;
+        request.telefono = telefono;
+        request.correoElectronicoTributacion = correoElectronicoTributacion;
+        request.provincia = provincia;
+        request.canton = canton;
+        request.distrito = distrito;
+        request.barrio = barrio;
+        request.direccionCompleta = direccionCompleta;
         return aplicarCambios(request);
     }
 
     @Nullable
     private static String enBlancoNulo(@Nullable String valor) {
         return valor == null || valor.isBlank() ? null : valor;
+    }
+
+    /** Texto recortado; null si queda vacío. Rechaza lo que no cabe en la columna. */
+    @Nullable
+    private static String textoLimitado(@Nullable String valor, int max, @Nonnull String etiqueta) {
+        if (valor == null) {
+            return null;
+        }
+        String limpio = valor.trim();
+        if (limpio.isEmpty()) {
+            return null;
+        }
+        if (limpio.length() > max) {
+            throw new IllegalArgumentException(etiqueta + " no puede superar " + max + " caracteres.");
+        }
+        return limpio;
     }
 
     /** Tri-state checkbox: marker absent = leave unchanged; unchecked = false. */
@@ -311,6 +355,68 @@ public class SettingsResource {
                 settings.setProvedor(valorProveedor.isEmpty() ? null : valorProveedor);
             }
 
+            // ── Perfil y tributación ─────────────────────────────────────
+            // Todos son columnas de texto de ConfiguracionAplicacion. Se
+            // recortan y se limitan; el tipo de identificación solo admite los
+            // códigos que Hacienda define (01..04) porque el comprobante los
+            // emite tal cual.
+            if (request.nombrePerfil != null) {
+                settings.setNombrePerfil(textoLimitado(request.nombrePerfil, 120, "El nombre del perfil"));
+            }
+            if (request.nombre != null) {
+                settings.setNombre(textoLimitado(request.nombre, 160, "El nombre completo"));
+            }
+            if (request.tipoIdentificacion != null) {
+                String tipo = request.tipoIdentificacion.trim();
+                if (!tipo.isEmpty() && !tipo.matches("0[1-4]")) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El tipo de identificación debe ser 01 (física), 02 (jurídica), 03 (DIMEX) o 04 (NITE)."))
+                            .build();
+                }
+                settings.setTipoIdentificacion(tipo.isEmpty() ? null : tipo);
+            }
+            if (request.identificacion != null) {
+                settings.setIdentificacion(textoLimitado(request.identificacion, 20, "La identificación"));
+            }
+            if (request.nombreNegocio != null) {
+                settings.setNombreNegocio(textoLimitado(request.nombreNegocio, 160, "El nombre del negocio"));
+            }
+            if (request.razonSocial != null) {
+                settings.setRazonSocial(textoLimitado(request.razonSocial, 160, "La razón social"));
+            }
+            if (request.codigoActividad != null) {
+                settings.setCodigoActividad(textoLimitado(request.codigoActividad, 10, "El código de actividad"));
+            }
+            if (request.telefono != null) {
+                settings.setTelefono(textoLimitado(request.telefono, 20, "El teléfono"));
+            }
+            if (request.correoElectronicoTributacion != null) {
+                String correo = request.correoElectronicoTributacion.trim();
+                if (!correo.isEmpty() && (correo.length() > 160 || !correo.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El correo de tributación no es válido."))
+                            .build();
+                }
+                settings.setCorreoElectronicoTributacion(correo.isEmpty() ? null : correo);
+            }
+            if (request.provincia != null) {
+                settings.setProvincia(textoLimitado(request.provincia, 80, "La provincia"));
+            }
+            if (request.canton != null) {
+                settings.setCanton(textoLimitado(request.canton, 80, "El cantón"));
+            }
+            if (request.distrito != null) {
+                settings.setDistrito(textoLimitado(request.distrito, 80, "El distrito"));
+            }
+            if (request.barrio != null) {
+                settings.setBarrio(textoLimitado(request.barrio, 80, "El barrio"));
+            }
+            if (request.direccionCompleta != null) {
+                settings.setDireccionCompleta(textoLimitado(request.direccionCompleta, 250, "La dirección"));
+            }
+
             // ── Proveedor de correo (IMAP/SMTP) ──
             // Se guarda por triplete (clave + host + puerto) porque la UI
             // manda el host/puerto editable siempre: si el operador cambia de
@@ -373,6 +479,12 @@ public class SettingsResource {
                         LOG.info("Se ha actualizado la configuración: " + settings.getNombrePerfil() + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "SettingsResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
 
             return Response.ok(ApiResponse.ok(toDTO(settings))).build();
+        } catch (IllegalArgumentException e) {
+            // Mensaje ya redactado por textoLimitado(); es un dato del
+            // operador, no un fallo del servidor.
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
+                    .build();
         } catch (Exception e) {
             LOG.warn("Error updating app settings", e);
             return Response.serverError()
@@ -794,6 +906,26 @@ public class SettingsResource {
          */
         @Nullable
         public String proveedorSistemas;
+
+        // ── Perfil y tributación ──────────────────────────────────────────
+        // Estos campos existían en ConfiguracionAplicacion pero no eran
+        // escribibles desde ninguna pantalla nueva: el asistente los mostraba
+        // en solo lectura. Exponerlos aquí es paridad con la entidad, no
+        // lógica nueva.
+        @Nullable public String nombrePerfil;
+        @Nullable public String nombre;
+        @Nullable public String tipoIdentificacion;
+        @Nullable public String identificacion;
+        @Nullable public String nombreNegocio;
+        @Nullable public String razonSocial;
+        @Nullable public String codigoActividad;
+        @Nullable public String telefono;
+        @Nullable public String correoElectronicoTributacion;
+        @Nullable public String provincia;
+        @Nullable public String canton;
+        @Nullable public String distrito;
+        @Nullable public String barrio;
+        @Nullable public String direccionCompleta;
 
         /**
          * Proveedor de buzone: GMAIL | OUTLOOK | YAHOO | PERSONALIZADO. Un valor

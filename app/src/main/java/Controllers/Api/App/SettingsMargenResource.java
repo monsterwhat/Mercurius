@@ -32,7 +32,7 @@ import org.jboss.logging.Logger;
 @Path("/api/app/settings/margen")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("admin")
+@RolesAllowed({"admin", "inventario"})
 public class SettingsMargenResource {
 
     private static final Logger LOG = Logger.getLogger(SettingsMargenResource.class);

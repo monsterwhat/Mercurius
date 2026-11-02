@@ -2810,3 +2810,29 @@ button,
 .pos-page {
     padding: 0 !important;
 }
+// -----------------------------------------------------------------------------
+// 3.11 Standalone listings
+//
+// Several report screens render _kit/data-table directly on the page canvas.
+// In light mode that reads as a loose white slab: no frame, no rounded corner,
+// pagination floating under it. A listing that is NOT already inside a panel
+// gets the panel treatment; the reset keeps tables inside surfaces, boxes,
+// modals and metric cards exactly as they were (no double frame).
+// -----------------------------------------------------------------------------
+.app-content .table-block {
+    background: var(--merc-surface);
+    border: 1px solid var(--merc-border);
+    border-radius: var(--merc-radius-md);
+    padding: .5rem .75rem;
+}
+
+.app-content .box .table-block,
+.app-content .surface .table-block,
+.app-content .kit-surface .table-block,
+.app-content .modal .table-block,
+.app-content .metric-card .table-block {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+}

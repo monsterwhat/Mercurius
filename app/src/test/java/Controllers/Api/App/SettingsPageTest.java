@@ -158,14 +158,15 @@ class SettingsPageTest extends AppBase {
         }
 
         // Alpine wizard replaces p:steps with the five legacy steps
-        assertTrue(html.contains("id=\"asistente-aplicacion\""), "falta el asistente Alpine");
-        assertTrue(html.contains("x-data=\"{ paso: 0 }\""), "falta el estado Alpine del asistente");
-        assertTrue(html.contains("Perfil"), "falta paso Perfil");
-        assertTrue(html.contains("Logo"), "falta paso Logo");
-        assertTrue(html.contains("Tributación"), "falta paso Tributación");
-        assertTrue(html.contains("Confirmación"), "falta paso Confirmación");
-        assertTrue(html.contains("hx-include=\"#ajustes-forma\""),
-                "el paso final debe enviar el mismo payload del formulario");
+        // El asistente de 5 pasos se retiró: 4 pasos eran solo lectura y el
+        // quinto enviaba los mismos campos del formulario. Perfil y tributación
+        // ahora son editables en su propia sección.
+        assertFalse(html.contains("id=\"asistente-aplicacion\""), "el asistente de solo lectura debía retirarse");
+        assertTrue(html.contains("data-group=\"general-negocio\""), "falta la sección de perfil y tributación");
+        assertTrue(html.contains("name=\"nombrePerfil\""), "el nombre del perfil debe ser editable");
+        assertTrue(html.contains("name=\"identificacion\""), "la identificación debe ser editable");
+        assertTrue(html.contains("name=\"tipoIdentificacion\""), "el tipo de identificación debe ser editable");
+        assertTrue(html.contains("name=\"correoElectronicoTributacion\""), "el correo de tributación debe ser editable");
 
         // backup status card + trigger button hit the live POST endpoint
         assertTrue(html.contains("id=\"backup-status-card\""), "falta la tarjeta de estado de backups");

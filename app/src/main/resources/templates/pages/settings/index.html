@@ -115,167 +115,12 @@
 
     {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
     {#if modo != 'backups'}
-    {! ── Legacy p:steps replacement: Alpine-driven wizard (client-side only) ── !}
-    <section id="asistente-aplicacion" class="box mb-5" x-data="{ paso: 0 }"
-             aria-labelledby="asistente-titulo">
-        <h2 class="title is-5" id="asistente-titulo">Asistente inicial</h2>
-        <p class="subtitle is-6 mercurius-text-muted">
-            Misma secuencia del asistente legacy: Perfil, Logo, Correo,
-            Tributación y Confirmación. La navegación es local; el guardado
-            final usa el mismo endpoint de ajustes.
-        </p>
+        {! El asistente de 5 pasos se retiró: 4 de sus pasos eran solo lectura y
+       el quinto enviaba los mismos campos que el formulario de abajo. Los datos
+       de perfil y tributación ahora SON editables en «Perfil y tributación», y
+       el logo no tiene backend (no existe endpoint de carga). !}
 
-        <div class="buttons" role="group" aria-label="Pasos del asistente">
-            <button class="button" type="button" @click="paso = 0"
-                    :aria-pressed="paso === 0"
-                    :class="{ 'is-primary': paso === 0 }">1. Perfil</button>
-            <button class="button" type="button" @click="paso = 1"
-                    :aria-pressed="paso === 1"
-                    :class="{ 'is-primary': paso === 1 }">2. Logo</button>
-            <button class="button" type="button" @click="paso = 2"
-                    :aria-pressed="paso === 2"
-                    :class="{ 'is-primary': paso === 2 }">3. Correo</button>
-            <button class="button" type="button" @click="paso = 3"
-                    :aria-pressed="paso === 3"
-                    :class="{ 'is-primary': paso === 3 }">4. Tributación</button>
-            <button class="button" type="button" @click="paso = 4"
-                    :aria-pressed="paso === 4"
-                    :class="{ 'is-primary': paso === 4 }">5. Confirmación</button>
-        </div>
-
-        <div x-show="paso === 0" role="region" aria-label="Paso 1: Perfil">
-            <p class="is-size-7 mercurius-text-muted">Nombre del perfil</p>
-            <p class="title is-4">{settings.nombrePerfil ?: '—'}</p>
-            <p class="is-size-7 mercurius-text-muted">Estado del perfil</p>
-            <span class="status-chip {#if settings.estatus}is-success{#else}is-neutral{/if}">
-                {#if settings.estatus}Activo{#else}Inactivo{/if}</span>
-            <p class="is-size-7 mercurius-text-muted">Progreso del asistente</p>
-            <p>Paso <span x-text="paso + 1">1</span> de 5</p>
-        </div>
-
-        <div x-show="paso === 1" style="display: none;" role="region" aria-label="Paso 2: Logo">
-            <p class="is-size-7 mercurius-text-muted">Logo configurado</p>
-            <span class="status-chip {#if settings.logoMimeType??}is-success{#else}is-warning{/if}">
-                {#if settings.logoMimeType??}Sí ({settings.logoMimeType}){#else}Sin logo{/if}</span>
-            <p class="help mercurius-text-muted">
-                La carga del logo sigue viviendo en el flujo legacy hasta que su
-                migración aterrice; aquí solo se consulta.
-            </p>
-        </div>
-
-        <div x-show="paso === 2" style="display: none;" role="region" aria-label="Paso 3: Correo">
-            <p class="is-size-7 mercurius-text-muted">Correo electrónico principal</p>
-            <p>{settings.correoElectronico ?: '—'}</p>
-            <p class="is-size-7 mercurius-text-muted">Notificaciones de rechazos</p>
-            <p>{#if settings.notificarRechazos}Activadas{#else}Desactivadas{/if}</p>
-            <p class="help mercurius-text-muted">
-                Por seguridad, las credenciales del correo no se muestran ni se
-                editan desde esta pantalla.
-            </p>
-        </div>
-
-        <div x-show="paso === 3" style="display: none;" role="region" aria-label="Paso 4: Tributación">
-            <div class="columns is-multiline">
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Identificación</p>
-                    <p>{settings.identificacion ?: '—'}
-                        {#if settings.tipoIdentificacion??}<small>({settings.tipoIdentificacion})</small>{/if}</p>
-                </div>
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Nombre del negocio</p>
-                    <p>{settings.nombreNegocio ?: '—'}</p>
-                </div>
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Provincia</p>
-                    <p>{settings.provincia ?: '—'}</p>
-                </div>
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Teléfono</p>
-                    <p>{settings.telefono ?: '—'}</p>
-                </div>
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Correo de tributación</p>
-                    <p>{settings.correoElectronicoTributacion ?: '—'}</p>
-                </div>
-                <div class="column is-half">
-                    <p class="is-size-7 mercurius-text-muted">Entorno Hacienda</p>
-                    <p>{#if settings.haciendaEnvironment??}{#if settings.haciendaEnvironment == 'production'}Producción{#else}{#if settings.haciendaEnvironment == 'sandbox'}Pruebas (sandbox){#else}{settings.haciendaEnvironment}{/if}{/if}{#else}&mdash;{/if}</p>
-                </div>
-            </div>
-        </div>
-
-        <div x-show="paso === 4" style="display: none;" role="region" aria-label="Paso 5: Confirmación">
-            <p class="notification is-info is-light">
-                Revise el resumen y confirme. Esto envía los campos operativos
-                editables (notificaciones y respaldos) al mismo endpoint de
-                ajustes usado por las secciones de abajo.
-            </p>
-
-            {! ── Seleccion del punto de venta (rama/terminal) antes de confirmar ── !}
-            <div class="box" id="asistente-sucursal" data-group="sucursal-asistente">
-                <p class="is-size-7 mercurius-text-muted">Sucursal y terminal que emiten</p>
-                {#if sucursales?? && sucursales.size() > 0}
-                <form id="sucursal-seleccion-forma" data-json-save
-                      hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/seleccionar"
-                      hx-target="#sucursal-seleccion-forma" hx-swap="outerHTML"
-                      hx-on::after-request="if (event.detail.successful) window.location.reload()">
-                    <div class="field">
-                        <label class="label" for="sucursal-seleccion">Punto de venta</label>
-                        <div class="select">
-                            <select id="sucursal-seleccion" name="id">
-                                {#for s in sucursales}
-                                <option value="{s.id}"
-                                        {#if sucursalSeleccionadaId?? && s.id == sucursalSeleccionadaId}selected{/if}
-                                        {#if !s.activo}disabled{/if}>
-                                    {s.codigoSucursal} — {s.nombreSucursal ?: 'Sin nombre'} /
-                                    {s.codigoTerminal} — {s.nombreTerminal ?: 'Sin nombre'}
-                                    {#if s.activo}(activo){#else}(inactivo){/if}
-                                </option>
-                                {/for}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <button class="button is-primary is-small" type="submit">Usar este punto de venta</button>
-                    </div>
-                </form>
-                <p class="help mercurius-text-muted">
-                    El par elegido se guarda como sucursal y terminal de la
-                    configuración, que es lo que se imprime en el consecutivo de
-                    cada comprobante. La numeración de cada punto de venta
-                    continúa donde se quedó. Las filas inactivas no se pueden
-                    elegir.
-                </p>
-                {#else}
-                <p class="help mercurius-text-muted">
-                    Todavía no hay sucursales registradas en esta configuración.
-                </p>
-                {/if}
-            </div>
-
-            <div class="buttons">
-                <button class="button is-primary" type="button"
-                        data-json-save
-                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/form"
-                        hx-include="#ajustes-forma"
-                        hx-target="#ajustes-forma" hx-swap="outerHTML"
-                        hx-disabled-elt="this"
-                        hx-on::before-request="this.classList.add('is-loading')"
-                        hx-on::after-request="this.classList.remove('is-loading')">
-                    Confirmar y guardar</button>
-            </div>
-        </div>
-
-        <div class="level mt-4">
-            <button class="button" type="button" @click="paso = Math.max(0, paso - 1)"
-                    :disabled="paso === 0">&larr; Anterior</button>
-            <button class="button is-primary" type="button"
-                    @click="paso = Math.min(4, paso + 1)"
-                    :disabled="paso === 4">Siguiente &rarr;</button>
-        </div>
-    </section>
-
-    {! ── Registro de sucursales y terminales: va FUERA de #ajustes-forma a
+{! ── Registro de sucursales y terminales: va FUERA de #ajustes-forma a
          proposito, porque sus formularios propios no pueden anidarse dentro de
          otro <form> (el parser HTML descarta el <form> interno y htmx se
          queda sin elemento al que colgar el hx-post). ── !}
@@ -705,24 +550,170 @@
         {! Read-only / module-owned groups: settings-workflow mode only. !}
         {#if modo != 'backups'}
         {! ── Grupo: general / negocio (read-only parity) ── !}
-        <div class="box mb-5" data-group="general-negocio">
-            <h2 class="title is-5">General y negocio</h2>
+                <div class="box mb-5" data-group="general-negocio">
+            <h2 class="title is-5">Perfil y tributación</h2>
             <p class="subtitle is-6 mercurius-text-muted">
-                Datos del perfil y de tributación; edición solo lectura aquí
-                mientras su migración de flujo completa aterrice.
+                Datos del emisor: son los que viajan en el encabezado de cada
+                comprobante. Se guardan con «Guardar ajustes», al final de la
+                página.
             </p>
             <div class="columns is-multiline">
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre del perfil</p><p>{settings.nombrePerfil ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre completo</p><p>{settings.nombre ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Nombre del negocio</p><p>{settings.nombreNegocio ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Tipo de identificación</p><p>{settings.tipoIdentificacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Identificación</p><p>{settings.identificacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Razón social</p><p>{settings.razonSocial ?: '—'}</p></div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-nombre-perfil">Nombre del perfil</label>
+                        <div class="control">
+                            <input class="input" id="aj-nombre-perfil" type="text" name="nombrePerfil"
+                                   maxlength="120" autocomplete="off"
+                                   placeholder="Perfil principal"
+                                   value="{settings.nombrePerfil ?: ''}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Nombre con el que identificás esta configuración.</p>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-nombre">Nombre completo</label>
+                        <div class="control">
+                            <input class="input" id="aj-nombre" type="text" name="nombre"
+                                   maxlength="160" autocomplete="name"
+                                   value="{settings.nombre ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-nombre-negocio">Nombre del negocio</label>
+                        <div class="control">
+                            <input class="input" id="aj-nombre-negocio" type="text" name="nombreNegocio"
+                                   maxlength="160" autocomplete="organization"
+                                   value="{settings.nombreNegocio ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-tipo-id">Tipo de identificación</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select id="aj-tipo-id" name="tipoIdentificacion">
+                                    <option value="" {#if !settings.tipoIdentificacion??}selected{/if}>Sin definir</option>
+                                    <option value="01" {#if settings.tipoIdentificacion?? && settings.tipoIdentificacion == '01'}selected{/if}>01 — Cédula física</option>
+                                    <option value="02" {#if settings.tipoIdentificacion?? && settings.tipoIdentificacion == '02'}selected{/if}>02 — Cédula jurídica</option>
+                                    <option value="03" {#if settings.tipoIdentificacion?? && settings.tipoIdentificacion == '03'}selected{/if}>03 — DIMEX</option>
+                                    <option value="04" {#if settings.tipoIdentificacion?? && settings.tipoIdentificacion == '04'}selected{/if}>04 — NITE</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-identificacion">Identificación</label>
+                        <div class="control">
+                            <input class="input" id="aj-identificacion" type="text" name="identificacion"
+                                   maxlength="20" inputmode="numeric" autocomplete="off"
+                                   value="{settings.identificacion ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-razon-social">Razón social</label>
+                        <div class="control">
+                            <input class="input" id="aj-razon-social" type="text" name="razonSocial"
+                                   maxlength="160" autocomplete="organization"
+                                   value="{settings.razonSocial ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-codigo-actividad">Código de actividad</label>
+                        <div class="control">
+                            <input class="input" id="aj-codigo-actividad" type="text" name="codigoActividad"
+                                   maxlength="10" inputmode="numeric" autocomplete="off"
+                                   placeholder="Ej.: 561000"
+                                   value="{settings.codigoActividad ?: ''}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Código de actividad económica del emisor (Hacienda).</p>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-telefono">Teléfono</label>
+                        <div class="control">
+                            <input class="input" id="aj-telefono" type="text" name="telefono"
+                                   maxlength="20" inputmode="tel" autocomplete="tel"
+                                   value="{settings.telefono ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="aj-correo-tributacion">Correo de tributación</label>
+                        <div class="control">
+                            <input class="input" id="aj-correo-tributacion" type="email"
+                                   name="correoElectronicoTributacion"
+                                   maxlength="160" autocomplete="email"
+                                   value="{settings.correoElectronicoTributacion ?: ''}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Destino de las notificaciones de Hacienda.</p>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="aj-provincia">Provincia</label>
+                        <div class="control">
+                            <input class="input" id="aj-provincia" type="text" name="provincia"
+                                   maxlength="80" autocomplete="address-level1"
+                                   value="{settings.provincia ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="aj-canton">Cantón</label>
+                        <div class="control">
+                            <input class="input" id="aj-canton" type="text" name="canton"
+                                   maxlength="80" autocomplete="address-level2"
+                                   value="{settings.canton ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="aj-distrito">Distrito</label>
+                        <div class="control">
+                            <input class="input" id="aj-distrito" type="text" name="distrito"
+                                   maxlength="80" autocomplete="address-level3"
+                                   value="{settings.distrito ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="aj-barrio">Barrio</label>
+                        <div class="control">
+                            <input class="input" id="aj-barrio" type="text" name="barrio"
+                                   maxlength="80" autocomplete="off"
+                                   value="{settings.barrio ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-two-thirds">
+                    <div class="field">
+                        <label class="label" for="aj-direccion">Dirección completa</label>
+                        <div class="control">
+                            <textarea class="textarea" id="aj-direccion" name="direccionCompleta"
+                                      rows="2" maxlength="250" autocomplete="street-address">{settings.direccionCompleta ?: ''}</textarea>
+                        </div>
+                    </div>
+                </div>
                 <div class="column is-one-third">
                     <div class="field">
                         <label class="label is-small" for="proveedor-sistemas">Proveedor de sistemas</label>
                         <div class="control">
-                            <input id="proveedor-sistemas" class="input is-small" type="text"
+                            <input id="proveedor-sistemas" class="input" type="text"
                                    name="proveedorSistemas"
                                    maxlength="20"
                                    aria-describedby="proveedor-sistemas-help"
@@ -731,33 +722,27 @@
                         </div>
                         <p class="help mercurius-text-muted" id="proveedor-sistemas-help">
                             Se emite como <code>&lt;ProveedorSistemas&gt;</code> en cada
-                            comprobante v4.4; el esquema lo exige después de
-                            <code>&lt;Clave&gt;</code>. Máximo 20 caracteres. No es un
-                            dato de correo.
+                            comprobante v4.4. Máximo 20 caracteres.
                         </p>
                     </div>
                 </div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código de actividad</p><p>{settings.codigoActividad ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Teléfono</p><p>{settings.telefono ?: '—'} {#if settings.codigoPais??}(+{settings.codigoPais}){/if}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Fax</p><p>{settings.telefonoFax ?: '—'} {#if settings.codigoPaisFax??}(+{settings.codigoPaisFax}){/if}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Correo de tributación</p><p>{settings.correoElectronicoTributacion ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Provincia</p><p>{settings.provincia ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Cantón</p><p>{settings.canton ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Distrito</p><p>{settings.distrito ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Barrio</p><p>{settings.barrio ?: '—'}</p></div>
-                <div class="column is-two-thirds"><p class="is-size-7 mercurius-text-muted">Dirección completa</p><p>{settings.direccionCompleta ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código sucursal</p><p>{settings.codigoSucursal ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código terminal</p><p>{settings.codigoTerminal ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Tipo de documento</p>
-                    <p>{#if settings.tipoDocumento??}{#if settings.tipoDocumento == '01'}Factura electrónica (01){#else}{#if settings.tipoDocumento == '04'}Tiquete electrónico (04){#else}{settings.tipoDocumento}{/if}{/if}{#else}&mdash;{/if}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Último consecutivo</p><p>{settings.ultimoConsecutivo ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Facturación vía Fides</p>
+            </div>
+
+            <hr/>
+
+            {! Solo lectura: los administra el registro de sucursales o la
+               emisión, no este formulario. !}
+            <div class="columns is-multiline">
+                <div class="column is-one-quarter"><p class="is-size-7 mercurius-text-muted">Código sucursal</p><p>{settings.codigoSucursal ?: '—'}</p></div>
+                <div class="column is-one-quarter"><p class="is-size-7 mercurius-text-muted">Código terminal</p><p>{settings.codigoTerminal ?: '—'}</p></div>
+                <div class="column is-one-quarter"><p class="is-size-7 mercurius-text-muted">Último consecutivo</p><p>{settings.ultimoConsecutivo ?: '—'}</p></div>
+                <div class="column is-one-quarter"><p class="is-size-7 mercurius-text-muted">Facturación vía Fides</p>
                     <span class="status-chip {#if settings.useFides}is-success{#else}is-neutral{/if}">
                         {#if settings.useFides}Activado{#else}Desactivado{/if}</span></div>
             </div>
         </div>
 
-        {! ── Grupo: loyalty (read-only; writes belong to the Loyalty module) ── !}
+{! ── Grupo: loyalty (read-only; writes belong to the Loyalty module) ── !}
         <div class="box mb-5" data-group="loyalty">
             <h2 class="title is-5">Lealtad</h2>
             <div class="columns is-multiline">
@@ -796,108 +781,8 @@
                 <span>Configurar umbrales por artículo</span></a>
         </div>
 
-        {! ── Grupo: márgenes de ganancia (configuración global) ── !}
-        <div class="box mb-5" data-group="margenes">
-            <h2 class="title is-5">Márgenes de ganancia</h2>
-            <p class="subtitle is-6 mercurius-text-muted">
-                Configuración global de márgenes aplicada a todos los productos
-                según su tipo de refrigeración. Cada cambio crea un nuevo registro
-                en el historial.
-            </p>
-
-            {! NOT a <form>: this block sits inside #ajustes-forma, and HTML
-               discards a nested form, so its submit used to fire the OUTER
-               settings request instead. The action is a button that posts the
-               three fields explicitly - same endpoint, same field names. !}
-            <div>
-                <div class="columns">
-                    <div class="column is-one-third">
-                        <div class="field">
-                            <label class="label" for="margen-base">Margen base (%)</label>
-                            <div class="control">
-                                <input class="input" id="margen-base" type="number" step="0.01" min="0"
-                                       name="margenBase" required="required" inputmode="decimal"
-                                       placeholder="25"
-                                       value="{configuracionMargen.margenBase}"/>
-                            </div>
-                            <p class="help mercurius-text-muted">Aplicado a productos sin refrigeración.</p>
-                        </div>
-                    </div>
-                    <div class="column is-one-third">
-                        <div class="field">
-                            <label class="label" for="margen-refrigerado">Ajuste refrigerado (% extra)</label>
-                            <div class="control">
-                                <input class="input" id="margen-refrigerado" type="number" step="0.01" min="0"
-                                       name="ajusteRefrigerado" required="required" inputmode="decimal"
-                                       placeholder="5"
-                                       value="{configuracionMargen.ajusteRefrigerado}"/>
-                            </div>
-                            <p class="help mercurius-text-muted">Sumado al margen base para productos refrigerados (2-8 °C).</p>
-                        </div>
-                    </div>
-                    <div class="column is-one-third">
-                        <div class="field">
-                            <label class="label" for="margen-congelado">Ajuste congelado (% extra)</label>
-                            <div class="control">
-                                <input class="input" id="margen-congelado" type="number" step="0.01" min="0"
-                                       name="ajusteCongelado" required="required" inputmode="decimal"
-                                       placeholder="10"
-                                       value="{configuracionMargen.ajusteCongelado}"/>
-                            </div>
-                            <p class="help mercurius-text-muted">Sumado al margen base para productos congelados (-18 °C).</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <button class="button" type="button" data-json-save
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
-                            hx-include="#margen-base, #margen-refrigerado, #margen-congelado"
-                            hx-target="#margen-resultado" hx-swap="innerHTML"
-                            hx-disabled-elt="this"
-                            hx-on::before-request="this.classList.add('is-loading')"
-                            hx-on::after-request="this.classList.remove('is-loading')">
-                        Guardar márgenes
-                    </button>
-                    <p class="help mercurius-text-muted">
-                        Se aplica a los productos nuevos; los precios ya guardados no cambian.
-                    </p>
-                </div>
-            </div>
-            <div id="margen-resultado" role="status" aria-live="polite"></div>
-
-            {#if margenHistorial?? && margenHistorial.size() > 1}
-            <hr/>
-            <h3 class="title is-6">Historial de cambios</h3>
-            <div class="table-container">
-                <table class="table is-hoverable is-fullwidth is-narrow">
-                    <caption class="is-sr-only">Historial de márgenes de ganancia</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">ID</th>
-                            <th scope="col" class="num">Margen base</th>
-                            <th scope="col" class="num">Ajuste refrigerado</th>
-                            <th scope="col" class="num">Ajuste congelado</th>
-                            <th scope="col">Fecha</th>
-                            <th scope="col">Usuario</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#for c in margenHistorial}
-                        <tr {#if c.id == configuracionMargen.id}class="is-selected"{/if}>
-                            <td class="kit-code">{c.id}</td>
-                            <td class="num">{fmt:porcentaje(c.margenBase)}</td>
-                            <td class="num">+{fmt:porcentaje(c.ajusteRefrigerado)}</td>
-                            <td class="num">+{fmt:porcentaje(c.ajusteCongelado)}</td>
-                            <td>{#if c.fechaCreacion??}{time:format(c.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
-                            <td>{#if c.usuario??}{c.usuario.username}{#else}&mdash;{/if}</td>
-                        </tr>
-                        {/for}
-                    </tbody>
-                </table>
-            </div>
-            {/if}
-        </div>
+                {! ── Márgenes de ganancia: se movieron a Artículos. Es una regla de
+           precio del catálogo, no un ajuste de la aplicación. ── !}
 
         {! ── Grupo: modo de prevalidación ── !}
         {! Se quitó: la prevalidación XML de cargas es SIEMPRE activa y no

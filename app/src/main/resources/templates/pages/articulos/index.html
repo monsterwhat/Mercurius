@@ -234,6 +234,98 @@
              bodyUrl="/api/app/articulos/cabys?q=" /}
     </section>
 
+    {! ── Márgenes de ganancia ────────────────────────────────────────────
+       Configuración GLOBAL de precios, por eso vive en Artículos y no en
+       Ajustes: es una regla del catálogo. Cada guardado crea una fila en el
+       historial (se recarga la página para verla). !}
+    {#include _kit/surface title="Márgenes de ganancia"
+         subtitle="Porcentaje aplicado a los productos según su tipo de refrigeración. Cada cambio queda registrado en el historial."}
+        {#content}
+        <form hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
+              hx-swap="none"
+              hx-disabled-elt="find button[type='submit']"
+              hx-on::after-request="if (event.detail.successful) { window.location.reload(); } else { document.getElementById('margen-resultado').textContent = 'No se pudieron guardar los márgenes.'; }">
+            <div class="columns">
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="margen-base">Margen base (%)</label>
+                        <div class="control">
+                            <input class="input" id="margen-base" type="number" step="0.01" min="0"
+                                   name="margenBase" required="required" inputmode="decimal"
+                                   placeholder="25"
+                                   value="{configuracionMargen.margenBase}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Aplicado a productos sin refrigeración.</p>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="margen-refrigerado">Ajuste refrigerado (% extra)</label>
+                        <div class="control">
+                            <input class="input" id="margen-refrigerado" type="number" step="0.01" min="0"
+                                   name="ajusteRefrigerado" required="required" inputmode="decimal"
+                                   placeholder="5"
+                                   value="{configuracionMargen.ajusteRefrigerado}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Sumado al margen base para productos refrigerados (2-8 °C).</p>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label" for="margen-congelado">Ajuste congelado (% extra)</label>
+                        <div class="control">
+                            <input class="input" id="margen-congelado" type="number" step="0.01" min="0"
+                                   name="ajusteCongelado" required="required" inputmode="decimal"
+                                   placeholder="10"
+                                   value="{configuracionMargen.ajusteCongelado}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">Sumado al margen base para productos congelados (-18 °C).</p>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <button class="button is-primary" type="submit">Guardar márgenes</button>
+                <p class="help mercurius-text-muted">
+                    Se aplica a los productos nuevos; los precios ya guardados no cambian.
+                </p>
+            </div>
+        </form>
+        <div id="margen-resultado" role="status" aria-live="polite"></div>
+
+        {#if margenHistorial?? && margenHistorial.size() > 1}
+        <hr/>
+        <h3 class="title is-6">Historial de cambios</h3>
+        <div class="table-container">
+            <table class="table is-hoverable is-fullwidth is-narrow">
+                <caption class="is-sr-only">Historial de márgenes de ganancia</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col" class="num">Margen base</th>
+                        <th scope="col" class="num">Ajuste refrigerado</th>
+                        <th scope="col" class="num">Ajuste congelado</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Usuario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for c in margenHistorial}
+                    <tr {#if c.id == configuracionMargen.id}class="is-selected"{/if}>
+                        <td class="kit-code">{c.id}</td>
+                        <td class="num">{fmt:porcentaje(c.margenBase)}</td>
+                        <td class="num">+{fmt:porcentaje(c.ajusteRefrigerado)}</td>
+                        <td class="num">+{fmt:porcentaje(c.ajusteCongelado)}</td>
+                        <td>{#if c.fechaCreacion??}{time:format(c.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
+                        <td>{#if c.usuario??}{c.usuario.username}{#else}&mdash;{/if}</td>
+                    </tr>
+                    {/for}
+                </tbody>
+            </table>
+        </div>
+        {/if}
+        {/content}
+    {/include}
+
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
     {#include _kit/confirm /}
 
