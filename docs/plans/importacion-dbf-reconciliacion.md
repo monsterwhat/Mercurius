@@ -101,3 +101,88 @@ Faltantes por año según `E:\VPALMERAS`:
 Esas **92 781 ventas de 2015-2016** se pueden importar desde E: pero **sin
 líneas de detalle** (el `DETAFACT` del respaldo está vacío).
 
+## 7. Reconstruccion total (2 de noviembre de 2026)
+
+La base original tenia cabeceras parciales y casi ningun detalle. Se reconstruyo
+todo lo que existe en los archivos, usando **todas** las fuentes disponibles.
+
+### De donde salio cada anio
+
+| Anio | Cabeceras | Lineas de detalle | Movimientos |
+|---|---|---|---|
+| 2013 | base (E:) | **sin fuente** | sin fuente |
+| 2014 | base (E:) | **sin fuente** | sin fuente |
+| 2015 | E: `facturasdiarias` + `kardex` | oct-dic del kardex (ene-sep sin fuente) | kardex + entradas |
+| 2016 | kardex FE + E: ene-feb | kardex FE | kardex |
+| 2017 | no hubo ventas (numeracion continua 2016 a 2018) | - | - |
+| 2018 | base | solo 27 (kardex 2018 vacio) | kardex |
+| 2019 | base | sin fuente | kardex |
+| 2022 | reconstruidas de `detafact_respaldo_respaldo` | idem | detafact |
+| 2023 | base + snapshot | base + snapshot | base + snapshot |
+| 2024 | **faltaban 63 046** -> snapshot | snapshot | snapshot |
+| 2025 | **faltaban 3 708** -> snapshot | snapshot | snapshot |
+| 2026 | **faltaban 12 315** -> snapshot | snapshot | snapshot |
+
+### Scripts
+
+| Script | Que hace |
+|---|---|
+| `scripts/extraer_historicas.py` | DBF a CSV (ventas, kardex, detafact, entradas) |
+| `scripts/numeros_fuente.py` | Lista de numeros de factura de todas las fuentes |
+| `scripts/importar_ventas_historicas.sql` | 2015 (faltantes), 2016 y 2022: cabeceras + lineas |
+| `scripts/importar_ventas_modernas.sql` | 2023-2026: cabeceras + lineas |
+| `scripts/importar_movimientos_historicos.sql` | Movimientos 2015-2016 y 2022 |
+| `scripts/importar_movimientos_modernos.sql` | Movimientos 2023-2026 |
+| `scripts/rellenar_lineas_faltantes.sql` | Detalle de facturas que quedaron sin lineas |
+| `scripts/corregir_totales_historicos.sql` | `total_comprobante` 2013-2015 y `total_venta_neta` 2018-2025 |
+
+Los imports son idempotentes: la clave es (anio, numero de factura) comparado
+numericamente, porque la base mezcla formatos (`959552`, `000...959552`,
+`709162@20131022`, `722657@20251116`).
+
+### Volumen agregado en esta pasada
+
+- **398 562 cabeceras** nuevas
+- **728 439 lineas** de detalle
+- **506 941 movimientos** de inventario
+
+`comprobantesemitidos`: 752 493 -> **1 151 055**
+`linea_detalle`: 569 106 -> **1 297 545**
+`inventario`: 824 594 -> **1 331 535**
+
+### Estado final por anio
+
+| Anio | Facturas | Total CRC | Sin detalle |
+|---|---|---|---|
+| 2013 | 49 396 | 125 022 501 | 49 396 |
+| 2014 | 208 561 | 547 785 205 | 208 560 |
+| 2015 | 203 102 | 573 763 941 | 154 417 |
+| 2016 | 147 227 | 428 611 310 | 6 |
+| 2017 | 0 | 0 | - |
+| 2018 | 14 094 | 43 540 217 | 14 067 |
+| 2019 | 2 | 20 780 | 2 |
+| 2020-2021 | 0 | 0 | - |
+| 2022 | 119 036 | 304 115 938 | 0 |
+| 2023 | 116 440 | 275 134 458 | 20 |
+| 2024 | 104 617 | 259 593 672 | 1 |
+| 2025 | 96 034 | 233 461 398 | 3 |
+| 2026 | 92 546 | 241 916 845 | 11 |
+| **Total** | **1 151 055** | **3 032 966 265** | |
+
+### Verificacion
+
+`scripts/numeros_fuente.py` + comparacion numerica por anio: para 2023, 2024,
+2025 y 2026 **no falta ningun numero** de factura de las fuentes. 2022 queda
+completo salvo 11 numeros que chocaban con cabeceras huerfanas viejas (ya
+recuperados) y 4 cabeceras de 2022 que tienen clave de Hacienda en vez de numero.
+
+### Lo que no se pudo recuperar (no existe en ningun archivo)
+
+- Detalle de **2013 y 2014** (el `DETAFACT` del respaldo 2019 esta vacio).
+- Detalle de **2015 enero-septiembre** (el kardex solo trae oct-dic).
+- Detalle de **2018** (el kardex de 2018 solo tiene 104 lineas) y **2019**.
+- **2017**: no hubo ventas; la numeracion pasa de 1 309 912 (sep-2016) a
+  1 309 913 (dic-2018) sin hueco.
+- 2 claves de Hacienda sin XML.
+- 3 446 cabeceras huerfanas preexistentes (sin comprobante ni resumen), que no
+  afectan totales porque no tienen comprobante asociado.
