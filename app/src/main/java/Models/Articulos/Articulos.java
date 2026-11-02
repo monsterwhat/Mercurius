@@ -137,24 +137,49 @@ public class Articulos implements Serializable {
         fecha = new Date(); // Sets the current timestamp when creating the entity
     }
 
+    /**
+     * Precio vigente del artículo: la fila con la {@code fechaCompra} MÁS
+     * RECIENTE (a igualdad de fecha, el id mayor).
+     *
+     * <p>Antes se elegía solo por id: una fila cargada después pero con fecha de
+     * compra anterior ganaba como "último precio" y el POS cobraba un precio
+     * viejo. La fecha del cambio es el dato real del historial; el id solo
+     * desempata. Las filas sin fecha cuentan como las más antiguas.</p>
+     */
     public ArticuloPrecio getLastPrecio() {
         if (precios == null || precios.isEmpty()) {
             return null;
         }
-        // Defensive max-by-id: @OrderBy("id ASC") already sorts the loaded
-        // collection, but a detached/in-memory list (new rows not flushed yet)
-        // is not guaranteed to be sorted. Ties keep the later element, which is
-        // the insertion order for rows whose id is still 0.
         ArticuloPrecio last = null;
         for (ArticuloPrecio precio : precios) {
             if (precio == null) {
                 continue;
             }
-            if (last == null || precio.getId() >= last.getId()) {
+            if (last == null || esMasNuevo(precio, last)) {
                 last = precio;
             }
         }
         return last;
+    }
+
+    /** true cuando {@code a} es más reciente que {@code b} (fecha, luego id). */
+    private static boolean esMasNuevo(ArticuloPrecio a, ArticuloPrecio b) {
+        java.util.Date fa = a.getFechaCompra();
+        java.util.Date fb = b.getFechaCompra();
+        if (fa != null && fb != null) {
+            int porFecha = fa.compareTo(fb);
+            if (porFecha != 0) {
+                return porFecha > 0;
+            }
+            return a.getId() >= b.getId();
+        }
+        if (fa != null) {
+            return true;
+        }
+        if (fb != null) {
+            return false;
+        }
+        return a.getId() >= b.getId();
     }
 
     public BigDecimal getLastPrecioArticulo() {

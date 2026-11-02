@@ -8,8 +8,11 @@
          page=page size=size total=total totalPages=totalPages pages=pages params=params}
       {#rows}
         {#for f in filas}
-        <tr>
-            <td>{f.articulo}</td>
+        <tr{#if f.esActual} class="is-selected"{/if}>
+            <td>
+                {f.articulo}
+                {#if f.esActual}<span class="status-chip is-success" title="Registro de precio más reciente del artículo">Precio actual</span>{/if}
+            </td>
             <td>{f.porcentajeUtilidad}</td>
             <td>{f.precioCostoSinIVA}</td>
             <td>{f.precioConUtilidad}</td>

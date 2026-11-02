@@ -117,11 +117,27 @@ public class PreciosResource {
         // Filter/sort/page in SQL: the history holds 16k+ rows and the old
         // code hydrated all of them for every request just to show 15.
         List<ArticuloPrecio> precios = precioService.findReportePage(
-                filtro, sort, !ReportePageSupport.isDescending(dir),
+                filtro, sort,
+                sort == null || sort.isBlank() ? false : !ReportePageSupport.isDescending(dir),
                 (current - 1) * pageSize, pageSize);
+
+        // "Precio actual": el registro más reciente de cada artículo (fecha del
+        // cambio, desempatando por id). Se resuelve para los artículos de ESTA
+        // página, no para todo el historial.
+        java.util.Set<Long> codigos = new java.util.HashSet<>();
+        for (ArticuloPrecio precio : precios) {
+            if (precio.getArticulo() != null) {
+                codigos.add(precio.getArticulo().getCodigo());
+            }
+        }
+        java.util.Map<Long, Integer> ultimoPorArticulo = precioService.ultimoPrecioPorArticulo(codigos);
 
         List<Map<String, Object>> filas = new ArrayList<>();
         for (ArticuloPrecio precio : precios) {
+            Long codigoArticulo = precio.getArticulo() != null
+                    ? precio.getArticulo().getCodigo() : null;
+            boolean esActual = codigoArticulo != null
+                    && Integer.valueOf(precio.getId()).equals(ultimoPorArticulo.get(codigoArticulo));
             filas.add(Tablas.fila(
                     "articulo", precio.getArticulo() != null
                             ? precio.getArticulo().getNombre() : "-",
@@ -132,7 +148,8 @@ public class PreciosResource {
                     "fechaCompra", Tablas.fmtFecha(precio.getFechaCompra()),
                     "usuario", precio.getUsuario() != null
                             && precio.getUsuario().getUsername() != null
-                            ? precio.getUsuario().getUsername() : "-"));
+                            ? precio.getUsuario().getUsername() : "-",
+                    "esActual", esActual));
         }
 
         Map<String, Object> model = new LinkedHashMap<>();

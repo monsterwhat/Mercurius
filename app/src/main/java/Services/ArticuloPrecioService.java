@@ -129,6 +129,60 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
     }
 
     /**
+     * Para los artículos indicados, el id de su fila de precio MÁS RECIENTE
+     * (fecha de compra, desempatando por id). Lo usa el reporte para marcar el
+     * "Precio actual" de cada artículo.
+     */
+    public @Nonnull java.util.Map<Long, Integer> ultimoPrecioPorArticulo(
+            @Nullable java.util.Collection<Long> codigos) {
+        java.util.Map<Long, Integer> ultimo = new java.util.HashMap<>();
+        if (codigos == null || codigos.isEmpty()) {
+            return ultimo;
+        }
+        try {
+            TypedQuery<Object[]> query = em.createQuery(
+                    "SELECT p.id, p.fechaCompra, p.articulo.codigo FROM ArticuloPrecio p "
+                    + "WHERE p.articulo.codigo IN :codigos", Object[].class);
+            query.setParameter("codigos", codigos);
+            java.util.Map<Long, java.util.Date> fechaUltimo = new java.util.HashMap<>();
+            for (Object[] fila : query.getResultList()) {
+                Integer id = (Integer) fila[0];
+                java.util.Date fecha = (java.util.Date) fila[1];
+                Long codigo = (Long) fila[2];
+                if (codigo == null || id == null) {
+                    continue;
+                }
+                Integer idActual = ultimo.get(codigo);
+                if (idActual == null) {
+                    ultimo.put(codigo, id);
+                    fechaUltimo.put(codigo, fecha);
+                    continue;
+                }
+                java.util.Date fechaActual = fechaUltimo.get(codigo);
+                boolean masNuevo;
+                if (fecha != null && fechaActual != null) {
+                    int porFecha = fecha.compareTo(fechaActual);
+                    masNuevo = porFecha > 0 || (porFecha == 0 && id >= idActual);
+                } else if (fecha != null) {
+                    masNuevo = true;
+                } else if (fechaActual != null) {
+                    masNuevo = false;
+                } else {
+                    masNuevo = id >= idActual;
+                }
+                if (masNuevo) {
+                    ultimo.put(codigo, id);
+                    fechaUltimo.put(codigo, fecha);
+                }
+            }
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("Error resolviendo el ultimo precio por articulo: " + e.getMessage()
+                    + " | source=ArticuloPrecioService.ultimoPrecioPorArticulo() | despues=" + e.getMessage());
+        }
+        return ultimo;
+    }
+
+    /**
      * One page of the price-history report, filtered and sorted in SQL.
      *
      * <p>Relations used by the visible columns are fetch-joined so rendering
@@ -168,7 +222,9 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             case "precioFinal" -> "p.precioFinal";
             case "fechaCompra" -> "p.fechaCompra";
             case "usuario" -> "u.username";
-            default -> "p.id";
+            // Por defecto el historial abre por la fecha del cambio: lo más
+            // reciente arriba, que es el precio vigente del artículo.
+            default -> "p.fechaCompra";
         };
     }
 
