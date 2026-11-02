@@ -1457,7 +1457,11 @@ button.metric-card {
     border-radius: var(--mercurius-radius-md);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* height:auto (antes 100%). En una fila con un hermano más alto la tarjeta
+       se estiraba, el cuerpo del gráfico crecía con ella y Chart.js seguía el
+       nuevo alto: el gráfico terminaba en 1.500px. La tarjeta ahora mide lo que
+       mide el gráfico. */
+    height: auto;
 }
 
 .chart-header {
@@ -1478,7 +1482,12 @@ button.metric-card {
 }
 
 .chart-body {
-    flex: 1 1 auto;
+    /* No crece nunca. Era `flex: 1 1 auto`: dentro de una tarjeta estirada por
+       un hermano alto (una tabla, otro panel), crecía más allá de
+       --chart-height, Chart.js redimensionaba el canvas a ese alto y la página
+       volvía a crecer: el gráfico terminaba en 1.500px en Tendencias e
+       Histórico de ventas. */
+    flex: 0 0 auto;
     /* A DEFINITE height, not a minimum. The wrapper used to size itself from
        its content, so the canvas decided the page height - and Chart.js's
        responsive observer resizes the canvas to its parent. The two chased
@@ -1488,6 +1497,7 @@ button.metric-card {
        settled. A fixed wrapper height breaks the loop: the canvas follows
        the wrapper, never the other way round. */
     height: var(--chart-height);
+    max-height: var(--chart-height);
     padding: var(--mercurius-space-4);
     position: relative;
 }
