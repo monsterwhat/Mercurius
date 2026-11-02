@@ -37,11 +37,11 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("Reportes de Usuarios"))
                 .body(containsString("7 informes"))
-                .body(containsString("5 informes"))
+                .body(containsString("4 informes"))
                 .body(containsString("6 informes"))
                 .body(containsString("2 informes"))
                 .body(containsString("href=\"/Mercurius/app/facturas\""))
-                .body(containsString("href=\"/Mercurius/app/facturas-recibidas?bucket=pendientes\""))
+                .body(containsString("href=\"/Mercurius/app/facturas-recibidas\""))
                 .body(containsString("href=\"/Mercurius/app/correos/reportes\""));
     }
 
