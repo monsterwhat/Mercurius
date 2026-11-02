@@ -154,6 +154,103 @@ public class SettingsResource {
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response update(@Nullable OperationalSettingsRequest request) {
+        return aplicarCambios(request);
+    }
+
+    /**
+     * Form twin of {@link #update}.
+     *
+     * <p>La pantalla de ajustes manda un cuerpo <b>form-urlencoded</b> (un
+     * {@code hx-post} desde un {@code <form>}), pero el endpoint solo declaraba
+     * {@code @Consumes(application/json)}: el servidor respondía <b>415</b> y el
+     * botón "Guardar ajustes" nunca había guardado nada. Este gemelo mapea los
+     * mismos campos y delega en el MISMO merge; no agrega lógica.</p>
+     *
+     * <p>Casillas tri-estado: el formulario emite un marcador
+     * {@code <campo>Presente} para distinguir "no vino" (dejar igual) de
+     * "desmarcada" (poner false).</p>
+     */
+    @POST
+    @Path("/form")
+    @Transactional
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Update whitelisted operational settings (form twin)")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Settings updated"),
+        @APIResponse(responseCode = "400", description = "Validation error"),
+        @APIResponse(responseCode = "401", description = "Not authenticated"),
+        @APIResponse(responseCode = "403", description = "Missing admin role"),
+        @APIResponse(responseCode = "404", description = "No active settings row")
+    })
+    public Response updateForm(
+            @FormParam("notificarRechazos") @Nullable String notificarRechazos,
+            @FormParam("notificarRechazosPresente") @Nullable String notificarRechazosPresente,
+            @FormParam("notificarRechazosResumen") @Nullable String notificarRechazosResumen,
+            @FormParam("notificarRechazosResumenPresente") @Nullable String notificarRechazosResumenPresente,
+            @FormParam("correoNotificaciones") @Nullable String correoNotificaciones,
+            @FormParam("backupHabilitado") @Nullable String backupHabilitado,
+            @FormParam("backupHabilitadoPresente") @Nullable String backupHabilitadoPresente,
+            @FormParam("backupHora") @Nullable String backupHora,
+            @FormParam("backupRetencionDias") @Nullable String backupRetencionDias,
+            @FormParam("backupRuta") @Nullable String backupRuta,
+            @FormParam("proveedorSistemas") @Nullable String proveedorSistemas,
+            @FormParam("proveedorCorreo") @Nullable String proveedorCorreo,
+            @FormParam("imapCorreoHost") @Nullable String imapCorreoHost,
+            @FormParam("imapCorreoPuerto") @Nullable String imapCorreoPuerto,
+            @FormParam("smtpCorreoHost") @Nullable String smtpCorreoHost,
+            @FormParam("smtpCorreoPuerto") @Nullable String smtpCorreoPuerto) {
+
+        OperationalSettingsRequest request = new OperationalSettingsRequest();
+        request.notificarRechazos = casilla(notificarRechazos, notificarRechazosPresente);
+        request.notificarRechazosResumen = casilla(notificarRechazosResumen, notificarRechazosResumenPresente);
+        request.backupHabilitado = casilla(backupHabilitado, backupHabilitadoPresente);
+        request.correoNotificaciones = correoNotificaciones;
+        // Un <input> vacío manda "" y el merge trata null como "no cambiar":
+        // sin esta normalización, dejar la hora o el puerto en blanco se
+        // rechazaba con 400 en vez de conservar el valor actual.
+        request.backupHora = enBlancoNulo(backupHora);
+        request.backupRetencionDias = enteroONull(backupRetencionDias);
+        request.backupRuta = backupRuta;
+        request.proveedorSistemas = proveedorSistemas;
+        request.proveedorCorreo = proveedorCorreo;
+        request.imapCorreoHost = imapCorreoHost;
+        request.imapCorreoPuerto = enBlancoNulo(imapCorreoPuerto);
+        request.smtpCorreoHost = smtpCorreoHost;
+        request.smtpCorreoPuerto = enBlancoNulo(smtpCorreoPuerto);
+        return aplicarCambios(request);
+    }
+
+    @Nullable
+    private static String enBlancoNulo(@Nullable String valor) {
+        return valor == null || valor.isBlank() ? null : valor;
+    }
+
+    /** Tri-state checkbox: marker absent = leave unchanged; unchecked = false. */
+    @Nullable
+    private static Boolean casilla(@Nullable String valor, @Nullable String presente) {
+        if (presente == null) {
+            return null;
+        }
+        return valor != null && !valor.isBlank() && !"false".equalsIgnoreCase(valor) && !"0".equals(valor);
+    }
+
+    /** Un entero de formulario; vacío o ilegible = "no cambiar". */
+    @Nullable
+    private static Integer enteroONull(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(raw.trim());
+        } catch (NumberFormatException e) {
+            LOG.warn("Valor numérico inválido en ajustes ignorado: " + raw
+                    + " | source=SettingsResource.enteroONull()");
+            return null;
+        }
+    }
+
+    private Response aplicarCambios(@Nullable OperationalSettingsRequest request) {
         try {
             if (request == null) {
                 return Response.status(Response.Status.BAD_REQUEST)

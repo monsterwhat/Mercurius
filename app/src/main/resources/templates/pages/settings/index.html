@@ -62,8 +62,8 @@
 
   FIELD-GROUP MAP (data-group markers asserted by SettingsPageTest):
     general-negocio  legacy wizard "Tributacion"+"CurrentSettings" panels
-                     (read-only here: writes still flow through the legacy
-                     entity-bound controllers until their migration lands)
+                     (read-only here except "Proveedor de sistemas", which IS
+                     editable: it is a Hacienda field, not a mail one)
     correo           legacy wizard "Correo" step: address display, the mail
                      provider selector (GMAIL/OUTLOOK/YAHOO/PERSONALIZADO) with
                      its IMAP/SMTP host+port overrides, and the three
@@ -72,12 +72,15 @@
                      owned by the Loyalty module endpoints)
     stock-umbrales   stock-alert engine constants (read-only snapshot) +
                      link to the T33 per-article config page
-    prevalidacion    upload prevalidation mode (always-on today; informational
-                     select, no backing setting exists yet)
     backups          status card + trigger button + whitelisted scheduling
                      quartet (editable)
     sucursales       branch/terminal registry: listing, selection and
                      registration of points of sale (editable)
+
+  SAVE WIRING: the form posts form-urlencoded to POST {root}/api/app/settings/form,
+  the twin of the JSON PUT (the JSON-only endpoint answered 415 to a browser
+  form, so "Guardar ajustes" had never saved anything). Same merge, same
+  whitelist, same audit entry.
 
   CSRF is inherited from layout.html body hx-headers.
 
@@ -253,7 +256,7 @@
             <div class="buttons">
                 <button class="button is-primary" type="button"
                         data-json-save
-                        hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
+                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/form"
                         hx-include="#ajustes-forma"
                         hx-target="#ajustes-forma" hx-swap="outerHTML"
                         hx-disabled-elt="this"
@@ -397,15 +400,11 @@
          BOTH modes so the backup scheduling fields can be saved from
          /app/backups too.
 
-         KNOWN CONTRACT GAP (reported, not fixable from the template):
-         PUT /api/app/settings declares @Consumes(application/json) only,
-         while an hx-put on a form sends form-urlencoded. The request is
-         answered 415 until a form-urlencoded twin (with the *Presente
-         markers the checkboxes already emit) lands in SettingsResource. The
-         page's afterRequest handler surfaces that 415 explicitly instead of
-         reporting a generic network failure. ── !}
+         The form posts form-urlencoded to the /form twin of PUT /api/app/settings
+         (the JSON endpoint answers 415 to a browser form). Same merge, same
+         whitelist, same audit entry. ── !}
     <form id="ajustes-forma" data-json-save
-          hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
+          hx-post="{config:['quarkus.http.root-path']}{baseUrl}/form"
           hx-target="#ajustes-forma" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
@@ -537,26 +536,6 @@
                         </div>
                         <p class="help mercurius-text-muted">
                             La conexión usa STARTTLS sobre el puerto indicado.
-                        </p>
-                    </div>
-                </div>
-                <div class="column is-full">
-                    <div class="field">
-                        <label class="label" for="proveedor-sistemas">Proveedor de sistemas</label>
-                        <div class="control">
-                            <input id="proveedor-sistemas" class="input" type="text"
-                                   name="proveedorSistemas"
-                                   maxlength="20" required="required"
-                                   aria-describedby="proveedor-sistemas-help"
-                                   placeholder="Identificación del proveedor de sistemas"
-                                   value="{settings.provedor}"/>
-                        </div>
-                        <p class="help mercurius-text-muted" id="proveedor-sistemas-help">
-                            Se emite como <code>&lt;ProveedorSistemas&gt;</code> en cada comprobante
-                            v4.4, y el esquema lo exige justo después de <code>&lt;Clave&gt;</code>.
-                            Si se deja vacío, JAXB omite el elemento y el comprobante deja de validar
-                            contra <code>FacturaElectronica_V4.4.xsd</code>; el error solo
-                            aparecería después, al firmar. Máximo 20 caracteres.
                         </p>
                     </div>
                 </div>
@@ -739,7 +718,25 @@
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Tipo de identificación</p><p>{settings.tipoIdentificacion ?: '—'}</p></div>
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Identificación</p><p>{settings.identificacion ?: '—'}</p></div>
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Razón social</p><p>{settings.razonSocial ?: '—'}</p></div>
-                <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Proveedor de sistemas</p><p>{settings.provedor ?: '—'}</p></div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label is-small" for="proveedor-sistemas">Proveedor de sistemas</label>
+                        <div class="control">
+                            <input id="proveedor-sistemas" class="input is-small" type="text"
+                                   name="proveedorSistemas"
+                                   maxlength="20"
+                                   aria-describedby="proveedor-sistemas-help"
+                                   placeholder="Identificación del proveedor"
+                                   value="{settings.provedor}"/>
+                        </div>
+                        <p class="help mercurius-text-muted" id="proveedor-sistemas-help">
+                            Se emite como <code>&lt;ProveedorSistemas&gt;</code> en cada
+                            comprobante v4.4; el esquema lo exige después de
+                            <code>&lt;Clave&gt;</code>. Máximo 20 caracteres. No es un
+                            dato de correo.
+                        </p>
+                    </div>
+                </div>
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Código de actividad</p><p>{settings.codigoActividad ?: '—'}</p></div>
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Teléfono</p><p>{settings.telefono ?: '—'} {#if settings.codigoPais??}(+{settings.codigoPais}){/if}</p></div>
                 <div class="column is-one-third"><p class="is-size-7 mercurius-text-muted">Fax</p><p>{settings.telefonoFax ?: '—'} {#if settings.codigoPaisFax??}(+{settings.codigoPaisFax}){/if}</p></div>
@@ -902,29 +899,10 @@
             {/if}
         </div>
 
-        {! ── Grupo: modo de prevalidación (informativo; sin setting respaldo aún) ── !}
-        <div class="box mb-5" data-group="prevalidacion">
-            <h2 class="title is-5">Prevalidación de cargas</h2>
-            <div class="field">
-                <label class="label" for="modo-prevalidacion">Modo de prevalidación</label>
-                <div class="control">
-                    <div class="select">
-                        <select id="modo-prevalidacion" disabled
-                                aria-describedby="modo-prevalidacion-help">
-                            <option value="siempre" selected>Siempre activa (comportamiento actual)</option>
-                            <option value="solo-errores" disabled>Solo reportar errores (no disponible)</option>
-                            <option value="apagada" disabled>Apagada (no disponible)</option>
-                        </select>
-                    </div>
-                </div>
-                <p class="help mercurius-text-muted" id="modo-prevalidacion-help">
-                    Toda carga de facturas recibidas e inventarios ejecuta la
-                    prevalidación XML antes de procesarse. Un modo configurable
-                    requeriría un nuevo parámetro del sistema y llega en otra
-                    tarea; el control es informativo y no se puede cambiar.
-                </p>
-            </div>
-        </div>
+        {! ── Grupo: modo de prevalidación ── !}
+        {! Se quitó: la prevalidación XML de cargas es SIEMPRE activa y no
+           existe un parámetro que la configure. Un selector deshabilitado con
+           una sola opción real no informa nada y ocupa media pantalla. !}
         {/if}
 
         <div class="field">

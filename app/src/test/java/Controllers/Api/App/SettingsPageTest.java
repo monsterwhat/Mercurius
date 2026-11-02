@@ -128,12 +128,16 @@ class SettingsPageTest extends AppBase {
         assertTrue(html.contains("cashbackPercentage"), "falta cashback en loyalty");
         assertTrue(html.contains("puntosInactivityMonths"), "faltan puntosInactivityMonths en loyalty");
         assertTrue(html.contains("data-group=\"stock-umbrales\""), "falta grupo umbrales de stock");
-        assertTrue(html.contains("data-group=\"prevalidacion\""), "falta grupo prevalidacion");
+        // prevalidacion: se eliminó a propósito (selector deshabilitado sin
+        // opciones reales); el grupo ya no existe.
+        assertFalse(html.contains("data-group=\"prevalidacion\""), "el grupo prevalidacion debía quitarse");
         assertTrue(html.contains("data-group=\"backups\""), "falta grupo backups");
 
-        // save wiring: form issues the PUT payload; wizard final step shares it
+        // save wiring: the form posts form-urlencoded to the twin of the JSON
+        // PUT (the JSON-only endpoint answered 415 to a browser form).
         assertTrue(html.contains("id=\"ajustes-forma\""), "falta el formulario de guardado");
-        assertTrue(html.contains("hx-put="), "el guardado debe emitir PUT");
+        assertTrue(html.contains("/api/app/settings/form"), "falta la URL del gemelo de formulario");
+        assertTrue(html.contains("hx-post="), "el guardado debe emitir POST");
         assertTrue(html.contains("/api/app/settings"), "falta la URL del contrato");
         assertTrue(html.contains("name=\"notificarRechazos\""), "falta campo whitelisted notificarRechazos");
         assertTrue(html.contains("name=\"correoNotificaciones\""), "falta campo whitelisted correoNotificaciones");
