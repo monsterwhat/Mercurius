@@ -665,6 +665,21 @@ public class ComprobanteService implements Serializable {
                 result.haciendaMensaje = "Comprobante creado y enviado a Hacienda";
                 return;
             }
+            // Un rechazo de Hacienda es una RESPUESTA, no un fallo de envío: el
+            // documento sí llegó y el encabezado quedó RECHAZADO. Reencolarlo no
+            // tiene sentido (el mismo XML volvería a fallar) y el mensaje
+            // "NO enviado" contradecía el chip ENVIADO de la pantalla.
+            String estadoEncabezado = comprobante.getEncabezado() != null
+                    ? comprobante.getEncabezado().getEstado() : null;
+            if ("RECHAZADO".equals(estadoEncabezado)) {
+                String motivo = comprobante.getEncabezado() != null
+                        ? comprobante.getEncabezado().getMotivoRechazo() : null;
+                result.pendienteEnvio = false;
+                result.haciendaMensaje = "Hacienda rechazó el comprobante"
+                        + (motivo != null && !motivo.isBlank() ? ": " + motivo : "")
+                        + ". Corrija el documento y reenvíelo desde Facturas emitidas.";
+                return;
+            }
             // El envío inmediato no prosperó (rechazo, fallo de transporte o
             // preflight). El XML firmado se encola igual para que el documento
             // no se pierda: antes de este cambio quedaba en haciendaEstado
@@ -821,12 +836,6 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
-                // El sello optimista de ENVIADO se puso antes de llamar a
-                // Hacienda; si la respuesta es un rechazo, el comprobante NO
-                // quedo enviado. Dejarlo en ENVIADO producia el falso exito que
-                // la pantalla mostraba como "Hacienda: ENVIADO" junto al
-                // mensaje "NO enviado". Un rechazo es terminal, no se reencola.
-                comprobante.setHaciendaEstado("RECHAZADO");
                 comprobantesEmitidosService.update(comprobante);
                 LOG.info("Hacienda rechazo comprobante: " + result.errorMessage
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()"

@@ -420,7 +420,7 @@ class PosFacturarEnvioFueraDeTransaccionTest extends support.ContextPathIsolatio
             respuesta.then()
                     .statusCode(200)
                     .body("data.comprobanteId", notNullValue())
-                    .body("data.haciendaMensaje", containsString("NO enviado a Hacienda"));
+                    .body("data.haciendaMensaje", containsString("rechazó el comprobante"));
             int id = respuesta.then().extract().jsonPath().getInt("data.comprobanteId");
 
             // La venta está cobrada y su documento existe: el rechazo es de
