@@ -23,29 +23,34 @@
 |---|---|---|
 | `articulostock` | 2 494 | **5 996** (1 116 con stock **negativo**) |
 | `inventario` | 673 326 | **824 594** (+151 268) |
+| `comprobantesrecibidos` | 177 | **2 021** (+252 electrónicas +1 592 legadas) |
+| `linea_detalle` | 564 992 | **567 997** (+3 005 líneas de compra) |
+| `encabezado` | 753 769 | **755 613** |
 
 Rango de fechas de los movimientos: **2013-01-01 → 2026-10-26**.
-Dos filas de `ENTRADAS` traían fecha corrupta (2085-12-01); se corrigieron a 2013-01-01.
+Facturas de compra electrónicas: **2018-10-11 → 2026-10-27**.
+Facturas legadas (cuentas por pagar): **2015-01-01 → 2022-01-28**, con `paid` tomado
+del `ESTADO` del sistema viejo (1 570 canceladas).
+
+Correcciones de datos del origen:
+- 2 movimientos `ENTRADAS` con fecha 2085 → 2013-01-01.
+- **7 facturas legadas** con fecha corrupta (1520/2085) → 2015-01-01.
 
 Idempotencia: el script carga los CSV del DBF en tablas temporales, arma la tabla
 `inv_keys` con la clave natural de lo que ya existe
 `(articulo_codigo, fecha, cantidad, documento, tipo)` y **solo inserta lo que no
-matchea**. Correrlo dos veces no duplica nada.
+matchea**. Correrlo dos veces no duplica nada (verificado: segunda pasada
+`faltantes = 0` para KARDEX y `claves_faltantes = 0` para compras).
 
 ## 3. Lo que falta y por qué no se hizo todavía
 
-1. **252 facturas de compra electrónicas.** Los datos están en `fe_encabezado` +
-   `fe_detalle` (cabecera y líneas), pero el modelo nuevo necesita el grafo
-   `encabezado → detalle_servicio → linea_detalle`, `resumen_factura` y
-   `comprobantesrecibidos`. Se puede construir por SQL, pero hay que fijar la
-   fecha desde la **clave** (el campo `FECHAEMISI` del DBF está corrupto) y crear
-   el `emisor` de cada proveedor.
-2. **1 592 facturas de compra legadas** (`facturascompras.dbf`): son cuentas por
-   pagar del sistema viejo (proveedor + factura + saldo). **No existe tabla
-   equivalente** en Mercurius; importarlas requeriría decidir dónde viven.
-3. **XML**: hay 34 424 archivos en disco, pero el índice `FE_DOCUMENTOS` apunta a
-   `C:\VSUPER\<clave>.xml` (el PC viejo). Solo 23 de las 252 claves de compra
-   tienen XML disponible aquí.
+1. **XML**: hay 34 424 archivos en disco, pero el índice `FE_DOCUMENTOS` apunta a
+   `C:\VSUPER\<clave>.xml` (el PC viejo) y solo 23 de las 276 claves de compra
+   tienen XML disponible aquí. Hace falta copiar esa carpeta desde la máquina
+   original.
+2. **AJUSTESINV** (3 419 ajustes globales): no llevan código de artículo; el
+   import viejo los metió con `articulo_codigo = null` y fecha del día del
+   import. No se reimportaron.
 
 ## 4. Scripts
 
@@ -54,8 +59,10 @@ matchea**. Correrlo dos veces no duplica nada.
 | `scripts/generar_csv_reconciliacion.py` | DBF → CSV (artículos, kardex, entradas, ajustes, fe_*, compras) |
 | `scripts/reconciliacion.sql` | Compara por clave natural y reporta faltantes (solo lectura) |
 | `scripts/importar_movimientos_stock.sql` | Importa stock + movimientos faltantes (idempotente, transaccional) |
+| `scripts/importar_facturas_compra.sql` | Importa 252 facturas electrónicas + 1 592 legadas (dry-run con `-v aplicar=false`) |
 | `scripts/cruzar_claves_xml.py` | Cruza claves faltantes con los XML disponibles |
 | `scripts/inspeccionar_dbf.py` / `inspeccionar_fe_documentos.py` | Introspección de los DBF |
 
 Ejecución (servidor): los CSV se copian a `/tmp/dbf_reconciliacion/` y se corre
 `psql -f` como `postgres`.
+
