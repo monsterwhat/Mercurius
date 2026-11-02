@@ -238,15 +238,51 @@
                 });
             }
 
+            // Sidebar groups: which ones are open survives navigation. A
+            // server-rendered shell rebuilds the list on every page load, so
+            // without this the panel you just opened snapped shut the moment
+            // you clicked something inside it.
+            var GROUPS_KEY = 'mercurius.sidebar.groups';
+            var gruposAbiertos = [];
+            try {
+                gruposAbiertos = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]') || [];
+            } catch (e) {
+                console.warn('[shell] no se pudo leer los grupos abiertos', e);
+                gruposAbiertos = [];
+            }
+
+            function grupoAbierto(id) {
+                return gruposAbiertos.indexOf(id) !== -1;
+            }
+
+            function marcarGrupo(id, abierto) {
+                if (abierto && !grupoAbierto(id)) {
+                    gruposAbiertos.push(id);
+                } else if (!abierto) {
+                    gruposAbiertos = gruposAbiertos.filter(function (otro) { return otro !== id; });
+                }
+                try {
+                    localStorage.setItem(GROUPS_KEY, JSON.stringify(gruposAbiertos));
+                } catch (e) {
+                    console.warn('[shell] no se pudo guardar los grupos abiertos', e);
+                }
+            }
+
             var groupButtons = document.querySelectorAll('[data-sidebar-group]');
             Array.prototype.forEach.call(groupButtons, function (btn) {
                 var target = document.getElementById(btn.getAttribute('aria-controls'));
+                if (!target) {
+                    return;
+                }
+                if (grupoAbierto(target.id)) {
+                    target.classList.add('is-open');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
                 btn.addEventListener('click', function () {
-                    var open = btn.getAttribute('aria-expanded') === 'true';
-                    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
-                    if (target) {
-                        target.classList.toggle('is-open', !open);
-                    }
+                    var abierto = btn.getAttribute('aria-expanded') === 'true';
+                    btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+                    target.classList.toggle('is-open', !abierto);
+                    marcarGrupo(target.id, !abierto);
                 });
             });
 
@@ -273,12 +309,27 @@
             if (best) {
                 best.classList.add('is-active');
                 best.setAttribute('aria-current', 'page');
-                var group = best.closest('[data-sidebar-sub]');
-                if (group) {
+                // The sub-list carries `.app-sidebar-sub`; `[data-sidebar-sub]`
+                // never existed, so this lookup used to fail and the group of
+                // the current page stayed closed - the active entry was on
+                // screen but invisible inside a collapsed group.
+                var group = best.closest('.app-sidebar-sub');
+                if (group && group.id) {
                     group.classList.add('is-open');
+                    marcarGrupo(group.id, true);
                     var owner = document.querySelector('[data-sidebar-group][aria-controls="' + group.id + '"]');
                     if (owner) {
                         owner.setAttribute('aria-expanded', 'true');
+                    }
+                    // A long menu scrolls inside the column: bring the current
+                    // entry into view without moving the page itself.
+                    var nav = document.querySelector('.app-sidebar-nav');
+                    if (nav) {
+                        var caja = nav.getBoundingClientRect();
+                        var fila = best.getBoundingClientRect();
+                        if (fila.top < caja.top || fila.bottom > caja.bottom) {
+                            nav.scrollTop += (fila.top - caja.top) - 40;
+                        }
                     }
                 }
                 if (context) {

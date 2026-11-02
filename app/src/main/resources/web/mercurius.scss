@@ -1169,6 +1169,9 @@ body {
     display: grid;
     gap: var(--mercurius-space-3);
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    // Without this the KPI cards sat flush against the panel below them (the
+    // "Archivos" count touched "Archivos de registro" on /app/registros/log).
+    margin-bottom: var(--mercurius-space-4);
 }
 
 .metric-card {

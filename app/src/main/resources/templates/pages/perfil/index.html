@@ -2,8 +2,13 @@
   pages/perfil/index - Mi Perfil (T22).
 
   Qute/HTMX/Bulma port of the legacy perfil.xhtml (SessionController
-  changeName/changeEmail/changePassword). Rendered by
+  changeEmail/changePassword). Rendered by
   Controllers.Api.App.PerfilPagesResource with the logged-in user's data.
+
+  The username is NOT editable here. It is the account's identity: the session
+  principal, the operator name stamped on every invoice and the key the cart
+  session store uses. POST /api/app/perfil/nombre still exists for API
+  compatibility, but no screen offers it.
 
   Model keys:
     usuario  UsersDTO - id/username/email/groupName/status of the current user
@@ -40,7 +45,7 @@
     {#body}
     <section class="section" style="padding-top:1rem">
         {#include _kit/page-header title="Mi Perfil"
-             subtitle="Datos de la cuenta y cambio de credenciales" /}
+             subtitle="Datos de la cuenta, correo electrónico y contraseña" /}
 
         {! ── Datos del usuario ───────────────────────────────────── !}
         {#include _kit/surface title="Datos de la cuenta"}
@@ -65,28 +70,6 @@
                     <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-neutral">Inactivo</span>{/if}</p>
                 </div>
             </div>
-            {/content}
-        {/include}
-
-        {! ── Cambiar nombre de usuario ───────────────────────────── !}
-        {#include _kit/surface title="Cambiar nombre de usuario"}
-            {#content}
-            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/nombre"
-                  hx-target="#perfil-resultado"
-                  hx-swap="innerHTML">
-                <div class="field">
-                    <label class="label" for="nuevoNombre">Nuevo nombre de usuario</label>
-                    <div class="control">
-                        <input class="input perfil-input" type="text" id="nuevoNombre" name="nuevoNombre"
-                               autocomplete="username" required
-                               aria-describedby="nuevoNombre-help"/>
-                    </div>
-                    <p class="help mercurius-text-muted" id="nuevoNombre-help">
-                        Actual: {usuario.username}
-                    </p>
-                </div>
-                <button class="button is-primary" type="submit">Actualizar nombre</button>
-            </form>
             {/content}
         {/include}
 
