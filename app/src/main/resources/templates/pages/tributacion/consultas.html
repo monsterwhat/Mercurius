@@ -40,8 +40,13 @@
             {/actions}
         {/include}
 
+            {! The whole screen lives in surfaces: without them the countdown,
+               the tabs and the tables sat straight on the page background, which
+               in light mode reads as an unstyled page (white tables with no
+               frame). Every other board in the app is one kind of panel. !}
+            {#include _kit/surface title="Próximo envío programado"}
+                {#content}
             <p class="has-text-centered mt-3">
-                <span class="is-size-7 mercurius-text-muted">Próximo envío programado</span><br/>
                 <span id="consultas-countdown"
                       class="kit-countdown kit-code"
                       role="timer"
@@ -53,7 +58,11 @@
             {#if contadorPendientes == 0}
             <p class="help mercurius-text-muted has-text-centered">No hay facturas pendientes: el envío está deshabilitado.</p>
             {/if}
+                {/content}
+            {/include}
 
+            {#include _kit/surface title="Facturas por estado"}
+                {#content}
             <div id="consultas-contadores">
             {#include _kit/view-tabs ariaLabel="Vistas de consultas"}
                 {#tabs}
@@ -197,6 +206,8 @@
             </div>
             {/fragment}
         </div>
+                {/content}
+            {/include}
         </div>
     {/body}
 {/include}
