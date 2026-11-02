@@ -269,9 +269,24 @@ Verificado: 0 movimientos sin articulo.
 
 ### Lo unico que quedo fuera a proposito
 
-- `lineasborradas.dbf` (18 171 lineas borradas 2009-2018): son lineas que un
-  supervisor **elimino** de la factura. Insertarlas cambiaria los totales ya
-  impresos, asi que no se importaron.
+- `lineasborradas.dbf` (18 171 filas 2009-2018): **no son movimientos de
+  inventario**. Es la bitacora de lineas que un cajero quito de una factura antes
+  de cerrarla, con el supervisor que autorizo (`CODIGO, DOCUMENTO, FECHA,
+  CANTIDAD, VENTA, CAJERO, SUPERVISOR`). El movimiento de inventario se genera al
+  cerrar la factura, con las lineas que quedaron.
+
+  Verificacion (2015-2016, que es donde hay kardex para comparar):
+  * 6 652 lineas borradas; 4 903 tienen factura existente.
+  * Solo **310 (4.6 %)** coinciden con una linea del kardex de esa factura, y en
+    todos esos casos el articulo y la cantidad **siguen en la factura final**
+    (se quito y se volvio a agregar, o era una linea repetida).
+  * El total de la factura cuadra con la suma del kardex **sin** la linea
+    borrada (ej.: factura 960 891, total 550, linea borrada de 600).
+  * De 2 555 ajustes `AJ` del kardex, solo 23 coinciden por articulo+fecha con
+    una linea borrada, así que las eliminaciones tampoco generan ajustes.
+
+  Importarlas inflaria ventas y salidas de stock. Quedan disponibles en el DBF
+  original si algun dia se necesitan como auditoria.
 - 147 codigos CAByS del maestro viejo que no existen en la tabla `cabys`.
 - `cur_precios` no se uso: ninguna parte de la app lo consulta.
 
