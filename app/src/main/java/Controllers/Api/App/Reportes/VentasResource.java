@@ -118,15 +118,18 @@ public class VentasResource {
 
         List<Map<String, Object>> filas = new ArrayList<>();
         BigDecimal total = null;
-        boolean consultaCompleta = usuario != null && !usuario.isBlank()
-                && inicio != null && fin != null;
+        // Sin usuario = todos los cajeros. Antes la consulta solo corría con un
+        // usuario elegido y el reporte salía vacío por omisión.
+        boolean consultaCompleta = inicio != null && fin != null;
 
         if (consultaCompleta) {
-            Usuarios cajero = userService.find(Long.valueOf(usuario.trim()));
-            if (cajero != null) {
+            boolean todos = usuario == null || usuario.isBlank();
+            Usuarios cajero = todos ? null : userService.find(Long.valueOf(usuario.trim()));
+            if (todos || cajero != null) {
                 total = BigDecimal.ZERO;
-                List<ComprobantesEmitidos> comprobantes =
-                        comprobanteService.listAllEmitidosBy(cajero, inicio, fin);
+                List<ComprobantesEmitidos> comprobantes = todos
+                        ? comprobanteService.listAllEmitidosBy(inicio, fin)
+                        : comprobanteService.listAllEmitidosBy(cajero, inicio, fin);
                 if (comprobantes != null) {
                     for (ComprobantesEmitidos comprobante : comprobantes) {
                         if (comprobante.getDetalles() == null

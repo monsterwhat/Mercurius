@@ -622,6 +622,37 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
+    /**
+     * Todas las facturas emitidas de un rango, sin filtrar por cajero. El
+     * reporte de ventas por cajero debe poder abrirse sin elegir usuario: en ese
+     * caso muestra todas las ventas del período.
+     */
+    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Date startDate, @Nonnull Date endDate) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f "
+                    + "LEFT JOIN FETCH f.detalles d "
+                    + "LEFT JOIN FETCH d.lineasDetalle ld "
+                    + "LEFT JOIN FETCH ld.codigosComerciales cc "
+                    + "LEFT JOIN FETCH ld.descuentos des "
+                    + "LEFT JOIN FETCH ld.impuestos imp "
+                    + "LEFT JOIN FETCH d.otrosCargos oc "
+                    + "WHERE f.encabezado.fechaEmision BETWEEN :startDate AND :endDate",
+                    ComprobantesEmitidos.class
+            );
+            query.setParameter("startDate", startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+            query.setParameter("endDate", endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+            List<ComprobantesEmitidos> result = query.getResultList();
+            LOG.info("Query returned " + result.size() + " invoices between " + startDate + " and " + endDate
+                    + " | source=ComprobantesEmitidosService.listAllEmitidosBy(all users)");
+            return result;
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing all invoices with date range: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listAllEmitidosBy(all users) | despues=" + e.getMessage());
+            return null;
+        }
+    }
+
     public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Usuarios user, @Nonnull Date startDate, @Nonnull Date endDate) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
