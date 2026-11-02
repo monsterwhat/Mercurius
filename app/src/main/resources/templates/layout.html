@@ -105,76 +105,48 @@
 
         onReady(function () {
             var shell = document.getElementById('app-shell');
-            var toggle = document.querySelector('[data-sidebar-toggle]');
+            // Two controls drive the shell: the header burger (mobile, opens the
+            // off-canvas drawer) and the sidebar footer button (desktop, folds
+            // the sidebar into the 58px icon rail). Same attribute, same
+            // handler, different breakpoint.
+            var toggles = document.querySelectorAll('[data-sidebar-toggle]');
             var backdrop = document.querySelector('[data-sidebar-close]');
+            var desktopQuery = window.matchMedia('(min-width: 1025px)');
+            var COLLAPSE_KEY = 'mercurius.sidebar.collapsed';
+
+            function marcarToggles(open) {
+                Array.prototype.forEach.call(toggles, function (btn) {
+                    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            }
 
             function setSidebar(open) {
                 if (!shell) {
                     return;
                 }
                 shell.classList.toggle('is-sidebar-open', open);
-                if (toggle) {
-                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                }
-                // Desktop: the same button collapses the sidebar to an icon rail
-            // (spec §3). Below 1025px the bubble-phase handler above opens the
-            // off-canvas drawer instead, so this one bows out there.
-            var desktopQuery = window.matchMedia('(min-width: 1025px)');
-            var COLLAPSE_KEY = 'mercurius.sidebar.collapsed';
-
-            function applyCollapsed(collapsed) {
-                shell.classList.toggle('is-sidebar-collapsed', collapsed);
-                if (toggle) {
-                    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-                }
-                try {
-                    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
-                } catch (e) {
-                    console.warn('[shell] no se pudo guardar el estado del sidebar', e);
-                }
-            }
-
-            if (shell) {
-                try {
-                    if (localStorage.getItem(COLLAPSE_KEY) === '1') {
-                        shell.classList.add('is-sidebar-collapsed');
-                    }
-                } catch (e) {
-                    console.warn('[shell] no se pudo leer el estado del sidebar', e);
-                }
-            }
-
-            if (toggle && shell) {
-                toggle.addEventListener('click', function (event) {
-                    if (!desktopQuery.matches) {
-                        return;
-                    }
-                    event.stopImmediatePropagation();
-                    applyCollapsed(!shell.classList.contains('is-sidebar-collapsed'));
-                }, true);
-            }
-            if (backdrop) {
+                marcarToggles(open);
+                if (backdrop) {
                     backdrop.hidden = !open;
                 }
             }
 
-            if (toggle && shell) {
-                toggle.addEventListener('click', function () {
-                    setSidebar(!shell.classList.contains('is-sidebar-open'));
-                });
-            }
-
-            // Desktop: the same button collapses the sidebar to an icon rail
-            // (spec §3). Below 1025px the bubble-phase handler above opens the
-            // off-canvas drawer instead, so this one bows out there.
-            var desktopQuery = window.matchMedia('(min-width: 1025px)');
-            var COLLAPSE_KEY = 'mercurius.sidebar.collapsed';
-
             function applyCollapsed(collapsed) {
-                shell.classList.toggle('is-sidebar-collapsed', collapsed);
-                if (toggle) {
-                    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                if (!shell) {
+                    return;
                 }
+                shell.classList.toggle('is-sidebar-collapsed', collapsed);
+                Array.prototype.forEach.call(toggles, function (btn) {
+                    if (!btn.hasAttribute('data-sidebar-collapse')) {
+                        return;
+                    }
+                    // The rail button stays on screen while the rail is
+                    // collapsed, so its label/title must name the NEXT click.
+                    var texto = collapsed ? 'Expandir el menú' : 'Colapsar el menú';
+                    btn.setAttribute('aria-label', texto);
+                    btn.setAttribute('title', texto);
+                });
+                marcarToggles(!collapsed);
                 try {
                     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
                 } catch (e) {
@@ -185,22 +157,26 @@
             if (shell) {
                 try {
                     if (localStorage.getItem(COLLAPSE_KEY) === '1') {
-                        shell.classList.add('is-sidebar-collapsed');
+                        applyCollapsed(true);
                     }
                 } catch (e) {
                     console.warn('[shell] no se pudo leer el estado del sidebar', e);
                 }
             }
 
-            if (toggle && shell) {
-                toggle.addEventListener('click', function (event) {
-                    if (!desktopQuery.matches) {
+            Array.prototype.forEach.call(toggles, function (btn) {
+                btn.addEventListener('click', function () {
+                    if (!shell) {
                         return;
                     }
-                    event.stopImmediatePropagation();
-                    applyCollapsed(!shell.classList.contains('is-sidebar-collapsed'));
-                }, true);
-            }
+                    if (desktopQuery.matches) {
+                        applyCollapsed(!shell.classList.contains('is-sidebar-collapsed'));
+                        return;
+                    }
+                    setSidebar(!shell.classList.contains('is-sidebar-open'));
+                });
+            });
+
             if (backdrop) {
                 backdrop.addEventListener('click', function () { setSidebar(false); });
             }

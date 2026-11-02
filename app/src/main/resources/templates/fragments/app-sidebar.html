@@ -133,6 +133,16 @@
     </nav>
 
     <div class="app-sidebar-meta">
+        {! The rail toggle lives ON the sidebar (desktop only): the control
+           that resizes the sidebar belongs to the sidebar, not to the header.
+           Below 1025px it is hidden and the header burger opens the off-canvas
+           drawer instead, because a 58px rail on a phone hides the nav. !}
+        <button type="button" class="app-sidebar-collapse" data-sidebar-toggle
+                data-sidebar-collapse aria-controls="app-sidebar" aria-expanded="true"
+                aria-label="Colapsar el menú" title="Colapsar el menú">
+            <span class="app-sidebar-icon">{#include _kit/icon name="arrow-left" /}</span>
+            <span class="app-sidebar-label">Colapsar</span>
+        </button>
         {#if inject:securityIdentity.username}
         <span class="app-sidebar-label">{inject:securityIdentity.username}</span>
         {/if}

@@ -370,6 +370,21 @@ body {
     border-right: 1px solid var(--merc-navy-light);
 }
 
+// Desktop: the sidebar is a viewport-height column pinned in place. Without
+// this it stretched to the height of the page, so the footer block (username,
+// connection dot and the rail toggle) lived at the bottom of a long page
+// instead of at the bottom of the screen, and the nav never scrolled on its
+// own. The nav keeps `overflow-y: auto`, so a long menu scrolls inside the
+// column while the footer stays reachable.
+@media (min-width: 1025px) {
+    .app-sidebar {
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        height: 100vh;
+    }
+}
+
 .app-sidebar-brand {
     display: flex;
     align-items: center;
@@ -390,6 +405,17 @@ body {
     flex: 1 1 auto;
     padding: .5rem;
     overflow-y: auto;
+}
+
+// A hair of air between top-level entries. At 36px per row with no gap the
+// links and the group buttons (Hacienda, Usuarios, Ajustes) read as one solid
+// block, and the group that owns a sub-list blurs into the row above it.
+.app-sidebar-nav > ul > li + li {
+    margin-top: .25rem;
+}
+
+.app-sidebar-sub > li + li {
+    margin-top: .125rem;
 }
 
 .app-sidebar-link,
@@ -424,7 +450,11 @@ body {
     flex: 1 1 auto;
 }
 
-.app-sidebar-row .app-sidebar-group {
+// The disclosure button (a bare chevron next to a landing link) carries no
+// padding of its own: the row is what aligns it. FULL-WIDTH group buttons
+// (Hacienda, Usuarios, Ajustes) are the label-bearing case and must keep the
+// same 10px inset as every link, or their icon sits 10px left of the others.
+.app-sidebar-row .app-sidebar-group:not(.app-sidebar-group--full) {
     width: 1.75rem;
     min-width: 1.75rem;
     padding: 0;
@@ -445,9 +475,17 @@ body {
     transform: rotate(-135deg);
 }
 
+// A group row is a LINK that happens to open a sub-list: icon, label, then the
+// chevron pushed to the right edge. It used to be justify-content:space-between,
+// which parked the label in the middle of the row and made Hacienda / Usuarios /
+// Ajustes look centred next to the left-aligned links.
 .app-sidebar-group--full {
     flex: 1 1 auto;
-    justify-content: space-between;
+    justify-content: flex-start;
+}
+
+.app-sidebar-group--full::after {
+    margin-left: auto;
 }
 
 .app-sidebar-link:hover,
@@ -499,6 +537,52 @@ body {
 
 .app-sidebar .mi-icon {
     font-size: 1.0625rem; /* §18.2 icon 16-18px */
+}
+
+// Rail toggle. It sits in the sidebar footer, not in the header: the control
+// that resizes the sidebar belongs to the sidebar. Hidden below 1025px, where
+// the header burger opens the off-canvas drawer instead (a 58px rail on a
+// phone would hide the navigation entirely).
+.app-sidebar-collapse {
+    display: none;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    min-height: 1.75rem;
+    margin-bottom: .375rem;
+    padding: .25rem .375rem;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--merc-navy-muted);
+    font: inherit;
+    font-size: .6875rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+}
+
+.app-sidebar-collapse:hover {
+    background: var(--merc-navy-light);
+    color: var(--merc-navy-ink);
+}
+
+.app-sidebar-collapse:focus-visible {
+    outline: 2px solid var(--merc-on-accent);
+    outline-offset: -2px;
+}
+
+@media (min-width: 1025px) {
+    .app-sidebar-collapse {
+        display: flex;
+    }
+
+    // The header burger is the mobile drawer trigger only. Scoped to the
+    // header so it outranks the base `.app-header-menu` rule below (a media
+    // query adds no specificity, only source order).
+    .app-header .app-header-menu {
+        display: none;
+    }
 }
 
 .app-sidebar-meta [data-connection-status]::before {
@@ -2576,6 +2660,18 @@ button,
 
     .app-sidebar-sub {
         display: none;
+    }
+
+    .app-sidebar-collapse {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    // The arrow points INTO the rail when expanded, out of it when collapsed:
+    // one icon, mirrored, so the control never needs a second glyph.
+    .app-sidebar-collapse .app-sidebar-icon {
+        transform: rotate(180deg);
     }
 
     .app-sidebar-meta {
