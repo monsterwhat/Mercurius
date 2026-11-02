@@ -36,7 +36,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Facturas y correo"))
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("Reportes de Usuarios"))
-                .body(containsString("7 informes"))
+                .body(containsString("8 informes"))
                 .body(containsString("4 informes"))
                 .body(containsString("6 informes"))
                 .body(containsString("2 informes"))

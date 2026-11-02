@@ -1,0 +1,29 @@
+{!
+  _tablas/carrito-modificaciones - table-only fragment for HX-Request swaps of
+  the Cambios de carrito report.
+!}
+<div id="reporte-carrito-tabla">
+    {#include _kit/data-table id="reporte-carrito" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.fecha}</td>
+            <td>{f.usuario}</td>
+            <td><span class="status-chip {#if f.accion == 'Carrito cancelado'}is-danger{#else if f.accion == 'Precio ajustado'}is-warning{#else}is-info{/if}">{f.accion}</span></td>
+            <td>{f.articulo}</td>
+            <td>{f.codigo}</td>
+            <td class="has-text-right">{f.cantidad}</td>
+            <td class="has-text-right">{f.precio}</td>
+            <td class="has-text-right">{f.importe}</td>
+            <td>{f.cliente}</td>
+            <td class="is-size-7">{f.detalle}</td>
+        </tr>
+        {/for}
+        {#if filas.isEmpty()}
+        <tr><td colspan="{columnas.size()}" class="kit-empty-cell">Sin cambios de carrito para los filtros seleccionados</td></tr>
+        {/if}
+      {/rows}
+    {/include}
+</div>
