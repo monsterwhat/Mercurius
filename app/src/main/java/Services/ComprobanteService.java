@@ -1165,7 +1165,7 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 var montoTotal = precioUnitario.multiply(Cantidad);
 
                 LineaDetalle linea = new LineaDetalle();
-                linea.setNumeroLinea(i);
+                linea.setNumeroLinea(i + 1);
 
                 // Nota interna del ajuste manual de precio POS. Son columnas
                 // @XmlTransient en LineaDetalle: quedan en la base para
