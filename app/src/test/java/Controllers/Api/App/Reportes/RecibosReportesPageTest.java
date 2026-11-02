@@ -14,79 +14,57 @@ import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * T20 — page contract for the Recibos report pages, including the vencido
- * filter correctness scenario: an unpaid received invoice whose due date
- * (fechaEmision + plazoCredito days) is past must appear ONLY on
- * /app/reportes/recibos/vencidos, while one with a future due date must
- * appear ONLY on /app/reportes/recibos/pendientes. Row counts must match the
- * direct service calls ({@link ComprobantesRecibidosService#listPendientes()}
- * / {@link ComprobantesRecibidosService#listVencidas()}).
+ * Las dos vistas de reportes "pendientes de pago" y "vencidas" se fusionaron
+ * como PESTAÑAS del buzón de facturas recibidas: sus rutas viejas redirigen y
+ * la regla del crédito vencido se comprueba sobre la tabla del buzón.
  *
- * <p>Fixtures are committed outside @TestTransaction so the HTTP request
- * thread can see them, and removed in a finally block; %test boots against a
- * drop-and-create schema so a failed assertion cannot poison later runs.</p>
+ * <p>Un comprobante recibido sin pagar cuyo vencimiento (fechaEmision +
+ * plazoCredito días) ya pasó debe aparecer SOLO en la bandeja
+ * {@code vencidas}; uno con vencimiento futuro, SOLO en {@code pendientes}. Los
+ * conteos deben coincidir con {@link ComprobantesRecibidosService#listPendientes()}
+ * y {@link ComprobantesRecibidosService#listVencidas()}.</p>
+ *
+ * <p>Las fixtures se confirman fuera de @TestTransaction para que el hilo HTTP
+ * las vea, y se borran en un finally.</p>
  */
 @QuarkusTest
 @Tag("reportes-pages")
 class RecibosReportesPageTest extends support.ContextPathIsolation {
 
+    /** Rutas viejas: ahora son redirecciones al buzón. */
     private static final String PENDIENTES_URL = "/Mercurius/app/reportes/recibos/pendientes";
     private static final String VENCIDOS_URL = "/Mercurius/app/reportes/recibos/vencidos";
+
+    /** Tabla del buzón de facturas recibidas (fragmento). */
+    private static final String TABLA_URL = "/Mercurius/api/app/facturas-recibidas/tabla";
 
     @Inject
     ComprobantesRecibidosService recibidosService;
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
-    void pendientesPageRenders() {
-        given()
+    void rutasViejasRedirigenAlBuzon() {
+        given().redirects().follow(false)
                 .when().get(PENDIENTES_URL)
                 .then()
-                .statusCode(200)
-                .body(containsString("Facturas Recibidas Pendientes"))
-                .body(containsString("data-kit-table"));
-    }
-
-    @Test
-    @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
-    void vencidosPageRenders() {
-        given()
+                .statusCode(302)
+                .header("Location", containsString("/app/facturas-recibidas?bucket=pendientes"));
+        given().redirects().follow(false)
                 .when().get(VENCIDOS_URL)
                 .then()
-                .statusCode(200)
-                .body(containsString("Facturas Recibidas Vencidas"))
-                .body(containsString("data-kit-table"));
-    }
-
-    @Test
-    @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
-    void hxRequestReturnsFragmentWithoutLayout() {
-        given()
-                .header("HX-Request", "true")
-                .when().get(PENDIENTES_URL)
-                .then()
-                .statusCode(200)
-                .body(containsString("data-kit-table"))
-                .body(not(containsString("<footer")));
-        given()
-                .header("HX-Request", "true")
-                .when().get(VENCIDOS_URL)
-                .then()
-                .statusCode(200)
-                .body(containsString("data-kit-table"))
-                .body(not(containsString("<footer")));
+                .statusCode(302)
+                .header("Location", containsString("/app/facturas-recibidas?bucket=vencidas"));
     }
 
     @Test
     @TestSecurity(user = "cajero", roles = {"inventario"})
     void nonFacturacionRoleIsForbidden() {
-        given().when().get(PENDIENTES_URL).then().statusCode(403);
-        given().when().get(VENCIDOS_URL).then().statusCode(403);
+        given().redirects().follow(false).when().get(PENDIENTES_URL).then().statusCode(403);
+        given().redirects().follow(false).when().get(VENCIDOS_URL).then().statusCode(403);
     }
 
     @Test
@@ -101,14 +79,18 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
             pendiente = seed(pendienteConsecutivo, LocalDateTime.now().minusDays(2), "30");
 
             String pendientesHtml = given()
+                    .header("HX-Request", "true")
+                    .queryParam("bucket", "pendientes")
                     .queryParam("size", 500)
-                    .when().get(PENDIENTES_URL)
+                    .when().get(TABLA_URL)
                     .then()
                     .statusCode(200)
                     .extract().asString();
             String vencidosHtml = given()
+                    .header("HX-Request", "true")
+                    .queryParam("bucket", "vencidas")
                     .queryParam("size", 500)
-                    .when().get(VENCIDOS_URL)
+                    .when().get(TABLA_URL)
                     .then()
                     .statusCode(200)
                     .extract().asString();
@@ -118,14 +100,14 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
             assertTrue(!pendientesHtml.contains(vencidoConsecutivo),
                     "past-due invoice must NOT be listed under pendientes");
             assertTrue(vencidosHtml.contains(vencidoConsecutivo),
-                    "past-due invoice must be listed under vencidos");
+                    "past-due invoice must be listed under vencidas");
             assertTrue(!vencidosHtml.contains(pendienteConsecutivo),
-                    "future-due invoice must NOT be listed under vencidos");
+                    "future-due invoice must NOT be listed under vencidas");
 
             assertEquals(recibidosService.listPendientes().size(), countRows(pendientesHtml),
-                    "pendientes page rows must equal listPendientes().size()");
+                    "pendientes rows must equal listPendientes().size()");
             assertEquals(recibidosService.listVencidas().size(), countRows(vencidosHtml),
-                    "vencidos page rows must equal listVencidas().size()");
+                    "vencidas rows must equal listVencidas().size()");
         } finally {
             if (vencida != null) {
                 recibidosService.delete(vencida);

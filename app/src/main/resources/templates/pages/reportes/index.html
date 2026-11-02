@@ -205,7 +205,7 @@
                         <p class="surface-subtitle">Emitidas, recibidas y envíos programados</p>
                     </div>
                 </div>
-                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}5{#else}1{/if} informes</span>
+                <span class="tag is-rounded">{#if inject:securityIdentity.hasRole('admin')}4{#else}1{/if} informes</span>
             </header>
             <div class="surface-body">
                 <ul class="menu-list">
@@ -219,17 +219,10 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas?bucket=pendientes" title="Recibos pendientes de pago">
+                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas" title="Facturas recibidas: pendientes de pago y vencidas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Facturas recibidas pendientes de pago</span>
-                                <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
-                            </span>
-                        </a>
-                    </li>
-                    <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas?bucket=vencidas" title="Recibos vencidos">
-                            <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
-                                <span class="has-text-weight-medium">Facturas recibidas vencidas</span>
+                                <span class="has-text-weight-medium">Facturas recibidas</span>
+                                <span class="is-size-7 mercurius-text-muted">Pendientes de pago y vencidas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
                             </span>
                         </a>

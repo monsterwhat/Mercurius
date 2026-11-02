@@ -63,7 +63,7 @@
     {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for factura in modelo.filas}
-            <tr>
+            <tr data-row-key="{factura.id}">
                 <td class="kit-code">{#if factura.consecutivo??}{factura.consecutivo}{#else}&mdash;{/if}</td>
                 <td>{#if factura.fechaEmision??}{time:format(factura.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
                 <td>{#if factura.emisorNombre??}{factura.emisorNombre}{#else}&mdash;{/if}</td>

@@ -48,8 +48,6 @@ class TablaColumnasTest extends support.ContextPathIsolation {
                 "/api/app/articulos/table",
                 "/app/reportes/clientes",
                 "/app/reportes/facturas",
-                "/app/reportes/recibos/pendientes",
-                "/app/reportes/recibos/vencidos",
                 "/app/reportes/inventario/resumen",
                 "/app/reportes/inventario/precios",
                 "/app/reportes/inventario/merma",

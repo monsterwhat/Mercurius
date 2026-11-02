@@ -75,28 +75,31 @@ public class RecibosReportesResource {
     @Nonnull
     HttpHeaders httpHeaders;
 
+    /**
+     * Las dos vistas viejas ("Facturas recibidas pendientes" y "vencidas")
+     * ahora son PESTAÑAS del buzón de facturas recibidas. Estas rutas quedan
+     * como redirección para no romper enlaces guardados.
+     */
     @GET
     @Path("/pendientes")
-    public Response pendientes(
-            @QueryParam("page") @Nullable Integer page,
-            @QueryParam("size") @Nullable Integer size,
-            @QueryParam("sort") @Nullable String sort,
-            @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
-            @QueryParam("q") @Nullable String q) {
-        return render(pendientesPage, BASE_PENDIENTES, "Pendientes", false,
-                page, size, sort, dir, q);
+    public Response pendientes() {
+        return redirigirABandeja("pendientes");
     }
 
     @GET
     @Path("/vencidos")
-    public Response vencidos(
-            @QueryParam("page") @Nullable Integer page,
-            @QueryParam("size") @Nullable Integer size,
-            @QueryParam("sort") @Nullable String sort,
-            @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
-            @QueryParam("q") @Nullable String q) {
-        return render(vencidosPage, BASE_VENCIDOS, "Vencidos", true,
-                page, size, sort, dir, q);
+    public Response vencidos() {
+        return redirigirABandeja("vencidas");
+    }
+
+    @Nonnull
+    private Response redirigirABandeja(@Nonnull String bucket) {
+        String root = org.eclipse.microprofile.config.ConfigProvider.getConfig()
+                .getValue("quarkus.http.root-path", String.class);
+        return Response.status(Response.Status.FOUND)
+                .header("Location", (root == null ? "" : root)
+                        + "/app/facturas-recibidas?bucket=" + bucket)
+                .build();
     }
 
     /**
