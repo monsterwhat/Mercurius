@@ -38,21 +38,10 @@ public class ArticulosPagesResource {
     @Location("pages/articulos/index")
     Template page;
 
-    /**
-     * Márgenes globales de ganancia. Viven en el modelo de Artículos porque la
-     * configuración se movió a esa pantalla: es una regla de precio del
-     * catálogo, no un ajuste de la aplicación.
-     */
-    @Inject
-    @Nonnull
-    Services.ConfiguracionMargenService margenService;
-
     @GET
     public Response index() {
         try {
-            Map<String, Object> model = new java.util.LinkedHashMap<>(articulos.fullPageModel());
-            model.put("configuracionMargen", margenService.findOrCreateDefault());
-            model.put("margenHistorial", margenService.listAllOrderById());
+            Map<String, Object> model = articulos.fullPageModel();
             TemplateInstance instance = page.instance();
             model.forEach(instance::data);
             return Response.ok(instance.render())

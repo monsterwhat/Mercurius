@@ -204,6 +204,11 @@ public class ArticuloResource {
     @Inject
     PromocionesService promoService;
 
+    /** Márgenes globales de ganancia: se configuran en esta misma pantalla. */
+    @Nonnull
+    @Inject
+    Services.ConfiguracionMargenService margenService;
+
     @Nonnull
     @Inject
     ArticuloCarritoService articuloCarritoService;
@@ -1437,6 +1442,11 @@ public class ArticuloResource {
         TableModel pendientes = buildTableModel(TAB_PENDIENTES, 1, 10, null, "asc", null);
         TableModel promociones = buildTableModel(TAB_PROMOCIONES, 1, 10, null, "asc", null);
         Map<String, Object> model = new LinkedHashMap<>();
+        // Márgenes globales: la configuración vive ahora en Artículos, y este
+        // modelo lo comparten la página (/app/articulos) y el endpoint de tabla
+        // sin HX-Request; si faltara aquí, ese render no tendría los valores.
+        model.put("configuracionMargen", margenService.findOrCreateDefault());
+        model.put("margenHistorial", margenService.listAllOrderById());
         model.put("activosTabla", activos.asMap());
         model.put("inactivosTabla", inactivos.asMap());
         model.put("catalogoTabla", catalogo.asMap());
