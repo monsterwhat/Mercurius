@@ -223,3 +223,64 @@ Nota: `salidas.dbf` de `E:` si tiene el articulo, la fecha y la cantidad de
 2015-08 a 2019, pero el numero de factura esta sobrescrito con `******` y no
 trae precios (`PVENTA1`/`VENTAIMP` vacios), asi que no se puede ligar a una
 factura concreta. Por eso no se uso para rellenar detalle.
+
+## 9. Catalogo completo, CAByS y movimientos viejos
+
+Ultima pasada: se importo **todo** lo que quedaba en los archivos viejos.
+
+### Articulos
+
+| Fuente | Filas | Que trae |
+|---|---|---|
+| `E:\VPALMERAS\Articulos.dbf` | 15 059 | catalogo completo (descripcion, precio, costo, familia, gravado) |
+| `E:\VPALMERAS\maestro.DBF` | 6 424 | maestro activo en 2019 (stock, costos, ultima entrada) |
+| `maestrocaby.DBF` (snapshot) | 53 317 | codigo de articulo -> codigo CAByS |
+
+Union de las dos primeras: **20 026 codigos**, de los cuales **16 858 no existian**
+en Mercurius. Importados:
+
+- `articulos`: 5 996 -> **22 854**
+- `articulostock`: 5 996 -> **22 854** (stock del maestro 2019; 0 si no habia dato)
+- `articuloprecio`: 16 886 -> **26 262** (precio y costo del catalogo viejo)
+
+Los **9 387** que seguian en el maestro de 2019 quedan `status = true` (aparecen en
+el POS). Los **13 467** que solo estan en `Articulos.dbf` son codigos retirados:
+quedan `status = false`, visibles en "inactivos" pero fuera del punto de venta.
+
+### CAByS
+
+`maestrocaby` trae 43 209 codigos y 1 783 CAByS distintos. **2 090 articulos**
+recibieron su CAByS (solo se asignan codigos que existen en la tabla `cabys`, por
+la FK). Quedan 15 073 sin CAByS: son casi todos articulos inactivos que nunca se
+facturaron electronicamente.
+
+### Movimientos
+
+Al existir los articulos viejos, **26 296 lineas de kardex** que antes no se
+podian ligar ya tienen articulo. Ademas se agregaron las fuentes que faltaban:
+
+- `kardex.DBF` completo (2015-10 a 2019-04)
+- `salidas.dbf` de E: solo donde el kardex no llega (2015-08/09, 2018-2019)
+- `entradas.dbf` completo (2010-04 a 2016-09)
+
+Resultado: **+142 189 movimientos historicos** y **+3 499 modernos**.
+`inventario`: 824 594 -> **1 477 223**, ahora con movimientos desde **2010**.
+Verificado: 0 movimientos sin articulo.
+
+### Lo unico que quedo fuera a proposito
+
+- `lineasborradas.dbf` (18 171 lineas borradas 2009-2018): son lineas que un
+  supervisor **elimino** de la factura. Insertarlas cambiaria los totales ya
+  impresos, asi que no se importaron.
+- 147 codigos CAByS del maestro viejo que no existen en la tabla `cabys`.
+- `cur_precios` no se uso: ninguna parte de la app lo consulta.
+
+### Totales finales
+
+| Tabla | Antes de toda la migracion | Ahora |
+|---|---|---|
+| `articulos` | 5 996 | **22 854** |
+| `comprobantesemitidos` | 751 869 | **1 151 055** |
+| `comprobantesrecibidos` | 177 | **2 021** |
+| `linea_detalle` | 569 106 | **1 297 560** |
+| `inventario` | 673 326 | **1 477 223** |

@@ -1,11 +1,12 @@
--- Importa los movimientos de inventario que faltan: 2015-2016 (kardex E:) y 2022
--- (detafact_respaldo_respaldo).
+-- Completa los movimientos de inventario historicos con TODAS las fuentes viejas:
+--   * kardex.DBF de E:           2015-10 .. 2019-04 (con numero de factura)
+--   * salidas.dbf de E:          2015-08 .. 2019-04 (sin numero; solo fuera del kardex)
+--   * entradas.dbf de E:         2010-04 .. 2016-09 (compras)
 --
--- Deduplicacion por conteo: para cada (articulo, fecha, cantidad, tipo) se compara
--- cuantas filas hay en la base y se insertan solo las que sobran. Asi no se pierden
--- ventas repetidas del mismo articulo el mismo dia y tampoco se duplica lo ya cargado.
+-- Deduplicacion por conteo de (articulo, fecha, cantidad, tipo): se compara con lo
+-- que ya hay en `inventario` y solo se inserta el excedente, asi no se duplican
+-- los movimientos que ya estaban ni se pierden ventas repetidas del mismo dia.
 --
--- Solo se importan movimientos de articulos que existen en el catalogo (FK).
 -- Uso: psql -v aplicar=false (dry-run) | -v aplicar=true (commit)
 \pset pager off
 \set ON_ERROR_STOP on
@@ -16,25 +17,23 @@ CREATE TEMP TABLE stg_kardex (movimiento text, documento text, fecha text, codig
     cantidad text, venta text, costo text, usuario text, saldo text, exento text);
 \copy stg_kardex FROM '/tmp/dbf_reconciliacion/kardex_e.csv' WITH (FORMAT csv, HEADER true)
 
-DROP TABLE IF EXISTS stg_2022;
-CREATE TEMP TABLE stg_2022 (factura text, fecha text, codigo text, codigocaby text,
-    descrip text, cantidad text, descuento text, valorunita text, total text, familia text,
-    exento text, porceimp text, imp text, usuario text, nlinea text, cservicios text,
-    unidad text);
-\copy stg_2022 FROM '/tmp/dbf_reconciliacion/detafact_2022.csv' WITH (FORMAT csv, HEADER true)
-
 DROP TABLE IF EXISTS stg_entradas;
 CREATE TEMP TABLE stg_entradas (documento text, fecha text, codigo text, cantidad text,
     costo text, prov text, codprov text, usuario text, detalle text);
 \copy stg_entradas FROM '/tmp/dbf_reconciliacion/entradas_mov.csv' WITH (FORMAT csv, HEADER true)
 
-\echo '===== claves de la base (2015-2022)'
+DROP TABLE IF EXISTS stg_salidas;
+CREATE TEMP TABLE stg_salidas (fecha text, codigo text, cantidad text, familia text,
+    usuario text, exento text);
+\copy stg_salidas FROM '/tmp/dbf_reconciliacion/salidas_e_mov.csv' WITH (FORMAT csv, HEADER true)
+
+\echo '===== claves de la base (hasta 2022)'
 DROP TABLE IF EXISTS base_mov;
 CREATE TEMP TABLE base_mov AS
 SELECT articulo_codigo AS art, fechamovimiento::date AS f, cantidad AS cant,
        tipomovimiento AS tipo, count(*) AS c
 FROM inventario
-WHERE fechamovimiento >= '2015-01-01' AND fechamovimiento < '2023-01-01'
+WHERE fechamovimiento < '2023-01-01'
 GROUP BY 1, 2, 3, 4;
 CREATE INDEX ON base_mov (art, f, cant, tipo);
 ANALYZE base_mov;
@@ -43,7 +42,7 @@ ANALYZE base_mov;
 DROP TABLE IF EXISTS cand;
 CREATE TEMP TABLE cand AS
 WITH x AS (
-    -- kardex 2015-2016: FE = venta, FA = entrada, AJ/CI/IM = movimiento
+    -- kardex: FE = venta, FA = entrada, AJ/CI/IM = movimiento
     SELECT a.codigo AS art, k.fecha::date AS f, k.cantidad::numeric AS cant,
            CASE k.movimiento WHEN 'FE' THEN 'Venta'
                              WHEN 'FA' THEN 'ENTRADA'
@@ -52,27 +51,28 @@ WITH x AS (
                 ELSE k.movimiento || ' ' || trim(k.documento) END AS doc
     FROM stg_kardex k
     JOIN articulos a ON a.codigobarra = k.codigo
-    WHERE k.fecha >= '2015-01-01' AND k.fecha < '2017-01-01'
+    WHERE k.fecha >= '2015-01-01' AND k.fecha < '2023-01-01'
       AND coalesce(trim(k.cantidad), '') <> '' AND coalesce(trim(k.fecha), '') <> ''
 
     UNION ALL
 
-    -- entradas manuales 2010-2016
+    -- entradas manuales de compra (2010-2016)
     SELECT a.codigo, e.fecha::date, e.cantidad::numeric, 'ENTRADA',
            'ENTRADA ' || trim(e.documento)
     FROM stg_entradas e
     JOIN articulos a ON a.codigobarra = e.codigo
-    WHERE e.fecha >= '2015-01-01' AND e.fecha < '2017-01-01'
+    WHERE e.fecha >= '2010-01-01' AND e.fecha < '2017-01-01'
       AND coalesce(trim(e.cantidad), '') <> '' AND coalesce(trim(e.fecha), '') <> ''
 
     UNION ALL
 
-    -- 2022: cada linea del detalle es una salida de inventario
-    SELECT a.codigo, d.fecha::date, -abs(coalesce(nullif(trim(d.cantidad), '')::numeric, 0)),
-           'Venta', trim(d.factura)
-    FROM stg_2022 d
-    JOIN articulos a ON a.codigobarra = d.codigo
-    WHERE coalesce(trim(d.cantidad), '') <> '' AND coalesce(trim(d.fecha), '') <> ''
+    -- salidas de inventario: solo donde el kardex no llega (2015-08/09, 2018-2019)
+    SELECT a.codigo, s.fecha::date, -abs(s.cantidad::numeric), 'Venta', 'SALIDA'
+    FROM stg_salidas s
+    JOIN articulos a ON a.codigobarra = s.codigo
+    WHERE (s.fecha < '2015-10-01' OR s.fecha >= '2017-01-01')
+      AND s.fecha < '2023-01-01'
+      AND coalesce(trim(s.cantidad), '') <> '' AND coalesce(trim(s.fecha), '') <> ''
 )
 SELECT art, f, cant, tipo, doc,
        row_number() OVER (PARTITION BY art, f, cant, tipo ORDER BY doc) AS rn
@@ -104,8 +104,7 @@ FROM mov_nuevos;
 \echo '===== totales'
 SELECT 'inventario' AS tabla, count(*) AS filas FROM inventario;
 SELECT to_char(fechamovimiento, 'YYYY') AS anio, count(*) AS filas
-FROM inventario WHERE fechamovimiento >= '2015-01-01' AND fechamovimiento < '2023-01-01'
-GROUP BY 1 ORDER BY 1;
+FROM inventario WHERE fechamovimiento < '2023-01-01' GROUP BY 1 ORDER BY 1;
 
 \if :aplicar
 COMMIT;
