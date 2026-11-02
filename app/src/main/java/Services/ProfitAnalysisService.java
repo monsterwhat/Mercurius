@@ -239,10 +239,13 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
      */
     @Transactional(TxType.SUPPORTS)
     public @Nonnull List<Articulos> getTopProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
-        String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
-                "(SELECT pmh.articulo.codigo FROM HistorialMargen pmh " +
-                "WHERE pmh.fecha BETWEEN :startDate AND :endDate " +
-                "ORDER BY pmh.margenReal DESC)";
+        // ORDER BY dentro de un IN(...) no ordena el resultado externo: LIMIT se
+        // aplicaba a un conjunto arbitrario, así que "top" y "bajo" devolvían
+        // las MISMAS filas. El orden ahora es del query externo, por el margen
+        // promedio del período.
+        String jpql = "SELECT a FROM Articulos a JOIN HistorialMargen h ON h.articulo = a "
+                + "WHERE h.fecha BETWEEN :startDate AND :endDate "
+                + "GROUP BY a ORDER BY AVG(h.margenReal) DESC";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate)
@@ -255,10 +258,13 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
      */
     @Transactional(TxType.SUPPORTS)
     public @Nonnull List<Articulos> getWorstProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
-        String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
-                "(SELECT pmh.articulo.codigo FROM HistorialMargen pmh " +
-                "WHERE pmh.fecha BETWEEN :startDate AND :endDate AND pmh.margenReal > 0 " +
-                "ORDER BY pmh.margenReal ASC)";
+        // Mismo problema que el top: el ORDER BY vivía dentro del IN y el LIMIT
+        // caía sobre un conjunto sin orden. Ahora se ordena por el margen
+        // promedio ascendente. Sin filtro margenReal > 0: vender bajo costo es
+        // justamente "bajo margen" y debe aparecer.
+        String jpql = "SELECT a FROM Articulos a JOIN HistorialMargen h ON h.articulo = a "
+                + "WHERE h.fecha BETWEEN :startDate AND :endDate "
+                + "GROUP BY a ORDER BY AVG(h.margenReal) ASC";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate)
