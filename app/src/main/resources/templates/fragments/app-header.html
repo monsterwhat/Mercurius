@@ -19,6 +19,16 @@
     <span class="app-header-title" id="app-header-context" aria-live="polite"></span>
 
     <div class="app-header-actions">
+        {! Tema claro/oscuro. Sin clase en <html> el tema sigue al sistema; el
+           botón fija la elección y la guarda (fragments/theme-boot la aplica
+           antes de la primera pintura). El icono muestra la acción, no el
+           estado: luna en claro, sol en oscuro. !}
+        <button type="button" class="app-header-theme" data-theme-toggle
+                aria-label="Cambiar a tema oscuro" title="Cambiar a tema oscuro">
+            <span class="app-theme-icon is-moon">{#include _kit/icon name="moon" /}</span>
+            <span class="app-theme-icon is-sun">{#include _kit/icon name="sun" /}</span>
+        </button>
+
         {! Lanzador POS: mismo contrato declarativo que el navbar (kitPopup). !}
         {#if inject:securityIdentity.hasRole('facturacion')}
         <a class="button is-dark"

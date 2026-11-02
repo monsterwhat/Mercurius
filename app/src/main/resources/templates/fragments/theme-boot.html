@@ -1,0 +1,25 @@
+{!
+  fragments/theme-boot - applies the saved colour theme BEFORE the first paint.
+
+  layout.html covers every page inside the shell, but login.html and
+  factura-standalone.html are self-contained documents that deliberately do
+  not include it. Without this fragment the POS window and the login screen
+  would ignore the operator's choice and flash the OS scheme first.
+
+  Bulma ships .theme-light / .theme-dark on <html> (every --bulma-* token
+  flips with that class) and web/mercurius.scss derives the --merc-* surface
+  tokens from those same classes, so ONE class is the whole theme. No class
+  means "follow the operating system".
+!}
+<script>
+    (function () {
+        try {
+            var tema = localStorage.getItem('mercurius.theme');
+            if (tema === 'dark' || tema === 'light') {
+                document.documentElement.classList.add('theme-' + tema);
+            }
+        } catch (e) {
+            console.warn('[theme] no se pudo leer la preferencia guardada', e);
+        }
+    })();
+</script>

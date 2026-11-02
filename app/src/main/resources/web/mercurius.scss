@@ -303,16 +303,28 @@
     --bulma-link-l: 56%;
 }
 
+// Dark surfaces, written once and applied from two places: the operating
+// system (when the operator has not chosen) and the explicit `.theme-dark`
+// class the header toggle puts on <html>. Bulma already flips every --bulma-*
+// token for that class, so only the --merc-* aliases need repeating.
+@mixin merc-dark-surfaces {
+    --merc-background: var(--bulma-scheme-main);
+    --merc-surface: var(--bulma-scheme-main-bis);
+    --merc-surface-hover: var(--bulma-scheme-main-ter);
+    --merc-border: var(--bulma-border);
+    --merc-text: var(--bulma-text);
+    --merc-text-secondary: var(--bulma-text-weak);
+    --merc-text-muted: var(--bulma-text-weak);
+}
+
 @media (prefers-color-scheme: dark) {
-    :root {
-        --merc-background: var(--bulma-scheme-main);
-        --merc-surface: var(--bulma-scheme-main-bis);
-        --merc-surface-hover: var(--bulma-scheme-main-ter);
-        --merc-border: var(--bulma-border);
-        --merc-text: var(--bulma-text);
-        --merc-text-secondary: var(--bulma-text-weak);
-        --merc-text-muted: var(--bulma-text-weak);
+    :root:not(.theme-light) {
+        @include merc-dark-surfaces;
     }
+}
+
+.theme-dark {
+    @include merc-dark-surfaces;
 }
 
 // -----------------------------------------------------------------------------
@@ -655,6 +667,55 @@ body {
     height: 1.5px;
     border-radius: 1px;
     background: currentColor;
+}
+
+// Theme switch. Same box as the burger so the header keeps one control height.
+// The icon shows the ACTION, not the state: moon in light mode (click -> dark),
+// sun in dark mode (click -> light). With no class on <html> the OS decides.
+.app-header-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--merc-border);
+    border-radius: var(--mercurius-radius-sm);
+    background: var(--merc-surface);
+    color: var(--merc-text);
+    cursor: pointer;
+}
+
+.app-header-theme:hover {
+    background: var(--merc-surface-hover);
+}
+
+.app-theme-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-theme-icon.is-sun {
+    display: none;
+}
+
+.theme-dark .app-theme-icon.is-moon {
+    display: none;
+}
+
+.theme-dark .app-theme-icon.is-sun {
+    display: inline-flex;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not(.theme-light) .app-theme-icon.is-moon {
+        display: none;
+    }
+
+    :root:not(.theme-light) .app-theme-icon.is-sun {
+        display: inline-flex;
+    }
 }
 
 .app-header-user-wrap {
@@ -1721,11 +1782,16 @@ summary:focus-visible,
 // ground it is a smudge whose one specular highlight does more work than the
 // silhouette — the product's own name is the one thing the operator must be
 // able to read. Inverting it in the dark scheme gives a white bull on black;
-// the light scheme keeps the original ink.
+// the light scheme keeps the original ink. Both entries are needed: the media
+// query follows the OS, the class is the operator's explicit choice.
 @media (prefers-color-scheme: dark) {
-    .mercurius-mark {
+    :root:not(.theme-light) .mercurius-mark {
         filter: invert(1);
     }
+}
+
+.theme-dark .mercurius-mark {
+    filter: invert(1);
 }
 
 // The native file input is the one control the OS draws, so it arrives in a
@@ -2480,14 +2546,33 @@ button.navbar-link {
   }
 }
 
-// ── POS: ayuda del cliente ───────────────────────────────────────────────────
-// El texto vivía en un .is-static con nowrap + ellipsis y en móvil se cortaba
-// a media frase ("Opcional — el cliente ..."), justo al lado del botón que
-// asigna el cliente. Ahora envuelve dentro de su control.
-.pos-cliente-hint {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
+// ── POS: captura ────────────────────────────────────────────────────────────
+// Bulma's `.select` shrink-wraps to the control's intrinsic width, and the
+// longest option ended up under the chevron ("Tiquete electrónic" + arrow).
+// A fixed box PLUS `select { width: 100% }` fixes both halves: the control
+// fills the box, so the chevron sits on its own padding instead of floating
+// outside it.
+.pos-tipo-documento {
+    width: 12.5rem;
+}
+
+.pos-tipo-documento select {
+    width: 100%;
+}
+
+// El campo de cantidad se escribe o se dicta, nunca se sube con las flechitas:
+// los spinners del navegador se dibujaban ENCIMA de los dígitos en la columna
+// angosta y el número quedaba ilegible. (La clase .pos-cliente-hint murió con
+// el texto "el cliente asignado aparece en el carrito".)
+#pos-page input[type="number"]::-webkit-outer-spin-button,
+#pos-page input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#pos-page input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 // =============================================================================

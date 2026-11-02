@@ -34,6 +34,9 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>{#insert title}Mercurius{/insert}</title>
+    {! Antes del bundle: la clase del tema tiene que existir cuando el CSS
+       pinta, o la primera pintura sale con el esquema del sistema. !}
+    {#include fragments/theme-boot /}
     {!
       web-bundler Qute tag: injects the bundled app-*.js and app-*.css
       (htmx + alpinejs + bulma + print.js) built from src/main/resources/web.
@@ -186,6 +189,54 @@
                     setSidebar(false);
                 }
             });
+
+            // Colour theme. fragments/theme-boot already applied the saved
+            // choice before the first paint; this block owns the switch that
+            // changes it. No class on <html> means "follow the OS", which is
+            // where Bulma starts.
+            var themeButton = document.querySelector('[data-theme-toggle]');
+            var THEME_KEY = 'mercurius.theme';
+
+            function temaEfectivo() {
+                var raiz = document.documentElement;
+                if (raiz.classList.contains('theme-dark')) {
+                    return 'dark';
+                }
+                if (raiz.classList.contains('theme-light')) {
+                    return 'light';
+                }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            function etiquetaTema(tema) {
+                return tema === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
+            }
+
+            function aplicarTema(tema) {
+                var raiz = document.documentElement;
+                raiz.classList.remove('theme-light', 'theme-dark');
+                raiz.classList.add('theme-' + tema);
+                if (themeButton) {
+                    var texto = etiquetaTema(tema);
+                    themeButton.setAttribute('aria-label', texto);
+                    themeButton.setAttribute('title', texto);
+                    themeButton.setAttribute('aria-pressed', tema === 'dark' ? 'true' : 'false');
+                }
+                try {
+                    localStorage.setItem(THEME_KEY, tema);
+                } catch (e) {
+                    console.warn('[theme] no se pudo guardar la preferencia', e);
+                }
+            }
+
+            if (themeButton) {
+                var inicial = etiquetaTema(temaEfectivo());
+                themeButton.setAttribute('aria-label', inicial);
+                themeButton.setAttribute('title', inicial);
+                themeButton.addEventListener('click', function () {
+                    aplicarTema(temaEfectivo() === 'dark' ? 'light' : 'dark');
+                });
+            }
 
             var groupButtons = document.querySelectorAll('[data-sidebar-group]');
             Array.prototype.forEach.call(groupButtons, function (btn) {
