@@ -2605,3 +2605,24 @@ button,
 }
 
 }
+// -----------------------------------------------------------------------------
+// 3.10 POS working surface
+//
+// The till is opened full screen (its own window from the navbar) and every
+// pixel of frame is a cart row the cashier cannot see. Bulma's 3rem section
+// gutter and the capped .container width are page chrome, not till chrome, so
+// the standalone POS drops both; inside the shell the section already has no
+// padding (.app-content .section) and this rule is a no-op.
+// -----------------------------------------------------------------------------
+.pos-standalone {
+    padding: .75rem 1rem 1.25rem;
+}
+
+.pos-standalone > .container {
+    max-width: none;
+    width: 100%;
+}
+
+.pos-page {
+    padding: 0 !important;
+}

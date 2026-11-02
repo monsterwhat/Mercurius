@@ -1,7 +1,9 @@
 # POS checkout rework — plan (product-owner brief)
 
-**Status:** approved by the product owner in chat; not implemented yet.
-**Scope:** `pages/facturas/factura-body.html`, `pages/facturas/cart-panel.html`, `PosResource`, one new dialog fragment.
+**Status:** DONE in 2.23.0. Implemented and verified in the browser (Playwright,
+dev server on `mercurius_test`): see "Resultado" at the end.
+**Scope:** `pages/facturas/factura-body.html`, `pages/facturas/cart-panel.html`,
+`PosResource`, one new dialog fragment.
 **Constraint:** no business-logic rewrite, no new backend feature. The till must stay sellable at every commit.
 
 ## 1. Decisions (verbatim intent)
@@ -50,3 +52,36 @@ Both share the target and fail together → the prime suspect is the `#cart-pane
 - No change to Hacienda emission, totals, IVA, discounts or puntos.
 - No removal of the payment endpoints (API parity only).
 - No new dependency.
+
+## 6. Resultado (2.23.0)
+
+**Causa raíz de los dos pickers (una sola):** el fragmento de cada picker
+cerraba su diálogo en el evento **click**. Cerrar un diálogo del kit vacía su
+cuerpo (`kitModalClosed` → `body.innerHTML = ''`), así que el formulario —y el
+botón— desaparecían antes de que htmx enviara el POST: no se emitía **ninguna**
+petición (verificado con Playwright: cero POST). Ahora el diálogo se cierra
+cuando el `#cart-panel` ya volvió (`htmx:afterSwap`), no al hacer clic.
+
+**Cobro:** `GET /api/app/pos/checkout-dialog` renderiza
+`pages/facturas/checkout-dialog.html` con el total y el tipo de cambio
+vigentes. `POST /facturar-form` acepta `colones` y `dolares`: el servidor
+convierte los dólares con la tasa de venta y entrega UNA entrada de efectivo
+(`01`) al pipeline de siempre. Sin método de pago, sin cambios en la factura.
+
+**Verificación en navegador** (`/app/pos/standalone`, 1440×900):
+
+| Comprobación | Resultado |
+|---|---|
+| Buscar → Agregar | 1 línea; diálogo cerrado; 0 errores JS |
+| Seleccionar cliente | cliente asignado en el carrito |
+| Facturar abre el diálogo | total `₡1 412,50`, TC `455.5` |
+| Pago parcial | vuelto `-₡706,50`, "Faltan ₡706,50", botón bloqueado |
+| Colones + dólares | `₡958 + 2×455,5 = ₡1 869,00` → vuelto `₡456,50` |
+| Confirmar | factura emitida, diálogo cerrado, carrito vacío |
+| Cancelar en el diálogo | se cierra, la venta sigue intacta |
+| Cancelar venta | confirmación + carrito vacío |
+| Ventana 1440 | contenedor 1408 px, padding 12/16/20, sin scroll horizontal |
+
+De paso se corrigió el **mojibake** de `factura-body.html` (13 cadenas
+mostraban `Ã³`/`Ã­` en pantalla: "CÃ³digo de barras", "artÃculo", "Tiquete
+electrÃ³nico").

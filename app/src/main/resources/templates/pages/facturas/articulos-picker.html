@@ -111,15 +111,5 @@
                     : total + (total === 1 ? ' artículo encontrado' : ' artículos encontrados');
             }
         })();
-        // Bridge: after the cart-panel swap request leaves, close the hosting kit
-        // modal (same Alpine contract as the client picker).
-        document.querySelectorAll('#articulos-picker-fragmento .js-pick-articulo').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var root = button.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
-                }
-            });
-        });
     </script>
 </div>

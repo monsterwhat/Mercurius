@@ -95,16 +95,5 @@
                     : total + (total === 1 ? ' cliente encontrado' : ' clientes encontrados');
             }
         })();
-        // Bridge: after the panel swap request leaves, close the hosting kit
-        // modal (same Alpine contract as pages/clientes/index.html
-        // data-kit-close).
-        document.querySelectorAll('#client-picker-fragmento .js-pick-cliente').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var root = button.closest('.kit-modal-root');
-                if (root && window.Alpine) {
-                    Alpine.$data(root).open = false;
-                }
-            });
-        });
     </script>
 </div>

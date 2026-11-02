@@ -21,9 +21,9 @@
   re-rendered with it or they would go stale): Descuento -> IVA -> TOTAL
   (plus the puntos row), then Cancelar before Facturar.
 
-  The rows table scrolls inside its own viewport; the totals, the payment
-  trigger and the two closing actions sit OUTSIDE it, so a long sale can never
-  push "Facturar" out of reach behind a scrollbar.
+  The rows table scrolls inside its own viewport; the totals and the two
+  closing actions sit OUTSIDE it, so a long sale can never push "Facturar" out
+  of reach behind a scrollbar.
 
   Model ("panel" bound key, Map):
     items            List  - {codigo,nombre,cantidad,precioEfectivo,precioMostrado,
@@ -190,15 +190,9 @@
         <tr><th scope="row" class="has-text-weight-normal">Puntos redimidos</th>
             <td class="num">&minus;{fmt:moneda(panel.descuentoPuntos)}</td></tr>
         {/if}
-        {! Staged payments are already on the session (the payment dialog wrote
-           them); showing the received amount here closes the loop without
-           reopening the dialog. The VUELTO is deliberately not repeated: the
-           session only recomputes it when the dialog posts, so adding an item
-           afterwards would leave a wrong change figure on the cart. !}
-        {#if panel.totalPagado?? && panel.totalPagado > 0}
-        <tr><th scope="row" class="has-text-weight-normal">Pagado</th>
-            <td class="num">{fmt:moneda(panel.totalPagado)}</td></tr>
-        {/if}
+        {! The payment dialog is gone from the till: the received amount and
+           the change are answered inside the Facturar dialog, and the invoice
+           records them. Nothing here needs to echo a staged amount. !}
         </tbody>
     </table>
     {/if}
@@ -233,19 +227,16 @@
     <p class="help" id="puntos-preview" data-puntos-preview aria-live="polite">&nbsp;</p>
     {/if}
 
-    {! Closing block: payment, TOTAL, then the two actions. `pos-cierre` is the
-       hook for the mobile sticky treatment (position:sticky;bottom:0 + an
-       opaque scheme background at <=768px), which belongs in the shared
-       stylesheet, not in this fragment. !}
+    {! Closing block: TOTAL, then the two actions. `pos-cierre` is the hook for
+       the mobile sticky treatment (position:sticky;bottom:0 + an opaque scheme
+       background at <=768px), which belongs in the shared stylesheet, not in
+       this fragment.
+
+       There is no payment step before Facturar: handing over money IS the
+       last step of the sale, so the "how much did they pay" dialog opens from
+       the Facturar button itself (modal-cobro, body from
+       /api/app/pos/checkout-dialog). !}
     <div class="pos-cierre">
-    <div class="field is-grouped" style="margin-bottom:0.25rem">
-        <p class="control is-expanded">
-            <button type="button" id="btn-abrir-pagos" class="button is-medium is-fullwidth"
-                    aria-haspopup="dialog" data-kit-open="modal-pago"{#if panel.vacio} disabled{/if}
-                    hx-get="{config:['quarkus.http.root-path']}/api/app/pos/payment-dialog"
-                    hx-target="#modal-pago-body" hx-swap="innerHTML">{#include _kit/icon name="money" /} Pagos y vuelto</button>
-        </p>
-    </div>
     <div class="level is-mobile" style="margin-bottom:0.5rem">
         <div class="level-left"><p class="has-text-weight-semibold" style="margin-bottom:0">Total a pagar</p></div>
         <div class="level-right"><p class="title is-3" style="margin-bottom:0"
@@ -259,10 +250,9 @@
                 hx-target="#cart-panel" hx-swap="outerHTML"
                 hx-disabled-elt="this">Cancelar venta</button>
         <button type="button" id="btn-facturar" class="button is-medium is-primary"{#if panel.vacio} disabled{/if}
-                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
-                hx-include="#forma-tipo-documento"
-                hx-target="#facturar-resultado" hx-swap="innerHTML"
-                hx-disabled-elt="this">{#include _kit/icon name="file" /} Facturar</button>
+                aria-haspopup="dialog" data-kit-open="modal-cobro"
+                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/checkout-dialog"
+                hx-target="#modal-cobro-body" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>
     </div>
     </div>
 

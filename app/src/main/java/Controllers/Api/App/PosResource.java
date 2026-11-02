@@ -53,6 +53,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
@@ -207,6 +208,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Location("pages/facturas/payment-dialog")
     @Inject
     Template paymentDialogTemplate;
+
+    @Nonnull
+    @Location("pages/facturas/checkout-dialog")
+    @Inject
+    Template checkoutDialogTemplate;
 
     @Nonnull
     @Location("pages/facturas/client-picker")
@@ -1602,9 +1608,34 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     }
 
     /**
+     * Checkout dialog body (modal fragment): the ONLY payment surface of the
+     * till. Facturar opens it; it shows the cart total and asks how much the
+     * customer handed over in colones and/or dollars.
+     *
+     * <p>Fetched fresh on every open so the total and the venta rate are the
+     * ones the current cart shows — a value frozen at page load would be
+     * wrong the moment the cashier scans one more line.</p>
+     */
+    @GET
+    @Path("/checkout-dialog")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Checkout dialog HTML fragment (colones + dollars + change)")
+    public Response checkoutDialog() {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        return htmlOk(checkoutDialogTemplate
+                .data("cobro", cobroModel(username)).render());
+    }
+
+    /**
      * Payment dialog body (modal fragment): staged payment rows per
      * metodoPago, server-computed split totals and vuelto. Also the response
      * body of {@link #paymentEntriesForm} — single source of truth.
+     *
+     * <p>No longer reachable from the POS UI (the checkout dialog replaced it);
+     * kept for API compatibility.</p>
      */
     @GET
     @Path("/payment-dialog")
@@ -1707,11 +1738,13 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
     /**
      * Form twin of {@link #facturar}: accepts tipoDocumento, optional
-     * puntosARedimir and the metodoPago[]/monto[] arrays from the payment
-     * dialog, runs the SAME {@link #doFacturar} pipeline and renders
-     * {@code pages/facturas/facturar-resultado.html}: success swaps the PDF
-     * link in and out-of-band clears {@code #cart-panel}; any guard failure
-     * renders the error envelope next to the button with the cart intact.
+     * puntosARedimir, the metodoPago[]/monto[] arrays from the legacy payment
+     * dialog, or the colones/dolares amounts collected by the checkout dialog
+     * (which win when either is present), runs the SAME {@link #doFacturar}
+     * pipeline and renders {@code pages/facturas/facturar-resultado.html}:
+     * success swaps the PDF link in and out-of-band clears {@code #cart-panel};
+     * any guard failure renders the error envelope next to the button with the
+     * cart intact.
      */
     @POST
     @Path("/facturar-form")
@@ -1722,19 +1755,86 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             @FormParam("tipoDocumento") @Nullable String tipoDocumento,
             @FormParam("puntosARedimir") @Nullable String puntos,
             @FormParam("metodoPago") @Nullable List<String> metodos,
-            @FormParam("monto") @Nullable List<String> montos) {
+            @FormParam("monto") @Nullable List<String> montos,
+            @FormParam("colones") @Nullable String colones,
+            @FormParam("dolares") @Nullable String dolares) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
         }
         String documento = tipoDocumento == null || tipoDocumento.isBlank()
                 ? "04" : tipoDocumento.trim();
-        List<EntradaPago> pagos = zipPagos(metodos, montos);
+        List<EntradaPago> pagos;
+        if (colones != null || dolares != null) {
+            // Checkout dialog: the cashier reports what the customer handed
+            // over, in colones and/or dollars. The server converts the dollars
+            // with the venta rate it already publishes and hands the pipeline
+            // ONE cash entry - the invoice stays denominated in colones.
+            pagos = pagosDeCobro(colones, dolares);
+            if (pagos == null) {
+                return htmlOk(facturarResultadoTemplate.data("resultado", resultadoModel(username,
+                        Response.status(Response.Status.CONFLICT)
+                                .entity(ApiResponse.error("TIPO_CAMBIO_NO_DISPONIBLE",
+                                        "No hay tipo de cambio de venta registrado: cobre en colones "
+                                                + "o registre el tipo de cambio antes de facturar."))
+                                .build())).render());
+            }
+        } else {
+            pagos = zipPagos(metodos, montos);
+        }
         BigDecimal puntosParam = puntos == null || puntos.isBlank() ? null : parseDecimal(puntos);
 
         Response result = doFacturar(documento, pagos.isEmpty() ? null : pagos, puntosParam);
         return htmlOk(facturarResultadoTemplate
                 .data("resultado", resultadoModel(username, result)).render());
+    }
+
+    /**
+     * Builds the single cash entry from the amounts the checkout dialog
+     * collected. Dollars are converted at the venta rate the POS publishes; the
+     * invoice keeps being denominated in colones, so one entry for the received
+     * total is exactly what the removed split-payment dialog produced when the
+     * cashier typed the amount handed over.
+     *
+     * @return the entries, or {@code null} when dollars were handed over but no
+     *         venta rate is configured (the caller answers an error envelope)
+     */
+    @Nullable
+    private List<EntradaPago> pagosDeCobro(@Nullable String colonesStr, @Nullable String dolaresStr) {
+        BigDecimal enColones = montoRecibido(colonesStr, "colones");
+        BigDecimal enDolares = montoRecibido(dolaresStr, "dólares");
+        BigDecimal tipoCambio = BigDecimal.ZERO;
+        if (enDolares.compareTo(BigDecimal.ZERO) > 0) {
+            TipoCambio tc = tipoCambioService.getNewestTipoCambio();
+            if (tc == null || tc.getValorVenta() == null) {
+                LOG.warn("Cobro en dólares rechazado: no hay tipo de cambio de venta"
+                        + " | source=PosResource.pagosDeCobro() | dolares=" + enDolares
+                        + " | despues=sin facturar; el carrito se conserva");
+                return null;
+            }
+            tipoCambio = tc.getValorVenta();
+        }
+        BigDecimal recibido = enColones.add(enDolares.multiply(tipoCambio))
+                .setScale(2, RoundingMode.HALF_UP);
+        EntradaPago pago = new EntradaPago();
+        pago.setMetodoPago("01");
+        pago.setMonto(recibido);
+        return List.of(pago);
+    }
+
+    /** Parses a checkout amount; blank or malformed counts as zero, never NaN. */
+    @Nonnull
+    private BigDecimal montoRecibido(@Nullable String raw, @Nonnull String campo) {
+        if (raw == null || raw.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(raw.trim().replace(',', '.')).max(BigDecimal.ZERO);
+        } catch (NumberFormatException e) {
+            LOG.warn("Monto de cobro inválido en " + campo + ", se usa 0: " + raw
+                    + " | source=PosResource.montoRecibido()");
+            return BigDecimal.ZERO;
+        }
     }
 
     /**
@@ -1822,6 +1922,29 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         panel.put("clientePuntos", clienteValido ? cliente.getPuntosAcumulados() : null);
         panel.put("mensaje", mensajeToMap(mensaje));
         return panel;
+    }
+
+    /**
+     * Checkout-dialog view model: the cart total plus the venta exchange rate
+     * the dollar field converts with. Raw (unformatted) strings travel with the
+     * display values because the live change is computed in the browser.
+     */
+    @Nonnull
+    Map<String, Object> cobroModel(@Nonnull String username) {
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionContext ctx = entry.getCartContext();
+        BigDecimal total = carritoService.calculateTotalCarrito(ctx);
+        Map<String, Object> badge = tipoCambioBadge();
+        Object venta = badge.get("venta");
+
+        Map<String, Object> cobro = new LinkedHashMap<>();
+        cobro.put("total", total);
+        cobro.put("totalRaw", total == null ? "0" : total.toPlainString());
+        cobro.put("disponible", badge.get("disponible"));
+        cobro.put("tipoCambio", venta);
+        cobro.put("tipoCambioRaw", venta instanceof BigDecimal valor
+                ? valor.toPlainString() : "0");
+        return cobro;
     }
 
     /** Payment-dialog view model: staged rows + server-computed totals. */

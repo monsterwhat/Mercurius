@@ -1,0 +1,141 @@
+{!
+  pages/facturas/checkout-dialog - the ONE payment surface of the POS.
+
+  Facturar opens it (data-kit-open="modal-cobro" + hx-get on the cart panel
+  button); GET /api/app/pos/checkout-dialog renders this body. It is fetched on
+  every open, so the total and the exchange rate are always the ones the
+  current cart shows - never a value frozen when the page loaded.
+
+  The cashier answers exactly one question: how much did the customer hand
+  over, in colones and/or in dollars. There is no payment-method selector:
+  cash is split across the two currencies, nothing else.
+
+  Live math (client-side, this fragment only):
+    pagado = colones + dolares x tipo de cambio
+    vuelto = pagado - total
+  Facturar stays disabled while pagado < total, so the server-side
+  "FALTANTE_DE_PAGO" guard is a backstop, not the normal path. The server
+  converts the dollars itself (same venta rate) and runs the SAME facturar
+  pipeline - this dialog adds no business logic.
+
+  Model ("cobro" bound key, Map):
+    total      BigDecimal - cart total to pay (server-computed)
+    totalRaw   String     - the same value as a plain decimal for JS
+    disponible bool       - a venta exchange rate exists
+    tipoCambio BigDecimal - venta rate, null when unavailable
+    tipoCambioRaw String  - plain decimal, "0" when unavailable
+!}
+<div id="cobro-fragmento" class="pos-cobro"
+     data-total="{cobro.totalRaw}" data-tipo-cambio="{cobro.tipoCambioRaw}">
+
+    <div class="level is-mobile" style="margin-bottom:0.75rem">
+        <div class="level-left">
+            <p class="has-text-weight-semibold" style="margin-bottom:0">Total a pagar</p>
+        </div>
+        <div class="level-right">
+            <p class="title is-4" style="margin-bottom:0">{fmt:moneda(cobro.total)}</p>
+        </div>
+    </div>
+
+    <form id="forma-cobro"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
+          hx-include="#forma-tipo-documento"
+          hx-target="#facturar-resultado" hx-swap="innerHTML"
+          hx-disabled-elt="#btn-cobro-facturar">
+        <div class="field">
+            <label class="label is-small" for="cobro-colones">Colones recibidos</label>
+            <div class="control">
+                <input class="input is-medium" type="number" id="cobro-colones" name="colones"
+                       min="0" step="0.01" inputmode="decimal" autocomplete="off" autofocus
+                       placeholder="0.00"/>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label is-small" for="cobro-dolares">Dólares recibidos
+                <span class="has-text-weight-normal mercurius-text-muted">(opcional)</span></label>
+            <div class="control">
+                <input class="input is-medium" type="number" id="cobro-dolares" name="dolares"
+                       min="0" step="0.01" inputmode="decimal" autocomplete="off"
+                       placeholder="0.00"{#if !cobro.disponible} disabled{/if}/>
+            </div>
+            {#if cobro.disponible}
+            <p class="help">Se convierten a colones al tipo de cambio de venta:
+                &#36;1 = {fmt:moneda(cobro.tipoCambio)}</p>
+            {#else}
+            <p class="help has-text-warning">No hay tipo de cambio de venta: cobre solo en colones.</p>
+            {/if}
+        </div>
+
+        <table class="table is-narrow is-fullwidth is-borderless" style="margin-bottom:0.75rem">
+            <tbody>
+            <tr><th scope="row" class="has-text-weight-normal">Pagado</th>
+                <td class="num" id="cobro-pagado">&nbsp;</td></tr>
+            <tr><th scope="row" class="has-text-weight-semibold">Vuelto</th>
+                <td class="num has-text-weight-semibold" id="cobro-vuelto" aria-live="polite">&nbsp;</td></tr>
+            </tbody>
+        </table>
+
+        <p class="help" id="cobro-faltante" role="status">&nbsp;</p>
+
+        <div class="buttons" style="margin-bottom:0">
+            <button type="button" class="button is-medium" data-kit-close>Cancelar</button>
+            <button type="submit" id="btn-cobro-facturar" class="button is-medium is-primary" disabled>
+                {#include _kit/icon name="file" /} Facturar</button>
+        </div>
+    </form>
+
+    <script>
+        (function () {
+            var raiz = document.getElementById('cobro-fragmento');
+            if (!raiz) {
+                return;
+            }
+            var total = parseFloat(raiz.getAttribute('data-total')) || 0;
+            var tipoCambio = parseFloat(raiz.getAttribute('data-tipo-cambio')) || 0;
+            var colones = document.getElementById('cobro-colones');
+            var dolares = document.getElementById('cobro-dolares');
+            var pagadoOut = document.getElementById('cobro-pagado');
+            var vueltoOut = document.getElementById('cobro-vuelto');
+            var faltanteOut = document.getElementById('cobro-faltante');
+            var boton = document.getElementById('btn-cobro-facturar');
+
+            function moneda(valor) {
+                var signo = valor < 0 ? '-' : '';
+                var monto = Math.abs(valor).toLocaleString('es-CR',
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return signo + '\u20a1' + monto;
+            }
+
+            function recalcular() {
+                var enColones = parseFloat(colones.value) || 0;
+                var enDolares = dolares ? (parseFloat(dolares.value) || 0) : 0;
+                var pagado = enColones + enDolares * tipoCambio;
+                var vuelto = pagado - total;
+                pagadoOut.textContent = moneda(pagado);
+                vueltoOut.textContent = moneda(vuelto);
+                vueltoOut.classList.toggle('has-text-danger', vuelto < -0.005);
+                var suficiente = vuelto >= -0.005;
+                if (boton) {
+                    boton.disabled = !suficiente;
+                }
+                if (suficiente) {
+                    faltanteOut.textContent = '\u00a0';
+                    faltanteOut.classList.remove('has-text-danger');
+                } else {
+                    faltanteOut.textContent = 'Faltan ' + moneda(-vuelto) +
+                        ' para cubrir el total.';
+                    faltanteOut.classList.add('has-text-danger');
+                }
+            }
+
+            colones.addEventListener('input', recalcular);
+            if (dolares) {
+                dolares.addEventListener('input', recalcular);
+            }
+            recalcular();
+            colones.focus();
+            colones.select();
+        })();
+    </script>
+</div>

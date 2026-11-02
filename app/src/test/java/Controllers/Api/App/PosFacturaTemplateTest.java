@@ -292,10 +292,10 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 .body(containsString("id=\"cart-panel\""))
                 .body(containsString("id=\"btn-facturar\""))
                 .body(containsString("id=\"btn-cancelar\""))
-                .body(containsString("hx-post=\"/Mercurius/api/app/pos/facturar-form\""))
                 .body(containsString("hx-post=\"/Mercurius/api/app/pos/cancel-form\""))
+                .body(containsString("hx-get=\"/Mercurius/api/app/pos/checkout-dialog\""))
                 // dialogs + tipo-cambio badge + keyboard-first refocus glue
-                .body(containsString("id=\"modal-pago\""))
+                .body(containsString("id=\"modal-cobro\""))
                 .body(containsString("id=\"modal-cliente\""))
                 .body(containsString("id=\"modal-precio\""))
                 .body(containsString("id=\"badge-tipo-cambio\""))
@@ -879,6 +879,34 @@ authed(session)
     }
 
     // ── Small helpers ───────────────────────────────────────────────────
+
+    /**
+     * The checkout dialog is the only payment surface on the till: Facturar
+     * opens it, it asks for colones + dollars and posts both to the SAME
+     * facturar pipeline. A broken body here means the till cannot sell, so the
+     * markers are pinned.
+     */
+    @Test
+    @Order(99)
+    void checkoutDialogAsksColonesAndDollarsAndPostsThem() {
+        Map<String, String> session = adminSession();
+        cartSessionStore.remove("admin");
+
+        authed(session)
+                .when().get(POS + "/checkout-dialog")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.HTML)
+                .body(containsString("id=\"cobro-fragmento\""))
+                .body(containsString("name=\"colones\""))
+                .body(containsString("name=\"dolares\""))
+                .body(containsString("id=\"cobro-vuelto\""))
+                .body(containsString("id=\"btn-cobro-facturar\""))
+                .body(containsString("hx-post=\"/Mercurius/api/app/pos/facturar-form\""))
+                .body(containsString("hx-include=\"#forma-tipo-documento\""))
+                // a dialog body, never a second copy of the sale panel
+                .body(not(containsString("id=\"cart-panel\"")));
+    }
 
     private void selectClient(Map<String, String> session, int clientCode) {
         authed(session)
