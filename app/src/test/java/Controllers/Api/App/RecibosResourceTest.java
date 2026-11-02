@@ -791,20 +791,22 @@ class RecibosResourceTest extends support.ContextPathIsolation {
     void pageRendersBoardMarkersAndTablaFragmentDualMode() {
         Map<String, String> session = adminSession();
 
-        authed(session)
+        // Una sola vista: el tablero ya no tiene bandejas ni conteos por bucket.
+        String pagina = authed(session)
                 .when().get(PAGE)
                 .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("Facturas Emitidas"))
-                .body(containsString("id=\"recibos-tablero\""))
-                .body(containsString("id=\"recibos-stats\""))
-                .body(containsString("id=\"recibos-tabla-todas\""))
-                .body(containsString("id=\"recibos-tabla-pagadas\""))
-                .body(containsString("id=\"recibos-tabla-procesadas\""))
-                .body(containsString("id=\"recibos-tabla-vencidos\""))
-                .body(containsString("Detalle de la factura"))
-                .body(containsString("id=\"recibo-detalle-cuerpo\""));
+                .extract().asString();
+        assertThat(pagina).contains("Facturas Emitidas");
+        assertThat(pagina).contains("id=\"recibos-tablero\"");
+        assertThat(pagina).contains("id=\"recibos-tabla-todas\"");
+        assertThat(pagina).contains("Detalle de la factura");
+        assertThat(pagina).contains("id=\"recibo-detalle-cuerpo\"");
+        assertThat(pagina).doesNotContain("id=\"recibos-stats\"");
+        assertThat(pagina).doesNotContain("id=\"recibos-tabla-pagadas\"");
+        assertThat(pagina).doesNotContain("id=\"recibos-tabla-procesadas\"");
+        assertThat(pagina).doesNotContain("id=\"recibos-tabla-vencidos\"");
 
         authed(session)
                 .header("HX-Request", "true")
@@ -813,8 +815,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("id=\"recibos-tabla-vencidos\""))
-                .body(containsString("Vencidos"));
+                .body(containsString("id=\"recibos-tabla-vencidos\""));
 
         String fragmento = authed(session)
                 .header("HX-Request", "true")
@@ -827,8 +828,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
                 .when().get(API + "/tabla")
                 .then()
                 .statusCode(200)
-                .body(containsString("id=\"recibos-tablero\""))
-                .body(containsString("id=\"recibos-stats\""));
+                .body(containsString("id=\"recibos-tablero\""));
     }
 
     @Test

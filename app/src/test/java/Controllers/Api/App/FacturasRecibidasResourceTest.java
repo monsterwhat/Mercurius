@@ -833,7 +833,8 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString("id=\"facturas-recibidas\""))
-                .body(containsString("Bandeja"));
+                .body(containsString("Pendientes de pago"))
+                .body(containsString("Vencidas"));
 
         String fragmento = RestAssured.given().cookies(session)
                 .header("HX-Request", "true")
