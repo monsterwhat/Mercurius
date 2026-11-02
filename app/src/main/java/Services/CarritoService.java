@@ -45,6 +45,9 @@ public class CarritoService implements Serializable {
         @Inject
     private @Nonnull InventarioService inventario;
 
+    @Inject
+    private @Nonnull CarritoModificacionService carritoModificacionService;
+
     /**
      * Contexto puente SOLO para los llamadores legacy que aún no reciben un
      * {@link CartSessionContext} propio (ConsultasController.clonarFacturaACarrito,
@@ -122,6 +125,8 @@ public class CarritoService implements Serializable {
                                                 LOG.info("Cajero " + currentUser.getUsername() + " elimino articulo de carrito" + " | user=" + String.valueOf(currentUser) + " | source=" + "CrearTiqueteController.removeArticulo" + " | antes=" + String.valueOf(articulo.toString()) + " | despues=" + String.valueOf((Object) null));
                     try {
                         lineas.remove(indice);
+                        carritoModificacionService.registrarLineaEliminada(articulo, currentUser,
+                                nombreCliente(ctx));
                     } catch (IndexOutOfBoundsException e) {
                         LOG.debug("La linea ya no estaba al removerla (carrito concurrente)"
                                 + " | source=CarritoService.removeArticulo()");
@@ -132,6 +137,12 @@ public class CarritoService implements Serializable {
         } catch (RuntimeException e) {
                         LOG.warn("Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
+    }
+
+    /** Nombre del cliente seleccionado, para la bitacora del carrito. */
+    private @Nullable String nombreCliente(@Nonnull CartSessionContext ctx) {
+        Clientes seleccionado = ctx.getSelectedClient();
+        return seleccionado != null ? seleccionado.getName() : null;
     }
 
     public @Nullable BigDecimal calcularTotal(@Nonnull CartSessionContext ctx) {
@@ -470,6 +481,9 @@ public class CarritoService implements Serializable {
             antesBuilder.append("\nCantidad Articulo: ").append(ctx.getCantidadArticulo());
             antesBuilder.append("\nCódigo Barra: ").append(ctx.getCodigoBarra());
             LOG.info("Eliminacion Articulo en Carrito - Cajero: " + cajero + " | tipo=facturacion | antes=" + antesBuilder.toString() + " | despues=Empty");
+            carritoModificacionService.registrarCancelacion(
+                    new ArrayList<>(ctx.getCarrito()), currentUser, nombreCliente(ctx),
+                    antesBuilder.toString());
 // Reset state
             ctx.setResetFlag(!ctx.isResetFlag());
             ctx.setCodigoBarra("");

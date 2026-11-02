@@ -81,6 +81,9 @@ class CarritoServiceParityTest {
     @Mock
     private StockAlertService stockAlertService;
 
+    @Mock
+    private CarritoModificacionService carritoModificacionService;
+
     @InjectMocks
     private CarritoService carritoService;
 
