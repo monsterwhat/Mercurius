@@ -10,6 +10,7 @@ import Models.Articulos.ArticuloPrecio;
 import Services.ArticuloPrecioService;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
+import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
@@ -57,6 +58,39 @@ public class PreciosResource {
     @Inject
     @Location("pages/reportes/_tablas/precios")
     Template tabla;
+
+    @Inject
+    @Location("pages/reportes/_selector-precios")
+    Template selectorArticulos;
+
+    /**
+     * Sugerencias del selector de artículos: solo artículos CON historial de
+     * precios, filtrados por nombre o código. La página lo usa como typeahead;
+     * elegir una fila navega a {@code ?q=<código>}, que el reporte ya interpreta
+     * como filtro.
+     */
+    @GET
+    @Path("/selector")
+    @Transactional
+    public Response selector(@QueryParam("q") @Nullable String q) {
+        String filtro = (q == null || q.isBlank())
+                ? null
+                : "%" + q.trim().toLowerCase(Locale.ROOT) + "%";
+        List<Map<String, Object>> resultados = new ArrayList<>();
+        for (Models.Articulos.Articulos articulo : precioService.buscarArticulosConPrecio(filtro, 12)) {
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("codigoBarra", articulo.getCodigoBarra() == null ? "" : articulo.getCodigoBarra());
+            fila.put("nombre", articulo.getNombre());
+            resultados.add(fila);
+        }
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("resultados", resultados);
+        model.put("baseUrl", BASE_URL);
+        TemplateInstance instancia = selectorArticulos.instance();
+        model.forEach(instancia::data);
+        return Response.ok(instancia.render())
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+    }
 
     @GET
     @Transactional

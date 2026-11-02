@@ -10,17 +10,17 @@
   modelo.filtros (bucket [+ q]); modelo.bucket = active bucket key; q =
   current global filter of THIS table.
 
-  Row actions replicate the legacy buttons: Pagar (hidden for notas de
-  crédito — commit 20d3cde — and disabled when already settled), Procesar
-  (disabled once the Hacienda exchange ran), Aceptar/Rechazar (Mensaje
-  Receptor resolution) and Ver (row-select detail panel). All actions swap
-  #recibos-tablero so stats and the four tables stay consistent.
+  Row actions: SOLO "Ver" (detalle en el drawer). El negocio no marca pagada ni
+  procesa lo que emite, y el Mensaje Receptor pertenece a las facturas
+  recibidas: se quitaron Pagar / Procesar / Aceptar / Rechazar. La tabla
+  conserva su id estable y sigue siendo el swap target del buscador y del
+  paginador.
 !}
 <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
     <div class="level is-flex-wrap-wrap mb-2">
         <div class="level-left">
-            <h3 class="title is-5 mb-0">{#if modelo.bucket == "vencidos"}Vencidos{#else if modelo.bucket == "pagadas"}Pagadas{#else if modelo.bucket == "procesadas"}Procesadas{#else if modelo.bucket == "todas"}Todas{#else}{modelo.bucket}{/if}</h3>
+            <h3 class="title is-5 mb-0">Facturas emitidas</h3>
         </div>
         <div class="level-right" style="flex:1 1 16rem;justify-content:flex-end">
             <div class="field mb-0" style="width:100%;max-width:24rem">
@@ -52,48 +52,19 @@
                 <td class="num">{fmt:moneda(fila.dto.totalImpuesto)}</td>
                 <td>
                     <div class="is-flex is-flex-wrap-wrap" style="gap:0.25rem">
-                        {#if fila.vencida}<span class="status-chip is-danger" title="Crédito no pagado dentro del plazo">Vencida</span>{/if}
                         {#if fila.activa}<span class="status-chip is-neutral">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
-                        {#if fila.pagada}<span class="status-chip is-success">Pagada</span>{/if}
-                        {#if fila.procesada}<span class="status-chip is-info">Procesada</span>{/if}
                         {#if fila.dto.haciendaEstado??}<span class="status-chip is-neutral">{fila.dto.haciendaEstado}</span>{/if}
                     </div>
                 </td>
                 <td class="has-text-centered" style="white-space:nowrap">
+                    {! Solo lectura: ver el detalle. Sin pagar, procesar, aceptar
+                       ni rechazar: lo emitido no lleva esos estados. !}
                     <button type="button" class="button is-small is-outlined" title="Ver detalles"
                             aria-label="Ver el detalle de la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             aria-haspopup="dialog"
                             data-kit-open="recibo-detalle"
                             hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
                             hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">{#include _kit/icon name="eye" /}</button>
-                    {#if !fila.notaCredito}
-                    <button type="button" class="button is-small is-outlined" title="Marcar como pagada"
-                            aria-label="Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
-                            {#if fila.pagada}disabled{/if}
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/pay"
-                            hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-disabled-elt="this"
-                            hx-confirm="&iquest;Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}?">{#include _kit/icon name="money" /}</button>
-                    {/if}
-                    <button type="button" class="button is-small is-outlined" title="Procesar (enviar a Hacienda)"
-                            aria-label="Procesar y enviar a Hacienda la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
-                            {#if fila.procesada}disabled{/if}
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/process"
-                            hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-disabled-elt="this"
-                            hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">{#include _kit/icon name="refresh" /}</button>
-                    <button type="button" class="button is-small is-outlined" title="Aceptar factura (Mensaje Receptor)"
-                            aria-label="Aceptar la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if} (Mensaje Receptor)"
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/accept"
-                            hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-disabled-elt="this"
-                            hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">{#include _kit/icon name="check" /}</button>
-                    <button type="button" class="button is-small is-danger is-outlined" title="Rechazar factura (Mensaje Receptor)"
-                            aria-label="Rechazar la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if} (Mensaje Receptor)"
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/reject"
-                            hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-disabled-elt="this"
-                            hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">{#include _kit/icon name="close" /}</button>
                 </td>
             </tr>
             {#else}

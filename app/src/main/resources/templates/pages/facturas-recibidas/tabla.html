@@ -20,44 +20,43 @@
 !}
 <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
-    <div class="field is-horizontal" style="gap:0.75rem">
-        <div class="field-body">
-            <div class="field">
-                <label class="label is-small" for="recibidas-cubeta">Bandeja</label>
-                <div class="control">
-                    <div class="select">
-                        {! hx-preserve keeps the chosen bucket (and its focus) when
-                           the whole table wrapper comes back from the server. !}
-                        <select id="recibidas-cubeta" name="bucket"
-                                hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
-                                hx-trigger="change" hx-target="#{modelo.id}" hx-swap="outerHTML"
-                                hx-include="#recibidas-busqueda"
-                                hx-preserve="true">
-                            <option value="todas" {#if modelo.bucket eq 'todas'}selected{/if}>Todas</option>
-                            <option value="activas" {#if modelo.bucket eq 'activas'}selected{/if}>Activas</option>
-                            <option value="pagadas" {#if modelo.bucket eq 'pagadas'}selected{/if}>Pagadas</option>
-                            <option value="procesadas" {#if modelo.bucket eq 'procesadas'}selected{/if}>Procesadas</option>
-                            <option value="pendientes" {#if modelo.bucket eq 'pendientes'}selected{/if}>Pendientes</option>
-                            <option value="vencidas" {#if modelo.bucket eq 'vencidas'}selected{/if}>Vencidas</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="field is-expanded">
-                <label class="label is-small" for="recibidas-busqueda">Buscar</label>
-                <div class="control has-icons-left">
-                    {! hx-preserve keeps the focused search box (and its caret)
-                       alive across the 300 ms type-ahead swaps of the wrapper. !}
-                    <input class="input" type="text" id="recibidas-busqueda" name="q"
-                           value="{#if q??}{q}{/if}" autocomplete="off"
-                           placeholder="Buscar por emisor, consecutivo, actividad..."
-                           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
-                           hx-trigger="keyup changed delay:300ms"
-                           hx-target="#{modelo.id}" hx-swap="outerHTML"
-                           hx-preserve="true" hx-sync="this:replace"/>
-                    <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
-                </div>
-            </div>
+    {! Las bandejas dejan de ser un <select> dentro de la tabla: pendientes de
+       pago y vencidas son vistas de la MISMA pantalla y se leen como
+       pestañas, igual que en el resto de los tableros. Pagadas / procesadas /
+       activas no se usan para facturas recibidas. !}
+    {#include _kit/view-tabs ariaLabel="Bandejas de facturas recibidas"}
+        {#tabs}
+        <a class="view-tab {#if modelo.bucket eq 'todas'}is-active{/if}"
+           {#if modelo.bucket eq 'todas'}aria-current="page"{/if}
+           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=todas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=todas"
+           hx-target="#{modelo.id}" hx-swap="outerHTML">Todas</a>
+        <a class="view-tab {#if modelo.bucket eq 'pendientes'}is-active{/if}"
+           {#if modelo.bucket eq 'pendientes'}aria-current="page"{/if}
+           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=pendientes{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=pendientes"
+           hx-target="#{modelo.id}" hx-swap="outerHTML">Pendientes de pago</a>
+        <a class="view-tab {#if modelo.bucket eq 'vencidas'}is-active{/if}"
+           {#if modelo.bucket eq 'vencidas'}aria-current="page"{/if}
+           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas"
+           hx-target="#{modelo.id}" hx-swap="outerHTML">Vencidas</a>
+        {/tabs}
+    {/include}
+
+    <div class="field mt-3">
+        <label class="label is-small" for="recibidas-busqueda">Buscar</label>
+        <div class="control has-icons-left">
+            {! hx-preserve keeps the focused search box (and its caret)
+               alive across the 300 ms type-ahead swaps of the wrapper. !}
+            <input class="input" type="text" id="recibidas-busqueda" name="q"
+                   value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar por emisor, consecutivo, actividad..."
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"
+                   hx-preserve="true" hx-sync="this:replace"/>
+            <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 

@@ -1,0 +1,30 @@
+{!
+  pages/reportes/_selector-precios - sugerencias del selector de artículos del
+  reporte de Histórico de Precios.
+
+  GET /app/reportes/inventario/precios/selector?q=
+
+  Model:
+    resultados List - artículos que tienen historial, {codigo, nombre}
+
+  Cada fila es un enlace normal (GET) al reporte con ?q=<código>: el filtro del
+  reporte ya busca por código, así que elegir un artículo deja SOLO su
+  historial. Sin JavaScript propio y sin estado en el servidor.
+!}
+<div id="precios-selector-resultados">
+    {#if resultados.isEmpty()}
+    <p class="help mercurius-text-muted">Sin artículos con historial que coincidan. Probá con otra palabra.</p>
+    {#else}
+    <ul class="menu-list">
+        {#for a in resultados}
+        <li>
+            <a class="is-flex is-align-items-center" style="gap:.5rem"
+               href="{config:['quarkus.http.root-path']}{baseUrl}?q={a.codigoBarra}">
+                <span class="kit-code">{a.codigoBarra}</span>
+                <span class="table-clamp" title="{a.nombre}">{a.nombre}</span>
+            </a>
+        </li>
+        {/for}
+    </ul>
+    {/if}
+</div>

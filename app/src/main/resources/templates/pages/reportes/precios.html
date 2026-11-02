@@ -8,6 +8,36 @@
     {#body}
         {#include _kit/page-header title=titulo subtitle="Historial de precios de compra y venta por artículo" /}
 
+        {#include _kit/surface title="Buscar un artículo"}
+            {#content}
+            <div class="field">
+                <label class="label" for="precios-articulo">Artículo</label>
+                <div class="control has-icons-left">
+                    <input class="input" type="search" id="precios-articulo" autocomplete="off"
+                           placeholder="Escribí el nombre o el código (por ejemplo, imperial)"
+                           aria-describedby="precios-articulo-ayuda"
+                           hx-get="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios/selector"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#precios-selector-resultados" hx-swap="outerHTML"/>
+                    <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
+                </div>
+                <p class="help mercurius-text-muted" id="precios-articulo-ayuda">
+                    Elegí un artículo de la lista para ver SOLO su historial de precios.
+                </p>
+            </div>
+            <div id="precios-selector-resultados" aria-live="polite"></div>
+            {/content}
+        {/include}
+
+        {#if filtros.q??}
+        {#if !filtros.q.isEmpty()}
+        <p class="help mt-3">
+            Mostrando el historial de <strong class="kit-code">{filtros.q}</strong>.
+            <a href="{config:['quarkus.http.root-path']}{baseUrl}">Ver todos los artículos</a>
+        </p>
+        {/if}
+        {/if}
+
         {#include _kit/filter-bar id="filtros-precios" method="get"}
                 <div class="field">
                     <label class="label" for="q">Búsqueda general</label>

@@ -107,6 +107,28 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
     }
 
     /**
+     * Artículos que TIENEN historial de precios, filtrados por nombre o código.
+     * Alimenta el selector del reporte: el operador busca "imperial" y elige el
+     * artículo cuyo historial quiere ver, en vez de filtrar una tabla plana.
+     */
+    public @Nonnull List<Models.Articulos.Articulos> buscarArticulosConPrecio(
+            @Nullable String filtro, int limite) {
+        try {
+            TypedQuery<Models.Articulos.Articulos> query = em.createQuery(
+                    "SELECT DISTINCT a FROM ArticuloPrecio p JOIN p.articulo a "
+                    + "WHERE LOWER(a.nombre) LIKE :filtro OR LOWER(a.codigoBarra) LIKE :filtro "
+                    + "ORDER BY a.nombre", Models.Articulos.Articulos.class);
+            query.setParameter("filtro", filtro == null || filtro.isBlank() ? "%%" : filtro);
+            query.setMaxResults(Math.max(limite, 1));
+            return query.getResultList();
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("Error buscando articulos con historial de precios: " + e.getMessage()
+                    + " | source=ArticuloPrecioService.buscarArticulosConPrecio() | despues=" + e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
      * One page of the price-history report, filtered and sorted in SQL.
      *
      * <p>Relations used by the visible columns are fetch-joined so rendering

@@ -1,83 +1,23 @@
 {!
-  pages/recibos/tablero - the four-bucket facturas-emitidas board (T27).
-  Rendered standalone by RecibosResource action endpoints (primary swap
-  target #recibos-tablero) and included by pages/recibos/index.html.
+  pages/recibos/tablero - tablero de Facturas Emitidas.
+
+  Rendered standalone by RecibosResource action endpoints (primary swap target
+  #recibos-tablero) and included by pages/recibos/index.html.
 
   Model keys:
-    stats         RecibosResource.StatsView (todas/pagadas/procesadas/vencidos)
     modelos       Map bucket-key -> kit data-table model (tablaModel)
     toastSeverity/toastMessage - optional OOB toast after an action
 
-  Bucket queries mirror the legacy pages/Recibos/index.xhtml tabs onto the
-  emitted-comprobante lifecycle (see RecibosResource javadoc): todas = all,
-  pagadas = Encabezado.estado ACEPTADO, procesadas = Hacienda exchange done,
-  vencidos = unsettled credit past due.
-
-  ONE BUCKET ON SCREEN
-  --------------------
-  The four tables are four views of ONE dataset. Rendering all four made the
-  board two screens tall, so the clerk could not tell which bucket they were
-  reading and read all of them. The board now shows one bucket at a time:
-  _kit/view-tabs carries the counts (the old anchor "KPI" cards were neither
-  filters nor tabs - they were a jump list) and the Alpine `bucket` variable
-  picks the visible panel.
-
-  The tab labels are the SAME words the tables use for their own heading
-  (Todas / Pagadas / Procesadas / Vencidos), so the mapping is learnable.
-
-  The `bucket` variable lives in the Alpine scope of pages/recibos/index.html
-  - one level up, outside this swap target. A row action re-renders the whole
-  board; a scope declared inside the board would be rebuilt with it and the
-  operator would land back on the first bucket.
+  UNA SOLA VISTA
+  --------------
+  Este tablero tenía cuatro pestañas (Todas / Pagadas / Procesadas /
+  Vencidas) que eran cuatro vistas del MISMO conjunto de comprobantes. El
+  negocio no lleva esos estados para lo que emite: una factura emitida es una
+  factura emitida. Queda una sola tabla con todo, sin pestañas ni conteos.
 !}
 <div id="recibos-tablero">
-    {#include _kit/view-tabs id="recibos-stats" ariaLabel="Vistas de facturas emitidas"}
-        {#tabs}
-        <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'todas' }"
-                aria-controls="panel-recibos-todas"
-                :aria-current="bucket === 'todas' ? 'page' : 'false'"
-                @click="bucket = 'todas'">
-            <span>Todas</span>
-            <span class="view-tab-count">{stats.todas}</span>
-        </button>
-        <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'pagadas' }"
-                aria-controls="panel-recibos-pagadas"
-                :aria-current="bucket === 'pagadas' ? 'page' : 'false'"
-                @click="bucket = 'pagadas'">
-            <span>Pagadas</span>
-            <span class="view-tab-count">{stats.pagadas}</span>
-        </button>
-        <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'procesadas' }"
-                aria-controls="panel-recibos-procesadas"
-                :aria-current="bucket === 'procesadas' ? 'page' : 'false'"
-                @click="bucket = 'procesadas'">
-            <span>Procesadas</span>
-            <span class="view-tab-count">{stats.procesadas}</span>
-        </button>
-        <button type="button" class="view-tab" :class="{ 'is-active': bucket === 'vencidos' }"
-                aria-controls="panel-recibos-vencidos"
-                :aria-current="bucket === 'vencidos' ? 'page' : 'false'"
-                @click="bucket = 'vencidos'">
-            <span>Vencidos</span>
-            <span class="view-tab-count">{stats.vencidos}</span>
-        </button>
-        {/tabs}
-    {/include}
-
-    {! Only the selected bucket is on screen. The panel wrappers keep the
-       tables' own ids (#recibos-tabla-<bucket>) and the hx-target of every
-       search box, pager and row action intact. !}
-    <div id="panel-recibos-todas" role="region" aria-label="Facturas: todas" x-show="bucket === 'todas'">
+    <div id="panel-recibos-todas" role="region" aria-label="Facturas emitidas">
         {#include pages/recibos/tabla modelo=modelos.todas /}
-    </div>
-    <div id="panel-recibos-pagadas" role="region" aria-label="Facturas: pagadas" x-show="bucket === 'pagadas'" style="display:none">
-        {#include pages/recibos/tabla modelo=modelos.pagadas /}
-    </div>
-    <div id="panel-recibos-procesadas" role="region" aria-label="Facturas: procesadas" x-show="bucket === 'procesadas'" style="display:none">
-        {#include pages/recibos/tabla modelo=modelos.procesadas /}
-    </div>
-    <div id="panel-recibos-vencidos" role="region" aria-label="Facturas: vencidas" x-show="bucket === 'vencidos'" style="display:none">
-        {#include pages/recibos/tabla modelo=modelos.vencidos /}
     </div>
 
     {#if toastMessage??}
