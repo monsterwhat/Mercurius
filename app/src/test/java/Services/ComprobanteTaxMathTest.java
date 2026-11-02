@@ -376,7 +376,7 @@ class ComprobanteTaxMathTest {
         assertThat(linea.getBaseImponible()).isEqualByComparingTo("31.50");
         assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("10.50");
         assertThat(linea.getCantidad()).isEqualByComparingTo("3");
-        assertThat(linea.getNumeroLinea()).isEqualTo(0); // documented 0-based numbering
+        assertThat(linea.getNumeroLinea()).isEqualTo(1); // XSD v4.4 exige minInclusive 1
         assertThat(linea.getDetalle()).isEqualTo("Producto 501010114");
         // Unit tax 10.50 × 13% = 1.365, extended by qty 3 → 4.095
         assertThat(linea.getImpuestos().get(0).getMonto()).isEqualByComparingTo("4.095");
