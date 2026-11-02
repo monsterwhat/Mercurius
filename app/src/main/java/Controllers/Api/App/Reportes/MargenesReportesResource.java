@@ -282,9 +282,14 @@ public class MargenesReportesResource {
         List<Map<String, Object>> filas = new ArrayList<>();
         for (Models.Articulos.Articulos articulo : orEmpty(articulos)) {
             Models.Articulos.ArticuloPrecio precio = articulo.getLastPrecio();
-            BigDecimal venta = precio == null || precio.getPrecioFinal() == null
-                    ? BigDecimal.ZERO : precio.getPrecioFinal();
-            BigDecimal costo = precio == null || precio.getPrecioCostoSinIVA() == null
+            // Precio de venta 0.00 = SIN PRECIO: el artículo no se vende, así que
+            // no puede entrar en un ranking de margen (aparecía con -100%).
+            if (precio == null || precio.getPrecioFinal() == null
+                    || precio.getPrecioFinal().signum() <= 0) {
+                continue;
+            }
+            BigDecimal venta = precio.getPrecioFinal();
+            BigDecimal costo = precio.getPrecioCostoSinIVA() == null
                     ? BigDecimal.ZERO : precio.getPrecioCostoSinIVA();
             BigDecimal diferencia = venta.subtract(costo);
             BigDecimal diferenciaPct = venta.signum() == 0
