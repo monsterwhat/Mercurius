@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -191,6 +192,16 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
                 .when().post(POS + "/facturar");
     }
 
+    /** POST con los datos extra de los documentos especiales (ND/REP). */
+    private Response facturarEspecial(Map<String, String> sesion, String tipoDocumento,
+                                      String camposExtraJson) {
+        return authed(sesion).contentType(ContentType.JSON)
+                .body("{\"tipoDocumento\":\"" + tipoDocumento + "\","
+                        + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":" + PRECIO + "}],"
+                        + "\"puntosARedimir\":0" + camposExtraJson + "}")
+                .when().post(POS + "/facturar");
+    }
+
     /** Fila creada por la prueba (marca de agua) con limpieza garantizada. */
     private ComprobantesEmitidos unicaFacturaNueva(Set<Long> idsPrevios) {
         List<ComprobantesEmitidos> nuevas = new ArrayList<>();
@@ -336,8 +347,8 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     }
 
     @Test
-    @DisplayName("ND por POS se crea pero SIN referencia (no hay flujo dedicado)")
-    void ndPorPosSeCreaPeroSinReferencia() {
+    @DisplayName("ND por POS SIN referencia se rechaza (Hacienda la exige)")
+    void ndPorPosSinReferenciaSeRechaza() {
         ensureAppSettings();
         Set<Long> idsPrevios = marcaDeAgua();
         try {
@@ -346,14 +357,67 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
 
             facturar(sesion, "03")
                     .then()
+                    .statusCode(400)
+                    .body("error.message", containsString("consecutivo"));
+
+            assertThat(emitidosService.listAll())
+                    .as("sin referencia no debe crearse la ND")
+                    .hasSize(idsPrevios.size());
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
+    }
+
+    @Test
+    @DisplayName("ND por POS CON referencia se crea y guarda la InformacionReferencia")
+    void ndPorPosConReferenciaSeCrea() {
+        ensureAppSettings();
+        Set<Long> idsPrevios = marcaDeAgua();
+        try {
+            Map<String, String> sesion = adminSession();
+            prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
+
+            facturarEspecial(sesion, "03",
+                    ",\"referenciaTipoDoc\":\"01\""
+                            + ",\"referenciaNumero\":\"00100001010000012345\""
+                            + ",\"referenciaFecha\":\"2026-10-30\""
+                            + ",\"referenciaCodigo\":\"10\""
+                            + ",\"referenciaRazon\":\"Cobro de intereses por mora\"")
+                    .then()
                     .statusCode(200)
                     .body("data.comprobanteId", notNullValue());
 
             ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("03");
-            assertThat(row.getInformacionReferencia())
-                    .as("ND por POS: sin referencia el documento es rechazable")
-                    .isNullOrEmpty();
+            assertThat(row.getInformacionReferencia()).hasSize(1);
+            var referencia = row.getInformacionReferencia().get(0);
+            assertThat(referencia.getTipoDoc()).isEqualTo("01");
+            assertThat(referencia.getNumero()).isEqualTo("00100001010000012345");
+            assertThat(referencia.getCodigo()).isEqualTo("10");
+            assertThat(referencia.getRazon()).isEqualTo("Cobro de intereses por mora");
+            assertThat(referencia.getFechaEmision()).isNotNull();
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
+    }
+
+    @Test
+    @DisplayName("REP por POS respeta la condición de venta elegida (09)")
+    void repPorPosRespetaCondicionNueve() {
+        ensureAppSettings();
+        Set<Long> idsPrevios = marcaDeAgua();
+        try {
+            Map<String, String> sesion = adminSession();
+            prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
+
+            facturarEspecial(sesion, "10", ",\"condicionVenta\":\"09\"")
+                    .then()
+                    .statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+
+            ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
+            assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("10");
+            assertThat(row.getEncabezado().getCondicionVenta()).isEqualTo("09");
         } finally {
             limpiarFacturas(idsPrevios);
         }

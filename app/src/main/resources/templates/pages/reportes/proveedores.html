@@ -10,7 +10,7 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        {#include _kit/page-header title="Ranking de Rendimiento de Proveedores" subtitle="Score, facturas y compras por proveedor" /}
+        {#include _kit/page-header title="Ranking de Rendimiento de Proveedores" subtitle=(origen ?: 'Score, facturas y compras por proveedor') /}
 
         <div class="metric-strip">
             {#include _kit/metric label="Proveedores" value=totalProveedores /}
@@ -43,7 +43,7 @@
                             <td class="num">{fila.facturas}</td>
                             <td class="num">{fila.pagadas}</td>
                             <td class="num">{fmt:moneda(fila.montoTotal)}</td>
-                            <td class="num">{fmt:porcentaje(fila.onTime)}</td>
+                            <td class="num">{#if fila.onTime??}{fmt:porcentaje(fila.onTime)}{#else}&mdash;{/if}</td>
                         </tr>
                         {/for}
                     </tbody>

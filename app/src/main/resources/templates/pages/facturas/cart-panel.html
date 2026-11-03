@@ -251,6 +251,7 @@
                 hx-disabled-elt="this">Cancelar venta</button>
         <button type="button" id="btn-facturar" class="button is-medium is-primary"{#if panel.vacio} disabled{/if}
                 aria-haspopup="dialog" data-kit-open="modal-cobro"
+                hx-include="#forma-tipo-documento"
                 hx-get="{config:['quarkus.http.root-path']}/api/app/pos/checkout-dialog"
                 hx-target="#modal-cobro-body" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>
     </div>

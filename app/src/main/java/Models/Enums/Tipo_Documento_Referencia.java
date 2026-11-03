@@ -1,6 +1,7 @@
 package Models.Enums;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Nota 10 — tipo de documento de referencia ({@code InformacionReferencia/TipoDocIR}).
@@ -71,5 +72,22 @@ public enum Tipo_Documento_Referencia {
             }
         }
         throw new IllegalArgumentException("Código de tipo de documento de referencia no válido: " + codigo);
+    }
+
+    /**
+     * Igual que {@link #fromCodigo(String)} pero devuelve {@code null} en vez
+     * de lanzar, para validar datos que llegan de un formulario.
+     */
+    @Nullable
+    public static Tipo_Documento_Referencia fromCodigoOrNull(@Nullable String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        for (Tipo_Documento_Referencia tipo : Tipo_Documento_Referencia.values()) {
+            if (tipo.getCodigo().equals(codigo.trim())) {
+                return tipo;
+            }
+        }
+        return null;
     }
 }

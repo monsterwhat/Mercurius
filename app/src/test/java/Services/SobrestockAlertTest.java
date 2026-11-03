@@ -68,6 +68,10 @@ class SobrestockAlertTest {
     }
 
     private Articulos sembrarArticulo(boolean alertas) {
+        return sembrarArticulo(alertas, 7);
+    }
+
+    private Articulos sembrarArticulo(boolean alertas, Integer diasSeguridad) {
         Articulos articulo = new Articulos();
         articulo.setNombre("Sobrestock " + codigoUnico("art"));
         articulo.setCodigoBarra(codigoUnico("SOB"));
@@ -75,7 +79,7 @@ class SobrestockAlertTest {
         articulo.setUnidadMedidaComercial("Unidad");
         articulo.setStatus(true);
         articulo.setProcessed(true);
-        articulo.setDiasStockSeguridad(7);
+        articulo.setDiasStockSeguridad(diasSeguridad);
         articulo.setEstadoAlertas(alertas);
         articulosService.create(articulo);
         assertThat(articulo.getCodigo()).isNotNull();
@@ -168,6 +172,23 @@ class SobrestockAlertTest {
             } catch (Exception ignorado) {
                 // Limpieza de pruebas: lo importante es no dejar filas huerfanas.
             }
+        }
+    }
+
+    @Test
+    @DisplayName("dias de seguridad 0 no produce un umbral 0: usa el respaldo de 14 dias")
+    void diasCeroNoGeneraUmbralCero() {
+        Articulos articulo = sembrarArticulo(true, 0);
+        try {
+            sembrarStock(articulo, 10);
+
+            stockAlertService.checkAndCreateStockAlerts();
+
+            assertThat(alertasDe(articulo))
+                    .as("10 unidades con umbral 28 (14x2) no debe alertar; antes 0x2=0 alertaba todo")
+                    .isEmpty();
+        } finally {
+            limpiar(articulo);
         }
     }
 

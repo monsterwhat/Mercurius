@@ -29,6 +29,9 @@ import Models.Enums.Tipo_CondicionVenta;
 import Models.Enums.Tipo_MedioPago;
 import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.Tipo_TarifaIVA;
+import Models.Enums.Tipo_CodigosReferencia;
+import Models.Enums.Tipo_Documento_Referencia;
+import Models.Referencias.InformacionReferencia;
 import Models.EntradaPago;
 import Models.ConfiguracionAplicacion;
 import Models.EnvioFueraLinea;
@@ -60,6 +63,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -195,6 +199,30 @@ public class ComprobanteService implements Serializable {
         }
     }
 
+    /**
+     * Datos extra de los documentos especiales que el POS captura en el
+     * dialogo de cobro. Los documentos de venta (TE/FE) y las notas de credito
+     * (que se emiten desde Devoluciones) los dejan en {@link #NINGUNO}.
+     *
+     * @param condicionVenta  REP: 09 o 11 (el XSD no admite otra)
+     * @param referenciaTipoDoc  ND: CodigoDocumento del documento afectado
+     * @param referenciaNumero   ND: consecutivo del documento afectado
+     * @param referenciaFecha    ND: fecha del documento afectado (yyyy-MM-dd)
+     * @param referenciaCodigo   ND: codigo de referencia (Nota 9)
+     * @param referenciaRazon    ND: motivo (obligatorio, max 180)
+     */
+    public record DatosEspeciales(
+            @Nullable String condicionVenta,
+            @Nullable String referenciaTipoDoc,
+            @Nullable String referenciaNumero,
+            @Nullable String referenciaFecha,
+            @Nullable String referenciaCodigo,
+            @Nullable String referenciaRazon) {
+
+        public static final DatosEspeciales NINGUNO =
+                new DatosEspeciales(null, null, null, null, null, null);
+    }
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
@@ -313,6 +341,16 @@ public class ComprobanteService implements Serializable {
                                                     @Nullable Clientes selectedClient, @Nullable Clientes cliente, @Nonnull Usuarios currentUser,
                                                     @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos,
                                                     @Nullable BigDecimal puntosARedimir) {
+        return crearComprobante(appSettings, carrito, selectedClient, cliente, currentUser,
+                strategy, pagos, puntosARedimir, null);
+    }
+
+    @jakarta.transaction.Transactional
+    public @Nullable CrearComprobanteResult crearComprobante(@Nonnull ConfiguracionAplicacion appSettings, @Nonnull List<ArticuloCarrito> carrito,
+                                                    @Nullable Clientes selectedClient, @Nullable Clientes cliente, @Nonnull Usuarios currentUser,
+                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos,
+                                                    @Nullable BigDecimal puntosARedimir,
+                                                    @Nullable DatosEspeciales datosEspeciales) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
         result.pendienteEnvio = false;
@@ -374,6 +412,10 @@ public class ComprobanteService implements Serializable {
             // Use strategy to build the type-specific encabezado
             Encabezado encabezado = strategy.buildEncabezado(appSettings, selectedClient);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
+            // Documentos especiales del POS: condicion de venta elegida (REP) y
+            // referencia obligatoria de la nota de debito. Se aplica ANTES de
+            // firmar: la referencia viaja dentro del XML.
+            aplicarDatosEspeciales(encabezado, strategy, datosEspeciales);
 
             List<MedioPago> medioPagoList = new ArrayList<>();
             for (EntradaPago entry : pagos) {
@@ -507,6 +549,10 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setEncabezado(encabezado);
             tiqueteElectronico.setDetalles(detalles);
             tiqueteElectronico.setResumen(resumen);
+            if (datosEspeciales != null && "03".equals(tipoDocumento)) {
+                tiqueteElectronico.setInformacionReferencia(
+                        List.of(construirReferenciaNd(datosEspeciales)));
+            }
             tiqueteElectronico.setUser(currentUser.getUsername());
             tiqueteElectronico.setStatus(true);
             tiqueteElectronico.setHaciendaClave(clave);
@@ -921,6 +967,74 @@ public class ComprobanteService implements Serializable {
                 + " | despues=el comprobante queda PENDIENTE y el lote de 48h lo reintentará");
             return null;
         }
+    }
+
+    /**
+     * Aplica los datos que solo traen los documentos especiales del POS.
+     * Para TE/FE no hace nada ({@code datos == null} o todo vacio).
+     *
+     * @throws IllegalArgumentException si faltan datos que el XSD exige
+     */
+    private static void aplicarDatosEspeciales(@Nonnull Encabezado encabezado,
+                                               @Nonnull DocumentoStrategy strategy,
+                                               @Nullable DatosEspeciales datos) {
+        if (datos == null) {
+            return;
+        }
+        if (datos.condicionVenta() != null && !datos.condicionVenta().isBlank()) {
+            String condicion = datos.condicionVenta().trim();
+            // Cada estrategia declara sus codigos permitidos (REP solo 09/11).
+            strategy.validarCondicionVenta(condicion);
+            encabezado.setCondicionVenta(condicion);
+        }
+        if (!"03".equals(strategy.getCodigoDocumento())) {
+            return;
+        }
+        // La nota de debito SIN referencia es rechazada por Hacienda. Se valida
+        // aqui, antes de consumir inventario y consecutivo.
+        if (datos.referenciaNumero() == null || datos.referenciaNumero().isBlank()) {
+            throw new IllegalArgumentException(
+                    "La nota de débito requiere el consecutivo del documento que afecta.");
+        }
+        if (datos.referenciaFecha() == null || datos.referenciaFecha().isBlank()) {
+            throw new IllegalArgumentException(
+                    "La nota de débito requiere la fecha del documento que afecta.");
+        }
+        try {
+            LocalDate.parse(datos.referenciaFecha().trim());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException(
+                    "Fecha de referencia inválida: use el formato AAAA-MM-DD.");
+        }
+        if (datos.referenciaRazon() == null || datos.referenciaRazon().isBlank()) {
+            throw new IllegalArgumentException(
+                    "La nota de débito requiere el motivo de la referencia.");
+        }
+        if (datos.referenciaRazon().trim().length() > 180) {
+            throw new IllegalArgumentException(
+                    "El motivo de la referencia no puede superar 180 caracteres.");
+        }
+        if (Tipo_Documento_Referencia.fromCodigoOrNull(datos.referenciaTipoDoc()) == null) {
+            throw new IllegalArgumentException(
+                    "Tipo de documento de referencia inválido.");
+        }
+        Tipo_CodigosReferencia codigo =
+                Tipo_CodigosReferencia.fromCodigoOrNull(datos.referenciaCodigo());
+        if (codigo == null) {
+            throw new IllegalArgumentException("Código de referencia inválido.");
+        }
+        Tipo_CodigosReferencia.validarParaDocumento(strategy.getCodigoDocumento(), codigo);
+    }
+
+    @Nonnull
+    private static InformacionReferencia construirReferenciaNd(@Nonnull DatosEspeciales datos) {
+        InformacionReferencia ref = new InformacionReferencia();
+        ref.setTipoDoc(datos.referenciaTipoDoc() == null ? null : datos.referenciaTipoDoc().trim());
+        ref.setNumero(datos.referenciaNumero() == null ? null : datos.referenciaNumero().trim());
+        ref.setFechaEmision(LocalDate.parse(datos.referenciaFecha().trim()).atStartOfDay());
+        ref.setCodigo(datos.referenciaCodigo() == null ? null : datos.referenciaCodigo().trim());
+        ref.setRazon(datos.referenciaRazon() == null ? null : datos.referenciaRazon().trim());
+        return ref;
     }
 
     public ResumenFactura resumenComprobante(List<ArticuloCarrito> carrito) {

@@ -47,7 +47,13 @@ class UsuariosManagementExportTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void oldReportRouteIsRetired() {
-        given().when().get(OLD_REPORT).then().statusCode(404);
+        // Retirada: ya no sirve la pantalla. El fallback de /app redirige al
+        // dashboard en vez de dejar la pagina cruda "Not Found".
+        given().redirects().follow(false).when().get(OLD_REPORT).then()
+                .statusCode(org.hamcrest.Matchers.anyOf(
+                        org.hamcrest.Matchers.is(302),
+                        org.hamcrest.Matchers.is(303),
+                        org.hamcrest.Matchers.is(404)));
     }
 
     @Test

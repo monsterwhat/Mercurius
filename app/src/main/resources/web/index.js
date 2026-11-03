@@ -18,6 +18,7 @@ import { applyChartDefaults, Chart, create as createChart, destroyAll as destroy
 // written, so the module deliberately reads nothing at import time: its first
 // mount is deferred until after boot() has applied the chart defaults.
 import './report-chart.js';
+import './date-input.js';
 
 // chart.js is a provided-scope org.mvnpm dependency resolvable ONLY at build
 // time inside bundle entries, so Qute pages cannot import it directly.

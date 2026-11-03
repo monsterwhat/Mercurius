@@ -186,7 +186,11 @@ public class StockAlertService extends GService<AlertaStock> {
      * {@link #evaluarSobrestock}): no behavior change to the low-stock path.</p>
      */
     private static int optimoDeRespaldo(@Nonnull Articulos articulo) {
-        return articulo.getDiasStockSeguridad() != null ? articulo.getDiasStockSeguridad() * 2 : 14;
+        Integer dias = articulo.getDiasStockSeguridad();
+        // 0 significa "sin configurar", igual que null. Antes 0 se multiplicaba
+        // por 2 y daba optimo 0 -> umbral 0 -> TODA unidad era "sobrestock":
+        // 396 alertas falsas para articulos sin historial ni dias configurados.
+        return dias != null && dias > 0 ? dias * 2 : 14;
     }
 
     /**

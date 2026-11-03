@@ -467,7 +467,15 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         // Null puntos means "use the staged ctx discount" inside doFacturar;
         // explicit JSON values keep their original semantics verbatim.
         BigDecimal puntos = request == null ? null : request.puntosARedimir;
-        return doFacturar(tipoDocumento, request == null ? null : request.pagos, puntos);
+        ComprobanteService.DatosEspeciales datos = request == null ? null
+                : new ComprobanteService.DatosEspeciales(
+                        request.condicionVenta,
+                        request.referenciaTipoDoc,
+                        request.referenciaNumero,
+                        request.referenciaFecha,
+                        request.referenciaCodigo,
+                        request.referenciaRazon);
+        return doFacturar(tipoDocumento, request == null ? null : request.pagos, puntos, datos);
     }
 
     /**
@@ -492,6 +500,12 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      */
     private Response doFacturar(@Nonnull String tipoDocumento,
             @Nullable List<EntradaPago> pagosParam, @Nullable BigDecimal puntosParam) {
+        return doFacturar(tipoDocumento, pagosParam, puntosParam, null);
+    }
+
+    private Response doFacturar(@Nonnull String tipoDocumento,
+            @Nullable List<EntradaPago> pagosParam, @Nullable BigDecimal puntosParam,
+            @Nullable ComprobanteService.DatosEspeciales datosEspeciales) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
@@ -504,12 +518,14 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         // the Hacienda call by design — that wait is exactly what makes a
         // double-click or a retry unable to invoice twice.
         synchronized (entry) {
-            return doFacturarInterior(tipoDocumento, pagosParam, puntosParam, username, entry);
+            return doFacturarInterior(tipoDocumento, pagosParam, puntosParam,
+                    datosEspeciales, username, entry);
         }
     }
 
     private Response doFacturarInterior(@Nonnull String tipoDocumento,
             @Nullable List<EntradaPago> pagosParam, @Nullable BigDecimal puntosParam,
+            @Nullable ComprobanteService.DatosEspeciales datosEspeciales,
             @Nonnull String username, @Nonnull CartSessionStore.Entry entry) {
         Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
@@ -698,7 +714,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     currentUser,
                     strategy,
                     pagos,
-                    descuentoPuntos
+                    descuentoPuntos,
+                    datosEspeciales
             );
         } catch (ComprobanteService.PuntosNoCanjeadosException e) {
             // Aborta ANTES del commit: no hay comprobante, no se consume un
@@ -723,6 +740,15 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             // contract (500 COMPROBANTE_ERROR) is unchanged.
             LOG.warn("No se pudo crear el comprobante (transaccion revertida): " + e.getMessage()
                     + " | source=PosResource.doFacturar() | despues=" + e.getMessage());
+            // Los datos que captura el cajero (p. ej. la referencia de una nota
+            // de debito) son validacion de entrada, no un fallo del servidor:
+            // devolver 400 con el motivo en vez de un 500 generico.
+            if (e.getCause() instanceof IllegalArgumentException causa) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(ApiResponse.error("DATOS_DOCUMENTO_INVALIDO",
+                                causa.getMessage()))
+                        .build();
+            }
             return Response.serverError()
                     .entity(ApiResponse.error("COMPROBANTE_ERROR",
                             "No se pudo crear el comprobante; revise la bitácora de alertas"))
@@ -1652,13 +1678,13 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Path("/checkout-dialog")
     @Produces(MediaType.TEXT_HTML)
     @Operation(summary = "Checkout dialog HTML fragment (colones + dollars + change)")
-    public Response checkoutDialog() {
+    public Response checkoutDialog(@QueryParam("tipoDocumento") @Nullable String tipoDocumento) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
         }
         return htmlOk(checkoutDialogTemplate
-                .data("cobro", cobroModel(username)).render());
+                .data("cobro", cobroModel(username, tipoDocumento)).render());
     }
 
     /**
@@ -1789,7 +1815,13 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             @FormParam("metodoPago") @Nullable List<String> metodos,
             @FormParam("monto") @Nullable List<String> montos,
             @FormParam("colones") @Nullable String colones,
-            @FormParam("dolares") @Nullable String dolares) {
+            @FormParam("dolares") @Nullable String dolares,
+            @FormParam("condicionVenta") @Nullable String condicionVenta,
+            @FormParam("referenciaTipoDoc") @Nullable String referenciaTipoDoc,
+            @FormParam("referenciaNumero") @Nullable String referenciaNumero,
+            @FormParam("referenciaFecha") @Nullable String referenciaFecha,
+            @FormParam("referenciaCodigo") @Nullable String referenciaCodigo,
+            @FormParam("referenciaRazon") @Nullable String referenciaRazon) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
@@ -1816,7 +1848,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
         BigDecimal puntosParam = puntos == null || puntos.isBlank() ? null : parseDecimal(puntos);
 
-        Response result = doFacturar(documento, pagos.isEmpty() ? null : pagos, puntosParam);
+        ComprobanteService.DatosEspeciales datos = new ComprobanteService.DatosEspeciales(
+                condicionVenta, referenciaTipoDoc, referenciaNumero,
+                referenciaFecha, referenciaCodigo, referenciaRazon);
+        Response result = doFacturar(documento, pagos.isEmpty() ? null : pagos, puntosParam, datos);
         return htmlOk(facturarResultadoTemplate
                 .data("resultado", resultadoModel(username, result)).render());
     }
@@ -1963,6 +1998,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      */
     @Nonnull
     Map<String, Object> cobroModel(@Nonnull String username) {
+        return cobroModel(username, null);
+    }
+
+    Map<String, Object> cobroModel(@Nonnull String username, @Nullable String tipoDocumento) {
         CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
         CartSessionContext ctx = entry.getCartContext();
         BigDecimal total = carritoService.calculateTotalCarrito(ctx);
@@ -1976,6 +2015,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         cobro.put("tipoCambio", venta);
         cobro.put("tipoCambioRaw", venta instanceof BigDecimal valor
                 ? valor.toPlainString() : "0");
+        // Los documentos especiales piden datos extra EN el dialogo de cobro:
+        // referencia para la ND y condicion de venta para el REP.
+        cobro.put("tipoDocumento", tipoDocumento == null || tipoDocumento.isBlank()
+                ? "04" : tipoDocumento.trim());
         return cobro;
     }
 
@@ -2394,6 +2437,18 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         public @Nullable List<EntradaPago> pagos;
         /** Points to redeem (1 punto = ₡1), clamped to the client balance. */
         public @Nullable BigDecimal puntosARedimir;
+        /** REP: 09 or 11 (the only condicionVenta the XSD accepts). */
+        public @Nullable String condicionVenta;
+        /** ND: document type of the affected document (01/04/...). */
+        public @Nullable String referenciaTipoDoc;
+        /** ND: consecutivo of the affected document. */
+        public @Nullable String referenciaNumero;
+        /** ND: emission date of the affected document (yyyy-MM-dd). */
+        public @Nullable String referenciaFecha;
+        /** ND: Nota 9 reference code. */
+        public @Nullable String referenciaCodigo;
+        /** ND: reason (mandatory, max 180 chars). */
+        public @Nullable String referenciaRazon;
     }
 
     /** POST /override-authorize body. */

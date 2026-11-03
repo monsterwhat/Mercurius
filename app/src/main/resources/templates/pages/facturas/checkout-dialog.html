@@ -67,6 +67,105 @@
             {/if}
         </div>
 
+        {#if cobro.tipoDocumento == '03'}
+        <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
+            <strong>Nota de débito</strong>
+            <span>Debe indicar el documento que afecta y el motivo. Se envía como
+                referencia dentro del XML.</span>
+        </div>
+        <div class="field">
+            <label class="label is-small" for="referencia-numero">Consecutivo del documento que afecta</label>
+            <div class="control">
+                <input class="input" type="text" id="referencia-numero" name="referenciaNumero"
+                       maxlength="50" autocomplete="off" required
+                       placeholder="Ej.: 00100001010000012345"/>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label is-small" for="referencia-fecha">Fecha del documento</label>
+                    <div class="control">
+                        <input class="input" type="date" id="referencia-fecha" name="referenciaFecha" required/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label is-small" for="referencia-tipo">Tipo de documento</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="referencia-tipo" name="referenciaTipoDoc" required>
+                                <option value="01">Factura electrónica</option>
+                                <option value="04">Tiquete electrónico</option>
+                                <option value="05">Factura de exportación</option>
+                                <option value="08">Factura de compra</option>
+                                <option value="10">Recibo electrónico de pago</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label is-small" for="referencia-codigo">Código de referencia</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="referencia-codigo" name="referenciaCodigo" required>
+                        <option value="01">01 — Anula documento de referencia</option>
+                        <option value="02">02 — Corrige texto del documento</option>
+                        <option value="04">04 — Referencia a otro documento</option>
+                        <option value="05">05 — Sustituye comprobante provisional</option>
+                        <option value="06">06 — Devolución de mercancía</option>
+                        <option value="07">07 — Sustituye comprobante electrónico</option>
+                        <option value="10">10 — Nota de débito financiera</option>
+                        <option value="14">14 — Corrige monto por error material</option>
+                        <option value="16">16 — Sustituye comprobante rechazado</option>
+                        <option value="99">99 — Otros</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label is-small" for="referencia-razon">Motivo</label>
+            <div class="control">
+                <input class="input" type="text" id="referencia-razon" name="referenciaRazon"
+                       maxlength="180" autocomplete="off" required
+                       placeholder="Ej.: cobro de intereses por mora"/>
+            </div>
+            <p class="help">Máximo 180 caracteres. Viaja en el XML como razón de la referencia.</p>
+        </div>
+        {/if}
+
+        {#if cobro.tipoDocumento == '10'}
+        <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
+            <strong>Recibo electrónico de pago</strong>
+            <span>El XSD solo admite las condiciones 09 y 11. El medio de pago se
+                toma de lo cobrado aquí.</span>
+        </div>
+        <div class="field">
+            <label class="label is-small" for="condicion-venta">Condición de venta</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="condicion-venta" name="condicionVenta" required>
+                        <option value="11">11 — Pago venta a crédito IVA 90 días</option>
+                        <option value="09">09 — Pago servicios prestados al Estado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+        {#if cobro.tipoDocumento == '05'}
+        <p class="help">La factura de exportación se emite en colones con los
+            precios del carrito; registre al cliente extranjero como receptor.</p>
+        {/if}
+
+        {#if cobro.tipoDocumento == '08'}
+        <p class="help">La factura de compra se emite al proveedor; regístrelo
+            como cliente (receptor) antes de facturar.</p>
+        {/if}
+
         <table class="table is-narrow is-fullwidth is-borderless" style="margin-bottom:0.75rem">
             <tbody>
             <tr><th scope="row" class="has-text-weight-normal is-size-5">Pagado</th>
