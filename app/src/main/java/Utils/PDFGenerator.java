@@ -88,6 +88,27 @@ public class PDFGenerator {
 
     }
 
+    /**
+     * Titulo impreso segun el CodigoDocumento. Antes TODO salia como
+     * "TIQUETE ELECTRONICO", incluida una factura, una nota de debito o un
+     * recibo de pago.
+     */
+    @Nonnull
+    private static String tituloDocumento(@Nullable String codigoDocumento) {
+        if (codigoDocumento == null) {
+            return "TIQUETE ELECTRONICO";
+        }
+        return switch (codigoDocumento) {
+            case "01" -> "FACTURA ELECTRONICA";
+            case "02" -> "NOTA DE CREDITO ELECTRONICA";
+            case "03" -> "NOTA DE DEBITO ELECTRONICA";
+            case "05" -> "FACTURA ELECTRONICA DE EXPORTACION";
+            case "08" -> "FACTURA ELECTRONICA DE COMPRA";
+            case "10" -> "RECIBO ELECTRONICO DE PAGO";
+            default -> "TIQUETE ELECTRONICO";
+        };
+    }
+
     private Document addContentToDocument(ByteArrayOutputStream baos, ConfiguracionAplicacion settings, ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<EntradaPago> pagos) throws DocumentException {
         Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
         PdfWriter.getInstance(document, baos);
@@ -98,7 +119,8 @@ public class PDFGenerator {
         com.lowagie.text.Font font = new com.lowagie.text.Font();
         font.setSize(8); // Establecer tamaño de fuente a 8 puntos
 
-        Paragraph tiqueteTitulo = new Paragraph("TIQUETE ELECTRONICO", font);
+        Paragraph tiqueteTitulo = new Paragraph(
+                tituloDocumento(tiqueteElectronico.getEncabezado().getCodigoDocumento()), font);
         tiqueteTitulo.setAlignment(Element.ALIGN_CENTER);
         tiqueteTitulo.setLeading(10f);
         document.add(tiqueteTitulo);
