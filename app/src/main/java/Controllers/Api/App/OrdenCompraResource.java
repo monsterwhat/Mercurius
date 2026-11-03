@@ -437,7 +437,7 @@ public class OrdenCompraResource {
      */
     @PUT
     @Path("/{id}/recibir")
-    @Consumes(MediaType.WILDCARD)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     @Operation(summary = "Mark an order as received (legacy recibirOrden)")
     @APIResponses({
@@ -469,6 +469,21 @@ public class OrdenCompraResource {
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error recibiendo la orden"))
                     .build();
         }
+    }
+
+    /**
+     * Twin de formulario para el boton HTMX: htmx manda
+     * {@code application/x-www-form-urlencoded} sin cuerpo, y el metodo JSON
+     * (que espera un {@link ReciboRequest}) devolvia 415 porque no hay lector
+     * para ese tipo. Este twin sin cuerpo delega en el mismo pipeline.
+     */
+    @PUT
+    @Path("/{id}/recibir")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Transactional
+    @Operation(summary = "Mark an order as received (HTMX form twin)", hidden = true)
+    public Response recibirForm(@PathParam("id") long id) {
+        return recibir(id, null);
     }
 
     /**
