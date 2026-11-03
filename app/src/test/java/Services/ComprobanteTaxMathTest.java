@@ -360,6 +360,21 @@ class ComprobanteTaxMathTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Test
+    void lineaConImpuestoQuedaEnlazadaParaElXml() {
+        ArticuloCarrito articulo = item(102L, "501010114", "13", "10.50", "1");
+
+        DetalleServicio detalles = service.detallesComprobante(List.of(articulo), "04");
+
+        LineaDetalle linea = detalles.getLineasDetalle().get(0);
+        // El XML exige <Impuesto> en cada linea Gravada. Si el Impuesto no se
+        // enlaza a su LineaDetalle, el FK queda NULL, la fila se pierde y el
+        // XSD v4.4 rechaza el documento.
+        assertThat(linea.getImpuestos()).isNotEmpty();
+        assertThat(linea.getImpuestos().get(0).getLineaDetalle()).isSameAs(linea);
+    }
+
+
+    @Test
     void subTotalMontoTotalLineaDerivationPerLineaDetalle() {
         ArticuloCarrito articulo = item(101L, "501010114", "13", "10.50", "3");
 
@@ -371,7 +386,7 @@ class ComprobanteTaxMathTest {
         assertThat(linea.getMontoTotal()).isEqualByComparingTo("31.50");
         // subTotal mirrors montoTotal (discounts are separate Descuento entities)
         assertThat(linea.getSubTotal()).isEqualByComparingTo("31.50");
-        // montoTotalLinea also mirrors montoTotal in the current implementation
+        // montoTotalLinea mirrors montoTotal (sin IVA; el IVA va en ImpuestoNeto)
         assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("31.50");
         assertThat(linea.getBaseImponible()).isEqualByComparingTo("31.50");
         assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("10.50");

@@ -520,6 +520,7 @@ public class OrdenCompraResource {
      * refreshed table fragment + OOB toast come back (ui-kit §7).
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}")
     @Transactional
     @Operation(summary = "Soft-delete (archive) a purchase order")

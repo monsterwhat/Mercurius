@@ -385,6 +385,7 @@ public class CategoriaResource {
      * table fragment plus an out-of-band toast instead of JSON.
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/familias/{id}")
     @Operation(summary = "Toggle familia soft-delete state (legacy deleteFamilia parity)")
     @APIResponses({
@@ -578,6 +579,7 @@ public class CategoriaResource {
 
     /** Soft-delete toggle — legacy {@code deleteDepartamento()} parity. */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/departamentos/{id}")
     @Operation(summary = "Toggle departamento soft-delete state (legacy deleteDepartamento parity)")
     @APIResponses({

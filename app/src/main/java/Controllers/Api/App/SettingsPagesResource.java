@@ -24,6 +24,7 @@ import Models.Sucursal;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.ConfiguracionMargenService;
+import Services.ConsecutivoEmitidoService;
 import Services.SucursalService;
 
 /**
@@ -76,6 +77,9 @@ public class SettingsPagesResource {
 
     @Inject
     @Nonnull
+    ConsecutivoEmitidoService consecutivoEmitidoService;
+    @Inject
+    @Nonnull
     @Location("pages/settings/index")
     Template page;
 
@@ -97,7 +101,19 @@ public class SettingsPagesResource {
             Map<String, Object> model = new LinkedHashMap<>();
             model.put("titulo", titulo);
             model.put("modo", modo);
-            model.put("settings", toDTO(settings));
+            Models.DTO.AppSettingsDTO dtoSettings = toDTO(settings);
+            if (dtoSettings != null) {
+                // appsettings.ultimoconsecutivo es legado y quedo vacio; el
+                // numero real vive en consecutivo_emitido por sucursal/terminal/tipo.
+                Long ultimo = consecutivoEmitidoService.ultimoSecuencialEmitido(
+                        dtoSettings.getCodigoSucursal() == null ? "" : dtoSettings.getCodigoSucursal(),
+                        dtoSettings.getCodigoTerminal() == null ? "" : dtoSettings.getCodigoTerminal(),
+                        dtoSettings.getTipoDocumento() == null ? "04" : dtoSettings.getTipoDocumento());
+                if (ultimo != null && ultimo > 0) {
+                    dtoSettings.setUltimoConsecutivo(ultimo.intValue());
+                }
+            }
+            model.put("settings", dtoSettings);
             model.put("backup", toBackupStatusDTO(settings));
             model.put("backupLog", toBackupLog(backupService.listarBackups()));
             model.put("backupRutaEfectiva", backupService.rutaEfectiva());

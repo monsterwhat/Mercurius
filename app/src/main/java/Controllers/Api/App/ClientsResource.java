@@ -290,6 +290,7 @@ public class ClientsResource {
     }
 
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{code}")
     @Transactional
     @Operation(summary = "Archive (soft-disable) a client")

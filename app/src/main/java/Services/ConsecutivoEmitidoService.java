@@ -39,6 +39,36 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
         return ConsecutivoEmitido.class;
     }
 
+    /**
+     * Ultimo secuencial YA EMITIDO para (sucursal, terminal, tipo), sin
+     * consumir el siguiente. Solo lectura: lo usa la pantalla de Ajustes para
+     * mostrar la numeracion real; {@code appsettings.ultimoconsecutivo} es un
+     * campo legado que quedo vacio.
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public @Nonnull Long ultimoSecuencialEmitido(@Nonnull String sucursal,
+                                                 @Nonnull String terminal,
+                                                 @Nonnull String tipo) {
+        try {
+            TypedQuery<ConsecutivoEmitido> query = em.createQuery(
+                    "SELECT c FROM ConsecutivoEmitido c"
+                    + " WHERE c.sucursal = :s AND c.terminal = :t AND c.tipo = :ti",
+                    ConsecutivoEmitido.class);
+            query.setParameter("s", sucursal);
+            query.setParameter("t", terminal);
+            query.setParameter("ti", tipo);
+            ConsecutivoEmitido fila = query.getSingleResult();
+            return fila.getUltimoSecuencial() != null ? fila.getUltimoSecuencial() : 0L;
+        } catch (NoResultException e) {
+            return 0L;
+        } catch (PersistenceException e) {
+            LOG.warn("No se pudo leer el ultimo secuencial emitido"
+                    + " | sucursal=" + sucursal + " | terminal=" + terminal + " | tipo=" + tipo
+                    + " | source=ConsecutivoEmitidoService.ultimoSecuencialEmitido()", e);
+            return 0L;
+        }
+    }
+
     @PostConstruct
     public void init() {
     }

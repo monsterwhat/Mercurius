@@ -310,6 +310,7 @@ public class UsersResource {
     }
 
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}")
     @RolesAllowed("admin")
     @Transactional

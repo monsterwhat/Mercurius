@@ -44,9 +44,19 @@
                 <div class="field">
                     <label class="label" for="recibidas-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
                     <div class="control">
-                        <input class="input" type="file" id="recibidas-upload-archivos"
-                               name="files" accept=".xml" multiple required
-                               aria-describedby="recibidas-upload-ayuda"/>
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" id="recibidas-upload-archivos"
+                                       name="files" accept=".xml" multiple required
+                                       aria-describedby="recibidas-upload-ayuda"
+                                       onchange="this.closest('.file').querySelector('.file-name').textContent = this.files.length > 1 ? this.files.length + ' archivos seleccionados' : (this.files.length ? this.files[0].name : 'Ningún archivo seleccionado')"/>
+                                <span class="file-cta">
+                                    <span class="file-icon">{#include _kit/icon name="upload" /}</span>
+                                    <span class="file-label">Elegir archivos XML</span>
+                                </span>
+                                <span class="file-name">Ningún archivo seleccionado</span>
+                            </label>
+                        </div>
                     </div>
                     <p id="recibidas-upload-ayuda" class="help mercurius-text-muted">
                         Puede seleccionar varios archivos .xml a la vez. Cada archivo se procesa por separado.

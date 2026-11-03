@@ -28,7 +28,7 @@ class CarritoModificacionesPageTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString("Cambios de carrito"))
-                .body(containsString("Lineas eliminadas"))
+                .body(containsString("Líneas eliminadas"))
                 .body(containsString("Carritos cancelados"))
                 .body(containsString("Precios ajustados"))
                 .body(containsString("data-kit-table"))

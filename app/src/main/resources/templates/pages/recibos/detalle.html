@@ -106,4 +106,18 @@
             </div>
         </div>
     </form>
+
+    <hr/>
+    <div class="field mt-2">
+        <div class="control">
+            <button type="button" class="button is-danger is-light"
+                    hx-delete="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}"
+                    hx-swap="none" hx-disabled-elt="this"
+                    hx-confirm="&iquest;Eliminar esta factura del listado? No devuelve el inventario ni libera el consecutivo."
+                    hx-on::after-request="if (event.detail.successful) { window.location.reload(); }">
+                Eliminar factura
+            </button>
+        </div>
+        <p class="help mercurius-text-muted">Solo la oculta del listado. No toca Hacienda ni devuelve el stock.</p>
+    </div>
 </div>

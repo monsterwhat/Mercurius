@@ -1289,7 +1289,9 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                     linea.setDescuentos(descuentos);
                 }
                 List<Impuesto> impuestos = new ArrayList<>();
-                if (articulo.getTotalImpuesto().compareTo(BigDecimal.ZERO) != 0) {
+                BigDecimal impuestoNetoLinea = articulo.getTotalImpuesto()
+                        .multiply(Cantidad).setScale(5, RoundingMode.HALF_UP);
+                if (impuestoNetoLinea.compareTo(BigDecimal.ZERO) != 0) {
                     Impuesto impuesto = new Impuesto();
                     String codigoImpuestoRaw = articulo.getArticulo().getCodigoCabys().getImpuesto();
                     String codigoImpuesto = normalizeImpuesto(codigoImpuestoRaw);
@@ -1299,8 +1301,12 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                     impuesto.setTarifa(new BigDecimal(codigoImpuesto));
                     // Escala Hacienda (igual que el resumen): cantidad
                     // fraccionaria × tasa reducida supera los 5 decimales.
-                    impuesto.setMonto(articulo.getTotalImpuesto().multiply(Cantidad)
-                            .setScale(5, RoundingMode.HALF_UP));
+                    impuesto.setMonto(impuestoNetoLinea);
+                    // El FK vive del lado del Impuesto (@ManyToOne). Sin esta
+                    // linea el impuesto se guarda con linea_detalle_id NULL:
+                    // la fila queda huerfana y el XML sale SIN <Impuesto>, que
+                    // el XSD v4.4 exige (minOccurs=1).
+                    impuesto.setLineaDetalle(linea);
                     ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
                             articulo.getArticulo().getCodigo().toString());
                     if (exoneracion != null) {
@@ -1320,17 +1326,28 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                     }
                     impuestos.add(impuesto);
                 }
-                linea.setMontoTotalLinea(montoTotal);
+                BigDecimal descuentoLinea = BigDecimal.ZERO;
+                for (Descuento d : descuentos) {
+                    if (d.getMontoDescuento() != null) {
+                        descuentoLinea = descuentoLinea.add(d.getMontoDescuento());
+                    }
+                }
+                descuentoLinea = descuentoLinea.setScale(5, RoundingMode.HALF_UP);
+                BigDecimal baseLinea = montoTotal.subtract(descuentoLinea)
+                        .setScale(5, RoundingMode.HALF_UP);
+                // Convencion de la app (fijada por TributacionComplianceTest):
+                // MontoTotalLinea y BaseImponible se expresan sin IVA; el IVA
+                // viaja en ImpuestoNeto.
+                linea.setMontoTotalLinea(baseLinea);
                 linea.setImpuestos(impuestos);
 
                 // ImpuestoNeto mandatory in all XSDs except FEE (misma escala que Monto)
                 if (!"05".equals(tipoDocumento)) {
-                    linea.setImpuestoNeto(articulo.getTotalImpuesto().multiply(Cantidad)
-                            .setScale(5, RoundingMode.HALF_UP));
+                    linea.setImpuestoNeto(impuestoNetoLinea);
                 }
                 // BaseImponible mandatory for FE/TE/NC/ND/FEC — not in REP/FEE XSD
                 if (!isRep && !"05".equals(tipoDocumento)) {
-                    linea.setBaseImponible(montoTotal);
+                    linea.setBaseImponible(baseLinea);
                 }
                 // ImpuestoAsumidoEmisorFabrica mandatory for FE/TE; optional for NC/ND
                 if ("01".equals(tipoDocumento) || "04".equals(tipoDocumento)) {

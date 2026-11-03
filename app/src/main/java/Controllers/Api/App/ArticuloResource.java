@@ -726,6 +726,7 @@ public class ArticuloResource {
      * parity: soft-deactivate only (no toggle back — preserved quirk).
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{codigo}")
     @Operation(summary = "Deactivate an artículo (legacy deleteArticulo soft-delete parity)")
     @APIResponses({
@@ -1176,6 +1177,7 @@ public class ArticuloResource {
      * {@link PromocionesService#delete} (preserved service quirk) + audit.
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/promociones/{id}")
     @Operation(summary = "Delete a promotion (deletePromocion hard-delete parity)")
     @APIResponses({

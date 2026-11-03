@@ -44,7 +44,7 @@ public class CarritoModificacionesResource {
 
     private static final List<Map<String, String>> ACCIONES = List.of(
             Map.of("valor", CarritoModificacion.ACCION_LINEA_ELIMINADA,
-                    "etiqueta", "Linea eliminada"),
+                    "etiqueta", "Línea eliminada"),
             Map.of("valor", CarritoModificacion.ACCION_CARRITO_CANCELADO,
                     "etiqueta", "Carrito cancelado"),
             Map.of("valor", CarritoModificacion.ACCION_PRECIO_AJUSTADO,
@@ -152,7 +152,7 @@ public class CarritoModificacionesResource {
             return "-";
         }
         return switch (accion) {
-            case CarritoModificacion.ACCION_LINEA_ELIMINADA -> "Linea eliminada";
+            case CarritoModificacion.ACCION_LINEA_ELIMINADA -> "Línea eliminada";
             case CarritoModificacion.ACCION_CARRITO_CANCELADO -> "Carrito cancelado";
             case CarritoModificacion.ACCION_PRECIO_AJUSTADO -> "Precio ajustado";
             default -> accion;
@@ -181,9 +181,9 @@ public class CarritoModificacionesResource {
         return List.of(
                 Map.of("label", "Fecha", "key", "fecha"),
                 Map.of("label", "Usuario", "key", "usuario"),
-                Map.of("label", "Accion", "key", "accion"),
-                Map.of("label", "Articulo", "key", "articulo"),
-                Map.of("label", "Codigo", "key", "codigo"),
+                Map.of("label", "Acción", "key", "accion"),
+                Map.of("label", "Artículo", "key", "articulo"),
+                Map.of("label", "Código", "key", "codigo"),
                 Map.of("label", "Cantidad", "key", "cantidad", "num", true),
                 Map.of("label", "Precio", "key", "precio", "num", true),
                 Map.of("label", "Importe", "key", "importe", "num", true),

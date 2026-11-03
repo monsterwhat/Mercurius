@@ -155,24 +155,22 @@ public class FamiliaService extends GService<Familia> {
             Familia existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
-                // Disable the existing item if enabled
-                if(existingItem.getStatus()){
-                    existingItem.setStatus(false);
-                }
+                // Copia los campos editables sobre la fila administrada. Antes
+                // se desactivaba y luego se hacia persist(entity): con el id ya
+                // existente Hibernate lanzaba detached-entity, la transaccion
+                // quedaba rollback-only y la edicion nunca se guardaba.
+                existingItem.setNombre(entity.getNombre());
+                existingItem.setUsuario(entity.getUsuario());
+                existingItem.setFecha(entity.getFecha());
+                existingItem.setStatus(entity.getStatus());
                 em.merge(existingItem);
-            em.flush();
-                
-                //If we are updating an existing disabled record we need to re-enable it...
-                if(!entity.getStatus()){
-                    entity.setStatus(true);
-                }
-                em.persist(entity);
-            em.flush();
+                em.flush();
             } else {
-                LOG.info("Entity not found | source=FamiliaService.method()");
+                LOG.info("Entity not found | source=FamiliaService.updateAndDisable()");
             }
         } catch (PersistenceException e) {
-            LOG.warn("Error updating entity: " + e.getMessage() + " | source=FamiliaService.method() | despues=" + e.getMessage());
+            LOG.warn("Error actualizando la familia " + entity.getId() + ": " + e.getMessage()
+                    + " | source=FamiliaService.updateAndDisable()", e);
         }
     }
 

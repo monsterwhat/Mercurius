@@ -577,9 +577,19 @@
                         {/if}
                     </figure>
                     <div>
-                        <input class="input" type="file" id="logo-archivo" name="logo"
-                               accept="image/png,image/jpeg,image/webp"
-                               aria-describedby="logo-ayuda"/>
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" id="logo-archivo" name="logo"
+                                       accept="image/png,image/jpeg,image/webp"
+                                       aria-describedby="logo-ayuda"
+                                       onchange="this.closest('.file').querySelector('.file-name').textContent = this.files.length ? this.files[0].name : 'Ningún archivo seleccionado'"/>
+                                <span class="file-cta">
+                                    <span class="file-icon">{#include _kit/icon name="upload" /}</span>
+                                    <span class="file-label">Elegir imagen</span>
+                                </span>
+                                <span class="file-name">Ningún archivo seleccionado</span>
+                            </label>
+                        </div>
                         <button class="button mt-2" type="button"
                                 hx-post="{config:['quarkus.http.root-path']}{baseUrl}/logo"
                                 hx-encoding="multipart/form-data"

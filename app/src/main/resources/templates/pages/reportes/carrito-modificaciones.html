@@ -1,6 +1,6 @@
 {!
   pages/reportes/carrito-modificaciones - bitacora de cambios del carrito del POS.
-  Solo lectura: lineas eliminadas, ventas canceladas a medio hacer y precios
+  Solo lectura: líneas eliminadas, ventas canceladas a medio hacer y precios
   ajustados por los cajeros. No toca Hacienda ni inventario.
 !}
 {#include layout}
@@ -10,7 +10,7 @@
         {#include _kit/page-header title=titulo subtitle="Cambios que hicieron los cajeros en el carrito antes de facturar" /}
 
         <div class="metric-strip">
-            {#include _kit/metric label="Lineas eliminadas" value=totalLineas /}
+            {#include _kit/metric label="Líneas eliminadas" value=totalLineas /}
             {#include _kit/metric label="Carritos cancelados" value=totalCarritos /}
             {#include _kit/metric label="Precios ajustados" value=totalPrecios /}
         </div>
@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="field">
-                <label class="label" for="accion">Accion</label>
+                <label class="label" for="accion">Acción</label>
                 <div class="control select">
                     <select name="accion" id="accion">
                         <option value="">Todas</option>
@@ -54,7 +54,7 @@
                 <label class="label" for="q">Buscar</label>
                 <div class="control">
                     <input class="input" type="text" id="q" name="q"
-                           placeholder="Articulo, codigo o cliente" value="{filtros.q ?: ''}"/>
+                           placeholder="Artículo, código o cliente" value="{filtros.q ?: ''}"/>
                 </div>
             </div>
             <div class="control">

@@ -360,6 +360,7 @@ public class EmailTemplateResource {
      * legacy audit texts (templates have no soft-archive concept).
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}")
     @Operation(summary = "Delete an email template (hard delete, legacy parity)")
     @APIResponses({
