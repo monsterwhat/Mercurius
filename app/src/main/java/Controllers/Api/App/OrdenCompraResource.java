@@ -437,7 +437,7 @@ public class OrdenCompraResource {
      */
     @PUT
     @Path("/{id}/recibir")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.WILDCARD)
     @Transactional
     @Operation(summary = "Mark an order as received (legacy recibirOrden)")
     @APIResponses({

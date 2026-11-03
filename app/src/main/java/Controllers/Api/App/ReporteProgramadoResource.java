@@ -329,6 +329,7 @@ public class ReporteProgramadoResource {
      * disableReporte() parity: flip, persist, never touch {@code lastRun}.
      */
     @PUT
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}/toggle")
     @Operation(summary = "Toggle the enabled flag of a scheduled report")
     @APIResponses({
