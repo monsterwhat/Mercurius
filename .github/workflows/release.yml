@@ -55,9 +55,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             gh workflow run ci.yml --ref "${GITHUB_REF_NAME}"
           fi
-          for _ in $(seq 1 90); do
+          # La suite completa tarda ~35 min en el runner: 180 x 20s = 60 min.
+          # Con 90 iteraciones (30 min) el Release fallaba por timeout aunque el
+          # Build terminara bien un minuto despues (v2.33.3).
+          for _ in $(seq 1 180); do
+            # Un fallo transitorio de la API de gh no debe abortar el release:
+            # se trata como "todavia no" y se reintenta en la proxima vuelta.
             STATUS=$(gh run list --workflow ci.yml --commit "$SHA" --limit 1 \
-                      --json conclusion --jq '.[0].conclusion // "queued"')
+                      --json conclusion --jq '.[0].conclusion // "queued"' 2>/dev/null) || STATUS="queued"
             echo "ci.yml status: ${STATUS:-running}"
             case "$STATUS" in
               success) echo "Build succeeded"; exit 0 ;;
