@@ -422,6 +422,30 @@ public class CarritoService implements Serializable {
         }
     }
 
+    /**
+     * Entrada de inventario para una Factura Electronica de Compra (FEC, 08).
+     * Es el espejo de {@link #ajustarInventario}: alli la mercancia SALE porque
+     * es una venta; aqui ENTRA porque el comprador documenta una compra.
+     */
+    public void ingresarInventario(@Nonnull List<ArticuloCarrito> lineas, @Nonnull Usuarios currentUser) {
+        for (ArticuloCarrito articulo : lineas) {
+            BigDecimal cantidad = articulo.getCantidad();
+
+            Inventario movimiento = new Inventario();
+            movimiento.setArticulo(articulo.getArticulo());
+            movimiento.setCantidad(cantidad);
+            movimiento.setFechaMovimiento(new Date());
+            movimiento.setNotas("Articulo Comprado (FEC)");
+            movimiento.setProcessed(Boolean.TRUE);
+            movimiento.setStatus(Boolean.TRUE);
+            movimiento.setTipoMovimiento("Compra");
+            movimiento.setUnidadesRecomendadasFactura(cantidad);
+            movimiento.setUsuario(currentUser);
+
+            inventario.update(movimiento);
+        }
+    }
+
     public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Usuarios currentUser) {
         ajustarInventario(ctx.getCarrito(), currentUser);
     }

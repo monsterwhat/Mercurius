@@ -76,6 +76,19 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     @Inject CartSessionStore cartSessionStore;
     @Inject ComprobantesEmitidosService emitidosService;
     @Inject DirectoryService dirService;
+    @Inject jakarta.persistence.EntityManager em;
+
+    /** Stock actual del articulo (0 si todavia no tiene fila). */
+    private java.math.BigDecimal stockDe(String codigoBarra) {
+        em.clear();
+        java.util.List<Models.Articulos.ArticuloStock> filas = em.createQuery(
+                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :b",
+                Models.Articulos.ArticuloStock.class)
+                .setParameter("b", codigoBarra)
+                .getResultList();
+        return filas.isEmpty() || filas.get(0).getStock() == null
+                ? java.math.BigDecimal.ZERO : filas.get(0).getStock();
+    }
 
     // ── Auth / fixtures (misma receta probada de PosResourceTest) ──
 
@@ -375,7 +388,9 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
         Set<Long> idsPrevios = marcaDeAgua();
         try {
             Map<String, String> sesion = adminSession();
-            prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
+            Articulos articulo = sembrarArticuloExento();
+            prepararVenta(sesion, articulo, sembrarCliente());
+            java.math.BigDecimal stockAntes = stockDe(articulo.getCodigoBarra());
 
             facturarEspecial(sesion, "03",
                     ",\"referenciaTipoDoc\":\"01\""
@@ -396,6 +411,9 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             assertThat(referencia.getCodigo()).isEqualTo("10");
             assertThat(referencia.getRazon()).isEqualTo("Cobro de intereses por mora");
             assertThat(referencia.getFechaEmision()).isNotNull();
+            assertThat(stockDe(articulo.getCodigoBarra()))
+                    .as("una nota de debito no mueve inventario")
+                    .isEqualByComparingTo(stockAntes);
         } finally {
             limpiarFacturas(idsPrevios);
         }
@@ -408,7 +426,9 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
         Set<Long> idsPrevios = marcaDeAgua();
         try {
             Map<String, String> sesion = adminSession();
-            prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
+            Articulos articulo = sembrarArticuloExento();
+            prepararVenta(sesion, articulo, sembrarCliente());
+            java.math.BigDecimal stockAntes = stockDe(articulo.getCodigoBarra());
 
             facturarEspecial(sesion, "10", ",\"condicionVenta\":\"09\"")
                     .then()
@@ -418,19 +438,24 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("10");
             assertThat(row.getEncabezado().getCondicionVenta()).isEqualTo("09");
+            assertThat(stockDe(articulo.getCodigoBarra()))
+                    .as("un recibo de pago no mueve inventario")
+                    .isEqualByComparingTo(stockAntes);
         } finally {
             limpiarFacturas(idsPrevios);
         }
     }
 
     @Test
-    @DisplayName("FEC por POS se crea con cliente (08)")
+    @DisplayName("FEC por POS se crea con cliente (08) y SUMA stock (es una compra)")
     void fecPorPosSeCreaConCliente() {
         ensureAppSettings();
         Set<Long> idsPrevios = marcaDeAgua();
         try {
             Map<String, String> sesion = adminSession();
-            prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
+            Articulos articulo = sembrarArticuloExento();
+            prepararVenta(sesion, articulo, sembrarCliente());
+            java.math.BigDecimal stockAntes = stockDe(articulo.getCodigoBarra());
 
             facturar(sesion, "08")
                     .then()
@@ -439,6 +464,9 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
 
             ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("08");
+            assertThat(stockDe(articulo.getCodigoBarra()))
+                    .as("una factura de compra documenta una ENTRADA de mercancia")
+                    .isEqualByComparingTo(stockAntes.add(java.math.BigDecimal.ONE));
         } finally {
             limpiarFacturas(idsPrevios);
         }

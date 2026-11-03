@@ -71,7 +71,7 @@
         <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
             <strong>Nota de débito</strong>
             <span>Debe indicar el documento que afecta y el motivo. Se envía como
-                referencia dentro del XML.</span>
+                referencia dentro del XML. No mueve inventario.</span>
         </div>
         <div class="field">
             <label class="label is-small" for="referencia-numero">Consecutivo del documento que afecta</label>
@@ -141,7 +141,7 @@
         <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
             <strong>Recibo electrónico de pago</strong>
             <span>El XSD solo admite las condiciones 09 y 11. El medio de pago se
-                toma de lo cobrado aquí.</span>
+                toma de lo cobrado aquí. No mueve inventario.</span>
         </div>
         <div class="field">
             <label class="label is-small" for="condicion-venta">Condición de venta</label>
@@ -158,12 +158,14 @@
 
         {#if cobro.tipoDocumento == '05'}
         <p class="help">La factura de exportación se emite en colones con los
-            precios del carrito; registre al cliente extranjero como receptor.</p>
+            precios del carrito; registre al cliente extranjero como receptor.
+            Descuenta inventario como una venta.</p>
         {/if}
 
         {#if cobro.tipoDocumento == '08'}
         <p class="help">La factura de compra se emite al proveedor; regístrelo
-            como cliente (receptor) antes de facturar.</p>
+            como cliente (receptor) antes de facturar. Suma las unidades al
+            inventario (es una compra).</p>
         {/if}
 
         <table class="table is-narrow is-fullwidth is-borderless" style="margin-bottom:0.75rem">

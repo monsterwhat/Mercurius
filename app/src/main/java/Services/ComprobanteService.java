@@ -364,7 +364,18 @@ public class ComprobanteService implements Serializable {
             // de ESTA transacción, cualquier fallo revierte stock + puntos +
             // comprobante juntos, y el reintento arranca limpio. Se conserva el
             // orden original (stock, luego canje, luego factura).
-            carritoService.ajustarInventario(carrito, currentUser);
+            //
+            // La DIRECCION depende del documento: una venta (TE/FE/FEE) resta;
+            // una Factura Electrónica de Compra (FEC, 08) SUMA, porque el
+            // comprador documenta una compra; una nota de débito (03) o un
+            // recibo de pago (10) no mueven inventario.
+            switch (strategy.getCodigoDocumento()) {
+                case "08" -> carritoService.ingresarInventario(carrito, currentUser);
+                case "02", "03", "10" -> LOG.info("Documento " + strategy.getCodigoDocumento()
+                        + " sin movimiento de inventario"
+                        + " | source=ComprobanteService.crearComprobante()");
+                default -> carritoService.ajustarInventario(carrito, currentUser);
+            }
 
             // ── Canje de puntos (ANTES de la primera escritura) ─────────────
             // El descuento por puntos ya se aplicó al monto a pagar en el POS,
