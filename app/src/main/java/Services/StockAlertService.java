@@ -905,24 +905,23 @@ public class StockAlertService extends GService<AlertaStock> {
     @Nonnull
     public Map<String, Integer> getAlertStatistics() {
         Map<String, Integer> stats = new HashMap<>();
-        
-        String jpql = "SELECT sa.tipoAlerta, COUNT(sa) FROM AlertaStock sa " +
-                     "WHERE sa.fechaCreacion >= :startDate GROUP BY sa.tipoAlerta";
-        
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, -30);
-        Date startDate = cal.getTime();
-        
-        TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class)
-                .setParameter("startDate", startDate);
-        
+
+        // Solo alertas ACTIVAS: las tarjetas del reporte deben cuadrar con la
+        // tabla (que muestra las activas). Antes contaba tambien las resueltas
+        // de los ultimos 30 dias y la pantalla decia "Sobrestock 396" con
+        // "Total alertas 22".
+        String jpql = "SELECT sa.tipoAlerta, COUNT(sa) FROM AlertaStock sa "
+                + "WHERE sa.estado = 'active' GROUP BY sa.tipoAlerta";
+
+        TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class);
+
         List<Object[]> results = query.getResultList();
         for (Object[] result : results) {
             String alertType = (String) result[0];
             Long count = (Long) result[1];
             stats.put(alertType, count.intValue());
         }
-        
+
         return stats;
     }
 }
