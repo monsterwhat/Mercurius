@@ -12,7 +12,7 @@
         {#include _kit/page-header title="Gestión"
              subtitle="Administración de artículos, inventarios, compras, usuarios y más" /}
 
-        <nav class="columns is-multiline" aria-label="Secciones de Gestión">
+        <nav class="columns is-multiline surface-grid" aria-label="Secciones de Gestión">
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
             <div class="column is-4">
                 {#include _kit/surface}

@@ -1436,6 +1436,30 @@ button.metric-card {
     padding: 0;
 }
 
+// A grid of surfaces (hub landing pages). Every card stretches to the height
+// of its row and the last action is pinned to the bottom, so the buttons line
+// up even when one card carries two links or longer copy.
+.surface-grid > .column {
+    display: flex;
+}
+
+.surface-grid > .column > .surface {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.surface-grid > .column > .surface > .surface-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.surface-grid > .column > .surface .surface-body > p {
+    flex: 1;
+}
+
 .surface-footer {
     align-items: center;
     border-top: 1px solid var(--mercurius-border);

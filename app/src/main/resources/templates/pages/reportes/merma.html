@@ -19,7 +19,7 @@
             {#include _kit/metric label="% de merma" value=(porcentajeMerma.toString() + "%")
                  href=(baseUrl + "?seccion=causas" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'causas') /}
-            {#include _kit/metric label="Movimiento total" value=movimientoTotal
+            {#include _kit/metric label="Movimiento de inventario" value=movimientoTotal
                  href=(baseUrl + "?seccion=departamentos" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'departamentos') /}
             {#include _kit/metric label="Registros" value=registros
