@@ -351,7 +351,7 @@ public class ArticuloResource {
     }
 
     /**
-     * GET /api/app/articulos/table?tab=… — fragment-or-full-page endpoint
+     * GET /app/articulos?tab=… — fragment-or-full-page endpoint
      * backing the five-tab page (ui-kit §2.9): HX-Request swaps ONLY the
      * requested table include; otherwise the whole page renders through the
      * layout.
@@ -544,7 +544,7 @@ public class ArticuloResource {
                         LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/articulos/table?tab=" + TAB_ACTIVOS);
+                return hxRedirect("/app/articulos?tab=" + TAB_ACTIVOS);
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(nuevo))).build();
@@ -706,7 +706,7 @@ public class ArticuloResource {
                         LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updateArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/articulos/table?tab=" + TAB_ACTIVOS);
+                return hxRedirect("/app/articulos?tab=" + TAB_ACTIVOS);
             }
             Articulos updated = articulosService.findById(codigo);
             if (updated == null) {
@@ -915,7 +915,7 @@ public class ArticuloResource {
                     return htmlOk(revisionFragment(siguiente, "success",
                             "Se proceso el articulo", siguiente == null, true));
                 }
-                return hxRedirect("/api/app/articulos/table?tab=" + TAB_CATALOGO);
+                return hxRedirect("/app/articulos?tab=" + TAB_CATALOGO);
             }
             RevisionResultDTO result = new RevisionResultDTO(true,
                     rapido ? orEmpty(articulosService.listAllSinProcesar()).size() : 0,
@@ -1036,7 +1036,7 @@ public class ArticuloResource {
                         LOG.info("Se actualizó el precio del artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePrecio()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/articulos/table?tab=" + TAB_CATALOGO);
+                return hxRedirect("/app/articulos?tab=" + TAB_CATALOGO);
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(articulo))).build();
         } catch (RuntimeException e) {
@@ -1310,7 +1310,7 @@ public class ArticuloResource {
             }
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/articulos/table?tab=" + TAB_PROMOCIONES);
+                return hxRedirect("/app/articulos?tab=" + TAB_PROMOCIONES);
             }
             return Response.status(id == null
                             ? Response.Status.CREATED : Response.Status.OK)

@@ -523,7 +523,7 @@ public class ClientsResource {
         Response result = create(buildDetailDTO(nombre, email, address, phoneNumber,
                 zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
         return handleFormMutationResult(result, "crear", null,
-                "/api/app/clientes/table");
+                "/app/clientes");
     }
 
     /**
@@ -564,7 +564,7 @@ public class ClientsResource {
         Response result = update(code, buildDetailDTO(nombre, email, address, phoneNumber,
                 zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
         return handleFormMutationResult(result, "editar", clientService.find(code),
-                "/api/app/clientes/table");
+                "/app/clientes");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

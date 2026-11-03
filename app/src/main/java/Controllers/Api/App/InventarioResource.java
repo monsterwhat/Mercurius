@@ -407,7 +407,7 @@ public class InventarioResource {
             inventarioService.createWithStock(nuevo);
             LOG.info("failed to create inventario dialog");
             if (isHxRequest()) {
-                return hxRedirect("/api/app/inventario/table?tab=" + TAB_ACTIVOS);
+                return hxRedirect("/app/inventarios?tab=" + TAB_ACTIVOS);
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(nuevo))).build();
@@ -536,7 +536,7 @@ public class InventarioResource {
                         siguiente == null ? MSG_SIN_PENDIENTES : MSG_SE_PROCESO));
             }
             if (isHxRequest()) {
-                return hxRedirect("/api/app/inventario/table?tab=" + TAB_PENDIENTES);
+                return hxRedirect("/app/inventarios?tab=" + TAB_PENDIENTES);
             }
             long restantes = orEmpty(inventarioService.listAllSinProcesar()).size();
             return Response.ok(ApiResponse.ok(new AprobacionResult(true, MSG_SE_PROCESO, restantes))).build();

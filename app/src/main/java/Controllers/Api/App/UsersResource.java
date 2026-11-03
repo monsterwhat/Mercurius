@@ -586,7 +586,7 @@ public class UsersResource {
         request.groupName = joinGroupNames(permisos);
         Response result = create(request);
         return handleFormMutationResult(result, "crear", null, null, null,
-                "/api/app/users/table");
+                "/app/usuarios");
     }
 
     /**
@@ -616,7 +616,7 @@ public class UsersResource {
         request.email = emptyToNull(email);
         Response result = update(id, request);
         return handleFormMutationResult(result, "editar", loginService.find(id), null, null,
-                "/api/app/users/table");
+                "/app/usuarios");
     }
 
     /**
@@ -684,7 +684,7 @@ public class UsersResource {
                     + " | despues=" + DiffUtils.snapshotEntity(user));
 
             return handleFormMutationResult(Response.ok(ApiResponse.ok(toDTO(user))).build(),
-                    "editar", user, null, null, "/api/app/users/table");
+                    "editar", user, null, null, "/app/usuarios");
         } catch (Exception e) {
             LOG.warn("Error updating permisos for user " + id, e);
             return Response.serverError()

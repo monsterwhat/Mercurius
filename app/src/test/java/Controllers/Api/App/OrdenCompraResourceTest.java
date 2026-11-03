@@ -721,7 +721,7 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/ordenes")
                 .then()
                 .statusCode(200)
-                .header("HX-Redirect", containsString("/api/app/ordenes/table"));
+                .header("HX-Redirect", containsString("/app/compras/ordenes"));
 
         // Validation failure: form redisplay + legacy message (ui-kit Pattern A).
         authed(session)

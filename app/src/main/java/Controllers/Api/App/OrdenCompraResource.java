@@ -955,7 +955,7 @@ public class OrdenCompraResource {
     }
 
     private String tablaUrl() {
-        return rootPath + "/api/app/ordenes/table";
+        return rootPath + "/app/compras/ordenes";
     }
 
     private static Response badRequest(String message) {

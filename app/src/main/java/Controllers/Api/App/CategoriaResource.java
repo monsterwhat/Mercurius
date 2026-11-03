@@ -307,7 +307,7 @@ public class CategoriaResource {
             if (isHxRequest()) {
                 // Success in the dialog flow: send the client back to the
                 // page so table, counters and modal state reset (ui-kit §5).
-                return hxRedirect("/api/app/categorias/table?tab=" + TAB_FAMILIAS);
+                return hxRedirect("/app/categorias?tab=" + TAB_FAMILIAS);
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(familia))).build();
@@ -363,7 +363,7 @@ public class CategoriaResource {
             familiaService.updateAndDisable(existing);
                         LOG.info("Se ha actualizado la familia: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.updateFamilia" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
-                return hxRedirect("/api/app/categorias/table?tab=" + TAB_FAMILIAS);
+                return hxRedirect("/app/categorias?tab=" + TAB_FAMILIAS);
             }
             Familia updated = familiaService.findById(id);
             if (updated == null) {
@@ -485,7 +485,7 @@ public class CategoriaResource {
             departamentoService.create(departamento);
                         LOG.info("Se creó el departamento: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.createDepartamento" + " | antes=" + String.valueOf("") + " | despues=" + String.valueOf(departamento.toString()));
             if (isHxRequest()) {
-                return hxRedirect("/api/app/categorias/table?tab=" + TAB_DEPARTAMENTOS);
+                return hxRedirect("/app/categorias?tab=" + TAB_DEPARTAMENTOS);
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(departamento))).build();
@@ -562,7 +562,7 @@ public class CategoriaResource {
             departamentoService.update(existing);
                         LOG.info("Se actualizó el departamento: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.updateDepartamento" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
-                return hxRedirect("/api/app/categorias/table?tab=" + TAB_DEPARTAMENTOS);
+                return hxRedirect("/app/categorias?tab=" + TAB_DEPARTAMENTOS);
             }
             Departamento updated = departamentoService.findById(id);
             if (updated == null) {
@@ -670,7 +670,7 @@ public class CategoriaResource {
         try {
             departamentoMetricoService.calcularTodasLasMetricas();
             if (isHxRequest()) {
-                return hxRedirect("/api/app/categorias/table?tab=" + TAB_DEPARTAMENTOS);
+                return hxRedirect("/app/categorias?tab=" + TAB_DEPARTAMENTOS);
             }
             return Response.ok(ApiResponse.ok(
                     Map.of("mensaje", "Métricas recalculadas correctamente"))).build();

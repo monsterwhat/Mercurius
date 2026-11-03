@@ -529,7 +529,7 @@ public class EmailTemplateResource {
                         LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.createPlantillaForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/email-templates/table");
+                return hxRedirect("/app/correos/plantillas");
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(template))).build();
@@ -596,7 +596,7 @@ public class EmailTemplateResource {
                         LOG.info("Se ha actualizado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.updatePlantillaForm()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/email-templates/table");
+                return hxRedirect("/app/correos/plantillas");
             }
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {

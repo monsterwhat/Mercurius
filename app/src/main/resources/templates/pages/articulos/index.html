@@ -47,7 +47,7 @@
 
     {#body}
     <section class="section" style="padding-top:1rem"
-             x-data="{ tab: 'activos' }">
+             x-data="{ tab: (['activos','inactivos','catalogo','pendientes','promociones'].includes(new URLSearchParams(location.search).get('tab')) ? new URLSearchParams(location.search).get('tab') : 'activos') }">
 
         {#include _kit/page-header breadcrumb="Gestión / Catálogo" title="Artículos"
              subtitle="Inventario, procesados, revisiones y promociones" /}

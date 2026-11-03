@@ -548,7 +548,7 @@ public class ReporteProgramadoResource {
                         LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.createReporteForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(reporte.toString()));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/reportes-programados/table");
+                return hxRedirect("/app/correos/reportes");
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(reporte))).build();
@@ -612,7 +612,7 @@ public class ReporteProgramadoResource {
                         LOG.info("Se ha actualizado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.updateReporteForm()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(reporte)));
 
             if (isHxRequest()) {
-                return hxRedirect("/api/app/reportes-programados/table");
+                return hxRedirect("/app/correos/reportes");
             }
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
