@@ -108,6 +108,9 @@ public class CierreCajaResource {
     @Inject
     CierreCajaService cierreCajaService;
 
+    @Inject
+    jakarta.persistence.EntityManager em;
+
     @Nonnull
     @Inject
     LoginService loginService;
@@ -261,6 +264,17 @@ public class CierreCajaResource {
             sesionActual.setMontoContadoSinpe(montoContadoSinpe);
             sesionActual.setMontoContadoTarjeta(montoContadoTarjeta);
 
+            // Los tres buckets "esperado" NUNCA se llenaban al abrir la sesion:
+            // el cierre comparaba lo contado contra 0 y la diferencia siempre
+            // era el total contado (con aviso de descuadre falso). Se calculan
+            // aqui desde las ventas del turno; si una sesion vieja ya los trae,
+            // se respetan.
+            if (sesionActual.getMontoEsperadoEfectivo() == null
+                    && sesionActual.getMontoEsperadoSinpe() == null
+                    && sesionActual.getMontoEsperadoTarjeta() == null) {
+                calcularEsperadoDesdeVentas(sesionActual);
+            }
+
             BigDecimal totalEsperado = BigDecimal.ZERO;
             if (sesionActual.getMontoEsperadoEfectivo() != null) {
                 totalEsperado = totalEsperado.add(sesionActual.getMontoEsperadoEfectivo());
@@ -294,6 +308,52 @@ public class CierreCajaResource {
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cerrando la sesion de caja"))
                     .build();
         }
+    }
+
+    /**
+     * Calcula los montos esperados del turno a partir de las ventas del
+     * usuario desde la apertura: efectivo inicial + pagos en efectivo (01),
+     * SINPE (06) y tarjeta (02). Antes los buckets quedaban en null y el
+     * cierre reportaba una diferencia igual a todo lo contado.
+     */
+    private void calcularEsperadoDesdeVentas(@Nonnull CierreCaja sesion) {
+        BigDecimal efectivo = sesion.getMontoInicial() != null
+                ? sesion.getMontoInicial() : BigDecimal.ZERO;
+        BigDecimal sinpe = BigDecimal.ZERO;
+        BigDecimal tarjeta = BigDecimal.ZERO;
+        try {
+            String username = sesion.getUsuario() != null ? sesion.getUsuario().getUsername() : null;
+            if (username != null && sesion.getFechaApertura() != null) {
+                List<Object[]> filas = em.createQuery(
+                                "SELECT m.tipoMedioPago, COALESCE(SUM(m.totalMedioPago), 0) "
+                                        + "FROM ComprobantesEmitidos c "
+                                        + "JOIN c.resumen r JOIN r.mediosPago m "
+                                        + "WHERE c.user = :usuario AND c.status = true "
+                                        + "AND c.encabezado.fechaEmision >= :desde "
+                                        + "GROUP BY m.tipoMedioPago",
+                                Object[].class)
+                        .setParameter("usuario", username)
+                        .setParameter("desde", sesion.getFechaApertura())
+                        .getResultList();
+                for (Object[] fila : filas) {
+                    String tipo = (String) fila[0];
+                    BigDecimal monto = fila[1] == null ? BigDecimal.ZERO : (BigDecimal) fila[1];
+                    switch (tipo == null ? "" : tipo) {
+                        case "01" -> efectivo = efectivo.add(monto);
+                        case "02" -> tarjeta = tarjeta.add(monto);
+                        case "06" -> sinpe = sinpe.add(monto);
+                        default -> LOG.debug("Medio de pago sin bucket en el cierre: " + tipo
+                                + " | source=CierreCajaResource.calcularEsperadoDesdeVentas()");
+                    }
+                }
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("No se pudieron calcular los montos esperados del turno; se usan ceros"
+                    + " | source=CierreCajaResource.calcularEsperadoDesdeVentas()", e);
+        }
+        sesion.setMontoEsperadoEfectivo(efectivo);
+        sesion.setMontoEsperadoSinpe(sinpe);
+        sesion.setMontoEsperadoTarjeta(tarjeta);
     }
 
     /**

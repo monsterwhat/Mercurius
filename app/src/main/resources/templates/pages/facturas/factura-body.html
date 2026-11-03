@@ -64,7 +64,7 @@
        picked, and it pushed the Cliente button off to one side. !}
     <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
         <form id="forma-tipo-documento" class="field">
-            <label class="label is-small has-text-centered" for="select-tipo-documento">Tipo de factura</label>
+            <label class="label is-small has-text-centered" for="select-tipo-documento">Tipo de comprobante</label>
             <div class="control has-text-centered">
                 <div class="select is-small pos-tipo-documento">
                     <select id="select-tipo-documento" name="tipoDocumento">
@@ -80,7 +80,7 @@
         </form>
         <div class="field" style="margin-bottom:0">
             <span class="label is-small has-text-centered" id="label-cliente">Cliente
-                <span class="has-text-weight-normal mercurius-text-muted">(opcional)</span></span>
+                <span class="has-text-weight-normal mercurius-text-muted" id="cliente-requerido">(opcional)</span></span>
             <div class="control has-text-centered">
                 <button type="button" class="button is-medium is-primary is-outlined" aria-haspopup="dialog"
                         title="Buscar y asignar un cliente"
@@ -90,6 +90,24 @@
             </div>
         </div>
     </div>
+
+    {! El cliente es opcional solo para el tiquete (04); FE/ND/FEC/FEE/REP
+       exigen receptor y el servidor responde CLIENTE_REQUERIDO. El aviso lo
+       dice ANTES de cobrar. !}
+    <script>
+        (function () {
+            var select = document.getElementById('select-tipo-documento');
+            var aviso = document.getElementById('cliente-requerido');
+            if (!select || !aviso) {
+                return;
+            }
+            function actualizarCliente() {
+                aviso.textContent = select.value === '04' ? '(opcional)' : '(requerido)';
+            }
+            select.addEventListener('change', actualizarCliente);
+            actualizarCliente();
+        })();
+    </script>
 
     {! Barcode capture: Enter posts (cantidad + codigoBarra) and redraws the
        sale panel. The article picker button rides the same row. There is no

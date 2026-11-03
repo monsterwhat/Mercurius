@@ -208,6 +208,38 @@ class CierreCajaResourceTest {
     }
 
     @Test
+    void closeCalculaElEsperadoDesdeElMontoInicialCuandoLosBucketsEstanVacios() {
+        Map<String, String> jar = loginAsAdmin();
+        CierreCaja sesion = null;
+        try {
+            // Sesion real del POS: al abrir NO se llenan los buckets esperados.
+            sesion = seedOpenSesion(null, null, null, new Date());
+
+            Response response = authed(jar)
+                    .contentType(ContentType.JSON)
+                    .body(Map.of(
+                            "montoContadoEfectivo", 50000,
+                            "montoContadoSinpe", 0,
+                            "montoContadoTarjeta", 0,
+                            "notas", "Cierre cuadrado QA"))
+                    .when().post(CLOSE_URL);
+            response.then().statusCode(200).contentType(ContentType.JSON);
+
+            assertEquals(0, new BigDecimal("50000.00").compareTo(
+                            new BigDecimal(response.jsonPath().getString("data.cierre.montoEsperadoEfectivo"))),
+                    "sin ventas, el esperado en efectivo es el monto inicial");
+            assertEquals(0, new BigDecimal("0").compareTo(
+                    new BigDecimal(response.jsonPath().getString("data.diferencia"))));
+            assertEquals(false, response.jsonPath().getBoolean("data.advertenciaDiferencia"),
+                    "un cierre cuadrado no debe avisar descuadre");
+        } finally {
+            if (sesion != null) {
+                cierreCajaService.delete(sesion);
+            }
+        }
+    }
+
+    @Test
     void closePersistsAndWarnsOnOpenDifference() {
         Map<String, String> jar = loginAsAdmin();
         CierreCaja sesion = null;
