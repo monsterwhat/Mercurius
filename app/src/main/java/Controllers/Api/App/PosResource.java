@@ -332,6 +332,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * (which also re-processes promotions), like CrearTiqueteController.removeArticulo.
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/item/{codigo}")
     @Operation(summary = "Remove a cart line by article code (delegates to CarritoService.removeArticulo)")
     public Response removeItem(@PathParam("codigo") long codigo) {

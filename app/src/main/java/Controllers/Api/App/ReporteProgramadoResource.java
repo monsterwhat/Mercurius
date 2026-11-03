@@ -378,6 +378,7 @@ public class ReporteProgramadoResource {
      * the legacy audit texts.
      */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}")
     @Operation(summary = "Delete a scheduled report (hard delete, legacy parity)")
     @APIResponses({

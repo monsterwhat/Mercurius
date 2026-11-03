@@ -308,6 +308,7 @@ public class LoteResource {
 
     /** Hard delete through GService.delete (find-first guard). */
     @DELETE
+    @Consumes(MediaType.WILDCARD)
     @Path("/{id}")
     @Operation(summary = "Delete a lote (no legacy counterpart)")
     @APIResponses({
