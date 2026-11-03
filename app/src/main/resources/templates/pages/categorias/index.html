@@ -80,7 +80,7 @@
                 <div class="buttons">
                     {#include _kit/modal id="crear-familia" title="Crear Familia" triggerLabel="Crear Familia" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
-                    {#if inject:securityIdentity.hasRole('registro')}
+                    {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
@@ -107,7 +107,7 @@
                 <div class="buttons">
                     {#include _kit/modal id="crear-departamento" title="Crear Departamento" triggerLabel="Crear Departamento" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
-                    {#if inject:securityIdentity.hasRole('registro')}
+                    {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>

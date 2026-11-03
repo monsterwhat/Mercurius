@@ -62,7 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/api/app/cabys")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"admin", "inventario"})
+@RolesAllowed({"admin", "inventario", "tributacion"})
 @Tag(name = "App - Cabys")
 public class CabysResource {
 
@@ -425,6 +425,7 @@ public class CabysResource {
         columnas.add(col("Descripción", "descripcion"));
         columnas.add(col("Impuesto", "impuesto"));
         columnas.add(col("Estado", "estado"));
+        columnas.add(col("Acciones", null));
 
         Map<String, Object> filtros = new LinkedHashMap<>();
         if (q != null && !q.isBlank()) {

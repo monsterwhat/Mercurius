@@ -65,6 +65,17 @@
             </li>
             {/if}
 
+            {! Caja: apertura/cierre del turno; sin enlace la pantalla solo era
+               alcanzable por URL de API. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion')}
+            <li>
+                <a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/caja" data-planned-route="/app/caja" title="Caja">
+                    <span class="app-sidebar-icon">{#include _kit/icon name="money" /}</span>
+                    <span class="app-sidebar-label">Caja</span>
+                </a>
+            </li>
+            {/if}
+
             {! Hacienda: gate tributacion. !}
             {#if inject:securityIdentity.hasRole('tributacion')}
             <li class="app-sidebar-row">
@@ -104,7 +115,7 @@
             <li>
                 <ul id="sidebar-usuarios" class="app-sidebar-sub">
                     <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios" title="Usuarios"><span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span><span class="app-sidebar-label">Usuarios</span></a></li>
-                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" data-planned-route="/app/reportes/clientes" title="Clientes"><span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span><span class="app-sidebar-label">Clientes</span></a></li>
+                    <li><a class="app-sidebar-link" href="{config:['quarkus.http.root-path']}/app/clientes" data-planned-route="/app/clientes" title="Clientes"><span class="app-sidebar-icon">{#include _kit/icon name="user" /}</span><span class="app-sidebar-label">Clientes</span></a></li>
                 </ul>
             </li>
             {/if}

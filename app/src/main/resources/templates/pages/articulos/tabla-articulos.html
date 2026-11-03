@@ -109,6 +109,17 @@
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
                                 hx-confirm="¿Desactivar el artículo {articulo.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
+                        {#else if modelo.tab == 'inactivos'}
+                        <button type="button" class="button is-small" title="Activar artículo"
+                                aria-label="Activar artículo"
+                                hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/activar"
+                                hx-confirm="¿Activar el artículo {articulo.nombre}?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
+                        <button type="button" class="button is-small" title="Ver detalles"
+                                aria-label="Ver detalles"
+                                aria-haspopup="dialog" data-kit-open="detalles-articulo"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+                                hx-target="#detalles-articulo-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {#else if modelo.tab == 'pendientes'}
                         <button type="button" class="button is-small" title="Procesar artículo"
                                 aria-label="Procesar artículo"

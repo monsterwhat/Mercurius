@@ -102,6 +102,10 @@
             </form>
         </div>
 
+        {! El resto de la app usa el dialogo de confirmacion del kit; esta
+           pantalla caia al window.confirm nativo (inconsistente). !}
+        {#include _kit/confirm /}
+
         {! Bridge: row-level edit buttons open the shared modal (same pattern
            as artículos T18). !}
         <script>

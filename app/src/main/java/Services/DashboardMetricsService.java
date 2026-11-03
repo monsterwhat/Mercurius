@@ -3,6 +3,7 @@ package Services;
 import Models.ComprobantesEmitidos;
 import Models.Usuarios;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -23,11 +24,21 @@ public class DashboardMetricsService {
 
     @Inject @Nonnull
     EntityManager entityManager;
+    /**
+     * Usuario por el que se filtra la metrica: {@code null} = todo el negocio.
+     * El dashboard del admin usa {@link DashboardScope#TODOS} (no null: la
+     * cache de Quarkus no admite claves nulas).
+     */
+    @Nullable
+    private static String usernameDe(@Nullable Usuarios user) {
+        return DashboardScope.usernameOf(user);
+    }
+
 
 @CacheResult(cacheName = "analytics-getTodaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getTodaySales(@Nonnull Usuarios user) {
+    public BigDecimal getTodaySales(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -38,11 +49,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -56,7 +67,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getYesterdaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getYesterdaySales(@Nonnull Usuarios user) {
+    public BigDecimal getYesterdaySales(@Nullable Usuarios user) {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         LocalDateTime startOfDay = yesterday.atStartOfDay();
         LocalDateTime endOfDay = yesterday.atTime(23, 59, 59);
@@ -67,11 +78,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -85,7 +96,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getWeekSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getWeekSales(@Nonnull Usuarios user) {
+    public BigDecimal getWeekSales(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDate weekAgo = today.minusDays(7);
         LocalDateTime startOfPeriod = weekAgo.atStartOfDay();
@@ -97,11 +108,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -115,7 +126,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getMonthSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getMonthSales(@Nonnull Usuarios user) {
+    public BigDecimal getMonthSales(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDate monthAgo = today.minusDays(30);
         LocalDateTime startOfPeriod = monthAgo.atStartOfDay();
@@ -127,11 +138,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -144,7 +155,7 @@ public class DashboardMetricsService {
 
 @CacheResult(cacheName = "analytics-getTodayTransactions")
     @Transactional(Transactional.TxType.SUPPORTS)
-    public int getTodayTransactions(@Nonnull Usuarios user) {
+    public int getTodayTransactions(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -154,11 +165,11 @@ public class DashboardMetricsService {
                 "SELECT COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
               .setParameter("startOfDay", startOfDay)
               .setParameter("endOfDay", endOfDay)
               .getSingleResult();
@@ -184,11 +195,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -197,11 +208,11 @@ public class DashboardMetricsService {
                 "SELECT COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 Long.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -230,13 +241,13 @@ public class DashboardMetricsService {
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
-            "WHERE f.user = :user " +
+            "WHERE (:user IS NULL OR f.user = :user) " +
             "AND f.status = true " +
             "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod " +
             "GROUP BY ld.detalle " +
             "ORDER BY SUM(ld.cantidad) DESC"
         )
-        .setParameter("user", user.getUsername())
+        .setParameter("user", usernameDe(user))
         .setParameter("startOfPeriod", startOfPeriod)
         .setParameter("endOfPeriod", endOfPeriod)
         .setMaxResults(limit)
@@ -265,13 +276,13 @@ public class DashboardMetricsService {
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
-            "WHERE f.user = :user " +
+            "WHERE (:user IS NULL OR f.user = :user) " +
             "AND f.status = true " +
             "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay " +
             "GROUP BY HOUR(e.fechaEmision) " +
             "ORDER BY HOUR(e.fechaEmision)"
         )
-        .setParameter("user", user.getUsername())
+        .setParameter("user", usernameDe(user))
         .setParameter("startOfDay", startOfDay)
         .setParameter("endOfDay", endOfDay)
         .getResultList();
@@ -292,7 +303,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getWeeklySalesBreakdown")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public List<DailySales> getWeeklySalesBreakdown(@Nonnull Usuarios user) {
+    public List<DailySales> getWeeklySalesBreakdown(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         List<DailySales> dailySalesList = new ArrayList<>();
 
@@ -306,11 +317,11 @@ public class DashboardMetricsService {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -319,11 +330,11 @@ public class DashboardMetricsService {
                 "SELECT COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", usernameDe(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -340,7 +351,7 @@ public class DashboardMetricsService {
 
 @CacheResult(cacheName = "analytics-getKPIs")
     @Nonnull
-    public DashboardKPI getKPIs(@Nonnull Usuarios user) {
+    public DashboardKPI getKPIs(@Nullable Usuarios user) {
         BigDecimal todaySales = getTodaySales(user);
         BigDecimal yesterdaySales = getYesterdaySales(user);
         BigDecimal weekSales = getWeekSales(user);

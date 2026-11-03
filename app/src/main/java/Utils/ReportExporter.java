@@ -78,6 +78,22 @@ public final class ReportExporter {
     /** Shared OpenPDF page geometry used by both legacy PDF reports. */
     private static final Rectangle PDF_PAGE = new Rectangle(200f, 600f);
 
+    /**
+     * Tope de filas para un PDF imprimible. Con 1,4 millones de ajustes
+     * historicos un PDF por movimiento no termina (ni cabe): se exportan los
+     * mas recientes y el documento lo advierte.
+     */
+    private static final int MAX_FILAS_PDF = 2000;
+
+    /** Usuario del movimiento o "-" cuando la fila viene de la importacion. */
+    @Nonnull
+    private static String nombreUsuario(@Nonnull Inventario inventario) {
+        return inventario.getUsuario() != null && inventario.getUsuario().getUsername() != null
+                ? inventario.getUsuario().getUsername()
+                : "-";
+    }
+
+
     private static final String SEPARADOR = "-------------------------------------";
 
     private ReportExporter() {}
@@ -170,15 +186,26 @@ public final class ReportExporter {
         document.add(new Paragraph(SEPARADOR, font));
 
         int totalItems = inventarios.size();
+        int limite = Math.min(totalItems, MAX_FILAS_PDF);
+        if (totalItems > limite) {
+            // 1,4 millones de ajustes no caben en un PDF util. Se exportan los
+            // mas recientes y se avisa en el propio documento.
+            document.add(new Paragraph("Mostrando los ultimos " + limite + " de " + totalItems
+                    + " ajustes. Filtre por fecha en pantalla para acotar el reporte.", font));
+            document.add(new Paragraph(SEPARADOR, font));
+        }
         int currentItem = 1;
-        for (Inventario inventario : inventarios) {
-            String itemInfo = currentItem + "/" + totalItems;
+        for (Inventario inventario : inventarios.subList(0, limite)) {
+            String itemInfo = currentItem + "/" + limite;
             document.add(new Paragraph(itemInfo, font));
 
-            document.add(new Paragraph("Art: " + inventario.getArticulo().getNombre(), font));
+            document.add(new Paragraph("Art: " + (inventario.getArticulo() != null
+                    ? inventario.getArticulo().getNombre() : "-"), font));
             document.add(new Paragraph("Can: " + inventario.getCantidad() + "  Tipo: " + inventario.getTipoMovimiento(), font));
             document.add(new Paragraph("Fecha: " + inventario.getFechaMovimiento(), font));
-            document.add(new Paragraph("Creador: " + inventario.getUsuario().getUsername(), font));
+            // Los movimientos importados no tienen usuario: sin este null-check
+            // el PDF entero fallaba con NPE (1.477.222 filas historicas).
+            document.add(new Paragraph("Creador: " + nombreUsuario(inventario), font));
             document.add(new Paragraph("\n", font));
 
             currentItem++;

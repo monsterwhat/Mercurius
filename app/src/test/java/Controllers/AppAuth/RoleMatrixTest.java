@@ -120,7 +120,7 @@ class RoleMatrixTest extends support.ContextPathIsolation {
     @TestSecurity(user = "tributario", roles = {"tributacion"})
     void tributacionOnlyIdentityIsBlockedFromInventarioSurface() {
         // Plan T15 wording: "tributacion-only blocked from inventarios probe".
-        given().when().get(BASE + "/api/app/cabys").then().statusCode(403);
+        given().when().get(BASE + "/api/app/articulos").then().statusCode(403);
     }
 
     @Test

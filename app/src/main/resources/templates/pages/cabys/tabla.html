@@ -58,6 +58,16 @@
                 <td>{#if cabys.descripcion??}<span class="table-clamp" title="{cabys.descripcion}">{cabys.descripcion}</span>{#else}&mdash;{/if}</td>
                 <td class="num">{#if cabys.impuesto?? && cabys.impuesto != ''}{fmt:porcentaje(cabys.impuesto)}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">{#if cabys.estado?? && cabys.estado != ''}{cabys.estado}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">
+                    {! La columna Acciones estaba declarada en el modelo pero no
+                       se pintaba: quedaba una columna vacia y el formulario de
+                       edicion (pages/cabys/form.html) era inalcanzable. !}
+                    <button type="button" class="button is-small" title="Editar código CAByS"
+                            aria-label="Editar código CAByS" aria-haspopup="dialog"
+                            data-kit-open="editar-cabys"
+                            hx-get="{config:['quarkus.http.root-path']}/api/app/cabys/formularios/{cabys.codigo}"
+                            hx-target="#editar-cabys-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
+                </td>
             </tr>
             {#else}
             <tr>

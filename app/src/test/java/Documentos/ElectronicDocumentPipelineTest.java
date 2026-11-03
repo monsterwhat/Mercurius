@@ -11,6 +11,7 @@ import Models.Encabezado.IdentificacionReceptor;
 import Models.Encabezado.Receptor;
 import Models.Encabezado.Ubicacion;
 import Models.Resumen.CodigoTipoMoneda;
+import Models.Resumen.MedioPagoR;
 import Models.Jaxb.FE.FacturaElectronicaDocumento;
 import Models.Jaxb.TE.TiqueteElectronicoDocumento;
 import Models.Jaxb.NC.NotaCreditoElectronicaDocumento;
@@ -181,6 +182,43 @@ class ElectronicDocumentPipelineTest {
         verifyQualifyingProperties(doc, docType);
         verifySignedProperties(doc, docType);
         verifyExplicitPolicy(doc, docType);
+    }
+
+    // ── Real XSD validation of the SIGNED document, one per type ───────────
+    //
+    // The pipeline test above mocks HaciendaXsdValidator, so it never proves
+    // that the XML the app produces is schema-valid. This one signs with the
+    // test certificate and validates the signed bytes against the REAL v4.4
+    // schemas, which is the gate Hacienda applies before accepting a document.
+
+    @ParameterizedTest(name = "XSD v4.4 real: {0}")
+    @EnumSource(DocType.class)
+    void signedDocumentValidatesAgainstTheRealXsd(DocType docType) throws Exception {
+        Object jaxbDoc = buildJaxbDoc(docType);
+        String flatXml = XmlEncabezadoFlattener.flatten(
+                marshal(getJaxbContext(docType), jaxbDoc));
+
+        HaciendaSigner.SignResult signResult = signer.signXml(flatXml);
+        assertTrue(signResult.success,
+                docType + ": la firma falló: " + signResult.errorMessage);
+
+        HaciendaXsdValidator.ValidationResult resultado =
+                new HaciendaXsdValidator().validate(signResult.signedXml, namespaceDe(docType));
+        assertTrue(resultado.valid,
+                docType + ": el XML firmado NO valida contra el XSD v4.4: "
+                        + resultado.errorMessage);
+    }
+
+    private static String namespaceDe(DocType docType) {
+        return switch (docType) {
+            case FE -> FE_NS;
+            case TE -> TE_NS;
+            case NC -> NC_NS;
+            case ND -> ND_NS;
+            case FEC -> FEC_NS;
+            case FEE -> FEE_NS;
+            case REP -> REP_NS;
+        };
     }
 
     // ── Individual document type tests (non-parameterized for clarity) ────
@@ -419,6 +457,12 @@ class ElectronicDocumentPipelineTest {
         r.setTotalVentaNeta(new BigDecimal("100.00000"));
         r.setTotalImpuesto(new BigDecimal("13.00000"));
         r.setTotalComprobante(new BigDecimal("113.00000"));
+        // El XSD de REP exige al menos un <MedioPago> (maxOccurs=4); sin el,
+        // el documento no valida aunque el resto este perfecto.
+        MedioPagoR efectivo = new MedioPagoR();
+        efectivo.setTipoMedioPago("01");
+        efectivo.setTotalMedioPago(new BigDecimal("113.00000"));
+        r.setMediosPago(List.of(efectivo));
         return r;
     }
 

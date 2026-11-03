@@ -37,7 +37,7 @@ import org.jboss.logging.Logger;
  */
 @Path("/app/cabys")
 @Produces(MediaType.TEXT_HTML)
-@RolesAllowed({"admin", "tributacion"})
+@RolesAllowed({"admin", "tributacion", "inventario"})
 public class CabysPagesResource {
 
     private static final Logger LOG = Logger.getLogger(CabysPagesResource.class);

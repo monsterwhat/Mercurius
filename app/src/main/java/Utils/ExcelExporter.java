@@ -24,6 +24,19 @@ public class ExcelExporter {
 
     private static final String DATE_PATTERN = "dd/MM/yyyy HH:mm";
 
+    /**
+     * Los movimientos importados no tienen usuario. Antes de este helper,
+     * exportar el inventario a Excel reventaba con NPE en la primera fila
+     * historica.
+     */
+    @Nonnull
+    private static String usuarioDe(@Nonnull Inventario inventario) {
+        return inventario.getUsuario() != null && inventario.getUsuario().getUsername() != null
+                ? inventario.getUsuario().getUsername()
+                : "-";
+    }
+
+
     @Nonnull
     private CellStyle createHeaderStyle(@Nonnull Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
@@ -98,10 +111,13 @@ public class ExcelExporter {
             Row row = sheet.createRow(rowNum++);
 
             row.createCell(0).setCellValue(inventario.getCodigo());
-            row.createCell(1).setCellValue(inventario.getArticulo().getNombre());
-            row.createCell(2).setCellValue(inventario.getUsuario().getUsername());
-            row.createCell(3).setCellValue(inventario.getCantidad().doubleValue());
-            row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura().doubleValue());
+            row.createCell(1).setCellValue(inventario.getArticulo() != null
+                    ? inventario.getArticulo().getNombre() : "");
+            row.createCell(2).setCellValue(usuarioDe(inventario));
+            row.createCell(3).setCellValue(inventario.getCantidad() != null
+                    ? inventario.getCantidad().doubleValue() : 0.0);
+            row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura() != null
+                    ? inventario.getUnidadesRecomendadasFactura().doubleValue() : 0.0);
             row.createCell(5).setCellValue(inventario.getTipoMovimiento());
             row.createCell(6).setCellValue(inventario.getFechaMovimiento() != null ? inventario.getFechaMovimiento().toString() : "");
             row.createCell(7).setCellValue(inventario.getNotas());
@@ -249,7 +265,7 @@ public class ExcelExporter {
         Workbook workbook = new XSSFWorkbook();
 
         Map<String, List<Inventario>> inventariosPorUsuario = inventarios.stream()
-                .collect(Collectors.groupingBy(inventario -> inventario.getUsuario().getUsername()));
+                .collect(Collectors.groupingBy(ExcelExporter::usuarioDe));
 
         for (Map.Entry<String, List<Inventario>> entry : inventariosPorUsuario.entrySet()) {
             String usuario = entry.getKey();
@@ -264,8 +280,9 @@ public class ExcelExporter {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0).setCellValue(inventario.getCodigo());
-                row.createCell(1).setCellValue(inventario.getArticulo().getNombre());
-                row.createCell(2).setCellValue(inventario.getUsuario().getUsername());
+                row.createCell(1).setCellValue(inventario.getArticulo() != null
+                        ? inventario.getArticulo().getNombre() : "");
+                row.createCell(2).setCellValue(usuarioDe(inventario));
                 row.createCell(3).setCellValue(inventario.getCantidad() != null ? inventario.getCantidad().doubleValue() : 0.0);
                 row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura() != null ? inventario.getUnidadesRecomendadasFactura().doubleValue() : 0.0);
                 row.createCell(5).setCellValue(inventario.getTipoMovimiento());

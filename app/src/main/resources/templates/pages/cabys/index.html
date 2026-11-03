@@ -97,6 +97,10 @@
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
     {#include _kit/confirm /}
 
+    {! Dialogo de edicion: el boton de cada fila trae su propio hx-get con el
+       codigo; este include solo aporta el cascaron modal. !}
+    {#include _kit/modal id="editar-cabys" title="Editar código CAByS" triggerClass="is-hidden" /}
+
     {! Column visibility toggles: hide long Categoría/Descripción columns.
        State persists in localStorage and is reapplied after table swaps.
        `aria-pressed` reports the same state to assistive technology, because the

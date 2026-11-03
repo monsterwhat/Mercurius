@@ -722,6 +722,49 @@ public class ArticuloResource {
     }
 
     /**
+     * PUT /api/app/articulos/{codigo}/activar — vuelve a poner activo un
+     * artículo desactivado. El DELETE histórico solo desactiva y no tiene
+     * reversa; sin esto, un artículo desactivado por error quedaba muerto para
+     * siempre (no hay otra pantalla que lo reactive).
+     */
+    @PUT
+    @Consumes(MediaType.WILDCARD)
+    @Path("/{codigo}/activar")
+    @Operation(summary = "Reactivate a previously deactivated artículo")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Reactivated (or refreshed fragment when HX-Request)"),
+        @APIResponse(responseCode = "404", description = "Unknown codigo"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response activate(@PathParam("codigo") long codigo) {
+        try {
+            Articulos articulo = articulosService.findById((int) codigo);
+            if (articulo == null) {
+                return notFound("No se encontró el artículo solicitado");
+            }
+            String antes = DiffUtils.snapshotEntity(articulo);
+            articulosService.reactivar(articulo);
+            LOG.info("Se ha reactivado el artículo: " + articulo.getNombre()
+                    + " | user=" + String.valueOf(currentUser())
+                    + " | source=ArticuloResource.activate"
+                    + " | antes=" + String.valueOf(antes)
+                    + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+            if (isHxRequest()) {
+                return tableFragment(TAB_INACTIVOS, 1, 20, null, "asc", null,
+                        "success", "Se activó el artículo");
+            }
+            return Response.ok(ApiResponse.ok(Map.of(
+                    "resultado", "ACTIVATED",
+                    "mensaje", "Se activó el artículo"))).build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error reactivando el artículo " + codigo, e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error reactivando el artículo"))
+                    .build();
+        }
+    }
+
+    /**
      * DELETE /api/app/articulos/{codigo} — legacy {@code deleteArticulo()}
      * parity: soft-deactivate only (no toggle back — preserved quirk).
      */
@@ -1503,7 +1546,8 @@ public class ArticuloResource {
         model.put("catalogoCount", articulosService.countByTab(TAB_CATALOGO, null));
         model.put("pendientesCount", articulosService.countPendientes());
         model.put("promocionesCount", promoService.count());
-        model.put("canExport", !identity.isAnonymous() && identity.hasRole("registro"));
+        model.put("canExport", !identity.isAnonymous()
+                && (identity.hasRole("registro") || identity.hasRole("admin") || identity.hasRole("inventario")));
         return model;
     }
 

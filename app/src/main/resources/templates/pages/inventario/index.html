@@ -67,7 +67,7 @@
                 <div class="buttons">
                     {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-primary"
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
-                    {#if inject:securityIdentity.hasRole('registro')}
+                    {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>

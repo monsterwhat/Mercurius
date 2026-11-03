@@ -38,7 +38,7 @@
 !}
 {@java.lang.String id}
 {@java.lang.String title}
-{@java.lang.String bodyUrl}
+{@java.lang.String bodyUrl = ''}
 <div class="kit-modal-root" x-data="{ open:false }"
      x-init="$watch('open', value => value ? window.kitModalOpened($el) : window.kitModalClosed($el))">
 
@@ -48,9 +48,11 @@
             aria-haspopup="dialog"
             aria-controls="{id}"
             @click="open = true; $nextTick(() => $refs.card.focus())"
+            {#if bodyUrl}
             hx-get="{config:['quarkus.http.root-path']}{bodyUrl}"
             hx-target="#{id}-body"
-            hx-swap="innerHTML">{#if triggerLabel??}{triggerLabel}{#else}Abrir{/if}</button>
+            hx-swap="innerHTML"
+            {/if}>{#if triggerLabel??}{triggerLabel}{#else}Abrir{/if}</button>
     {/insert}
 
     <div class="modal" id="{id}" :class="{ 'is-active': open }"

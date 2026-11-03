@@ -142,6 +142,28 @@ public class ArticulosService extends GService<Articulos> {
             LOG.warn("Error soft deleting entity: " + e.getMessage() + " | source=ArticulosService.softDelete() | despues=" + e.getMessage());
         }
     }
+
+    /**
+     * Reversa del soft delete: vuelve a marcar el artículo como activo.
+     * {@link #softDelete} es de una sola vía, así que sin esto un artículo
+     * desactivado por error no se podía recuperar desde la interfaz.
+     */
+    @Transactional
+    public void reactivar(@Nonnull Articulos entity) {
+        try {
+            Articulos existingItem = em.find(getEntityClass(), entity.getCodigo());
+            if (existingItem != null) {
+                existingItem.setStatus(true);
+                em.merge(existingItem);
+                em.flush();
+            } else {
+                LOG.info("Entity not found | source=ArticulosService.reactivar()");
+            }
+        } catch (PersistenceException e) {
+            LOG.warn("Error reactivando el artículo " + entity.getCodigo() + ": " + e.getMessage()
+                    + " | source=ArticulosService.reactivar()", e);
+        }
+    }
     
     public @Nullable Articulos findById(@Nonnull Integer id) {
     try {

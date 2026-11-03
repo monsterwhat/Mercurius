@@ -100,7 +100,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/api/app/reportes-programados")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"admin", "tributacion"})
+@RolesAllowed({"admin", "tributacion", "facturacion"})
 @Tag(name = "App - Reportes Programados")
 public class ReporteProgramadoResource {
 

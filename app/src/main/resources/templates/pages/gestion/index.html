@@ -166,8 +166,55 @@
                         Gestión de clientes.
                     </p>
                     <a class="button is-fullwidth"
-                       href="{config:['quarkus.http.root-path']}/app/reportes/clientes">
+                       href="{config:['quarkus.http.root-path']}/app/clientes">
                         Ir a Clientes
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {! Caja y Lealtad eran pantallas huerfanas: solo existian como
+               endpoint /api/app/*/table. Se enlazan desde aqui para que se
+               puedan abrir sin teclear una URL de API. !}
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="money" /}</span>
+                            <span>Caja</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Apertura, cierre e historial de la caja.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/caja">
+                        Ir a Caja
+                    </a>
+                    {/content}
+                {/include}
+            </div>
+            {/if}
+
+            {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion')}
+            <div class="column is-4">
+                {#include _kit/surface}
+                    {#content}
+                    <h2 class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon">{#include _kit/icon name="check" /}</span>
+                            <span>Lealtad</span>
+                        </span>
+                    </h2>
+                    <p class="mercurius-text-muted mb-4">
+                        Puntos, recompensas e historial por cliente.
+                    </p>
+                    <a class="button is-fullwidth"
+                       href="{config:['quarkus.http.root-path']}/app/loyalty">
+                        Ir a Lealtad
                     </a>
                     {/content}
                 {/include}

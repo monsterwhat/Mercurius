@@ -32,7 +32,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
     private EntityManager em;
     
     @Nonnull
-    public BigDecimal getTodaySales(@Nonnull Usuarios user) {
+    public BigDecimal getTodaySales(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -43,11 +43,11 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.resumen r " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", DashboardScope.usernameOf(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -59,7 +59,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         }
     }
     
-    public int getTransactionCount(@Nonnull Usuarios user) {
+    public int getTransactionCount(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -69,11 +69,11 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "SELECT COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", DashboardScope.usernameOf(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -85,7 +85,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         }
     }
     
-    public int getItemsSold(@Nonnull Usuarios user) {
+    public int getItemsSold(@Nullable Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -97,11 +97,11 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "JOIN f.detalles d " +
                 "JOIN d.lineasDetalle ld " +
                 "JOIN f.encabezado e " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Number.class
-            ).setParameter("user", user.getUsername())
+            ).setParameter("user", DashboardScope.usernameOf(user))
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -114,19 +114,19 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
     }
     
     @Nullable
-    public ComprobantesEmitidos getLastTransaction(@Nonnull Usuarios user) {
+    public ComprobantesEmitidos getLastTransaction(@Nullable Usuarios user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
                 "LEFT JOIN FETCH f.encabezado e " +
                 "LEFT JOIN FETCH f.resumen r " +
                 "LEFT JOIN FETCH f.detalles d " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user.getUsername());
+            query.setParameter("user", DashboardScope.usernameOf(user));
             query.setMaxResults(1);
             return query.getSingleResult();
         } catch (NoResultException e) {
@@ -144,12 +144,12 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "SELECT f FROM ComprobantesEmitidos f " +
                 "LEFT JOIN FETCH f.encabezado e " +
                 "LEFT JOIN FETCH f.resumen r " +
-                "WHERE f.user = :user " +
+                "WHERE (:user IS NULL OR f.user = :user) " +
                 "AND f.status = true " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user.getUsername());
+            query.setParameter("user", DashboardScope.usernameOf(user));
             query.setMaxResults(limit);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {

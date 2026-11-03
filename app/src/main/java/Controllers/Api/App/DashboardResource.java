@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import Models.DTO.ApiResponse;
 import Models.Usuarios;
 import Services.DashboardMetricsService;
+import Services.DashboardScope;
 import Services.DashboardService;
 import Services.LoginService;
 import io.quarkus.qute.Location;
@@ -127,17 +128,18 @@ public class DashboardResource {
         BigDecimal ticket = BigDecimal.ZERO;
         BigDecimal crecimiento = BigDecimal.ZERO;
         int transaccionesHoy = 0;
-        if (user != null) {
-            DashboardMetricsService.DashboardKPI kpi = dashboardMetricsService.getKPIs(user);
+        Usuarios metricas = metricUser();
+        {
+            DashboardMetricsService.DashboardKPI kpi = dashboardMetricsService.getKPIs(metricas);
             hoy = kpi.getTodaySales();
-            ayer = dashboardMetricsService.getYesterdaySales(user);
+            ayer = dashboardMetricsService.getYesterdaySales(metricas);
             semana = kpi.getWeekSales();
             mes = kpi.getMonthSales();
             ticket = kpi.getAverageTicket();
             crecimiento = kpi.getDailyGrowth();
             transaccionesHoy = kpi.getTodayTransactions();
         }
-        int articulosVendidos = user != null ? dashboardService.getItemsSold(user) : 0;
+        int articulosVendidos = dashboardService.getItemsSold(metricas);
 
         model.put("ventasHoy", formatoColones(hoy));
         model.put("ventasAyer", formatoColones(ayer));
@@ -148,14 +150,14 @@ public class DashboardResource {
         model.put("crecimientoCss", cssCrecimiento(crecimiento));
         model.put("transaccionesHoy", transaccionesHoy);
         model.put("articulosVendidos", articulosVendidos);
-        model.put("ultimaTransaccion", ultimaTransaccionDisplay(user));
+        model.put("ultimaTransaccion", ultimaTransaccionDisplay(metricas));
 
         List<Map<String, Object>> topProductos = new ArrayList<>();
         if (user != null && esInventario) {
-            for (DashboardMetricsService.TopProduct prod : dashboardMetricsService.getTopSellingProducts(user, 5)) {
+            for (DashboardMetricsService.TopProduct prod : dashboardMetricsService.getTopSellingProducts(metricas, 5)) {
                 Map<String, Object> fila = new LinkedHashMap<>();
                 fila.put("nombre", prod.getName());
-                fila.put("unidades", prod.getQuantity());
+                fila.put("unidades", fmtCantidad(prod.getQuantity()));
                 fila.put("ingresos", formatoColones(prod.getRevenue()));
                 topProductos.add(fila);
             }
@@ -164,8 +166,8 @@ public class DashboardResource {
 
         // Jackson-serialized chart datasets for the no-fetch fallback path.
         // ONLY fixed labels + service numbers — never user-controlled text (.raw safety rule).
-        model.put("hourlyJson", toJson(construirHourly(user)));
-        model.put("weeklyJson", toJson(construirWeekly(user)));
+        model.put("hourlyJson", toJson(construirHourly(metricas)));
+        model.put("weeklyJson", toJson(construirWeekly(metricas)));
 
         String html = pagina.data(model).render();
         return Response.ok(html)
@@ -186,7 +188,7 @@ public class DashboardResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response datosPorHora() {
-        return Response.ok(construirHourly(currentUser())).build();
+        return Response.ok(construirHourly(metricUser())).build();
     }
 
     /**
@@ -198,7 +200,7 @@ public class DashboardResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response datosSemanales() {
-        return Response.ok(construirWeekly(currentUser())).build();
+        return Response.ok(construirWeekly(metricUser())).build();
     }
 
     /**
@@ -212,7 +214,7 @@ public class DashboardResource {
     @Transactional
     public Response datosKpi() {
         try {
-            return Response.ok(ApiResponse.ok(construirKpi(currentUser()))).build();
+            return Response.ok(ApiResponse.ok(construirKpi(metricUser()))).build();
         } catch (RuntimeException e) {
             LOG.warn("Error building dashboard KPI feed", e);
             return Response.serverError()
@@ -279,23 +281,14 @@ public class DashboardResource {
     @Nonnull
     private Map<String, Object> construirKpi(@Nullable Usuarios user) {
         Map<String, Object> data = new LinkedHashMap<>();
-        BigDecimal hoy = BigDecimal.ZERO;
-        BigDecimal ayer = BigDecimal.ZERO;
-        BigDecimal semana = BigDecimal.ZERO;
-        BigDecimal mes = BigDecimal.ZERO;
-        BigDecimal ticket = BigDecimal.ZERO;
-        BigDecimal crecimiento = BigDecimal.ZERO;
-        int transaccionesHoy = 0;
-        if (user != null) {
-            DashboardMetricsService.DashboardKPI kpi = dashboardMetricsService.getKPIs(user);
-            hoy = kpi.getTodaySales();
-            ayer = dashboardMetricsService.getYesterdaySales(user);
-            semana = kpi.getWeekSales();
-            mes = kpi.getMonthSales();
-            ticket = kpi.getAverageTicket();
-            crecimiento = kpi.getDailyGrowth();
-            transaccionesHoy = kpi.getTodayTransactions();
-        }
+        DashboardMetricsService.DashboardKPI kpi = dashboardMetricsService.getKPIs(user);
+        BigDecimal hoy = kpi.getTodaySales();
+        BigDecimal ayer = dashboardMetricsService.getYesterdaySales(user);
+        BigDecimal semana = kpi.getWeekSales();
+        BigDecimal mes = kpi.getMonthSales();
+        BigDecimal ticket = kpi.getAverageTicket();
+        BigDecimal crecimiento = kpi.getDailyGrowth();
+        int transaccionesHoy = kpi.getTodayTransactions();
         data.put("ventasHoy", hoy);
         data.put("ventasAyer", ayer);
         data.put("ventasSemana", semana);
@@ -303,7 +296,7 @@ public class DashboardResource {
         data.put("transaccionesHoy", transaccionesHoy);
         data.put("ticketPromedio", ticket);
         data.put("crecimientoDiario", crecimiento);
-        data.put("articulosVendidos", user != null ? dashboardService.getItemsSold(user) : 0);
+        data.put("articulosVendidos", dashboardService.getItemsSold(user));
         return data;
     }
 
@@ -342,9 +335,6 @@ public class DashboardResource {
      */
     @Nonnull
     private String ultimaTransaccionDisplay(@Nullable Usuarios user) {
-        if (user == null) {
-            return "No hay transacciones hoy";
-        }
         try {
             Models.ComprobantesEmitidos ultima = dashboardService.getLastTransaction(user);
             if (ultima == null) {
@@ -353,12 +343,23 @@ public class DashboardResource {
             String consecutivo = ultima.getEncabezado().getNumeroConsecutivo();
             BigDecimal total = ultima.getResumen().getTotalComprobante();
             LocalDateTime fecha = ultima.getEncabezado().getFechaEmision();
-            return String.format("Factura %s - %s colones a las %s",
-                    consecutivo, total, fecha.format(DateTimeFormatter.ofPattern("HH:mm")));
+            // Formato de colones, no el BigDecimal crudo ("850.00000 colones").
+            return String.format("Factura %s — %s a las %s",
+                    consecutivo, formatoColones(total),
+                    fecha.format(DateTimeFormatter.ofPattern("HH:mm")));
         } catch (RuntimeException e) {
             LOG.warn("Error formatting last transaction", e);
             return "Error al cargar última transacción";
         }
+    }
+
+    /** Cantidad sin decimales de relleno: 26.0 -> "26", 1.50 -> "1,5". */
+    @Nonnull
+    private static String fmtCantidad(double cantidad) {
+        BigDecimal valor = BigDecimal.valueOf(cantidad)
+                .setScale(3, java.math.RoundingMode.HALF_UP)
+                .stripTrailingZeros();
+        return valor.toPlainString().replace('.', ',');
     }
 
     @Nullable
@@ -367,6 +368,32 @@ public class DashboardResource {
             return null;
         }
         return loginService.findByUsername(securityIdentity.getPrincipal().getName());
+    }
+
+    /**
+     * Usuario por el que se filtran las metricas. El admin ve TODO el negocio
+     * (null = sin filtro): las ventas importadas quedaron bajo el usuario
+     * "MIGRACION", asi que filtrando por "Admin" el dashboard mostraba casi
+     * todo en cero. Los demas roles siguen viendo solo lo suyo.
+     */
+    @Nullable
+    private Usuarios metricUser() {
+        if (securityIdentity.hasRole("admin")) {
+            return DashboardScope.TODOS;
+        }
+        Usuarios user = currentUser();
+        if (user != null) {
+            return user;
+        }
+        // Usuario autenticado sin fila en la tabla (p. ej. un usuario de
+        // prueba): se filtra por su nombre para no caer en null, que la cache
+        // de Quarkus rechaza y ademas mostraria datos de todo el negocio.
+        if (securityIdentity.isAnonymous() || securityIdentity.getPrincipal() == null) {
+            return DashboardScope.TODOS;
+        }
+        Usuarios sintetico = new Usuarios();
+        sintetico.setUsername(securityIdentity.getPrincipal().getName());
+        return sintetico;
     }
 
     @Nonnull
