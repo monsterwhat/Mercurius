@@ -391,6 +391,15 @@ public class StockAlertService extends GService<AlertaStock> {
             return false;
         }
 
+        // El optimo calculado se guarda en el articulo: antes solo lo hacia la
+        // rama de stock bajo, asi que la tabla de alertas mostraba
+        // "Stock Optimo 0" para sobrestock aunque la alerta se hubiera
+        // disparado contra un optimo real (p. ej. 4).
+        if (articulo.getStockOptimo() == null || articulo.getStockOptimo() != optimo) {
+            articulo.setStockOptimo(optimo);
+            em.merge(articulo);
+        }
+
         Long existentes = em.createQuery(
                         "SELECT COUNT(sa) FROM AlertaStock sa WHERE sa.articulo = :articulo "
                                 + "AND sa.tipoAlerta = 'overstock' AND sa.estado = 'active'",

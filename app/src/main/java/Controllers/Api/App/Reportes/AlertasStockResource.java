@@ -243,6 +243,7 @@ public class AlertasStockResource {
                         ? alerta.getCantidadMinima().toString() : "-",
                 "stockOptimo", alerta.getArticulo() != null
                         && alerta.getArticulo().getStockOptimo() != null
+                        && alerta.getArticulo().getStockOptimo() > 0
                         ? alerta.getArticulo().getStockOptimo().toString() : "-",
                 "fechaCreacion", Tablas.fmtFechaHora(alerta.getFechaCreacion()),
                 "estado", etiquetaEstado(alerta.getEstado()));
@@ -336,7 +337,7 @@ public class AlertasStockResource {
                 Map.of("label", "Artículo", "key", "articulo"),
                 Map.of("label", "Código", "key", "codigoBarra"),
                 Map.of("label", "Stock Actual", "key", "cantidadActual"),
-                Map.of("label", "Stock Mínimo", "key", "cantidadMinima"),
+                Map.of("label", "Umbral", "key", "cantidadMinima"),
                 Map.of("label", "Stock Óptimo", "key", "stockOptimo"),
                 Map.of("label", "Fecha de creación", "key", "fechaCreacion"),
                 Map.of("label", "Estado", "key", "estado"));
