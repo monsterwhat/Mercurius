@@ -3,6 +3,7 @@ package Controllers.Api.App;
 import Models.ConfiguracionAplicacion;
 import Services.AppSettingsService;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -21,6 +22,7 @@ import org.jboss.logging.Logger;
  * logo recién subido no se sirva desde caché.</p>
  */
 @Path("/logo")
+@PermitAll
 public class LogoResource {
 
     private static final Logger LOG = Logger.getLogger(LogoResource.class);
