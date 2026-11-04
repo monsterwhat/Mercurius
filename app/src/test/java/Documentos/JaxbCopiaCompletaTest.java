@@ -294,6 +294,21 @@ class JaxbCopiaCompletaTest {
         assertThat(copiado.getNumeroConsecutivo()).isEqualTo("00100001050000000001");
     }
 
+    @Test
+    @DisplayName("FEE.ResumenFactura no emite los totales exclusivos de FE")
+    void feeResumenSinTotalesExclusivosDeFe() {
+        // El XSD de facturaElectronicaExportacion no tiene TotalServExonerado,
+        // TotalMercExonerada, TotalExonerado, NoSujeto ni TotalIVADevuelto.
+        for (String getter : new String[]{
+                "getTotalServExonerado", "getTotalServNoSujeto", "getTotalMercExonerada",
+                "getTotalMercNoSujeta", "getTotalExonerado", "getTotalNoSujeto",
+                "getTotalIVADevuelto"}) {
+            assertThatCode(() -> Models.Jaxb.FEE.ResumenFactura.class.getMethod(getter))
+                    .as("FEE.ResumenFactura no debe tener " + getter)
+                    .isInstanceOf(NoSuchMethodException.class);
+        }
+    }
+
     private static org.assertj.core.api.AbstractThrowableAssert<?, ? extends Throwable> assertThatCode(
             org.assertj.core.api.ThrowableAssert.ThrowingCallable callable) {
         return org.assertj.core.api.Assertions.assertThatCode(callable);

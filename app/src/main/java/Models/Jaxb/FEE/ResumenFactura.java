@@ -20,35 +20,17 @@ public class ResumenFactura {
     @XmlElement(name = "TotalServExentos")
     private BigDecimal totalServExentos;
 
-    @XmlElement(name = "TotalServExonerado")
-    private BigDecimal totalServExonerado;
-
-    @XmlElement(name = "TotalServNoSujeto")
-    private BigDecimal totalServNoSujeto;
-
     @XmlElement(name = "TotalMercanciasGravadas")
     private BigDecimal totalMercanciasGravadas;
 
     @XmlElement(name = "TotalMercanciasExentas")
     private BigDecimal totalMercanciasExentas;
 
-    @XmlElement(name = "TotalMercExonerada")
-    private BigDecimal totalMercExonerada;
-
-    @XmlElement(name = "TotalMercNoSujeta")
-    private BigDecimal totalMercNoSujeta;
-
     @XmlElement(name = "TotalGravado")
     private BigDecimal totalGravado;
 
     @XmlElement(name = "TotalExento")
     private BigDecimal totalExento;
-
-    @XmlElement(name = "TotalExonerado")
-    private BigDecimal totalExonerado;
-
-    @XmlElement(name = "TotalNoSujeto")
-    private BigDecimal totalNoSujeto;
 
     @XmlElement(name = "TotalVenta")
     private BigDecimal totalVenta;
@@ -65,9 +47,6 @@ public class ResumenFactura {
     @XmlElement(name = "TotalImpuesto")
     private BigDecimal totalImpuesto;
 
-    @XmlElement(name = "TotalIVADevuelto")
-    private BigDecimal totalIVADevuelto;
-
     @XmlElement(name = "TotalOtrosCargos")
     private BigDecimal totalOtrosCargos;
 
@@ -83,21 +62,14 @@ public class ResumenFactura {
         if (src != null) {
             this.totalServGravados = src.getTotalServGravados();
             this.totalServExentos = src.getTotalServExentos();
-            this.totalServExonerado = src.getTotalServExonerado();
-            this.totalServNoSujeto = src.getTotalServNoSujeto();
             this.totalMercanciasGravadas = src.getTotalMercanciasGravadas();
             this.totalMercanciasExentas = src.getTotalMercanciasExentas();
-            this.totalMercExonerada = src.getTotalMercExonerada();
-            this.totalMercNoSujeta = src.getTotalMercNoSujeta();
             this.totalGravado = src.getTotalGravado();
             this.totalExento = src.getTotalExento();
-            this.totalExonerado = src.getTotalExonerado();
-            this.totalNoSujeto = src.getTotalNoSujeto();
             this.totalVenta = src.getTotalVenta();
             this.totalDescuentos = src.getTotalDescuentos();
             this.totalVentaNeta = src.getTotalVentaNeta();
             this.totalImpuesto = src.getTotalImpuesto();
-            this.totalIVADevuelto = src.getTotalIVADevuelto();
             this.totalOtrosCargos = src.getTotalOtrosCargos();
             this.totalComprobante = src.getTotalComprobante();
             if (src.getCodigoMoneda() != null)

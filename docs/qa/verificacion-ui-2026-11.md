@@ -230,6 +230,7 @@
 | 2.33.22 | FEE emitía `CodigoActividadReceptor` (XSD de exportación inválido) | el encabezado FEE no lo emite |
 | 2.33.23 | Línea nueva de orden: el buscador no disparaba (clon sin `htmx.process`) | procesar la fila clonada |
 | 2.33.24 | `window.htmx` no existía (build ESM no lo publica) | se expone el default export |
+| 2.33.25 | FEE emitía totales exclusivos de FE (`TotalServExonerado`, `TotalIVADevuelto`…) | resumen FEE ajustado al XSD |
 
 ## 12. No ejecutado (y por qué)
 
