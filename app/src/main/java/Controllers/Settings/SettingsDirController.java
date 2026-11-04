@@ -68,6 +68,7 @@ public class SettingsDirController implements Serializable {
     private Part imagen;
 
     @Nonnull
+    @Inject
     AppSettingsService settingsService;
     @Nonnull
     private ServletContext servletContext;
