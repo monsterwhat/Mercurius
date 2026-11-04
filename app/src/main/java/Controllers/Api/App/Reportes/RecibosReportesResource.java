@@ -81,6 +81,11 @@ public class RecibosReportesResource {
      * como redirección para no romper enlaces guardados.
      */
     @GET
+    public Response raiz() {
+        return redirigirABandeja("pendientes");
+    }
+
+    @GET
     @Path("/pendientes")
     public Response pendientes() {
         return redirigirABandeja("pendientes");

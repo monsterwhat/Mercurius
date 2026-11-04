@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.30 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.31 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -27,6 +27,8 @@
 | Búsqueda del hub de Reportes + Limpiar | ✅ | filtra tarjetas y restaura |
 | Tema oscuro en tablas/diálogos | ✅ | revisado visualmente |
 | Barrido de enlaces internos | ✅ | 88 enlaces (dashboard/gestión/reportes) → 200; `/app` redirige al dashboard |
+| Roles en la UI (usuario `facturacion`) | ✅ | dashboard/POS/emitidas/recibidas 200; Usuarios y Ajustes 403; sidebar reducido |
+| POS en ventana (`/app/pos/standalone`) | ✅ | mismo POS sin layout; título y controles correctos |
 | Redirecciones del proxy | 🟡 | por el dominio público el backend responde `Location: http://…` y Apache lo corrige (301); por la conexión directa `http://192.168.100.99:8081/Mercurius` todo responde correcto |
 
 ## 2. Dashboard
@@ -136,6 +138,10 @@
 | Clientes | ✅ | 200 |
 | Lealtad (reporte) | ✅ | 200 |
 | Filtros de fecha + exportaciones | ✅ | fechas ISO correctas; export 200 |
+| Ventas por departamento / familia | ✅ | 20 y 17 filas; enlazadas desde Ventas |
+| Pronósticos de inventario | ✅ | 9.387 productos, 6.552 saludables; enlazado desde Alertas |
+| Reportes por correo (solo lectura) | ✅ | 200; página sin enlace en el hub (solo por URL) |
+| Recibos pendientes / vencidos (rutas viejas) | ✅ | redirigen a Facturas recibidas con la bandeja correcta |
 
 ## 8. Catálogo
 
@@ -260,6 +266,7 @@
 | 2.33.28 | plantilla huérfana `pages/stockalert-config/index.html` | eliminada (la página real es `pages/inventario/stock-alert-config`) |
 | 2.33.29 | no había forma de guardar la contraseña del correo desde la UI | campo de solo escritura + “Enviar correo de prueba” |
 | 2.33.30 | el correo principal era “solo lectura” (no se podía poner el Gmail) | campo editable con validación |
+| 2.33.31 | `/app/reportes/recibos` devolvía “Not Found” pelado | redirige a Facturas recibidas (pendientes) |
 
 ## 12. No ejecutado (y por qué)
 

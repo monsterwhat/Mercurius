@@ -48,6 +48,12 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
     void rutasViejasRedirigenAlBuzon() {
+        // La raíz también: antes devolvía "Not Found" pelado.
+        given().redirects().follow(false)
+                .when().get("/Mercurius/app/reportes/recibos")
+                .then()
+                .statusCode(302)
+                .header("Location", containsString("/app/facturas-recibidas?bucket=pendientes"));
         given().redirects().follow(false)
                 .when().get(PENDIENTES_URL)
                 .then()
