@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.35 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.39 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -78,7 +78,7 @@
 | Emitidas: pagar / procesar / aceptar / rechazar | ⛔/🟡 | “Procesar” envía a Hacienda; aceptar/rechazar son locales pero no se ejecutaron |
 | **Recibidas**: lista, búsqueda, cubetas | ✅ | 200 |
 | Recibidas: formulario de carga | ✅ | XML real v4.4 → “1 archivo procesado”; inválidos → error por archivo (sin escrituras) |
-| Recibidas: “Revisar correo ahora” | ✅ | dispara el barrido IMAP al instante y muestra el resumen (v2.33.35) |
+| Recibidas: “Revisar correo ahora” | ✅ | dispara el barrido IMAP al instante y muestra el resumen (v2.33.39) |
 | Recibidas: drawer + prevalidación | ✅ | panel carga |
 | Recibidas: procesar / activar-desactivar | ✅ | **Pagar** (paid=true), **Procesar** (creó artículo + movimiento; revertido) y **Desactivar/Activar** con bandeja “Inactivas” |
 | Recibidas: Mensaje Receptor (aceptar/parcial/rechazar) | ⛔ | envía a Hacienda |
@@ -173,7 +173,7 @@
 |---|---|---|
 | **Plantillas**: crear | ✅ | “QA Plantilla” creada (tipo Reportes) |
 | Plantillas: cargar predeterminadas | ✅ | 4 plantillas HTML con estilos (factura, stock, reporte, general); idempotente |
-| Plantillas: vista previa | ✅ | modal con datos de ejemplo (v2.33.35) |
+| Plantillas: vista previa | ✅ | modal con datos de ejemplo (v2.33.39) |
 | Plantillas: editar | ✅ | nombre cambiado a “QA Plantilla editada” |
 | Plantillas: eliminar | ✅ | confirmación + desaparece del listado |
 | Correos del sistema con estilo | ✅ | layout HTML de marca (cabecera, cuerpo, pie) en el envío con adjuntos |
@@ -308,3 +308,6 @@
 - [x] `/app/correos` y plantilla huérfana de umbrales corregidos (v2.33.28).
 - [x] Correo real: Gmail configurado **desde Ajustes** (correo + contraseña de aplicación) y correo de prueba enviado.
 - [x] Barrido automático de correos (IMAP): corregido el NPE (`@Inject` faltante); pendiente confirmar el ciclo y la importación de un XML adjunto.
+- [x] Barrido automático de correos (IMAP): corregido el NPE (@Inject faltante) y el fallo del logo LOB (@Lob leído fuera de transacción); el ciclo vuelve a completar y hay botón **Revisar correo ahora** (v2.33.39/.38).
+- [x] Logo único: GET /logo público sirve el logo subido o el de fábrica; sidebar y login dejan de usar un base64 fijo (v2.33.36/.39).
+- [x] Plantillas: vista previa con el layout real del correo (cabecera, cuerpo, pie) y variables también en el asunto (v2.33.37).
