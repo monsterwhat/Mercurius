@@ -36,8 +36,8 @@
     {#if modo == 'editar' && promocion??}
     <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
           hx-target="#forma-promocion" hx-swap="outerHTML"
-          x-data="{ inicio: '{#if promocion.fechaInicio??}{promocion.fechaInicio.format('yyyy-MM-dd')}{/if}',
-                    fin: '{#if promocion.fechaFin??}{promocion.fechaFin.format('yyyy-MM-dd')}{/if}' }">
+          x-data="{ inicio: '{#if promocion.fechaInicio??}{time:format(promocion.fechaInicio, 'yyyy-MM-dd')}{/if}',
+                    fin: '{#if promocion.fechaFin??}{time:format(promocion.fechaFin, 'yyyy-MM-dd')}{/if}' }">
     {#else}
     <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/promociones"
           hx-target="#forma-promocion" hx-swap="outerHTML"
@@ -157,7 +157,7 @@
                     <div class="control">
                         <input class="input" id="promo-inicio" type="date" name="fechaInicio"
                                required="required" x-model="inicio"
-                               value="{#if modo == 'editar' && promocion.fechaInicio??}{promocion.fechaInicio.format('yyyy-MM-dd')}{/if}"/>
+                               value="{#if modo == 'editar' && promocion.fechaInicio??}{time:format(promocion.fechaInicio, 'yyyy-MM-dd')}{/if}"/>
                     </div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                         <input class="input" id="promo-fin" type="date" name="fechaFin"
                                required="required" x-model="fin"
                                :class="{ 'is-danger': inicio && fin && fin < inicio }"
-                               value="{#if modo == 'editar' && promocion.fechaFin??}{promocion.fechaFin.format('yyyy-MM-dd')}{/if}"/>
+                               value="{#if modo == 'editar' && promocion.fechaFin??}{time:format(promocion.fechaFin, 'yyyy-MM-dd')}{/if}"/>
                     </div>
                     <p class="help is-danger" x-show="inicio && fin && fin < inicio">
                         La fecha de fin debe ser posterior o igual a la fecha de inicio

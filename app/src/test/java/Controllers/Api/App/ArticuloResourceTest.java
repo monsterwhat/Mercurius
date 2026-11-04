@@ -24,6 +24,7 @@ import Models.Articulos.Articulos;
 import Models.Cabys;
 import Services.ArticulosService;
 import Services.CabysService;
+import Services.PromocionesService;
 
 /**
  * T34 acceptance suite for {@link ArticuloResource}: real form-cookie login
@@ -82,6 +83,9 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
 
     @Inject
     CabysService cabysService;
+
+    @Inject
+    PromocionesService promocionesService;
 
     // ── Auth helpers ────────────────────────────────────────────────────
 
@@ -675,6 +679,56 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                     .when().get(ARTICULOS + "/promociones/" + promoId)
                     .then()
                     .statusCode(404);
+        }
+    }
+
+    @Test
+    @Order(21)
+    void promoEditFormRendersPrefilledDates() {
+        Map<String, String> session = adminSession();
+        Integer depId = departamentoGeneralId(session);
+        ArticuloReal producto = productoReal();
+        long articuloCodigo = createArticle(session, depId, familiaGeneralId(session),
+                nombreReal(producto, "[T34 promo edit art]"), producto.codigoBarra());
+
+        String nombre = nombreReal(productoReal(), "[T34 promo edit]");
+        // Se crea por el twin de formulario, que es el camino de la UI (el
+        // JSON deserializa java.util.Date en UTC y desplaza el dia).
+        Integer promoId = null;
+        try {
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .formParam("nombre", nombre)
+                    .formParam("descuento", "12")
+                    .formParam("fechaInicio", "2026-03-01")
+                    .formParam("fechaFin", "2026-04-30")
+                    .formParam("itemCodigo", String.valueOf(articuloCodigo))
+                    .formParam("itemCantidad", "2")
+                    .when().post(ARTICULOS + "/promociones")
+                    .then()
+                    .statusCode(201);
+            promoId = promocionesService.listAll().stream()
+                    .filter(p -> nombre.equals(p.getNombre()))
+                    .map(p -> p.getId())
+                    .findFirst().orElse(null);
+            org.assertj.core.api.Assertions.assertThat(promoId)
+                    .as("la promoción creada por el formulario debe existir").isNotNull();
+
+            // El modal de edicion pide este fragmento. Antes reventaba con
+            // TemplateException (java.util.Date no tiene format()) y el modal
+            // quedaba vacio.
+            authed(session)
+                    .header("HX-Request", "true")
+                    .when().get(ARTICULOS + "/formularios/promociones/" + promoId)
+                    .then()
+                    .statusCode(200)
+                    .body(containsString("2026-03-01"))
+                    .body(containsString("2026-04-30"))
+                    .body(containsString(nombre));
+        } finally {
+            if (promoId != null) {
+                authed(session).when().delete(ARTICULOS + "/promociones/" + promoId);
+            }
         }
     }
 
