@@ -428,3 +428,19 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 - **Emitidas:** ya no muestran esas acciones; solo "Eliminar" en contado.
 
 **Hallazgo (pendiente de decisión):** el POS **no ofrece condición de venta** para TE/FE (solo el REP muestra 09/11) y el cobro exige pagar el total. Por eso hoy **no se pueden emitir facturas a crédito** desde la app nueva, y el botón "Marcar como pagada" (que sí existe para crédito) queda inalcanzable en la práctica. Implementarlo implica: selector Contado/Crédito + plazo, permitir facturar sin cobro total y manejar la cuenta por cobrar. No se implementó sin confirmación.
+
+## 18. Etiquetas IMAP, muestras de correo y POS de crédito (2026-11-04, noche)
+
+**Bug de etiquetas (causa raíz):** el barrido IMAP buscaba solo mensajes **no leídos** (`FlagTerm(SEEN,false)`). Si el usuario abría el correo en Gmail antes del ciclo, quedaba en el INBOX sin `Processed`/`NoXMLAttachments` para siempre. Eso explicaba la factura de proveedor y el correo de prueba sin etiqueta.
+
+- **Arreglo 2.33.50:** se procesan **todos** los mensajes del INBOX (`inbox.getMessages()`); cada uno sale del INBOX al procesarse, así que no se repite trabajo.
+- **Verificado:** se devolvieron al INBOX los dos mensajes huérfanos y "Revisar correo ahora" respondió `Total emails: 2, XML: 1, procesados: 1`. Resultado: **INBOX 0**, **Processed 2**, **NoXMLAttachments 1**; los dos XML de prueba se importaron (comprobantes 2032/2033) y luego se borraron con sus archivos.
+- **Correo nuevo con XML** (`00100001010000990022`): procesado al instante (1/1) y etiquetado en Processed.
+
+**Muestras de correo (2.33.50):**
+- Botón en Ajustes: "Enviar muestras (plantillas y reportes)" → `POST /api/app/settings/correo/muestras`.
+- Envió **10 correos**: 4 plantillas (Factura, Alerta de stock, Reporte programado, Notificación general) y 6 reportes (Movimientos, Facturación, Artículos, Departamentos, Familias, Inventarios), todos con el layout de marca.
+- Verificado por IMAP: 10 mensajes recibidos, HTML presente, tabla del reporte y **enlace al repositorio** en el pie.
+- El pie del layout incluye `https://github.com/monsterwhat/Mercurius`.
+
+**POS de crédito:** no existe otra página de POS; solo `/app/pos` y `/app/pos/standalone`. No hay selector Contado/Crédito ni forma de facturar sin cobrar el total, por lo que hoy no se pueden emitir ventas a crédito. Queda como hallazgo pendiente de decisión (ver sección 17).
