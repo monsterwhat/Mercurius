@@ -226,6 +226,7 @@
 | 2.33.18 | Ajustes aceptaba actividad que no son 6 dígitos | validación `\d{6}` |
 | 2.33.19 | Cualquiera con POS podía rebajar el precio de una línea | descuento/ajuste solo rol `admin` |
 | 2.33.20 | No existía descuento sobre el total de la factura | % admin-only repartido por línea |
+| 2.33.21 | Buscador de artículos en “Nueva Orden” no devolvía nada | `name="q"` en el input |
 
 ## 12. No ejecutado (y por qué)
 

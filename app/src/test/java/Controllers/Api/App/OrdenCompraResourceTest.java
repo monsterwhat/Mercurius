@@ -800,4 +800,22 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body("total", greaterThanOrEqualTo(1));
     }
+
+    @Test
+    @Order(24)
+    void newOrderFormArticleSearchSendsQ() {
+        Map<String, String> session = adminSession();
+        // El input de busqueda de articulo debe llevar name="q": htmx solo
+        // incluye el valor del elemento que dispara si tiene nombre. Sin el,
+        // /ordenes/articulos recibia q vacio y el buscador no devolvia nada.
+        String html = authed(session)
+                .header("HX-Request", "true")
+                .when().get(BASE + "/api/app/ordenes/formularios/nueva")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        org.assertj.core.api.Assertions.assertThat(html)
+                .contains("js-articulo-nombre")
+                .contains("name=\"q\"");
+    }
 }

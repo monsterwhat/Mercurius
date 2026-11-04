@@ -127,7 +127,7 @@
             <div class="orden-linea field is-grouped mb-2" style="align-items:flex-end;flex-wrap:wrap">
                 <input type="hidden" name="articuloCodigo" value="{#if linea.codigo??}{linea.codigo}{/if}"/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
-                    <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                    <input class="input js-articulo-nombre" type="text" autocomplete="off" name="q"
                            aria-label="Artículo de la línea"
                            placeholder="Buscar artículo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
@@ -168,7 +168,7 @@
             <div class="orden-linea field is-grouped mb-2" style="align-items:flex-end;flex-wrap:wrap">
                 <input type="hidden" name="articuloCodigo" value=""/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
-                    <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                    <input class="input js-articulo-nombre" type="text" autocomplete="off" name="q"
                            aria-label="Artículo de la línea"
                            placeholder="Buscar artículo..."
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
