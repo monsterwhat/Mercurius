@@ -229,6 +229,39 @@
     <p class="help" id="puntos-preview" data-puntos-preview aria-live="polite">&nbsp;</p>
     {/if}
 
+    {! Descuento a toda la factura: SOLO administrador. Se reparte como
+       ajuste de precio por línea, así el IVA y el XML siguen siendo válidos. !}
+    {#if panel.puedeDescontar && !panel.vacio}
+    <form id="forma-descuento" class="field has-addons" style="margin-bottom:0.5rem"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/descuento-form"
+          hx-target="#cart-panel" hx-swap="outerHTML"
+          hx-disabled-elt="#btn-aplicar-descuento">
+        <div class="control">
+            <input class="input is-small" type="number" min="1" max="100" step="0.01"
+                   name="porcentaje" id="descuento-porcentaje" placeholder="% descuento"
+                   autocomplete="off" aria-label="Porcentaje de descuento a la factura"/>
+        </div>
+        <div class="control is-expanded">
+            <input class="input is-small" type="text" name="motivo" id="descuento-motivo"
+                   maxlength="200" placeholder="Motivo del descuento" autocomplete="off"
+                   aria-label="Motivo del descuento"/>
+        </div>
+        <div class="control">
+            <button type="submit" id="btn-aplicar-descuento"
+                    class="button is-small is-warning">Descontar factura</button>
+        </div>
+        <div class="control">
+            <button type="button" class="button is-small"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/descuento-form"
+                    hx-vals='{"restaurar":"1"}'
+                    hx-target="#cart-panel" hx-swap="outerHTML"
+                    hx-confirm="¿Quitar el descuento de todas las líneas?"
+                    hx-disabled-elt="this">Quitar descuento</button>
+        </div>
+    </form>
+    <p class="help">Descuento sobre toda la factura (solo administrador). Aplica a las líneas actuales.</p>
+    {/if}
+
     {! Closing block: TOTAL, then the two actions. `pos-cierre` is the hook for
        the mobile sticky treatment (position:sticky;bottom:0 + an opaque scheme
        background at <=768px), which belongs in the shared stylesheet, not in

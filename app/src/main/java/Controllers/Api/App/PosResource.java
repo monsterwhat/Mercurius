@@ -1282,6 +1282,125 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     }
 
     /**
+     * Descuento porcentual sobre TODA la factura (solo administrador).
+     *
+     * <p>Se reparte como ajuste de precio por linea (precio final con IVA
+     * rebajado el porcentaje), asi la base y el IVA de cada linea siguen la
+     * matematica fiscal existente y el XML no necesita un elemento extra. La
+     * linea de promocion no se toca (ya trae su propio descuento).</p>
+     *
+     * <p>{@code restaurar=1} quita el descuento de todas las lineas.</p>
+     */
+    @POST
+    @Path("/descuento-form")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Apply an invoice-wide percentage discount (admin only)")
+    public Response descuentoForm(
+            @FormParam("porcentaje") @Nullable String porcentaje,
+            @FormParam("motivo") @Nullable String motivo,
+            @FormParam("restaurar") @Nullable String restaurar) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        if (!esAdmin()) {
+            LOG.warn("Descuento de factura rechazado: el usuario no es administrador | usuario="
+                    + username + " | source=PosResource.descuentoForm()");
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("DESCUENTO_SOLO_ADMIN", "warn",
+                            "Solo un administrador puede aplicar descuentos o ajustar precios",
+                            "Pida a un administrador que autorice el descuento."))).render());
+        }
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        Usuarios usuarioAjuste = loginService.findByUsername(username);
+        String clienteAjuste = ctx.getSelectedClient() != null
+                ? ctx.getSelectedClient().getName() : null;
+
+        if (restaurar != null && !restaurar.isBlank()) {
+            int restauradas = 0;
+            for (ArticuloCarrito item : ctx.getCarrito()) {
+                if (item.isPromo() || item.getPrecioPersonalizado() == null) {
+                    continue;
+                }
+                BigDecimal anterior = item.getPrecioFinalEfectivo();
+                BigDecimal sistema = item.getPrecioFinalSistema();
+                clearPriceOverride(item);
+                carritoModificacionService.registrarPrecioAjustado(item, anterior, sistema,
+                        usuarioAjuste, clienteAjuste, "Descuento de factura retirado");
+                restauradas++;
+            }
+            LOG.info("Descuento de factura retirado | usuario=" + username
+                    + " | lineas=" + restauradas);
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("DESCUENTO_RETIRADO", "info",
+                            "Descuento retirado", restauradas + " línea(s) volvieron al precio del sistema"))).render());
+        }
+
+        BigDecimal pct = parseDecimal(porcentaje);
+        if (pct.compareTo(BigDecimal.ZERO) <= 0 || pct.compareTo(new BigDecimal("100")) > 0) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("DESCUENTO_INVALIDO", "error",
+                            "El descuento debe estar entre 1% y 100%", null))).render());
+        }
+        if (motivo == null || motivo.isBlank()) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("MOTIVO_REQUERIDO", "error",
+                            "Indique el motivo del descuento",
+                            "Ej.: cliente frecuente, ajuste acordado"))).render());
+        }
+        String motivoLimpio = motivo.trim();
+        if (motivoLimpio.length() > 200) {
+            motivoLimpio = motivoLimpio.substring(0, 200);
+        }
+        String motivoAuditoria = "Descuento factura " + pct.stripTrailingZeros().toPlainString()
+                + "%: " + motivoLimpio;
+
+        BigDecimal factor = BigDecimal.valueOf(100).subtract(pct);
+        int aplicadas = 0;
+        for (ArticuloCarrito item : ctx.getCarrito()) {
+            if (item.isPromo()) {
+                continue;
+            }
+            BigDecimal sistema = item.getPrecioFinalSistema();
+            if (sistema == null || sistema.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            BigDecimal nuevoFinal = sistema.multiply(factor)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            if (nuevoFinal.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            BigDecimal baseSinIva = CarritoCalculations.getPrecioBaseDesdeFinal(item, nuevoFinal);
+            if (baseSinIva.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            item.setPrecioPersonalizado(baseSinIva);
+            item.setPrecioOriginalSistema(sistema);
+            item.setPrecioAjustadoFinal(nuevoFinal);
+            item.setMotivoAjustePrecio(motivoAuditoria);
+            item.setAjustePrecioPor(username);
+            item.setAjustePrecioFecha(new Date());
+            carritoModificacionService.registrarPrecioAjustado(item, sistema, nuevoFinal,
+                    usuarioAjuste, clienteAjuste, motivoAuditoria);
+            aplicadas++;
+        }
+
+        if (aplicadas == 0) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("DESCUENTO_SIN_LINEAS", "warn",
+                            "No hay líneas a las que aplicar el descuento", null))).render());
+        }
+        LOG.info("Descuento de factura aplicado | usuario=" + username
+                + " | porcentaje=" + pct.toPlainString() + " | lineas=" + aplicadas
+                + " | motivo=" + motivoLimpio);
+        return htmlOk(cartPanelTemplate.data("panel",
+                panelModel(username, message("DESCUENTO_APLICADO", "warn",
+                        "Descuento del " + pct.stripTrailingZeros().toPlainString() + "% aplicado a la factura",
+                        aplicadas + " línea(s) ajustadas. Queda registrado en la factura."))).render());
+    }
+
+    /**
      * Ajuste manual del precio de una linea del carrito. El cajero escribe el
      * precio FINAL (IVA incluido) que muestra la etiqueta fisica; la linea
      * guarda la base sin IVA para que la matematica fiscal existente cobre ese

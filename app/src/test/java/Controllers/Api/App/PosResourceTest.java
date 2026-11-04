@@ -839,6 +839,67 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     @Test
     @Order(18)
+    void adminCanApplyAndRemoveInvoiceWideDiscount() {
+        ensureAppSettings();
+        Map<String, String> session = adminSession();
+        cartSessionStore.remove("admin");
+        Articulos articulo = seedArticulo(productoReal(), "1000");
+
+        authed(session)
+                .contentType(ContentType.JSON)
+                .body("{\"articuloId\":" + articulo.getCodigo() + ",\"cantidad\":1}")
+                .when().post(POS + "/add")
+                .then().statusCode(200);
+
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("porcentaje", "10")
+                .formParam("motivo", "Cliente frecuente")
+                .when().post(POS + "/descuento-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Descuento del 10% aplicado a la factura"));
+
+        // 1130 (1000 + 13% IVA) menos 10% = 1017, con la base y el IVA
+        // recalculados sobre el precio rebajado.
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .body("data.items[0].precioFinal", equalTo(1017.0f))
+                .body("data.hasOverrides", is(true));
+
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("restaurar", "1")
+                .when().post(POS + "/descuento-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Descuento retirado"));
+
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .body("data.items[0].precioFinal", equalTo(1130.0f))
+                .body("data.hasOverrides", is(false));
+    }
+
+    @Test
+    @Order(19)
+    @TestSecurity(user = "cajero-descuento-factura", roles = {"facturacion"})
+    void facturacionRoleCannotApplyInvoiceWideDiscount() {
+        Map<String, String> jar = testIdentityJar();
+        testAuthed(jar)
+                .contentType(ContentType.URLENC)
+                .formParam("porcentaje", "10")
+                .formParam("motivo", "No autorizado")
+                .when().post(POS + "/descuento-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Solo un administrador puede aplicar descuentos"));
+    }
+
+    @Test
+    @Order(20)
     void cancelClearsCartPaymentsAndOverrideState() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
