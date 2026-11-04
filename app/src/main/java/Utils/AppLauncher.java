@@ -44,6 +44,15 @@ public class AppLauncher {
     SystemTrayManager trayManager;
 
     void onStart(@Observes StartupEvent event) {
+        // Zona horaria de negocio. El servidor corre en UTC, así que sin esto
+        // LocalDateTime.now() (FechaEmision de Hacienda, caja, auditoría,
+        // fechas mostradas) quedaba 6 horas adelantado respecto a Costa Rica.
+        // El arranque en producción también pasa -Duser.timezone; esto cubre
+        // cualquier instalación donde falte el flag.
+        java.util.TimeZone.setDefault(
+                java.util.TimeZone.getTimeZone("America/Costa_Rica"));
+        LOG.info("Zona horaria de negocio: "
+                + java.util.TimeZone.getDefault().getID());
         try {
             // Check if application is already running
             if (!isSingleInstance()) {
