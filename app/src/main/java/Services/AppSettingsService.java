@@ -118,11 +118,26 @@ public class AppSettingsService extends GService<ConfiguracionAplicacion> {
         }
     }
      
+    /**
+     * Configuración activa. Va en transacción a propósito: la fila lleva el
+     * logo como {@code @Lob} (OID de PostgreSQL), y leerlo fuera de una
+     * transacción falla con "Large Objects may not be used in auto-commit
+     * mode". Al hidratar la entidad dentro de la transacción los bytes quedan
+     * materializados y el llamador puede usarlos ya con la sesión cerrada.
+     */
+    @Transactional
     public @Nullable ConfiguracionAplicacion returnCurrent() {
         try {
             TypedQuery<ConfiguracionAplicacion> query = em.createQuery("SELECT a FROM ConfiguracionAplicacion a WHERE a.estatus = true", getEntityClass());
             query.setMaxResults(1);
-            return query.getSingleResult();
+            ConfiguracionAplicacion config = query.getSingleResult();
+            // Fuerza la lectura del LOB dentro de la transacción (defensa extra
+            // si el proveedor lo deja como stream perezoso).
+            if (config.getLogo() != null && config.getLogo().length == 0) {
+                LOG.debug("logo configurado vacío | id=" + config.getId()
+                        + " | source=AppSettingsService.returnCurrent()");
+            }
+            return config;
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
