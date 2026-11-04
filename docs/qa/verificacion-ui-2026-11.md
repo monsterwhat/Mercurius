@@ -344,3 +344,12 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 **Defectos encontrados en esta sesión (corregidos):**
 - la vista previa de plantillas mostraba las etiquetas HTML como texto → `wrapHtml` + iframe con `sandbox`.
 - las acciones de fila de Clientes salían en dos líneas (celda de ~85 px) → `white-space:nowrap` + `flex-wrap:nowrap`.
+
+**Ampliación del barrido:**
+- Recibidas: detalle lateral con clave, emisor/receptor, totales y pre-validación (6 advertencias) ✅
+- Usuarios: diálogo "Crear Usuario" con módulos/permisos ✅
+- Clientes: diálogo "Crear Cliente" con búsqueda en Gometa ✅
+- D-104 (`/app/tributacion/declaracion`): resumen del período y del año ✅
+- Reportes con datos: Márgenes (28,5% margen), Estacionalidad (gráficos), Pronósticos (MASE/sesgo), Facturas emitidas ✅
+- Tema oscuro: dashboard, tabla de artículos y diálogo de ajuste con buen contraste ✅
+- POS: selector de cliente filtra por nombre y asigna el cliente al carrito (con puntos y descuentos visibles) ✅
