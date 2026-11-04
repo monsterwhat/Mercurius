@@ -277,6 +277,8 @@
 | 2.33.34 | los correos del sistema salían en texto plano | layout HTML de marca (texto + HTML alternativo) |
 | 2.33.35 | no había forma de forzar la revisión del correo | botón “Revisar correo ahora” + endpoint |
 | 2.33.35 | las plantillas no se podían previsualizar | modal de vista previa con datos de ejemplo |
+| 2.33.43 | vista previa de plantillas mostraba el HTML escapado | `EmailLayout.wrapHtml` + iframe con sandbox |
+| 2.33.44 | acciones de fila apiladas en Clientes (celda muy estrecha) | `white-space:nowrap` + `flex-wrap:nowrap` |
 
 ## 12. No ejecutado (y por qué)
 
@@ -316,3 +318,29 @@
 - [ ] **Nota operativa:** la columna EmailTemplate.cuerpoHtml era VARCHAR(255); Hibernate update no cambia tipos, así que en bases existentes hay que ejecutar una vez ALTER TABLE emailtemplate ALTER COLUMN cuerpohtml TYPE TEXT; (ya aplicado en producción). Las instalaciones nuevas la crean como TEXT.
 - [x] Ciclo automático verificado tras el arreglo: 21:30 completado y **0 ERROR** en el log desde el despliegue de 2.33.42.
 - [x] Logging: se eliminó el 	oString() de Usuarios (incluía hash/sal de la contraseña) de 57 logs en 10 recursos; ahora se registra solo el username (Utils.LogUsers). Verificado en el barrido: user=Admin.
+## 12. Sesión de navegador (2026-11-04, noche)
+
+Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, login `Admin`, ventana 1280x720.
+
+| Pantalla / control | Estado | Evidencia |
+|---|---|---|
+| Login con el logo subido | ✅ | palmera servida por `/logo` (no el base64 viejo) |
+| Sidebar (logo 26px) | ✅ | mismo logo; marca "Mercurius" al lado |
+| Dashboard (claro y oscuro) | ✅ | métricas, gráficos y conmutador de tema |
+| POS standalone: carrito, cliente, descuentos, puntos | ✅ | artículo agregado, cliente TAMARA ROSSI asignado, controles de puntos y descuento visibles |
+| POS: selector de cliente con búsqueda | ✅ | `TAMARA` filtra a una sola fila (`keyup delay:250ms`) |
+| Facturas emitidas + detalle lateral | ✅ | totales, estados y acciones |
+| Facturas recibidas (carga + "Revisar correo ahora") | ✅ | botón y ayuda visibles |
+| Inventarios + diálogo Crear Ajuste (claro/oscuro) | ✅ | formulario completo |
+| Artículos, Categorías, Órdenes, Etiquetas, CAByS | ✅ | tablas y acciones |
+| Clientes | ✅ (2.33.44) | acciones de fila horizontales; antes se apilaban |
+| Caja, Usuarios, Perfil, Lealtad, Tipo de cambio | ✅ | sin incidencias |
+| Reportes + Cambios de carrito (auditoría) | ✅ | muestra precios ajustados, descuentos y motivos reales |
+| Alertas, Mermas, Configuración de alertas | ✅ | métricas y tablas |
+| Respaldos, Registro de actividades | ✅ | estado, historial y descarga |
+| Devoluciones, Consultas Hacienda | ✅ | formularios y tablas |
+| Plantillas: vista previa | ✅ (2.33.43) | HTML renderizado en iframe con `sandbox` (antes salía escapado) |
+
+**Defectos encontrados en esta sesión (corregidos):**
+- la vista previa de plantillas mostraba las etiquetas HTML como texto → `wrapHtml` + iframe con `sandbox`.
+- las acciones de fila de Clientes salían en dos líneas (celda de ~85 px) → `white-space:nowrap` + `flex-wrap:nowrap`.
