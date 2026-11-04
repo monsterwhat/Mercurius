@@ -179,7 +179,7 @@
 | Umbrales: cargar artículo y guardar | ✅ | 200 + toast |
 | **Tipo de cambio**: modal | ✅ | compra/venta/historial |
 | Tipo de cambio: actualizar / guardar manual | ⛔/✅ | API externa no probada; tasa manual guardada (histórico revertido) |
-| **Perfil**: formularios de correo y contraseña | ⛔ | cambiaría las credenciales de acceso |
+| **Perfil**: formularios de correo y contraseña | ✅ | contraseña re-guardada (mismo valor) y login verificado; correo inválido rechazado (v2.33.26) |
 | **Registro de actividades**: listar | ✅ | 142 archivos |
 | Registro: descargar log | ✅ | 200, `text/plain`, attachment |
 | **Caja**: abrir/cerrar sesión | ✅ | diferencia ₡0,00; QA limpiado |
@@ -231,6 +231,7 @@
 | 2.33.23 | Línea nueva de orden: el buscador no disparaba (clon sin `htmx.process`) | procesar la fila clonada |
 | 2.33.24 | `window.htmx` no existía (build ESM no lo publica) | se expone el default export |
 | 2.33.25 | FEE emitía totales exclusivos de FE (`TotalServExonerado`, `TotalIVADevuelto`…) | resumen FEE ajustado al XSD |
+| 2.33.26 | Perfil aceptaba cualquier texto como correo | validación de formato |
 
 ## 12. No ejecutado (y por qué)
 
@@ -259,5 +260,5 @@
 - [x] Cabys: importar catálogo — 20.505 códigos (el proxy devuelve 502 al navegador aunque el servidor termina; la operación es idempotente).
 - [x] Recibidas: “Procesar” — creó artículo y movimiento de inventario; revertido (factura 177).
 - [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
-- [ ] Perfil: cambio de correo/contraseña (cambia el acceso).
+- [x] Perfil: contraseña re-guardada (mismo valor) + login verificado; correo inválido rechazado (v2.33.26).
 - [x] **Ajustes: código de actividad corregido a `471102`.**

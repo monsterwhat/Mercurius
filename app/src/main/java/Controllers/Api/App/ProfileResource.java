@@ -104,6 +104,9 @@ public class ProfileResource {
             return badRequest("VALIDATION_ERROR", "El nuevo correo no puede estar vacio.");
         }
         String nuevo = nuevoEmail.trim();
+        if (!nuevo.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
+            return badRequest("VALIDATION_ERROR", "El correo no tiene un formato valido.");
+        }
         if (nuevo.equals(user.getEmail())) {
             return badRequest("VALIDATION_ERROR", "El nuevo correo no puede ser igual");
         }
