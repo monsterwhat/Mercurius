@@ -725,6 +725,27 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                     .body(containsString("2026-03-01"))
                     .body(containsString("2026-04-30"))
                     .body(containsString(nombre));
+
+            // Editar con la misma linea no debe duplicarla: ArticuloCarrito es
+            // el lado dueno de la join table.
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .formParam("nombre", nombre)
+                    .formParam("descuento", "20")
+                    .formParam("fechaInicio", "2026-03-01")
+                    .formParam("fechaFin", "2026-04-30")
+                    .formParam("itemCodigo", String.valueOf(articuloCodigo))
+                    .formParam("itemCantidad", "2")
+                    .when().put(ARTICULOS + "/promociones/" + promoId)
+                    .then()
+                    .statusCode(200);
+
+            authed(session)
+                    .when().get(ARTICULOS + "/promociones/" + promoId)
+                    .then()
+                    .statusCode(200)
+                    .body("data.descuento", equalTo(20.0f))
+                    .body("data.articulosCarrito.size()", equalTo(1));
         } finally {
             if (promoId != null) {
                 authed(session).when().delete(ARTICULOS + "/promociones/" + promoId);

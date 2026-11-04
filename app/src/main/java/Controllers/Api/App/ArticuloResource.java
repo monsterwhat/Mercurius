@@ -1294,6 +1294,17 @@ public class ArticuloResource {
 
             // Legacy: persist transient carrito items (no codigo yet) and link
             // both sides of the ManyToMany.
+            if (id != null) {
+                // ArticuloCarrito es el lado dueno de la join table: si solo
+                // reemplazamos promo.articulosCarrito, las filas viejas siguen
+                // apuntando a la promocion y al editar se duplicaban los
+                // articulos. Se desvinculan primero.
+                for (ArticuloCarrito anterior : new ArrayList<>(promo.getArticulosCarrito())) {
+                    if (anterior.getPromociones() != null) {
+                        anterior.getPromociones().remove(promo);
+                    }
+                }
+            }
             for (ArticuloCarrito item : items) {
                 if (item.getCodigo() == null) {
                     articuloCarritoService.create(item);

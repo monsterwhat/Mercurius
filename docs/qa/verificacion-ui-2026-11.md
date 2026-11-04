@@ -71,7 +71,7 @@
 | Emitidas: “Eliminar factura” (soft delete) | 🟡 | botón visible; no se ejecutó sobre datos reales |
 | Emitidas: pagar / procesar / aceptar / rechazar | ⛔/🟡 | “Procesar” envía a Hacienda; aceptar/rechazar son locales pero no se ejecutaron |
 | **Recibidas**: lista, búsqueda, cubetas | ✅ | 200 |
-| Recibidas: formulario de carga | 🟡 | revisado; no se subió XML |
+| Recibidas: formulario de carga | ✅/🟡 | archivo inválido → “0 procesados, 1 con error” (sin escrituras); XML válido cubierto por tests |
 | Recibidas: drawer + prevalidación | ✅ | panel carga |
 | Recibidas: procesar / activar-desactivar | ✅ | **Pagar** verificado (paid=true) y **Desactivar/Activar** con la nueva bandeja “Inactivas” (bug corregido) |
 | Recibidas: Mensaje Receptor (aceptar/parcial/rechazar) | ⛔ | envía a Hacienda |
@@ -98,7 +98,7 @@
 | Inventarios: pestañas y conteos | ✅ | 1.477.227 |
 | Inventarios: Crear Ajuste (diálogo) | ✅ | creó ajuste manual +1 y aplicó stock; revertido y limpiado |
 | Inventarios: Exportar PDF | ✅ | 200, 118 KB (tope 2.000 con aviso) |
-| Inventarios: procesar/rechazar/reabrir/omitir | 🟡 | no ejecutados (mutan stock) |
+| Inventarios: procesar/rechazar/reabrir/omitir | ✅/🟡 | procesó 809703 (+5 stock) y rechazó 809699; ambos revertidos por SQL |
 | Alertas: tarjetas, filtros, tabla | ✅ | 4 stock bajo + 18 sobrestock = 22 |
 | Alertas: exportar Excel | ✅ | 200 |
 | Mermas: tarjetas, filtros, exportar | ✅ | “Movimiento de inventario” |
@@ -133,7 +133,7 @@
 | Editar artículo | ✅ | prefill y guardado |
 | Desactivar / Activar | ✅ | toggle y reversa (nuevo endpoint) |
 | Procesar / Procesado rápido / Saltar | ✅ | artículo QA procesado (precio 1000→1413) y borrado; Saltar daba 415 (v2.33.15) |
-| Promociones (crear/editar/borrar) | ✅/🟡 | crear y borrar verificados (bug de transacción corregido, v2.33.13); editar no ejecutado |
+| Promociones (crear/editar/borrar) | ✅ | crear/editar/borrar verificados; bugs corregidos en 2.33.13, .16 y .17 |
 | Buscador CAByS dentro del artículo | ✅ | «arroz» → 10 resultados; selección llena el código |
 | Guardar márgenes | ✅ | 200 (historial de prueba limpiado) |
 | Exportar Excel | ✅ | 818 KB |
@@ -217,6 +217,8 @@
 | 2.33.13 | Crear/eliminar promoción no guardaba (transacción faltante) | `@Transactional` + no tragar errores |
 | 2.33.14 | “Activar cuenta” volvía a desactivar | DELETE alterna `status` (`toggleStatus`) |
 | 2.33.15 | “Saltar” en la revisión de artículos daba 415 | `@Consumes(WILDCARD)` + test HTMX |
+| 2.33.16 | Modal “Editar promoción” daba 500 y quedaba vacío | `time:format` sobre `java.util.Date` |
+| 2.33.17 | Editar promoción duplicaba los artículos | desvincular el lado dueño antes de reemplazar |
 
 ## 12. No ejecutado (y por qué)
 
@@ -236,7 +238,7 @@
 
 - [x] Facturas recibidas: **Pagar** y **Activar/Desactivar** (con bandeja Inactivas, v2.33.12).
 - [x] Promociones: crear y eliminar (v2.33.13); editar pendiente.
-- [x] Inventario: crear ajuste (aplica stock); pendiente aprobar/rechazar/reabrir.
+- [x] Inventario: crear ajuste y procesar/rechazar movimientos (revertidos).
 - [x] Artículos: “Procesar” / “Procesado rápido” / “Saltar” (v2.33.15) y buscador CAByS.
 - [x] Usuarios: guardar permisos y “Activar cuenta” (v2.33.14).
 - [x] Sucursales: registrar un punto de venta QA, revertir y eliminarlo.
