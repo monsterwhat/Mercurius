@@ -536,7 +536,7 @@ public class EmailTemplateResource {
         return htmlOk(previewPlantilla
                 .data("plantilla", template)
                 .data("asunto", asunto)
-                .data("html", Services.Correos.EmailLayout.wrap(asunto, html, negocio)));
+                .data("html", Services.Correos.EmailLayout.wrapHtml(asunto, html, negocio)));
     }
 
     /**

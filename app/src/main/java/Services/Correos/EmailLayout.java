@@ -30,7 +30,6 @@ public final class EmailLayout {
      */
     @Nonnull
     public static String wrap(@Nonnull String titulo, @Nonnull String cuerpo, @Nullable String negocio) {
-        String nombre = negocio == null || negocio.isBlank() ? "Mercurius" : negocio.trim();
         String parrafos = Arrays.stream(cuerpo.split("\\R", -1))
                 .map(String::trim)
                 .map(linea -> linea.isEmpty()
@@ -38,6 +37,28 @@ public final class EmailLayout {
                         : "<p style=\"margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.55\">"
                                 + escape(linea) + "</p>")
                 .collect(Collectors.joining());
+        return envolver(titulo, parrafos, negocio);
+    }
+
+    /**
+     * Envuelve un cuerpo que YA es HTML (las plantillas de correo). No se
+     * escapa: las plantillas las escribe un administrador en la app y están
+     * pensadas para llevar tablas y estilos propios. Para contenido de origen
+     * externo use {@link #wrap(String, String, String)}, que sí escapa.
+     *
+     * <p>La vista previa de plantillas lo muestra dentro de un {@code iframe}
+     * con {@code sandbox} para que un HTML malicioso no ejecute scripts en la
+     * aplicación.</p>
+     */
+    @Nonnull
+    public static String wrapHtml(@Nonnull String titulo, @Nonnull String cuerpoHtml, @Nullable String negocio) {
+        return envolver(titulo, cuerpoHtml, negocio);
+    }
+
+    @Nonnull
+    private static String envolver(@Nonnull String titulo, @Nonnull String cuerpoRenderizado,
+                                   @Nullable String negocio) {
+        String nombre = negocio == null || negocio.isBlank() ? "Mercurius" : negocio.trim();
 
         return "<!doctype html>"
                 + "<html lang=\"es\"><head><meta charset=\"utf-8\">"
@@ -55,7 +76,7 @@ public final class EmailLayout {
                 + "<tr><td style=\"padding:28px 28px 8px\">"
                 + "<h1 style=\"margin:0 0 18px;color:" + BRAND + ";font-size:20px;line-height:1.3\">"
                 + escape(titulo) + "</h1>"
-                + parrafos
+                + cuerpoRenderizado
                 + "</td></tr>"
                 + "<tr><td style=\"padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;"
                 + "color:#6b7280;font-size:12px;line-height:1.5\">"

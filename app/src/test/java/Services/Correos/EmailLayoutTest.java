@@ -25,4 +25,16 @@ class EmailLayoutTest {
         assertThat(EmailLayout.wrap("Asunto", "Cuerpo", null)).contains("Mercurius");
         assertThat(EmailLayout.wrap("Asunto", "Cuerpo", "  ")).contains("Mercurius");
     }
+
+    @Test
+    void wrapHtmlInsertaElCuerpoSinEscaparloPeroEscapaElTitulo() {
+        String html = EmailLayout.wrapHtml("Aviso <001>",
+                "<h2>Su factura</h2><p>Total <strong>1000</strong></p>", "Mi Negocio");
+
+        assertThat(html).contains("<!doctype html>");
+        assertThat(html).contains("<h2>Su factura</h2>");
+        assertThat(html).contains("<strong>1000</strong>");
+        // El título sí se escapa.
+        assertThat(html).contains("Aviso &lt;001&gt;");
+    }
 }

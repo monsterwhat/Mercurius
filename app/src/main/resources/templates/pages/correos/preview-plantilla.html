@@ -7,7 +7,10 @@
         <span class="has-text-weight-semibold">Asunto:</span>
         <span class="kit-code">{#if asunto??}{asunto}{#else}(sin asunto){/if}</span>
     </p>
-    <div class="box" style="background:#ffffff;max-height:60vh;overflow:auto">
-        {html.raw}
-    </div>
+    {! El correo se renderiza en un iframe con sandbox: así se ve igual que en
+       el cliente de correo y una plantilla no puede ejecutar scripts en la app. !}
+    <iframe class="box" title="Vista previa del correo"
+            sandbox=""
+            style="width:100%;height:60vh;border:1px solid var(--merc-border);border-radius:8px;background:#ffffff"
+            srcdoc="{html}"></iframe>
 </div>
