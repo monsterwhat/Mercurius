@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.26 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.27 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -160,8 +160,19 @@
 | Etiquetas: imprimir | ✅ | `window.print()` invocado |
 | **Precios**: histórico y selector | ✅ | 200 |
 
-## 9. Personas y lealtad
+## 8 bis. Correos
 
+| Pantalla / control | Estado | Evidencia |
+|---|---|---|
+| **Plantillas**: crear | ✅ | “QA Plantilla” creada (tipo Reportes) |
+| Plantillas: editar | ✅ | nombre cambiado a “QA Plantilla editada” |
+| Plantillas: eliminar | ✅ | confirmación + desaparece del listado |
+| **Reportes programados**: crear | ✅ | “QA Reporte”, Semanal, MOVIMIENTOS, correo QA |
+| Reportes programados: editar | ✅ | nombre actualizado |
+| Reportes programados: eliminar | ✅ | confirmación + listado vacío |
+| Envío real de correos | ⛔ | sin SMTP/IMAP configurados |
+
+## 9. Personas y lealtad
 | Control | Estado | Evidencia |
 |---|---|---|
 | **Clientes**: crear/editar/desactivar | ✅ | fecha dd/mm/aaaa; QA limpiado |
@@ -189,7 +200,7 @@
 | **Umbrales de stock**: enlace y página | ✅ | `/app/stock-alert-config` con layout |
 | Umbrales: cargar artículo y guardar | ✅ | 200 + toast |
 | **Tipo de cambio**: modal | ✅ | compra/venta/historial |
-| Tipo de cambio: actualizar / guardar manual | ✅ | BCCR consultado (450,31/454,65) sin duplicar la fila del día; tasa manual restaurada |
+| Tipo de cambio: actualizar / guardar manual | ✅ | BCCR consultado 2 veces → **1 sola fila** del día (v2.33.27); tasa manual 435 restaurada |
 | **Perfil**: formularios de correo y contraseña | ✅ | contraseña re-guardada (mismo valor) y login verificado; correo inválido rechazado (v2.33.26) |
 | **Registro de actividades**: listar | ✅ | 142 archivos |
 | Registro: descargar log | ✅ | 200, `text/plain`, attachment |
@@ -271,3 +282,4 @@
 - [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
 - [x] Perfil: contraseña re-guardada (mismo valor) + login verificado; correo inválido rechazado (v2.33.26).
 - [x] **Ajustes: código de actividad corregido a `471102`.**
+- Observación: `templates/pages/stockalert-config/index.html` es una plantilla huérfana (la página real usa `pages/inventario/stock-alert-config`); los modales `nueva-config`/`editar-config` de ese archivo no son alcanzables.
