@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.20 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.25 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -60,7 +60,7 @@
 | FEC/FEE: notas y receptor | ✅ | avisos correctos |
 | Emitir TE/FE | ✅ | documentos creados en pruebas anteriores |
 | Emitir ND/FEC/REP desde el POS | ✅ | ND 00100001030000000001, FEC ...080000000001, REP ...100000000001 (soft-deleted) |
-| Emitir FEE desde el POS | ✅ | 00100001050000000001; XSD de exportación corregido (v2.33.22) |
+| Emitir FEE desde el POS | ✅ | 00100001050000000003 valida contra el XSD; solo falla la firma externa (sin servicio) |
 | Efecto en inventario por tipo | ✅ | FEC suma; ND/REP/NC no mueven; ventas restan |
 | Título del PDF por tipo | ✅ | Factura/Nota/Compra/Exportación/Recibo/Tiquete |
 
