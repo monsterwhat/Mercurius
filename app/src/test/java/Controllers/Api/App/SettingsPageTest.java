@@ -59,6 +59,7 @@ import support.AppBase;
  * production markup without the layout shell (no csrf/bundle injectors).</p>
  */
 @QuarkusTest
+@org.junit.jupiter.api.TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class SettingsPageTest extends AppBase {
 
     private static final String BASE = "/api/app/settings";
@@ -192,6 +193,7 @@ class SettingsPageTest extends AppBase {
     }
 
     @Test
+    @org.junit.jupiter.api.Order(1)
     @TestSecurity(user = "admin", roles = {"admin"})
     void correoDePruebaSinCredencialesSeRechaza() {
         Map<String, String> jar = csrfJar();
@@ -199,6 +201,39 @@ class SettingsPageTest extends AppBase {
                 .header("X-CSRF-TOKEN", jar.get("csrf-token"))
                 .contentType(ContentType.URLENC)
                 .when().post(BASE + "/correo/prueba")
+                .then()
+                .statusCode(400)
+                .body("error.code", equalTo("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @org.junit.jupiter.api.Order(2)
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void correoYContrasenaSeGuardanSinFiltrarElSecreto() {
+        Map<String, String> jar = csrfJar();
+        String respuesta = given().cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.URLENC)
+                .formParam("correoElectronico", "negocio.qa@gmail.com")
+                .formParam("contrasenaCorreo", "abcd efgh ijkl mnop")
+                .when().post(BASE + "/form")
+                .then()
+                .statusCode(200)
+                .body("data.correoElectronico", equalTo("negocio.qa@gmail.com"))
+                .extract().asString();
+        assertFalse(respuesta.contains("abcd efgh ijkl mnop"),
+                "la contraseña guardada no debe viajar en la respuesta");
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void correoElectronicoInvalidoSeRechaza() {
+        Map<String, String> jar = csrfJar();
+        given().cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.URLENC)
+                .formParam("correoElectronico", "no-es-correo")
+                .when().post(BASE + "/form")
                 .then()
                 .statusCode(400)
                 .body("error.code", equalTo("VALIDATION_ERROR"));

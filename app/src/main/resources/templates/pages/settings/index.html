@@ -261,12 +261,20 @@
             <h2 class="title is-5">Correo y notificaciones</h2>
             <div class="columns is-multiline">
                 <div class="column is-full">
-                    <p class="is-size-7 mercurius-text-muted">Correo electrónico principal (solo lectura)</p>
-                    <p>{settings.correoElectronico ?: '—'}</p>
-                    <p class="help mercurius-text-muted">
-                        Por seguridad, las credenciales (correo, certificado .p12,
-                        llaves de Hacienda y Fides) no se muestran ni se editan aquí.
-                    </p>
+                    <div class="field">
+                        <label class="label" for="correo-electronico">Correo electrónico principal</label>
+                        <div class="control">
+                            <input id="correo-electronico" class="input" type="email"
+                                   name="correoElectronico" autocomplete="off"
+                                   placeholder="negocio@gmail.com"
+                                   value="{settings.correoElectronico ?: ''}"/>
+                        </div>
+                        <p class="help mercurius-text-muted">
+                            Cuenta desde la que se envían los correos (también es el USUARIO
+                            del SMTP/IMAP). El resto de credenciales (certificado .p12 y
+                            llaves de Hacienda/Fides) no se muestran ni se editan aquí.
+                        </p>
+                    </div>
                 </div>
                 <div class="column is-half">
                     <div class="field">

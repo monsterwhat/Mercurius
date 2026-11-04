@@ -196,6 +196,7 @@ public class SettingsResource {
             @FormParam("notificarRechazosResumen") @Nullable String notificarRechazosResumen,
             @FormParam("notificarRechazosResumenPresente") @Nullable String notificarRechazosResumenPresente,
             @FormParam("correoNotificaciones") @Nullable String correoNotificaciones,
+            @FormParam("correoElectronico") @Nullable String correoElectronico,
             @FormParam("backupHabilitado") @Nullable String backupHabilitado,
             @FormParam("backupHabilitadoPresente") @Nullable String backupHabilitadoPresente,
             @FormParam("backupHora") @Nullable String backupHora,
@@ -228,6 +229,7 @@ public class SettingsResource {
         request.notificarRechazosResumen = casilla(notificarRechazosResumen, notificarRechazosResumenPresente);
         request.backupHabilitado = casilla(backupHabilitado, backupHabilitadoPresente);
         request.correoNotificaciones = correoNotificaciones;
+        request.correoElectronico = correoElectronico;
         // Un <input> vacío manda "" y el merge trata null como "no cambiar":
         // sin esta normalización, dejar la hora o el puerto en blanco se
         // rechazaba con 400 en vez de conservar el valor actual.
@@ -336,6 +338,17 @@ public class SettingsResource {
             }
             if (request.correoNotificaciones != null) {
                 settings.setCorreoNotificaciones(request.correoNotificaciones);
+            }
+            if (request.correoElectronico != null) {
+                String correo = request.correoElectronico.trim();
+                if (!correo.isEmpty() && (correo.length() > 160
+                        || !correo.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El correo electrónico no tiene un formato válido."))
+                            .build();
+                }
+                settings.setCorreoElectronico(correo.isEmpty() ? null : correo);
             }
             if (request.notificarRechazosResumen != null) {
                 settings.setNotificarRechazosResumen(request.notificarRechazosResumen);
@@ -1084,6 +1097,8 @@ public class SettingsResource {
         public Boolean notificarRechazos;
         @Nullable
         public String correoNotificaciones;
+        @Nullable
+        public String correoElectronico;
         @Nullable
         public Boolean notificarRechazosResumen;
         @Nullable

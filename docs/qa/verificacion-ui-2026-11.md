@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.29 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.30 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -192,7 +192,7 @@
 | **Ajustes → Guardar ajustes** (identidad, actividad, correo, perfil tributación) | ✅ | 200 “Configuración guardada”; valores conservados; actividad inválida → 400 con mensaje |
 | **Sucursales y terminales**: “En uso”, Desactivar/Activar | ✅ | desactivó y reactivó (confirmado en BD) |
 | Registrar punto de venta | ✅ | 002/00002 registrado y usado; revertido a 001/00001 y fila borrada |
-| **Correo y notificaciones**: SMTP/IMAP/notificaciones | ✅/🟡 | proveedor, hosts/puertos, **contraseña de aplicación (solo escritura)** y **“Enviar correo de prueba”** (v2.33.29); el envío real depende de credenciales |
+| **Correo y notificaciones**: SMTP/IMAP/notificaciones | ✅/🟡 | correo principal editable, proveedor, hosts/puertos, **contraseña de aplicación (solo escritura)** y **“Enviar correo de prueba”** (v2.33.29/.30); el envío real depende de credenciales |
 | **Logo**: subir | ✅ | PNG de prueba subido (oid + image/png) y restaurado |
 | **Respaldos**: habilitar/hora/retensión/ruta | ✅ | 200; 03:00, 14 días |
 | Respaldos: ejecutar ahora | ✅ | `.sql.gz` de 152 MB generado |
@@ -259,6 +259,7 @@
 | 2.33.28 | `/app/correos` devolvía “Not Found” pelado | redirige a `/app/correos/reportes` |
 | 2.33.28 | plantilla huérfana `pages/stockalert-config/index.html` | eliminada (la página real es `pages/inventario/stock-alert-config`) |
 | 2.33.29 | no había forma de guardar la contraseña del correo desde la UI | campo de solo escritura + “Enviar correo de prueba” |
+| 2.33.30 | el correo principal era “solo lectura” (no se podía poner el Gmail) | campo editable con validación |
 
 ## 12. No ejecutado (y por qué)
 
