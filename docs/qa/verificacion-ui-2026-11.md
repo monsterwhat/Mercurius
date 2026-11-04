@@ -73,7 +73,7 @@
 | Emitidas: “Eliminar factura” (soft delete) | 🟡 | botón visible; no se ejecutó sobre datos reales |
 | Emitidas: pagar / procesar / aceptar / rechazar | ⛔/🟡 | “Procesar” envía a Hacienda; aceptar/rechazar son locales pero no se ejecutaron |
 | **Recibidas**: lista, búsqueda, cubetas | ✅ | 200 |
-| Recibidas: formulario de carga | ✅/🟡 | archivo inválido → “0 procesados, 1 con error” (sin escrituras); XML válido cubierto por tests |
+| Recibidas: formulario de carga | ✅ | XML real v4.4 → “1 archivo procesado”; inválidos → error por archivo (sin escrituras) |
 | Recibidas: drawer + prevalidación | ✅ | panel carga |
 | Recibidas: procesar / activar-desactivar | ✅ | **Pagar** (paid=true), **Procesar** (creó artículo + movimiento; revertido) y **Desactivar/Activar** con bandeja “Inactivas” |
 | Recibidas: Mensaje Receptor (aceptar/parcial/rechazar) | ⛔ | envía a Hacienda |
@@ -240,10 +240,8 @@
 | Envío a Hacienda (facturar con envío, Mensaje Receptor, reemitir, enviar pendientes, autorizar devolución) | Prohibido enviar a Tributación en esta sesión |
 | Correo real (SMTP/IMAP) | Sin credenciales configuradas |
 | Certificado / clave API de Hacienda | Sin credenciales |
-| Subir XML de facturas recibidas | Se probó el rechazo/validación; el XML de prueba no pasó el XSD completo |
 | Promociones / ajuste de inventario / procesar artículos | Mutaciones de catálogo/stock no revertibles desde la UI |
 | Tipo de cambio: actualizar | Llama a la API de Hacienda/BCCR |
-| Perfil: correo/contraseña | Cambiaría el acceso |
 
 ## 13. Pendientes de esta lista (siguiente pasada)
 
