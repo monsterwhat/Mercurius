@@ -154,12 +154,12 @@
 | Control | Estado | Evidencia |
 |---|---|---|
 | **Clientes**: crear/editar/desactivar | ✅ | fecha dd/mm/aaaa; QA limpiado |
-| Clientes: buscar nombre en Gometa | 🟡 | no ejecutado |
+| Clientes: buscar nombre en Gometa | ✅ | cédula 104550334 → nombre aplicado (“Datos encontrados y aplicados”) |
 | **Usuarios**: crear (rol), editar correo, desactivar | ✅ | QA limpiado |
 | Usuarios: guardar permisos | ✅ | `[inventario, usuario]` persistido en BD |
 | Usuarios: activar cuenta | ✅ | bug corregido (v2.33.14): el segundo DELETE reactiva |
 | **Lealtad (gestión)**: guardar cashback/meses | ✅ | 1%/12 y restaurado |
-| Lealtad: ver historial de cliente | 🟡 | no ejecutado |
+| Lealtad: ver historial de cliente | ✅ | modal con estado vacío correcto |
 | **Clientes (reporte)**: listado y exportar | ✅ | 200 |
 
 ## 10. Configuración del negocio
@@ -228,6 +228,7 @@
 | 2.33.20 | No existía descuento sobre el total de la factura | % admin-only repartido por línea |
 | 2.33.21 | Buscador de artículos en “Nueva Orden” no devolvía nada | `name="q"` en el input |
 | 2.33.22 | FEE emitía `CodigoActividadReceptor` (XSD de exportación inválido) | el encabezado FEE no lo emite |
+| 2.33.23 | Línea nueva de orden: el buscador no disparaba (clon sin `htmx.process`) | procesar la fila clonada |
 
 ## 12. No ejecutado (y por qué)
 
@@ -252,9 +253,11 @@
 - [x] Usuarios: guardar permisos y “Activar cuenta” (v2.33.14).
 - [x] Sucursales: registrar un punto de venta QA, revertir y eliminarlo.
 - [x] Tipo de cambio: tasa manual guardada y fila de historial eliminada.
-- [x] Emitir ND, FEC y REP desde el POS (v2.33.18 corrige el XML); FEE solo por tests.
-- [ ] Cabys: importar catálogo en ventana controlada (llamada externa larga).
-- [ ] Recibidas: “Procesar” (crea inventario/gasto).
-- [ ] Órdenes de compra: “Archivar” (no quedan órdenes de prueba).
-- [ ] Clientes: buscar en Gometa; Lealtad: historial de cliente; Perfil: cambio de correo/contraseña.
-- [ ] **Ajustes: el código de actividad guardado es `4711.2`; Hacienda exige 6 dígitos.**
+- [x] Emitir ND, FEC, FEE y REP desde el POS (v2.33.18/.22 corrigen el XML); documentos de prueba soft-deleted y stock revertido.
+- [x] Clientes: “Buscar nombre en Gometa” (rellenó el nombre con la cédula).
+- [x] Lealtad: “Ver historial” de un cliente (estado vacío correcto).
+- [ ] Cabys: importar catálogo (llamada externa larga; el catálogo ya responde búsquedas).
+- [ ] Recibidas: “Procesar” — crea artículos e inventario reales (175 pendientes); lo decide el negocio.
+- [ ] Órdenes de compra: “Archivar” (se prueba con la orden QA de la siguiente pasada).
+- [ ] Perfil: cambio de correo/contraseña (cambia el acceso).
+- [x] **Ajustes: código de actividad corregido a `471102`.**

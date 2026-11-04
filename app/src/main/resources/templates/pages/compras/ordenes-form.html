@@ -309,8 +309,14 @@
                 var lista = document.getElementById('lineas-lista');
                 if (plantilla && lista) {
                     lista.appendChild(plantilla.content.cloneNode(true));
-                    actualizarVacio();
                     var nueva = lista.lastElementChild;
+                    // htmx enlaza sus atributos al procesar el DOM: una fila
+                    // clonada desde <template> queda "muerta" (el buscador de
+                    // articulo no dispara hx-get) hasta procesarla.
+                    if (nueva && window.htmx && htmx.process) {
+                        htmx.process(nueva);
+                    }
+                    actualizarVacio();
                     var campo = nueva ? nueva.querySelector('.js-articulo-nombre') : null;
                     if (campo) {
                         campo.focus();
