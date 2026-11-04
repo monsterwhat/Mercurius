@@ -55,8 +55,6 @@ public class SettingsDirController implements Serializable {
     private static final Logger LOG = Logger.getLogger(SettingsDirController.class);
 
     @Nullable
-    private List<ConfiguracionAplicacion> currentSettingsList;
-    @Nullable
     private ConfiguracionAplicacion currentSettings;
     @Nullable
     private ConfiguracionAplicacion newSettings;
@@ -79,7 +77,10 @@ public class SettingsDirController implements Serializable {
 
     @PostConstruct
     private void init() {
-        currentSettingsList = settingsService.listAll();
+        // Solo la configuración activa. Un listAll() aquí hidrataba todas las
+        // filas (incluido el logo @Lob) fuera de transacción y fallaba en cada
+        // ciclo del planificador, llenando el log de ERROR; la lista ni siquiera
+        // se leía en ninguna parte.
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
             currentSettings = new ConfiguracionAplicacion();

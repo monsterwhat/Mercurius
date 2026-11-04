@@ -62,8 +62,6 @@ public class SettingsController implements Serializable {
     private static final Logger LOG = Logger.getLogger(SettingsController.class);
 
     @Nullable
-    private List<ConfiguracionAplicacion> currentSettingsList;
-    @Nullable
     private ConfiguracionAplicacion currentSettings;
     @Nullable
     private ConfiguracionAplicacion newSettings;
@@ -115,7 +113,6 @@ public class SettingsController implements Serializable {
             return;
         }
         
-        currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
             currentSettings = new ConfiguracionAplicacion(); 

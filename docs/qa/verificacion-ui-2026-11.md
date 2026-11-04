@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.39 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.41 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -203,7 +203,7 @@
 | **Sucursales y terminales**: “En uso”, Desactivar/Activar | ✅ | desactivó y reactivó (confirmado en BD) |
 | Registrar punto de venta | ✅ | 002/00002 registrado y usado; revertido a 001/00001 y fila borrada |
 | **Correo y notificaciones**: SMTP/IMAP/notificaciones | ✅ | correo Gmail + contraseña de aplicación configurados desde la UI; **correo de prueba enviado** (SMTP real). IMAP queda a la espera del ciclo de 15 min |
-| **Logo**: subir | ✅ | PNG de prueba subido (oid + image/png) y restaurado |
+| **Logo**: subir | ✅ | logo real de 249.754 bytes subido, servido por `/logo` (md5 idéntico), visible en login/sidebar/Ajustes; subida de prueba y restauración byte a byte verificadas (v2.33.40) |
 | **Respaldos**: habilitar/hora/retensión/ruta | ✅ | 200; 03:00, 14 días |
 | Respaldos: ejecutar ahora | ✅ | `.sql.gz` de 152 MB generado |
 | Respaldos: historial | ✅ | fila con fecha y tamaño |
@@ -310,4 +310,7 @@
 - [x] Barrido automático de correos (IMAP): corregido el NPE (`@Inject` faltante); pendiente confirmar el ciclo y la importación de un XML adjunto.
 - [x] Barrido automático de correos (IMAP): corregido el NPE (@Inject faltante) y el fallo del logo LOB (@Lob leído fuera de transacción); el ciclo vuelve a completar y hay botón **Revisar correo ahora** (v2.33.39/.38).
 - [x] Logo único: GET /logo público sirve el logo subido o el de fábrica; sidebar y login dejan de usar un base64 fijo (v2.33.36/.39).
-- [x] Plantillas: vista previa con el layout real del correo (cabecera, cuerpo, pie) y variables también en el asunto (v2.33.37).
+- [x] Plantillas: vista previa con el layout real del correo (cabecera, cuerpo, pie) y variables también en el asunto (v2.33.37).- [x] Barrido IMAP verificado de punta a punta en producción: correo con XML adjunto → comprobante  0100001010000990021 creado; después se borraron comprobante, líneas, XML en disco y el correo. El planificador completa cada 15 min (19:15 → 21:00 sin fallos).
+- [x] Plantillas predeterminadas: las 4 se crean desde la UI (200) y la vista previa devuelve el correo completo con marca y variables sustituidas (asunto Su factura 00100001010000000001).
+- [x] Logo: subida desde Ajustes probada con una imagen distinta (el endpoint público cambia al instante) y restaurado el logo original; login/sidebar/Ajustes apuntan todos a /logo.
+- [ ] **Nota operativa:** la columna EmailTemplate.cuerpoHtml era VARCHAR(255); Hibernate update no cambia tipos, así que en bases existentes hay que ejecutar una vez ALTER TABLE emailtemplate ALTER COLUMN cuerpohtml TYPE TEXT; (ya aplicado en producción). Las instalaciones nuevas la crean como TEXT.
