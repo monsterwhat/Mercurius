@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.11 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.18 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -165,7 +165,7 @@
 
 | Control | Estado | Evidencia |
 |---|---|---|
-| **Ajustes → Guardar ajustes** (identidad, actividad, correo, perfil tributación) | ✅ | 200 “Configuración guardada”; valores conservados |
+| **Ajustes → Guardar ajustes** (identidad, actividad, correo, perfil tributación) | ✅ | 200 “Configuración guardada”; valores conservados; actividad inválida → 400 con mensaje |
 | **Sucursales y terminales**: “En uso”, Desactivar/Activar | ✅ | desactivó y reactivó (confirmado en BD) |
 | Registrar punto de venta | ✅ | 002/00002 registrado y usado; revertido a 001/00001 y fila borrada |
 | **Correo y notificaciones**: SMTP/IMAP/notificaciones | 🟡 | formulario guarda; sin credenciales no hay envío real |
@@ -241,10 +241,15 @@
 ## 13. Pendientes de esta lista (siguiente pasada)
 
 - [x] Facturas recibidas: **Pagar** y **Activar/Desactivar** (con bandeja Inactivas, v2.33.12).
-- [x] Promociones: crear y eliminar (v2.33.13); editar pendiente.
+- [x] Promociones: crear, editar y eliminar (v2.33.13/.16/.17).
 - [x] Inventario: crear ajuste y procesar/rechazar movimientos (revertidos).
 - [x] Artículos: “Procesar” / “Procesado rápido” / “Saltar” (v2.33.15) y buscador CAByS.
 - [x] Usuarios: guardar permisos y “Activar cuenta” (v2.33.14).
 - [x] Sucursales: registrar un punto de venta QA, revertir y eliminarlo.
 - [x] Tipo de cambio: tasa manual guardada y fila de historial eliminada.
+- [x] Emitir ND, FEC y REP desde el POS (v2.33.18 corrige el XML); FEE solo por tests.
 - [ ] Cabys: importar catálogo en ventana controlada (llamada externa larga).
+- [ ] Recibidas: “Procesar” (crea inventario/gasto).
+- [ ] Órdenes de compra: “Archivar” (no quedan órdenes de prueba).
+- [ ] Clientes: buscar en Gometa; Lealtad: historial de cliente; Perfil: cambio de correo/contraseña.
+- [ ] **Ajustes: el código de actividad guardado es `4711.2`; Hacienda exige 6 dígitos.**
