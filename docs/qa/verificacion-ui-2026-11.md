@@ -26,6 +26,8 @@
 | Campos de fecha `dd/mm/aaaa` | ✅ | visible `04/10/2026` ↔ ISO `2026-10-04`; filtro envía ISO |
 | Búsqueda del hub de Reportes + Limpiar | ✅ | filtra tarjetas y restaura |
 | Tema oscuro en tablas/diálogos | ✅ | revisado visualmente |
+| Barrido de enlaces internos | ✅ | 88 enlaces (dashboard/gestión/reportes) → 200; `/app` redirige al dashboard |
+| Redirecciones del proxy | 🟡 | el backend responde `Location: http://…`; Apache lo corrige con 301 a https |
 
 ## 2. Dashboard
 
