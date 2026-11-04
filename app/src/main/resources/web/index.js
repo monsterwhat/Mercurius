@@ -1,6 +1,10 @@
 // Mercurius application entry point.
 // Manual index: importing index.scss here is what makes the bundler emit app-*.css
-import 'htmx.org';
+// htmx 2's ESM build does NOT assign window.htmx (only the UMD build does).
+// Page scripts and this module's own helpers (kitPolling, htmx.process on
+// cloned rows) rely on the global, so publish the default export explicitly.
+import htmx from 'htmx.org';
+window.htmx = htmx;
 import Alpine from 'alpinejs';
 import './print.js';
 import './index.scss';
