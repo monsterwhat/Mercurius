@@ -86,12 +86,12 @@
 
 | Control | Estado | Evidencia |
 |---|---|---|
-| Crear orden (proveedor, fecha, líneas) | ✅ | OC-2026-00001/2, BORRADOR, total correcto |
+| Crear orden (proveedor, fecha, líneas) | ✅ | buscador de artículos corregido (v2.33.21/.23/.24); OC-2026-00001 total ₡1.200 |
 | Editar orden (notas) | ✅ | persistido |
 | Cambiar estado BORRADOR→ENVIADA→CONFIRMADA | ✅ | transiciones y 409 en ilegales |
 | Marcar como Recibida | ✅ | RECIBIDA + fecha real (corregido 415) |
 | Cancelar orden con motivo | ✅ | CANCELADA + motivo en notas |
-| Archivar orden | 🟡 | visible en estados activos; no se ejecutó |
+| Archivar orden | ✅ | `status=false`, desaparece del listado; orden QA borrada |
 
 ## 6. Inventario
 
@@ -244,7 +244,6 @@
 | Promociones / ajuste de inventario / procesar artículos | Mutaciones de catálogo/stock no revertibles desde la UI |
 | Tipo de cambio: actualizar | Llama a la API de Hacienda/BCCR |
 | Perfil: correo/contraseña | Cambiaría el acceso |
-| Archivar orden | Botón disponible solo en estados activos; no se ejecutó |
 
 ## 13. Pendientes de esta lista (siguiente pasada)
 
@@ -260,6 +259,6 @@
 - [x] Lealtad: “Ver historial” de un cliente (estado vacío correcto).
 - [ ] Cabys: importar catálogo (llamada externa larga; el catálogo ya responde búsquedas).
 - [ ] Recibidas: “Procesar” — crea artículos e inventario reales (175 pendientes); lo decide el negocio.
-- [ ] Órdenes de compra: “Archivar” (se prueba con la orden QA de la siguiente pasada).
+- [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
 - [ ] Perfil: cambio de correo/contraseña (cambia el acceso).
 - [x] **Ajustes: código de actividad corregido a `471102`.**
