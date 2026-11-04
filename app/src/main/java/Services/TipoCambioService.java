@@ -125,14 +125,33 @@ public class TipoCambioService extends GService<TipoCambio> {
             if (response.getStatus() == Response.Status.OK.getStatusCode()) {
                 TipoCambio tipoCambio = parseTipoCambio(response.readEntity(String.class));
                 if (tipoCambio != null) {
-                    tipoCambio.setManual(Boolean.FALSE);
-                    saveTipoCambio(tipoCambio);
+                    applyFetchedRate(tipoCambio);
                 }
             } else {
                 LOG.warn("forced tipo-cambio refresh failed, status " + response.getStatus());
             }
         } catch (RuntimeException e) {
             LOG.warn("forced tipo-cambio refresh failed", e);
+        }
+    }
+
+    /**
+     * Guarda la tasa obtenida de la API. La tasa es diaria: si ya existe una
+     * fila para esa fecha se ACTUALIZA en vez de insertar otra. Antes cada clic
+     * en "Actualizar" dejaba una fila duplicada del mismo día.
+     *
+     * <p>Package-private para poder cubrirlo sin llamar a la API externa.</p>
+     */
+    void applyFetchedRate(@Nonnull TipoCambio tipoCambio) {
+        tipoCambio.setManual(Boolean.FALSE);
+        TipoCambio existente = findForDate(tipoCambio.getFecha());
+        if (existente != null) {
+            existente.setValorCompra(tipoCambio.getValorCompra());
+            existente.setValorVenta(tipoCambio.getValorVenta());
+            existente.setManual(Boolean.FALSE);
+            update(existente);
+        } else {
+            saveTipoCambio(tipoCambio);
         }
     }
 
@@ -158,17 +177,26 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     private boolean tipoCambioExistsForDate(@Nonnull LocalDateTime date) {
+        return findForDate(date) != null;
+    }
+
+    /** Primera fila de esa fecha (la tasa es diaria), o null. */
+    @Nullable
+    private TipoCambio findForDate(@Nonnull LocalDateTime date) {
         try {
-            TypedQuery<Long> query = em.createQuery(
-                "SELECT COUNT(t) FROM TipoCambio t WHERE CAST(t.fecha AS date) = :date", Long.class);
+            TypedQuery<TipoCambio> query = em.createQuery(
+                "SELECT t FROM TipoCambio t WHERE CAST(t.fecha AS date) = :date ORDER BY t.id", TipoCambio.class);
             query.setParameter("date", java.sql.Date.valueOf(date.toLocalDate()));
-            return query.getSingleResult() > 0;
-        } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.warn("Error checking TipoCambio existence for date: " + e.getMessage() + " | source=" + "TipoCambioService.tipoCambioExistsForDate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            return false;
+            query.setMaxResults(1);
+            List<TipoCambio> filas = query.getResultList();
+            return filas.isEmpty() ? null : filas.get(0);
+        } catch (RuntimeException e) {
+            LOG.warn("Error buscando TipoCambio por fecha: " + e.getMessage()
+                    + " | source=TipoCambioService.findForDate()", e);
+            return null;
         }
     }
-    
+
     @Timeout(value = 3, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5, delay = 30, delayUnit = ChronoUnit.SECONDS)

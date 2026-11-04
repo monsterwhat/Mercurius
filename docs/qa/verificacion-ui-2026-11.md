@@ -189,7 +189,7 @@
 | **Umbrales de stock**: enlace y página | ✅ | `/app/stock-alert-config` con layout |
 | Umbrales: cargar artículo y guardar | ✅ | 200 + toast |
 | **Tipo de cambio**: modal | ✅ | compra/venta/historial |
-| Tipo de cambio: actualizar / guardar manual | ⛔/✅ | API externa no probada; tasa manual guardada (histórico revertido) |
+| Tipo de cambio: actualizar / guardar manual | ✅ | BCCR consultado (450,31/454,65) sin duplicar la fila del día; tasa manual restaurada |
 | **Perfil**: formularios de correo y contraseña | ✅ | contraseña re-guardada (mismo valor) y login verificado; correo inválido rechazado (v2.33.26) |
 | **Registro de actividades**: listar | ✅ | 142 archivos |
 | Registro: descargar log | ✅ | 200, `text/plain`, attachment |
@@ -243,6 +243,7 @@
 | 2.33.24 | `window.htmx` no existía (build ESM no lo publica) | se expone el default export |
 | 2.33.25 | FEE emitía totales exclusivos de FE (`TotalServExonerado`, `TotalIVADevuelto`…) | resumen FEE ajustado al XSD |
 | 2.33.26 | Perfil aceptaba cualquier texto como correo | validación de formato |
+| 2.33.27 | “Actualizar” tipo de cambio duplicaba la fila del día en cada clic | actualiza la fila de esa fecha |
 
 ## 12. No ejecutado (y por qué)
 
@@ -252,7 +253,6 @@
 | Correo real (SMTP/IMAP) | Sin credenciales configuradas |
 | Certificado / clave API de Hacienda | Sin credenciales |
 | Promociones / ajuste de inventario / procesar artículos | Mutaciones de catálogo/stock no revertibles desde la UI |
-| Tipo de cambio: actualizar | Llama a la API de Hacienda/BCCR |
 
 ## 13. Pendientes de esta lista (siguiente pasada)
 
