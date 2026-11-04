@@ -93,6 +93,11 @@ public class SettingsResource {
     @Inject
     AppSettingsService settingsService;
 
+    /** Para las muestras de plantillas (correo/muestras). */
+    @Nonnull
+    @Inject
+    Services.Correos.EmailTemplateService emailTemplateService;
+
     @Nonnull
     @Inject
     BackupService backupService;
@@ -514,7 +519,7 @@ public class SettingsResource {
 
             settingsService.update(settings);
 
-                        LOG.info("Se ha actualizado la configuración: " + settings.getNombrePerfil() + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "SettingsResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
+                        LOG.info("Se ha actualizado la configuración: " + settings.getNombrePerfil() + " | user=" + Utils.LogUsers.nombre(currentUserOrNull()) + " | source=" + "SettingsResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
 
             return Response.ok(ApiResponse.ok(toDTO(settings))).build();
         } catch (IllegalArgumentException e) {
@@ -623,7 +628,7 @@ public class SettingsResource {
             }
             settingsService.update(settings);
             LOG.info("Logo actualizado: " + bytes.length + " bytes (" + tipo + ")"
-                    + " | user=" + currentUserOrNull()
+                    + " | user=" + Utils.LogUsers.nombre(currentUserOrNull())
                     + " | source=SettingsResource.uploadLogo()");
             // Respuesta mínima a propósito: toDTO() arrastra los bytes del logo
             // (hasta 2 MB) y la página recarga para mostrar la imagen nueva.
@@ -798,7 +803,7 @@ public class SettingsResource {
             // gesto desde el asistente.
             sucursalService.seleccionar(registrada.getId());
             LOG.info("Configuración actualizada: punto de venta registrado y seleccionado | user="
-                    + String.valueOf(currentUserOrNull()) + " | source=SettingsResource.registrarSucursal()"
+                    + Utils.LogUsers.nombre(currentUserOrNull()) + " | source=SettingsResource.registrarSucursal()"
                     + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(registrada)));
             return Response.ok(ApiResponse.ok(toSucursales(sucursalService.seleccionada()))).build();
         } catch (IllegalArgumentException e) {
@@ -834,7 +839,7 @@ public class SettingsResource {
             Long registro = parseId(id);
             Sucursal seleccionada = sucursalService.seleccionar(registro);
             LOG.info("Configuración actualizada: sucursal seleccionada | user="
-                    + String.valueOf(currentUserOrNull()) + " | source=SettingsResource.seleccionarSucursal()"
+                    + Utils.LogUsers.nombre(currentUserOrNull()) + " | source=SettingsResource.seleccionarSucursal()"
                     + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(seleccionada)));
             return Response.ok(ApiResponse.ok(toSucursales(seleccionada))).build();
         } catch (IllegalArgumentException e) {
@@ -940,7 +945,7 @@ public class SettingsResource {
         }
         if ("Sent".equals(estado)) {
             LOG.info("Correo de prueba enviado a " + destino
-                    + " | user=" + String.valueOf(currentUserOrNull()));
+                    + " | user=" + Utils.LogUsers.nombre(currentUserOrNull()));
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("destino", destino);
             return Response.ok(ApiResponse.ok(data)).build();
@@ -949,6 +954,135 @@ public class SettingsResource {
         return Response.status(Response.Status.BAD_GATEWAY)
                 .entity(ApiResponse.error("EMAIL_FAILED", "No se pudo enviar: " + estado))
                 .build();
+    }
+
+    /**
+     * Envía una muestra de cada plantilla de correo y de cada reporte
+     * programado, para revisar el formato de marca en el cliente real.
+     * Solo admin (clase) y con CSRF; usa las credenciales guardadas.
+     */
+    @POST
+    @Path("/correo/muestras")
+    @Consumes(MediaType.WILDCARD)
+    @Operation(summary = "Send one sample email per template and per report")
+    public Response enviarMuestrasCorreo() {
+        ConfiguracionAplicacion settings = settingsService.returnCurrent();
+        if (settings == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", "No hay configuración guardada."))
+                    .build();
+        }
+        String correo = settings.getCorreoElectronico();
+        String pass = settings.getContrasenaCorreo();
+        if (correo == null || correo.isBlank() || pass == null || pass.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR",
+                            "Configure el correo y la contraseña de aplicación antes de enviar."))
+                    .build();
+        }
+        String destino = settings.getCorreoNotificaciones() != null
+                && !settings.getCorreoNotificaciones().isBlank()
+                ? settings.getCorreoNotificaciones().trim() : correo.trim();
+        String negocio = settings.getNombreNegocio();
+        int enviados = 0;
+        int fallidos = 0;
+
+        for (Models.Correos.EmailTemplate plantilla : emailTemplateService.listAll()) {
+            if (!plantilla.isStatus()) {
+                continue;
+            }
+            String asunto = "Muestra de plantilla: " + plantilla.getNombre();
+            String cuerpo = emailTemplateService.procesarPlantilla(plantilla, variablesMuestra());
+            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim())) {
+                enviados++;
+            } else {
+                fallidos++;
+            }
+        }
+
+        for (String[] reporte : REPORTES_MUESTRA) {
+            String asunto = "Muestra de reporte: " + reporte[0];
+            String cuerpo = htmlReporteMuestra(reporte);
+            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim())) {
+                enviados++;
+            } else {
+                fallidos++;
+            }
+        }
+
+        LOG.info("Muestras de correo enviadas a " + destino
+                + " | enviados=" + enviados + " | fallidos=" + fallidos
+                + " | user=" + Utils.LogUsers.nombre(currentUserOrNull()));
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("destino", destino);
+        data.put("enviados", enviados);
+        data.put("fallidos", fallidos);
+        return Response.ok(ApiResponse.ok(data)).build();
+    }
+
+    /** Reportes con su tabla de muestra: {título, col1, col2, col3}. */
+    private static final String[][] REPORTES_MUESTRA = {
+        {"Movimientos de inventario", "Fecha", "Artículo", "Cantidad"},
+        {"Facturación", "Consecutivo", "Cliente", "Total"},
+        {"Artículos", "Artículo", "Vendidos", "Ingreso"},
+        {"Departamentos", "Departamento", "Ventas", "Margen"},
+        {"Familias", "Familia", "Ventas", "Margen"},
+        {"Inventarios", "Artículo", "Stock", "Óptimo"}
+    };
+
+    private static Map<String, String> variablesMuestra() {
+        Map<String, String> v = new LinkedHashMap<>();
+        v.put("cliente", "Cliente de ejemplo");
+        v.put("consecutivo", "00100001010000000001");
+        v.put("fecha", "04/11/2026");
+        v.put("total", "₡11.300,00");
+        v.put("cantidad", "3");
+        v.put("detalle", "ARROZ 1KG — quedan 2 (mínimo 5)<br>CAFÉ 500G — quedan 0 (mínimo 4)");
+        v.put("reporte", "Ventas del mes");
+        v.put("periodo", "Octubre 2026");
+        v.put("asunto", "Aviso importante");
+        v.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
+        v.put("enlace", "https://mercurius.tamarindorents.com/Mercurius");
+        return v;
+    }
+
+    private static String htmlReporteMuestra(String[] reporte) {
+        String fila = "<tr>"
+                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151\">04/11/2026</td>"
+                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151\">Producto de ejemplo</td>"
+                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151;text-align:right\">3</td>"
+                + "</tr>";
+        return "<h2 style=\"margin:0 0 8px;color:#0b3b8c;font-size:19px\">" + reporte[0] + "</h2>"
+                + "<p style=\"margin:0 0 16px;color:#1f2937;font-size:14px\">"
+                + "Así se ve el correo de un reporte programado. Los datos reales se generan al enviar.</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" "
+                + "style=\"border:1px solid #e5e9f2;border-radius:8px\">"
+                + "<tr style=\"background:#f8fafc\">"
+                + "<th style=\"padding:8px 10px;text-align:left;font-size:12px;color:#6b7280\">" + reporte[1] + "</th>"
+                + "<th style=\"padding:8px 10px;text-align:left;font-size:12px;color:#6b7280\">" + reporte[2] + "</th>"
+                + "<th style=\"padding:8px 10px;text-align:right;font-size:12px;color:#6b7280\">" + reporte[3] + "</th>"
+                + "</tr>" + fila + fila + fila + "</table>";
+    }
+
+    /** Envía HTML con el layout de marca; true si Gmail lo aceptó. */
+    private boolean enviarHtml(String destino, String asunto, String cuerpoHtml,
+                               @Nullable String negocio, String correo, String pass) {
+        String html = Services.Correos.EmailLayout.wrapHtml(asunto, cuerpoHtml, negocio);
+        java.util.concurrent.CompletableFuture<String> resultado = new java.util.concurrent.CompletableFuture<>();
+        emailService.sendHtmlEmails(java.util.List.of(destino), asunto, html, correo, pass,
+                resultado::complete);
+        try {
+            return "Sent".equals(resultado.get(30, java.util.concurrent.TimeUnit.SECONDS));
+        } catch (java.util.concurrent.TimeoutException e) {
+            LOG.warn("Muestra de correo sin respuesta: " + asunto, e);
+            return false;
+        } catch (RuntimeException | InterruptedException | java.util.concurrent.ExecutionException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            LOG.warn("Error enviando muestra de correo: " + asunto + " | " + e.getMessage(), e);
+            return false;
+        }
     }
 
     private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionada) {

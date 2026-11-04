@@ -81,7 +81,10 @@ public final class EmailLayout {
                 + "<tr><td style=\"padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;"
                 + "color:#6b7280;font-size:12px;line-height:1.5\">"
                 + "Enviado por Mercurius · " + escape(nombre)
-                + "<br>Este es un correo automático; no responda a esta dirección.</td></tr>"
+                + "<br>Este es un correo automático; no responda a esta dirección."
+                + "<br><a href=\"https://github.com/monsterwhat/Mercurius\""
+                + " style=\"color:#0b3b8c;text-decoration:none\">"
+                + "github.com/monsterwhat/Mercurius</a></td></tr>"
                 + "</table></td></tr></table></body></html>";
     }
 

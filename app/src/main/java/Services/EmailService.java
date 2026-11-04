@@ -347,8 +347,12 @@ public class EmailService implements Serializable {
             Folder inbox = store.getFolder("INBOX");
             inbox.open(Folder.READ_WRITE);
 
-            // Search for unread messages
-            Message[] messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+            // Se procesan TODOS los mensajes del INBOX, no solo los no leídos:
+            // el usuario (o Gmail) puede marcar el correo como leído antes del
+            // barrido y antes quedaba sin etiqueta Processed/NoXMLAttachments
+            // para siempre. Cada mensaje sale del INBOX al procesarse, así que
+            // no se repite trabajo.
+            Message[] messages = inbox.getMessages();
             totalEmails = messages.length;
 
             // Ensure save directory exists

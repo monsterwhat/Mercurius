@@ -37,4 +37,10 @@ class EmailLayoutTest {
         // El título sí se escapa.
         assertThat(html).contains("Aviso &lt;001&gt;");
     }
+
+    @Test
+    void elPieEnlazaElRepositorio() {
+        String html = EmailLayout.wrap("Asunto", "Cuerpo", "Mi Negocio");
+        assertThat(html).contains("https://github.com/monsterwhat/Mercurius");
+    }
 }

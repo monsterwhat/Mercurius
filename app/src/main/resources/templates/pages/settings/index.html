@@ -411,11 +411,19 @@
                 </div>
                 <div class="column is-full">
                     <div class="field">
-                        <button type="button" class="button is-light" data-json-save
-                                hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/prueba"
-                                hx-on::after-request="this.classList.remove('is-loading')">
-                            Enviar correo de prueba
-                        </button>
+                        <div class="buttons">
+                            <button type="button" class="button is-light" data-json-save
+                                    hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/prueba"
+                                    hx-on::after-request="this.classList.remove('is-loading')">
+                                Enviar correo de prueba
+                            </button>
+                            <button type="button" class="button is-light" data-json-save
+                                    hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/muestras"
+                                    hx-confirm="¿Enviar una muestra de cada plantilla y de cada reporte? Son varios correos."
+                                    hx-on::after-request="this.classList.remove('is-loading')">
+                                Enviar muestras (plantillas y reportes)
+                            </button>
+                        </div>
                         <p class="help mercurius-text-muted">
                             Usa el correo y la contraseña guardados. El destino es el correo de
                             notificaciones; si está vacío, el correo principal. Se envía con el
