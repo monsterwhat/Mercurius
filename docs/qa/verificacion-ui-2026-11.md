@@ -192,7 +192,7 @@
 | **Ajustes → Guardar ajustes** (identidad, actividad, correo, perfil tributación) | ✅ | 200 “Configuración guardada”; valores conservados; actividad inválida → 400 con mensaje |
 | **Sucursales y terminales**: “En uso”, Desactivar/Activar | ✅ | desactivó y reactivó (confirmado en BD) |
 | Registrar punto de venta | ✅ | 002/00002 registrado y usado; revertido a 001/00001 y fila borrada |
-| **Correo y notificaciones**: SMTP/IMAP/notificaciones | ✅/🟡 | correo principal editable, proveedor, hosts/puertos, **contraseña de aplicación (solo escritura)** y **“Enviar correo de prueba”** (v2.33.29/.30); el envío real depende de credenciales |
+| **Correo y notificaciones**: SMTP/IMAP/notificaciones | ✅ | correo Gmail + contraseña de aplicación configurados desde la UI; **correo de prueba enviado** (SMTP real). IMAP queda a la espera del ciclo de 15 min |
 | **Logo**: subir | ✅ | PNG de prueba subido (oid + image/png) y restaurado |
 | **Respaldos**: habilitar/hora/retensión/ruta | ✅ | 200; 03:00, 14 días |
 | Respaldos: ejecutar ahora | ✅ | `.sql.gz` de 152 MB generado |
@@ -266,8 +266,8 @@
 | Elemento | Motivo |
 |---|---|
 | Envío a Hacienda (facturar con envío, Mensaje Receptor, reemitir, enviar pendientes, autorizar devolución) | Prohibido enviar a Tributación en esta sesión |
-| Correo real (SMTP/IMAP) | Sin credenciales configuradas |
 | Certificado / clave API de Hacienda | Sin credenciales |
+| IMAP (lectura de respuestas) | Configurado, pero el poll corre cada 15 min; no se esperó el ciclo |
 | Promociones / ajuste de inventario / procesar artículos | Mutaciones de catálogo/stock no revertibles desde la UI |
 
 ## 13. Pendientes de esta lista (siguiente pasada)
@@ -289,3 +289,4 @@
 - [x] **Ajustes: código de actividad corregido a `471102`.**
 - [x] Lealtad: flujo completo (config 10% → cliente → venta → 47,03 puntos → historial), datos revertidos.
 - [x] `/app/correos` y plantilla huérfana de umbrales corregidos (v2.33.28).
+- [x] Correo real: Gmail configurado **desde Ajustes** (correo + contraseña de aplicación) y correo de prueba enviado.
