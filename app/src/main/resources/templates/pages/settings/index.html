@@ -607,7 +607,7 @@
                     <figure class="image is-64x64"
                             style="border:1px solid var(--merc-border);border-radius:8px;overflow:hidden;background:var(--merc-surface);margin:0">
                         {#if settings.logoMimeType??}
-                        <img src="{config:['quarkus.http.root-path']}{baseUrl}/logo" alt="Logo actual de la empresa"/>
+                        <img src="{config:['quarkus.http.root-path']}/logo" alt="Logo actual de la empresa"/>
                         {#else}
                         <div class="has-text-centered mercurius-text-muted" style="padding:1.25rem .25rem">
                             {#include _kit/icon name="file" /}
@@ -638,7 +638,7 @@
                             Subir logo
                         </button>
                         <p class="help mercurius-text-muted" id="logo-ayuda">
-                            PNG, JPG o WebP, máximo 2 MB. Se usa en el membrete de los comprobantes.
+                            PNG, JPG o WebP, máximo 2 MB. Se usa en el membrete de los comprobantes y como logo de toda la aplicación (barra lateral, login y cabecera).
                         </p>
                         <p id="logo-resultado" class="help has-text-danger" role="status" aria-live="polite"></p>
                     </div>

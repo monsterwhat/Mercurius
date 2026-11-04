@@ -13,9 +13,9 @@
     the mechanism matches normalizedPath().endsWith("/j_security_check")). The
     form action below is deliberately RELATIVE so it resolves against the
     deployment root without this template knowing what that root is.
-  - Logo is inlined as a base64 data URI via fragments/logo-img
-    (plain META-INF static files are challenged pre-auth; only the
-    web-bundler output is public, so no URL-based logo can load here).
+  - Logo: fragments/logo-img points at the PUBLIC /logo endpoint, which serves
+    the logo uploaded in Ajustes (or the factory PNG when none is set), so the
+    same image shows on the login screen and across the whole app.
   W2: nothing on this page hard-codes the deployment root. See
   .omo/evidence/t14/implementation-notes.md for the original decision record.
 ============================================================================ -->
