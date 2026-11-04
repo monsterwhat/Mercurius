@@ -114,6 +114,11 @@ public class EmailTemplateResource {
     @Inject
     LoginService loginService;
 
+    /** Para la marca del correo en la vista previa de plantillas. */
+    @Nonnull
+    @Inject
+    Services.AppSettingsService appSettingsService;
+
     @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
@@ -518,9 +523,20 @@ public class EmailTemplateResource {
         variables.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
         variables.put("enlace", "#");
         String html = emailTemplateService.procesarPlantilla(template, variables);
+        String asunto = template.getAsunto() == null ? "" : template.getAsunto();
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
+            asunto = asunto.replace("{{" + entry.getKey() + "}}",
+                    entry.getValue() == null ? "" : entry.getValue());
+        }
+        String negocio = null;
+        Models.ConfiguracionAplicacion ajustes = appSettingsService.returnCurrent();
+        if (ajustes != null) {
+            negocio = ajustes.getNombreNegocio();
+        }
         return htmlOk(previewPlantilla
                 .data("plantilla", template)
-                .data("html", html));
+                .data("asunto", asunto)
+                .data("html", Services.Correos.EmailLayout.wrap(asunto, html, negocio)));
     }
 
     /**

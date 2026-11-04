@@ -1,10 +1,11 @@
 <div id="preview-plantilla-cuerpo">
     <p class="is-size-7 mercurius-text-muted mb-2">
-        Así se verá el contenido de la plantilla con datos de ejemplo.
+        Vista previa con datos de ejemplo; el marco, la cabecera y el pie son los
+        que llevan los correos del sistema.
     </p>
     <p class="mb-3">
         <span class="has-text-weight-semibold">Asunto:</span>
-        <span class="kit-code">{#if plantilla.asunto??}{plantilla.asunto}{#else}(sin asunto){/if}</span>
+        <span class="kit-code">{#if asunto??}{asunto}{#else}(sin asunto){/if}</span>
     </p>
     <div class="box" style="background:#ffffff;max-height:60vh;overflow:auto">
         {html.raw}
