@@ -82,6 +82,15 @@
 | Devoluciones: seleccionar + total en vivo + motivo | ✅ | total ₡575,22 |
 | Devoluciones: procesar/autorizar | ⛔ | genera NC y envía a Hacienda |
 
+## 4 bis. Hacienda (solo lectura)
+
+| Pantalla / control | Estado | Evidencia |
+|---|---|---|
+| **Dashboard Hacienda** | ✅ | 13.013 emitidos, 99,9% éxito, 10 rechazados, pendientes 0 |
+| **Consultas**: pestañas Pendientes/Aceptadas/Rechazadas/Mensajes | ✅ | 0 / 12.998 / 6 / 2.020; tablas con datos |
+| Consultas: “Enviar Facturas Pendientes” | ✅ | **deshabilitado** sin pendientes (no se envió nada) |
+| **Declaración D-104**: período y cálculo | ✅ | Octubre 2026: ventas ₡12.047.235,15 (5.201), IVA ₡1.389.073,60; compras 0 (no hay recibidas en el período) |
+
 ## 5. Compras
 
 | Control | Estado | Evidencia |
@@ -144,7 +153,7 @@
 | Departamentos: crear/editar/desactivar | ✅ | verificado (QA limpiado) |
 | Búsqueda de cada tabla | ✅ | usa el input correcto por panel |
 | **CAByS**: búsqueda y edición | ✅ | modal + guardado |
-| CAByS: importar/actualizar catálogo | ⛔ | descarga de Hacienda (largo, externo) |
+| CAByS: importar/actualizar catálogo | ✅ | 20.505 códigos (el proxy devuelve 502 al navegador aunque el servidor termina) |
 | **Etiquetas**: seleccionar todos / limpiar / exportar PDF | ✅ | 15 marcados → 0; PDF 629 KB |
 | Etiquetas: imprimir | ✅ | `window.print()` invocado |
 | **Precios**: histórico y selector | ✅ | 200 |
