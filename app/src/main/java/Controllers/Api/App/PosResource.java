@@ -2152,6 +2152,14 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         return hits;
     }
 
+    /** v4.4: tipos cuyo Encabezado exige CodigoActividadReceptor. */
+    private static boolean exigeActividadReceptor(@Nullable String tipoDocumento) {
+        return switch (tipoDocumento == null ? "" : tipoDocumento) {
+            case "01", "02", "03", "05", "08" -> true;
+            default -> false;
+        };
+    }
+
     private static boolean matchesArticulo(@Nonnull Articulos articulo, @Nullable String q) {
         if (q == null || q.isBlank()) {
             return true;

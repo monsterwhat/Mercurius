@@ -123,7 +123,15 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     }
 
     private void ensureAppSettings() {
-        if (appSettingsService.returnCurrent() != null) {
+        ConfiguracionAplicacion existente = appSettingsService.returnCurrent();
+        if (existente != null) {
+            // Otro test pudo crear la configuracion sin actividad; el
+            // CodigoActividadReceptor de FE/FEC/FEE/ND cae al del emisor.
+            if (existente.getCodigoActividad() == null
+                    || existente.getCodigoActividad().isBlank()) {
+                existente.setCodigoActividad("620101");
+                appSettingsService.update(existente);
+            }
             return;
         }
         ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
@@ -464,6 +472,10 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
 
             ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("08");
+            assertThat(row.getEncabezado().getCodigoActividadReceptor())
+                    .as("FEC v4.4 exige CodigoActividadReceptor; sin actividad del cliente "
+                            + "se usa la del emisor para que el XML valide")
+                    .isNotBlank();
             assertThat(stockDe(articulo.getCodigoBarra()))
                     .as("una factura de compra documenta una ENTRADA de mercancia")
                     .isEqualByComparingTo(stockAntes.add(java.math.BigDecimal.ONE));

@@ -58,7 +58,8 @@
 | REP: condición de venta 09/11 | ✅ | select y persistencia |
 | FEC/FEE: notas y receptor | ✅ | avisos correctos |
 | Emitir TE/FE | ✅ | documentos creados en pruebas anteriores |
-| Emitir ND/FEC/FEE/REP | ✅ | por API/tests; PDF y XML válidos |
+| Emitir ND/FEC/REP desde el POS | ✅ | ND 00100001030000000001, FEC ...080000000001, REP ...100000000001 (soft-deleted) |
+| Emitir FEE desde el POS | 🟡 | cubierto por tests; no repetido en UI |
 | Efecto en inventario por tipo | ✅ | FEC suma; ND/REP/NC no mueven; ventas restan |
 | Título del PDF por tipo | ✅ | Factura/Nota/Compra/Exportación/Recibo/Tiquete |
 
@@ -219,6 +220,9 @@
 | 2.33.15 | “Saltar” en la revisión de artículos daba 415 | `@Consumes(WILDCARD)` + test HTMX |
 | 2.33.16 | Modal “Editar promoción” daba 500 y quedaba vacío | `time:format` sobre `java.util.Date` |
 | 2.33.17 | Editar promoción duplicaba los artículos | desvincular el lado dueño antes de reemplazar |
+| 2.33.18 | REP emitía `NombreComercial` en el receptor (XSD inválido) | receptor REP mínimo |
+| 2.33.18 | FE/ND/FEC/FEE sin `CodigoActividadReceptor` (XSD inválido) | fallback al emisor + test |
+| 2.33.18 | Ajustes aceptaba actividad que no son 6 dígitos | validación `\d{6}` |
 
 ## 12. No ejecutado (y por qué)
 

@@ -389,7 +389,17 @@ public class SettingsResource {
                 settings.setRazonSocial(textoLimitado(request.razonSocial, 160, "La razón social"));
             }
             if (request.codigoActividad != null) {
-                settings.setCodigoActividad(textoLimitado(request.codigoActividad, 10, "El código de actividad"));
+                String actividad = request.codigoActividad.trim();
+                // Hacienda v4.4: CodigoActividadType = exactamente 6 digitos.
+                // Un valor como "4711.2" produce XML invalido en TODOS los
+                // comprobantes (el XSD lo rechaza con cvc-pattern-valid).
+                if (!actividad.isEmpty() && !actividad.matches("\\d{6}")) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El código de actividad debe tener 6 dígitos (por ejemplo, 471102)."))
+                            .build();
+                }
+                settings.setCodigoActividad(actividad.isEmpty() ? null : actividad);
             }
             if (request.telefono != null) {
                 settings.setTelefono(textoLimitado(request.telefono, 20, "El teléfono"));

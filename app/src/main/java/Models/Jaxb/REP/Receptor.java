@@ -36,17 +36,18 @@ public class Receptor {
     public Receptor(Models.Encabezado.Receptor src) {
         if (src != null) {
             this.nombre = src.getNombre();
-            this.nombreComercial = src.getNombreComercial();
-            this.otrasSenasExtranjero = src.getOtrasSenasExtranjero();
             if (src.getCorreosElectronicos() != null)
                 this.correosElectronicos = src.getCorreosElectronicos().stream()
                     .map(CorreoElectronicoReceptor::new).collect(Collectors.toList());
             if (src.getIdentificacion() != null)
                 this.identificacion = new IdentificacionReceptor(src.getIdentificacion());
-            if (src.getUbicacion() != null)
-                this.ubicacion = new Ubicacion(src.getUbicacion());
-            if (src.getTelefono() != null)
-                this.telefono = new Telefono(src.getTelefono());
+            // REP minimal per XSD: despues de Identificacion el XSD solo
+            // admite CorreoElectronico. Emitir NombreComercial/Ubicacion aqui
+            // hace que la firma falle con cvc-complex-type.2.4.a.
+            this.nombreComercial = null;
+            this.otrasSenasExtranjero = null;
+            this.ubicacion = null;
+            this.telefono = null;
         }
     }
 }

@@ -251,6 +251,32 @@ class JaxbCopiaCompletaTest {
                 .isInstanceOf(ClassNotFoundException.class);
     }
 
+    @Test
+    @DisplayName("REP.Receptor es minimo: sin NombreComercial ni Ubicacion (XSD)")
+    void repReceptorMinimoPorXsd() {
+        var src = new Models.Encabezado.Receptor();
+        src.setNombre("Cliente");
+        src.setNombreComercial("Comercial del cliente");
+        src.setOtrasSenasExtranjero("Senas extranjero");
+        var ubicacion = new Models.Encabezado.Ubicacion();
+        src.setUbicacion(ubicacion);
+        var telefono = new Models.Encabezado.Telefono();
+        src.setTelefono(telefono);
+
+        var copiado = new Models.Jaxb.REP.Receptor(src);
+
+        assertThat(copiado.getNombre()).isEqualTo("Cliente");
+        assertThat(copiado.getNombreComercial())
+                .as("REP Receptor no admite NombreComercial: el XSD espera CorreoElectronico")
+                .isNull();
+        assertThat(copiado.getUbicacion())
+                .as("REP Receptor no admite Ubicacion").isNull();
+        assertThat(copiado.getTelefono())
+                .as("REP Receptor no admite Telefono").isNull();
+        assertThat(copiado.getOtrasSenasExtranjero())
+                .as("REP Receptor no admite OtrasSenasExtranjero").isNull();
+    }
+
     private static org.assertj.core.api.AbstractThrowableAssert<?, ? extends Throwable> assertThatCode(
             org.assertj.core.api.ThrowableAssert.ThrowingCallable callable) {
         return org.assertj.core.api.Assertions.assertThatCode(callable);

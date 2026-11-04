@@ -428,6 +428,24 @@ public class ComprobanteService implements Serializable {
             // firmar: la referencia viaja dentro del XML.
             aplicarDatosEspeciales(encabezado, strategy, datosEspeciales);
 
+            // v4.4: FE (01), NC (02), ND (03), FEE (05) y FEC (08) exigen
+            // CodigoActividadReceptor. Si el cliente no tiene actividad
+            // registrada el XML no valida contra el XSD y Hacienda responde
+            // con un cvc-complex-type.2.4.a opaco; se usa la actividad del
+            // emisor y se deja constancia para corregir el cliente.
+            if (exigeActividadReceptor(strategy.getCodigoDocumento())
+                    && (encabezado.getCodigoActividadReceptor() == null
+                        || encabezado.getCodigoActividadReceptor().isBlank())
+                    && encabezado.getCodigoActividadEmisor() != null
+                    && !encabezado.getCodigoActividadEmisor().isBlank()) {
+                LOG.warn("Cliente sin actividad economica; se usa la del emisor como "
+                        + "CodigoActividadReceptor | tipo=" + strategy.getCodigoDocumento()
+                        + " | cliente=" + (selectedClient == null ? null : selectedClient.getCode())
+                        + " | activity=" + encabezado.getCodigoActividadEmisor()
+                        + " | source=ComprobanteService.emitir()");
+                encabezado.setCodigoActividadReceptor(encabezado.getCodigoActividadEmisor());
+            }
+
             List<MedioPago> medioPagoList = new ArrayList<>();
             for (EntradaPago entry : pagos) {
                 if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
@@ -978,6 +996,16 @@ public class ComprobanteService implements Serializable {
                 + " | despues=el comprobante queda PENDIENTE y el lote de 48h lo reintentará");
             return null;
         }
+    }
+
+    /**
+     * v4.4: tipos cuyo Encabezado exige {@code CodigoActividadReceptor}.
+     */
+    private static boolean exigeActividadReceptor(@Nullable String tipoDocumento) {
+        return switch (tipoDocumento == null ? "" : tipoDocumento) {
+            case "01", "02", "03", "05", "08" -> true;
+            default -> false;
+        };
     }
 
     /**
