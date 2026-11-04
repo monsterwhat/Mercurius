@@ -389,3 +389,14 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 | Catálogos de referencia incompletos en la UI | faltaban 08, 09, 11, 12, 13, 15 (Nota 9), 19 y 20 (Nota 10) | selects completos |
 
 **Pendiente (no bloquea):** reglas de período contable para 13/14 (afectan reportes, no el XML), interpretación exacta de la regla ampliada de `TotalIVADevuelto`, y descargar los XSD definitivos desde OVi TRIBU-CR cuando estén disponibles (los locales ya validan los códigos nuevos).
+
+## 15. Acciones de facturas emitidas vs recibidas (2026-11-04)
+
+**Investigación (Mensaje Receptor, fuentes oficiales + secundarias):** el Mensaje Receptor **no se eliminó**; sigue siendo obligatorio para las facturas **recibidas** (comprador), con plazo de **8 días hábiles desde el primer día del mes siguiente**, aceptación tácita si no se responde (Decreto 44739-H art. 20 y MH-DGT-RES-0027-2024 art. 10) y pérdida del crédito IVA si no se envía. **No aplica a las facturas emitidas** (el emisor no acepta su propia factura) ni a tiquetes de consumidor final.
+
+**Corregido en 2.33.47:**
+- **Emitidas:** "Marcar como pagada" solo aparece (y el endpoint solo acepta) para ventas a **crédito (condición 02)**; un tiquete o factura de contado ya está cobrado. Server-side devuelve 409 para contado.
+- **Emitidas:** se quitaron "Procesar" (reenvío manual a Hacienda) y "Aceptar/Rechazar" (Mensaje Receptor), que son acciones del receptor y no tienen sentido en una factura emitida; "Eliminar" (soft delete) se mantiene.
+- **Recibidas:** se conservan "Pagar", "Procesar", "Activar/Desactivar" y las acciones de Mensaje Receptor (aceptar / aceptar parcial / rechazar) con su indicador de plazo, que es donde sí corresponden.
+
+**Pruebas:** `RecibosResourceTest` 20/20 (incluye 409 al intentar pagar una venta de contado y el drawer de una venta a crédito).

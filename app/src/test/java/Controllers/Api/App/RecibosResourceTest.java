@@ -164,6 +164,13 @@ class RecibosResourceTest extends support.ContextPathIsolation {
                 new BigDecimal("10000"), new BigDecimal("1300"));
     }
 
+    /** Venta a crédito: es la única que puede quedar pendiente de pago. */
+    private ComprobantesEmitidos seedPendienteCredito(String sufijo) {
+        return seedRecibo("T27" + uniqueSuffix() + sufijo, LocalDateTime.now().minusDays(1),
+                "02", "30", "01", "PENDIENTE", "PENDIENTE",
+                new BigDecimal("10000"), new BigDecimal("1300"));
+    }
+
     private void deleteQuietly(ComprobantesEmitidos... filas) {
         for (ComprobantesEmitidos f : filas) {
             if (f != null && f.getId() != null) {
@@ -541,7 +548,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
         Map<String, String> session = adminSession();
         ComprobantesEmitidos fila = null;
         try {
-            fila = seedPendiente("G1");
+            fila = seedPendienteCredito("G1");
 
             authed(session)
                     .when().post(API + "/" + fila.getId() + "/pagar")
@@ -552,6 +559,23 @@ class RecibosResourceTest extends support.ContextPathIsolation {
 
             ComprobantesEmitidos trasPago = emitidosService.find(fila.getId());
             assertThat(trasPago.getEncabezado().getEstado()).isEqualTo("ACEPTADO");
+        } finally {
+            deleteQuietly(fila);
+        }
+    }
+
+    @Test
+    void unaVentaDeContadoNoSeMarcaComoPagada() {
+        Map<String, String> session = adminSession();
+        ComprobantesEmitidos fila = null;
+        try {
+            fila = seedPendiente("CT");
+            authed(session)
+                    .when().post(API + "/" + fila.getId() + "/pay")
+                    .then()
+                    .statusCode(409)
+                    .body("error.message",
+                            equalTo("Solo las ventas a crédito (condición 02) se marcan como pagadas."));
         } finally {
             deleteQuietly(fila);
         }
@@ -836,7 +860,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
         Map<String, String> session = adminSession();
         ComprobantesEmitidos fila = null;
         try {
-            fila = seedPendiente("DP");
+            fila = seedPendienteCredito("DP");
 
             authed(session)
                     .header("HX-Request", "true")

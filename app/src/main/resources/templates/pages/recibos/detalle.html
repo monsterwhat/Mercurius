@@ -64,7 +64,11 @@
 
     <hr/>
     <div class="buttons mt-2">
-        {#if !vista.notaCredito}
+        {! Solo una venta a crédito (condición 02) puede quedar pendiente de
+           pago. Un tiquete o una factura de contado ya está cobrado: no se
+           marca como pagada. Procesar/Aceptar/Rechazar son acciones del
+           receptor (facturas recibidas), no de las emitidas. !}
+        {#if !vista.notaCredito && vista.detalle.condicionVenta?? && vista.detalle.condicionVenta == '02'}
         <button type="button" class="button"
                 {#if vista.pagada}disabled{/if}
                 hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/pay"
@@ -72,40 +76,7 @@
                 hx-disabled-elt="this"
                 hx-confirm="&iquest;Marcar como pagada la factura?">Marcar como pagada</button>
         {/if}
-        <button type="button" class="button is-primary"
-                {#if vista.procesada}disabled{/if}
-                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/process"
-                hx-target="#recibos-tablero" hx-swap="outerHTML"
-                hx-disabled-elt="this"
-                hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">Procesar</button>
-        <button type="button" class="button"
-                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/accept"
-                hx-target="#recibos-tablero" hx-swap="outerHTML"
-                hx-disabled-elt="this"
-                hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">Aceptar factura</button>
     </div>
-
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/reject"
-          hx-target="#recibos-tablero" hx-swap="outerHTML" class="mt-2"
-          hx-disabled-elt="find button[type='submit']">
-        <div class="field mb-2">
-            <label class="label is-small" for="recibo-motivo-rechazo">Motivo del rechazo <span class="has-text-weight-normal">(opcional)</span></label>
-            <div class="control">
-                <input class="input" type="text" id="recibo-motivo-rechazo" name="motivo" maxlength="500"
-                       aria-describedby="recibo-motivo-rechazo-ayuda"
-                       placeholder="Motivo del rechazo (opcional, m&aacute;x. 500 caracteres)"/>
-            </div>
-            <p id="recibo-motivo-rechazo-ayuda" class="help mercurius-text-muted">
-                Se envía a Hacienda junto con el Mensaje Receptor de rechazo.
-            </p>
-        </div>
-        <div class="field mb-0">
-            <div class="control">
-                <button class="button is-danger is-outlined" type="submit"
-                        hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">Rechazar factura</button>
-            </div>
-        </div>
-    </form>
 
     <hr/>
     <div class="field mt-2">

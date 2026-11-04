@@ -400,6 +400,12 @@ public class RecibosResource {
             if (enc == null) {
                 return guardFailure("El recibo no tiene encabezado y no puede marcarse como pagada");
             }
+            // Solo una venta a crédito queda pendiente de cobro. Un tiquete o
+            // una factura de contado ya se cobraron al emitirse: marcarlos como
+            // pagados falsea el estado y el historial de caja.
+            if (!"02".equals(enc.getCondicionVenta())) {
+                return guardFailure("Solo las ventas a crédito (condición 02) se marcan como pagadas.");
+            }
             enc.setEstado("ACEPTADO");
             comprobantesEmitidosService.update(f);
                         LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf((Object) null));
