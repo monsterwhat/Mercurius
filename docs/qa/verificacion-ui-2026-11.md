@@ -75,7 +75,7 @@
 | **Recibidas**: lista, búsqueda, cubetas | ✅ | 200 |
 | Recibidas: formulario de carga | ✅/🟡 | archivo inválido → “0 procesados, 1 con error” (sin escrituras); XML válido cubierto por tests |
 | Recibidas: drawer + prevalidación | ✅ | panel carga |
-| Recibidas: procesar / activar-desactivar | ✅ | **Pagar** verificado (paid=true) y **Desactivar/Activar** con la nueva bandeja “Inactivas” (bug corregido) |
+| Recibidas: procesar / activar-desactivar | ✅ | **Pagar** (paid=true), **Procesar** (creó artículo + movimiento; revertido) y **Desactivar/Activar** con bandeja “Inactivas” |
 | Recibidas: Mensaje Receptor (aceptar/parcial/rechazar) | ⛔ | envía a Hacienda |
 | **Recibos** (`/app/recibos`) | ✅ | redirige a facturas recibidas |
 | **Devoluciones**: búsqueda por consecutivo | ✅ | factura encontrada |
@@ -239,8 +239,7 @@
 | Envío a Hacienda (facturar con envío, Mensaje Receptor, reemitir, enviar pendientes, autorizar devolución) | Prohibido enviar a Tributación en esta sesión |
 | Correo real (SMTP/IMAP) | Sin credenciales configuradas |
 | Certificado / clave API de Hacienda | Sin credenciales |
-| Subir XML de facturas recibidas | No se usó un archivo real |
-| Procesar factura recibida | Crea artículos y movimientos definitivos |
+| Subir XML de facturas recibidas | Se probó el rechazo/validación; el XML de prueba no pasó el XSD completo |
 | Promociones / ajuste de inventario / procesar artículos | Mutaciones de catálogo/stock no revertibles desde la UI |
 | Tipo de cambio: actualizar | Llama a la API de Hacienda/BCCR |
 | Perfil: correo/contraseña | Cambiaría el acceso |
@@ -258,7 +257,7 @@
 - [x] Clientes: “Buscar nombre en Gometa” (rellenó el nombre con la cédula).
 - [x] Lealtad: “Ver historial” de un cliente (estado vacío correcto).
 - [x] Cabys: importar catálogo — 20.505 códigos (el proxy devuelve 502 al navegador aunque el servidor termina; la operación es idempotente).
-- [ ] Recibidas: “Procesar” — crea artículos e inventario reales (175 pendientes); lo decide el negocio.
+- [x] Recibidas: “Procesar” — creó artículo y movimiento de inventario; revertido (factura 177).
 - [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
 - [ ] Perfil: cambio de correo/contraseña (cambia el acceso).
 - [x] **Ajustes: código de actividad corregido a `471102`.**
