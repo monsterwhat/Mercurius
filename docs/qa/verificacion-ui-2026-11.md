@@ -2,7 +2,7 @@
 
 - **Fecha:** 2026-11-03
 - **Versión verificada:** v2.33.26 (producción interna, ambiente Hacienda `sandbox`)
-- **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
+- **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
 
@@ -27,7 +27,7 @@
 | Búsqueda del hub de Reportes + Limpiar | ✅ | filtra tarjetas y restaura |
 | Tema oscuro en tablas/diálogos | ✅ | revisado visualmente |
 | Barrido de enlaces internos | ✅ | 88 enlaces (dashboard/gestión/reportes) → 200; `/app` redirige al dashboard |
-| Redirecciones del proxy | 🟡 | el backend responde `Location: http://…`; Apache lo corrige con 301 a https |
+| Redirecciones del proxy | 🟡 | por el dominio público el backend responde `Location: http://…` y Apache lo corrige (301); por la conexión directa `http://192.168.100.99:8081/Mercurius` todo responde correcto |
 
 ## 2. Dashboard
 
@@ -155,7 +155,7 @@
 | Departamentos: crear/editar/desactivar | ✅ | verificado (QA limpiado) |
 | Búsqueda de cada tabla | ✅ | usa el input correcto por panel |
 | **CAByS**: búsqueda y edición | ✅ | modal + guardado |
-| CAByS: importar/actualizar catálogo | ✅ | 20.505 códigos (el proxy devuelve 502 al navegador aunque el servidor termina) |
+| CAByS: importar/actualizar catálogo | ✅ | 20.505 códigos; por conexión directa (`:8081`) responde **200** (por el proxy corta con 502) |
 | **Etiquetas**: seleccionar todos / limpiar / exportar PDF | ✅ | 15 marcados → 0; PDF 629 KB |
 | Etiquetas: imprimir | ✅ | `window.print()` invocado |
 | **Precios**: histórico y selector | ✅ | 200 |
