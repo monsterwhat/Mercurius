@@ -584,7 +584,8 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setDetalles(detalles);
             tiqueteElectronico.setResumen(resumen);
             if (datosEspeciales != null
-                    && ("03".equals(tipoDocumento) || "10".equals(tipoDocumento))) {
+                    && ("03".equals(tipoDocumento) || "10".equals(tipoDocumento)
+                        || "08".equals(tipoDocumento))) {
                 tiqueteElectronico.setInformacionReferencia(
                         List.of(construirReferenciaNd(datosEspeciales)));
             }
@@ -1035,12 +1036,16 @@ public class ComprobanteService implements Serializable {
         }
         boolean esNotaDebito = "03".equals(strategy.getCodigoDocumento());
         boolean esReciboPago = "10".equals(strategy.getCodigoDocumento());
-        if (!esNotaDebito && !esReciboPago) {
+        boolean esFacturaCompra = "08".equals(strategy.getCodigoDocumento());
+        if (!esNotaDebito && !esReciboPago && !esFacturaCompra) {
             return;
         }
-        // La nota de débito y el recibo de pago SIN referencia son rechazados
-        // por Hacienda (el REP exige InformacionReferencia en el XSD).
-        String documento = esReciboPago ? "El recibo electrónico de pago" : "La nota de débito";
+        // La nota de débito, el recibo de pago y la factura de compra SIN
+        // referencia son rechazados por Hacienda (el XSD exige
+        // InformacionReferencia en los tres).
+        String documento = esReciboPago ? "El recibo electrónico de pago"
+                : esFacturaCompra ? "La factura electrónica de compra"
+                : "La nota de débito";
         if (datos.referenciaNumero() == null || datos.referenciaNumero().isBlank()) {
             throw new IllegalArgumentException(
                     documento + " requiere el consecutivo o la clave del documento que afecta.");
@@ -1077,6 +1082,11 @@ public class ComprobanteService implements Serializable {
             throw new IllegalArgumentException(
                     "El recibo electrónico de pago debe usar el código de referencia 17 "
                             + "(pago a comprobante electrónico).");
+        }
+        if (esFacturaCompra && codigo != Tipo_CodigosReferencia.PROVEEDOR_NO_DOMICILIADO) {
+            throw new IllegalArgumentException(
+                    "La factura electrónica de compra debe usar el código de referencia 11 "
+                            + "(proveedor no domiciliado).");
         }
     }
 

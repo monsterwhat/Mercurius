@@ -473,7 +473,12 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             prepararVenta(sesion, articulo, sembrarCliente());
             java.math.BigDecimal stockAntes = stockDe(articulo.getCodigoBarra());
 
-            facturar(sesion, "08")
+            facturarEspecial(sesion, "08",
+                    ",\"referenciaTipoDoc\":\"16\""
+                            + ",\"referenciaNumero\":\"F-12345\""
+                            + ",\"referenciaFecha\":\"2026-10-30\""
+                            + ",\"referenciaCodigo\":\"11\""
+                            + ",\"referenciaRazon\":\"Compra a proveedor no domiciliado\"")
                     .then()
                     .statusCode(200)
                     .body("data.comprobanteId", notNullValue());

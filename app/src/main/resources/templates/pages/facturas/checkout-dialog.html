@@ -67,13 +67,18 @@
             {/if}
         </div>
 
-        {#if cobro.tipoDocumento == '03' || cobro.tipoDocumento == '10'}
+        {#if cobro.tipoDocumento == '03' || cobro.tipoDocumento == '10' || cobro.tipoDocumento == '08'}
         <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
             {#if cobro.tipoDocumento == '10'}
             <strong>Recibo electrónico de pago</strong>
             <span>Indique la factura que se paga y su motivo. El XSD exige al
                 menos una referencia (código 17, exclusivo del REP). No mueve
                 inventario.</span>
+            {#else if cobro.tipoDocumento == '08'}
+            <strong>Factura electrónica de compra</strong>
+            <span>Indique el documento del proveedor que respalda la compra
+                (código 11, proveedor no domiciliado). El XSD exige una
+                referencia. Suma inventario.</span>
             {#else}
             <strong>Nota de débito</strong>
             <span>Debe indicar el documento que afecta y el motivo. Se envía como
@@ -110,6 +115,7 @@
                                 <option value="05">05 — Factura de exportación</option>
                                 <option value="08">08 — Factura de compra</option>
                                 <option value="10">10 — Recibo electrónico de pago</option>
+                                <option value="16" {#if cobro.tipoDocumento == '08'}selected{/if}>16 — Comprobante de proveedor no domiciliado</option>
                                 <option value="19">19 — Factura electrónica de exportación</option>
                                 <option value="20">20 — Recibo electrónico de pago (REP)</option>
                             </select>
@@ -121,6 +127,9 @@
         {#if cobro.tipoDocumento == '10'}
         <input type="hidden" name="referenciaCodigo" value="17"/>
         <p class="help">Código de referencia 17 — Pago a comprobante electrónico.</p>
+        {#else if cobro.tipoDocumento == '08'}
+        <input type="hidden" name="referenciaCodigo" value="11"/>
+        <p class="help">Código de referencia 11 — Proveedor no domiciliado.</p>
         {#else}
         <div class="field">
             <label class="label is-small" for="referencia-codigo">Código de referencia</label>

@@ -400,3 +400,5 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 - **Recibidas:** se conservan "Pagar", "Procesar", "Activar/Desactivar" y las acciones de Mensaje Receptor (aceptar / aceptar parcial / rechazar) con su indicador de plazo, que es donde sí corresponden.
 
 **Pruebas:** `RecibosResourceTest` 20/20 (incluye 409 al intentar pagar una venta de contado y el drawer de una venta a crédito).
+
+**Hallazgo adicional (FEC):** al re-emitir una Factura Electrónica de Compra el XSD v4.4 también exige `InformacionReferencia` (código 11, proveedor no domiciliado; tipo de documento 16). Sin ella el XML queda incompleto. Corregido en 2.33.48: el checkout de FEC pide el documento del proveedor y fija el código 11; el servidor lo valida y guarda la referencia.
