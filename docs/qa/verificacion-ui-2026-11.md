@@ -307,10 +307,10 @@
 - [x] Lealtad: flujo completo (config 10% → cliente → venta → 47,03 puntos → historial), datos revertidos.
 - [x] `/app/correos` y plantilla huérfana de umbrales corregidos (v2.33.28).
 - [x] Correo real: Gmail configurado **desde Ajustes** (correo + contraseña de aplicación) y correo de prueba enviado.
-- [x] Barrido automático de correos (IMAP): corregido el NPE (`@Inject` faltante); pendiente confirmar el ciclo y la importación de un XML adjunto.
 - [x] Barrido automático de correos (IMAP): corregido el NPE (@Inject faltante) y el fallo del logo LOB (@Lob leído fuera de transacción); el ciclo vuelve a completar y hay botón **Revisar correo ahora** (v2.33.39/.38).
 - [x] Logo único: GET /logo público sirve el logo subido o el de fábrica; sidebar y login dejan de usar un base64 fijo (v2.33.36/.39).
-- [x] Plantillas: vista previa con el layout real del correo (cabecera, cuerpo, pie) y variables también en el asunto (v2.33.37).- [x] Barrido IMAP verificado de punta a punta en producción: correo con XML adjunto → comprobante  0100001010000990021 creado; después se borraron comprobante, líneas, XML en disco y el correo. El planificador completa cada 15 min (19:15 → 21:00 sin fallos).
+- [x] Plantillas: vista previa con el layout real del correo (cabecera, cuerpo, pie) y variables también en el asunto (v2.33.37).
+- [x] Barrido IMAP verificado de punta a punta en producción: correo con XML adjunto → comprobante  0100001010000990021 creado; después se borraron comprobante, líneas, XML en disco y el correo. El planificador completa cada 15 min (19:15 → 21:00 sin fallos).
 - [x] Plantillas predeterminadas: las 4 se crean desde la UI (200) y la vista previa devuelve el correo completo con marca y variables sustituidas (asunto Su factura 00100001010000000001).
 - [x] Logo: subida desde Ajustes probada con una imagen distinta (el endpoint público cambia al instante) y restaurado el logo original; login/sidebar/Ajustes apuntan todos a /logo.
 - [ ] **Nota operativa:** la columna EmailTemplate.cuerpoHtml era VARCHAR(255); Hibernate update no cambia tipos, así que en bases existentes hay que ejecutar una vez ALTER TABLE emailtemplate ALTER COLUMN cuerpohtml TYPE TEXT; (ya aplicado en producción). Las instalaciones nuevas la crean como TEXT.
