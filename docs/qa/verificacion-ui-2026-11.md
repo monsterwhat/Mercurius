@@ -402,3 +402,22 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 **Pruebas:** `RecibosResourceTest` 20/20 (incluye 409 al intentar pagar una venta de contado y el drawer de una venta a crédito).
 
 **Hallazgo adicional (FEC):** al re-emitir una Factura Electrónica de Compra el XSD v4.4 también exige `InformacionReferencia` (código 11, proveedor no domiciliado; tipo de documento 16). Sin ella el XML queda incompleto. Corregido en 2.33.48: el checkout de FEC pide el documento del proveedor y fija el código 11; el servidor lo valida y guarda la referencia.
+
+## 16. Re-prueba completa tras 2.33.49 (2026-11-04, tarde)
+
+| Prueba | Resultado |
+|---|---|
+| Caja: abrir/cerrar | Sesión 16:11→16:12, ₡10.000, diferencia ₡0, historial correcto |
+| Ajustes: guardar | "Configuración guardada" (200) |
+| Export Excel (márgenes) | 23.220 bytes, `attachment` con hora CR |
+| Export PDF (inventario) | 118.177 bytes, empieza con `%PDF-` |
+| Respaldo manual | `mercurius_20261104_164922.sql.gz`, 151,9 MB, log "Backup completado" |
+| Lealtad | 10% → venta ₡600 → **53,10 puntos** (10% de la neta), historial "Acumulación" ok; config, cliente, puntos, factura y stock revertidos |
+| Rol `facturacion` | dashboard/facturas/recibidas 200; usuarios/aplicación 403; usuario QA eliminado |
+| Eliminar factura emitida | `status=false`, desaparece del listado y **no** revierte stock (probado con FEC) |
+| Emitidas: acciones | solo queda "Eliminar"; sin Procesar/Aceptar/Rechazar/Pagar en contado (2.33.47) |
+| FEC con referencia | `00100001080000000004`: XSD válido; solo falla la firma externa (sin credenciales) |
+| REP con referencia 17 | `00100001100000000003`: XSD válido; solo falla la firma externa |
+| Correo de prueba con formato | llega `multipart/mixed` con parte `text/html` de 1.563 caracteres, cabecera con el negocio, pie "Enviado por Mercurius" y `<!doctype html>` (verificado por IMAP) |
+
+**Limpieza:** 8 comprobantes de prueba soft-deleted, stock restaurado a 452, cierre de caja QA borrado, cliente y usuario QA eliminados, correo de prueba borrado. **0 ERROR** desde el despliegue de 2.33.49.
