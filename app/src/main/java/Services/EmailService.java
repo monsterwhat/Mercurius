@@ -406,7 +406,17 @@ public class EmailService implements Serializable {
                 totalEmails, emailsWithXmlAttachments, successfullyProcessedFiles, savedPdfAttachments));
 
         } catch (MessagingException e) {
-                        LOG.warn("Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error revisando los correos: " + e.getMessage()
+                    + " | source=EmailService.processUnreadXmlAttachments()"
+                    + " | despues=" + e.getMessage());
+            callback.accept("Encountered an Error: " + e.getLocalizedMessage());
+        } catch (RuntimeException e) {
+            // Un fallo no controlado en el barrido (NPE de un mensaje raro,
+            // carpeta del perfil, etc.) NO debe tumbar el circuito: antes
+            // escapaba a @Retry/@CircuitBreaker, abría el breaker 15 minutos y
+            // el log solo decía "repeated failures" sin la causa.
+            LOG.error("Error inesperado revisando los correos: " + e.getMessage()
+                    + " | source=EmailService.processUnreadXmlAttachments()", e);
             callback.accept("Encountered an Error: " + e.getLocalizedMessage());
         }    }
 
