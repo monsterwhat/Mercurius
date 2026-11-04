@@ -257,7 +257,7 @@
 - [x] Emitir ND, FEC, FEE y REP desde el POS (v2.33.18/.22 corrigen el XML); documentos de prueba soft-deleted y stock revertido.
 - [x] Clientes: “Buscar nombre en Gometa” (rellenó el nombre con la cédula).
 - [x] Lealtad: “Ver historial” de un cliente (estado vacío correcto).
-- [ ] Cabys: importar catálogo (llamada externa larga; el catálogo ya responde búsquedas).
+- [x] Cabys: importar catálogo — 20.505 códigos (el proxy devuelve 502 al navegador aunque el servidor termina; la operación es idempotente).
 - [ ] Recibidas: “Procesar” — crea artículos e inventario reales (175 pendientes); lo decide el negocio.
 - [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
 - [ ] Perfil: cambio de correo/contraseña (cambia el acceso).
