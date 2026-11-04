@@ -438,7 +438,13 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             prepararVenta(sesion, articulo, sembrarCliente());
             java.math.BigDecimal stockAntes = stockDe(articulo.getCodigoBarra());
 
-            facturarEspecial(sesion, "10", ",\"condicionVenta\":\"09\"")
+            facturarEspecial(sesion, "10",
+                    ",\"condicionVenta\":\"09\""
+                            + ",\"referenciaTipoDoc\":\"01\""
+                            + ",\"referenciaNumero\":\"00100001010000012345\""
+                            + ",\"referenciaFecha\":\"2026-10-30\""
+                            + ",\"referenciaCodigo\":\"17\""
+                            + ",\"referenciaRazon\":\"Pago de la factura\"")
                     .then()
                     .statusCode(200)
                     .body("data.comprobanteId", notNullValue());
@@ -446,6 +452,8 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("10");
             assertThat(row.getEncabezado().getCondicionVenta()).isEqualTo("09");
+            assertThat(row.getInformacionReferencia()).hasSize(1);
+            assertThat(row.getInformacionReferencia().get(0).getCodigo()).isEqualTo("17");
             assertThat(stockDe(articulo.getCodigoBarra()))
                     .as("un recibo de pago no mueve inventario")
                     .isEqualByComparingTo(stockAntes);
@@ -493,7 +501,12 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             Map<String, String> sesion = adminSession();
             prepararVenta(sesion, sembrarArticuloExento(), sembrarCliente());
 
-            facturar(sesion, "10")
+            facturarEspecial(sesion, "10",
+                    ",\"referenciaTipoDoc\":\"01\""
+                            + ",\"referenciaNumero\":\"00100001010000012345\""
+                            + ",\"referenciaFecha\":\"2026-10-30\""
+                            + ",\"referenciaCodigo\":\"17\""
+                            + ",\"referenciaRazon\":\"Pago de la factura\"")
                     .then()
                     .statusCode(200)
                     .body("data.comprobanteId", notNullValue());

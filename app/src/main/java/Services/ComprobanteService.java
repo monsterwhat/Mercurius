@@ -520,7 +520,12 @@ public class ComprobanteService implements Serializable {
             resumen.setTotalOtrosCargos(totalOtrosCargos);
 
             BigDecimal totalIVADevuelto = calcularTotalIVADevuelto(carrito, pagos);
-            resumen.setTotalIVADevuelto(totalIVADevuelto);
+            // El XSD v4.4 de la Factura Electrónica de Compra (08) no define
+            // TotalIVADevuelto en ResumenFactura; emitirlo hace fallar la
+            // validación XSD antes de firmar (el resto de tipos sí lo admite).
+            if (!"08".equals(strategy.getCodigoDocumento())) {
+                resumen.setTotalIVADevuelto(totalIVADevuelto);
+            }
 
             BigDecimal totalComprobante = resumen.getTotalVentaNeta()
                     .add(resumen.getTotalImpuesto())
@@ -578,7 +583,8 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setEncabezado(encabezado);
             tiqueteElectronico.setDetalles(detalles);
             tiqueteElectronico.setResumen(resumen);
-            if (datosEspeciales != null && "03".equals(tipoDocumento)) {
+            if (datosEspeciales != null
+                    && ("03".equals(tipoDocumento) || "10".equals(tipoDocumento))) {
                 tiqueteElectronico.setInformacionReferencia(
                         List.of(construirReferenciaNd(datosEspeciales)));
             }
@@ -1027,18 +1033,21 @@ public class ComprobanteService implements Serializable {
             strategy.validarCondicionVenta(condicion);
             encabezado.setCondicionVenta(condicion);
         }
-        if (!"03".equals(strategy.getCodigoDocumento())) {
+        boolean esNotaDebito = "03".equals(strategy.getCodigoDocumento());
+        boolean esReciboPago = "10".equals(strategy.getCodigoDocumento());
+        if (!esNotaDebito && !esReciboPago) {
             return;
         }
-        // La nota de debito SIN referencia es rechazada por Hacienda. Se valida
-        // aqui, antes de consumir inventario y consecutivo.
+        // La nota de débito y el recibo de pago SIN referencia son rechazados
+        // por Hacienda (el REP exige InformacionReferencia en el XSD).
+        String documento = esReciboPago ? "El recibo electrónico de pago" : "La nota de débito";
         if (datos.referenciaNumero() == null || datos.referenciaNumero().isBlank()) {
             throw new IllegalArgumentException(
-                    "La nota de débito requiere el consecutivo del documento que afecta.");
+                    documento + " requiere el consecutivo o la clave del documento que afecta.");
         }
         if (datos.referenciaFecha() == null || datos.referenciaFecha().isBlank()) {
             throw new IllegalArgumentException(
-                    "La nota de débito requiere la fecha del documento que afecta.");
+                    documento + " requiere la fecha del documento que afecta.");
         }
         try {
             LocalDate.parse(datos.referenciaFecha().trim());
@@ -1048,7 +1057,7 @@ public class ComprobanteService implements Serializable {
         }
         if (datos.referenciaRazon() == null || datos.referenciaRazon().isBlank()) {
             throw new IllegalArgumentException(
-                    "La nota de débito requiere el motivo de la referencia.");
+                    documento + " requiere el motivo de la referencia.");
         }
         if (datos.referenciaRazon().trim().length() > 180) {
             throw new IllegalArgumentException(
@@ -1064,6 +1073,11 @@ public class ComprobanteService implements Serializable {
             throw new IllegalArgumentException("Código de referencia inválido.");
         }
         Tipo_CodigosReferencia.validarParaDocumento(strategy.getCodigoDocumento(), codigo);
+        if (esReciboPago && codigo != Tipo_CodigosReferencia.APLICACION_PAGO_REP) {
+            throw new IllegalArgumentException(
+                    "El recibo electrónico de pago debe usar el código de referencia 17 "
+                            + "(pago a comprobante electrónico).");
+        }
     }
 
     @Nonnull

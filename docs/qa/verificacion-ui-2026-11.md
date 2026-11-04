@@ -367,3 +367,25 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 
 - **Despliegue 2.33.45:** `Zona horaria de negocio: America/Costa_Rica` en el arranque, reloj del sistema en `CST (-0600)`, logo intacto (md5 `7f83ec9b…`), login 200 y **0 ERROR** desde el despliegue.
 - Reporte "Ventas por cajero": selección de cajero + rango y botón "Cargar Reportes" funcionan (estado vacío correcto para Admin).
+
+## 14. Actualización v4.4 de noviembre 2026 (investigación y ajustes)
+
+**Conclusión de la investigación (fuentes oficiales + técnicas):** no hay "v4.5"; el 1 de noviembre de 2026 entró en vigor la **actualización de los Anexos y Estructuras v4.4** publicada por Hacienda el 22/04/2026 (Comunicado; adopción temprana desde esa fecha). Cambios principales:
+
+- **Nota 9 (código de referencia):** catálogo completo 01, 02, 04–16, **17** y 99. El 17 ("Pago a comprobante electrónico") es **exclusivo del REP**. El 12 pasa a ser "NC financiera por exoneración posterior"; 13/14 exigen efecto contable en el período del comprobante original; 13 + reemplazo usa 15.
+- **Nota 10 (tipo de documento de referencia):** se agregan **19 (FEE)** y **20 (REP)**; el 16 es "Comprobante de Proveedor No Domiciliado" y el 13 "Facturación mes vencido".
+- **Clave:** patrón alfanumérico `[a-zA-Z0-9]{50}` (ya soportado en los XSD locales).
+- **Cédulas jurídicas alfanuméricas** (Q4 2026, fecha exacta aún no anunciada): el campo ya acepta hasta 20 caracteres; Gometa solo consulta cédulas numéricas.
+- **Sin nodos nuevos**: los XSD locales ya traen 17 en el REP, 19/20 en Nota 10 y `ProporcionSurtido/Proporcion` 10,5.
+- **Ajustes de reglas:** `TotalServExentos`/`TotalMercanciasExentas` se vinculan a tarifa exenta (código 10); en `TotalDesgloseImpuesto` la tarifa/monto van en 0 cuando el impuesto es asumido por el emisor o fábrica; regla de `TotalIVADevuelto` ampliada.
+
+**Defectos encontrados al re-probar los tipos del POS (corregidos en 2.33.46):**
+
+| Defecto | Causa | Arreglo |
+|---|---|---|
+| FEC rechazada por XSD (`TotalIVADevuelto` inesperado) | el modelo JAXB de FEC incluía un elemento que el XSD de compra no admite | se elimina del modelo FEC (y no se setea para el tipo 08) |
+| REP rechazado por XSD (`TotalServGravados` inesperado) | el `ResumenFactura` del REP reutilizaba el modelo genérico con servicios/mercancías/descuentos/IVA devuelto | modelo REP reducido al orden oficial: TotalVenta, TotalVentaNeta, TotalDesgloseImpuesto, TotalImpuesto, MedioPago, TotalComprobante |
+| REP sin `InformacionReferencia` (obligatoria en el XSD) | el POS no pedía referencia para el tipo 10 | el checkout pide documento/fecha/tipo/motivo y fija el código **17**; el servidor lo valida |
+| Catálogos de referencia incompletos en la UI | faltaban 08, 09, 11, 12, 13, 15 (Nota 9), 19 y 20 (Nota 10) | selects completos |
+
+**Pendiente (no bloquea):** reglas de período contable para 13/14 (afectan reportes, no el XML), interpretación exacta de la regla ampliada de `TotalIVADevuelto`, y descargar los XSD definitivos desde OVi TRIBU-CR cuando estén disponibles (los locales ya validan los códigos nuevos).

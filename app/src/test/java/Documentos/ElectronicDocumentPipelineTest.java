@@ -457,6 +457,25 @@ class ElectronicDocumentPipelineTest {
         r.setTotalVentaNeta(new BigDecimal("100.00000"));
         r.setTotalImpuesto(new BigDecimal("13.00000"));
         r.setTotalComprobante(new BigDecimal("113.00000"));
+        // ComprobanteService deja estos campos con valor (cero) en TODOS los
+        // tipos. La FEC v4.4 no admite <TotalIVADevuelto> y el REP v4.4 no
+        // admite servicios/mercancías/descuentos/IVA devuelto: el mapeo debe
+        // omitirlos y el XML seguir validando.
+        r.setTotalServGravados(BigDecimal.ZERO);
+        r.setTotalServExentos(BigDecimal.ZERO);
+        r.setTotalServExonerado(BigDecimal.ZERO);
+        r.setTotalServNoSujeto(BigDecimal.ZERO);
+        r.setTotalMercanciasGravadas(BigDecimal.ZERO);
+        r.setTotalMercanciasExentas(BigDecimal.ZERO);
+        r.setTotalMercExonerada(BigDecimal.ZERO);
+        r.setTotalMercNoSujeta(BigDecimal.ZERO);
+        r.setTotalGravado(BigDecimal.ZERO);
+        r.setTotalExento(BigDecimal.ZERO);
+        r.setTotalExonerado(BigDecimal.ZERO);
+        r.setTotalNoSujeto(BigDecimal.ZERO);
+        r.setTotalDescuentos(BigDecimal.ZERO);
+        r.setTotalIVADevuelto(BigDecimal.ZERO);
+        r.setTotalOtrosCargos(BigDecimal.ZERO);
         // El XSD de REP exige al menos un <MedioPago> (maxOccurs=4); sin el,
         // el documento no valida aunque el resto este perfecto.
         MedioPagoR efectivo = new MedioPagoR();

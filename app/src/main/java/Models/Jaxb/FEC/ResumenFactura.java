@@ -65,9 +65,6 @@ public class ResumenFactura {
     @XmlElement(name = "TotalImpuesto")
     private BigDecimal totalImpuesto;
 
-    @XmlElement(name = "TotalIVADevuelto")
-    private BigDecimal totalIVADevuelto;
-
     @XmlElement(name = "TotalOtrosCargos")
     private BigDecimal totalOtrosCargos;
 
@@ -97,7 +94,6 @@ public class ResumenFactura {
             this.totalDescuentos = src.getTotalDescuentos();
             this.totalVentaNeta = src.getTotalVentaNeta();
             this.totalImpuesto = src.getTotalImpuesto();
-            this.totalIVADevuelto = src.getTotalIVADevuelto();
             this.totalOtrosCargos = src.getTotalOtrosCargos();
             this.totalComprobante = src.getTotalComprobante();
             if (src.getCodigoMoneda() != null)

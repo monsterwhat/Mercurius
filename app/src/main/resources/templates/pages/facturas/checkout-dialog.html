@@ -67,14 +67,21 @@
             {/if}
         </div>
 
-        {#if cobro.tipoDocumento == '03'}
+        {#if cobro.tipoDocumento == '03' || cobro.tipoDocumento == '10'}
         <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
+            {#if cobro.tipoDocumento == '10'}
+            <strong>Recibo electrónico de pago</strong>
+            <span>Indique la factura que se paga y su motivo. El XSD exige al
+                menos una referencia (código 17, exclusivo del REP). No mueve
+                inventario.</span>
+            {#else}
             <strong>Nota de débito</strong>
             <span>Debe indicar el documento que afecta y el motivo. Se envía como
                 referencia dentro del XML. No mueve inventario.</span>
+            {/if}
         </div>
         <div class="field">
-            <label class="label is-small" for="referencia-numero">Consecutivo del documento que afecta</label>
+            <label class="label is-small" for="referencia-numero">Consecutivo o clave del documento</label>
             <div class="control">
                 <input class="input" type="text" id="referencia-numero" name="referenciaNumero"
                        maxlength="50" autocomplete="off" required
@@ -96,17 +103,25 @@
                     <div class="control">
                         <div class="select is-fullwidth">
                             <select id="referencia-tipo" name="referenciaTipoDoc" required>
-                                <option value="01">Factura electrónica</option>
-                                <option value="04">Tiquete electrónico</option>
-                                <option value="05">Factura de exportación</option>
-                                <option value="08">Factura de compra</option>
-                                <option value="10">Recibo electrónico de pago</option>
+                                <option value="01">01 — Factura electrónica</option>
+                                <option value="02">02 — Nota de crédito electrónica</option>
+                                <option value="03">03 — Nota de débito electrónica</option>
+                                <option value="04">04 — Tiquete electrónico</option>
+                                <option value="05">05 — Factura de exportación</option>
+                                <option value="08">08 — Factura de compra</option>
+                                <option value="10">10 — Recibo electrónico de pago</option>
+                                <option value="19">19 — Factura electrónica de exportación</option>
+                                <option value="20">20 — Recibo electrónico de pago (REP)</option>
                             </select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {#if cobro.tipoDocumento == '10'}
+        <input type="hidden" name="referenciaCodigo" value="17"/>
+        <p class="help">Código de referencia 17 — Pago a comprobante electrónico.</p>
+        {#else}
         <div class="field">
             <label class="label is-small" for="referencia-codigo">Código de referencia</label>
             <div class="control">
@@ -118,14 +133,21 @@
                         <option value="05">05 — Sustituye comprobante provisional</option>
                         <option value="06">06 — Devolución de mercancía</option>
                         <option value="07">07 — Sustituye comprobante electrónico</option>
+                        <option value="08">08 — Factura endosada</option>
+                        <option value="09">09 — Nota de crédito financiera</option>
                         <option value="10">10 — Nota de débito financiera</option>
+                        <option value="11">11 — Proveedor no domiciliado</option>
+                        <option value="12">12 — Crédito por exoneración posterior a la facturación</option>
+                        <option value="13">13 — Anula documento por error material</option>
                         <option value="14">14 — Corrige monto por error material</option>
+                        <option value="15">15 — Sustituye comprobante por error material</option>
                         <option value="16">16 — Sustituye comprobante rechazado</option>
                         <option value="99">99 — Otros</option>
                     </select>
                 </div>
             </div>
         </div>
+        {/if}
         <div class="field">
             <label class="label is-small" for="referencia-razon">Motivo</label>
             <div class="control">
