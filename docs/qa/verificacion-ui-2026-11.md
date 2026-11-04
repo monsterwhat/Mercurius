@@ -132,9 +132,9 @@
 | Crear artículo | ✅ | alta + precio + CAByS |
 | Editar artículo | ✅ | prefill y guardado |
 | Desactivar / Activar | ✅ | toggle y reversa (nuevo endpoint) |
-| Procesar / Procesado rápido / Saltar | 🟡 | no ejecutados |
+| Procesar / Procesado rápido / Saltar | ✅ | artículo QA procesado (precio 1000→1413) y borrado; Saltar daba 415 (v2.33.15) |
 | Promociones (crear/editar/borrar) | ✅/🟡 | crear y borrar verificados (bug de transacción corregido, v2.33.13); editar no ejecutado |
-| Buscador CAByS dentro del artículo | 🟡 | no ejecutado |
+| Buscador CAByS dentro del artículo | ✅ | «arroz» → 10 resultados; selección llena el código |
 | Guardar márgenes | ✅ | 200 (historial de prueba limpiado) |
 | Exportar Excel | ✅ | 818 KB |
 | **Categorías**: pestañas Familias/Departamentos | ✅ | 89/125 |
@@ -166,7 +166,7 @@
 |---|---|---|
 | **Ajustes → Guardar ajustes** (identidad, actividad, correo, perfil tributación) | ✅ | 200 “Configuración guardada”; valores conservados |
 | **Sucursales y terminales**: “En uso”, Desactivar/Activar | ✅ | desactivó y reactivó (confirmado en BD) |
-| Registrar punto de venta | 🟡 | validación de obligatorios; no se creó otro |
+| Registrar punto de venta | ✅ | 002/00002 registrado y usado; revertido a 001/00001 y fila borrada |
 | **Correo y notificaciones**: SMTP/IMAP/notificaciones | 🟡 | formulario guarda; sin credenciales no hay envío real |
 | **Logo**: subir | ✅ | PNG de prueba subido (oid + image/png) y restaurado |
 | **Respaldos**: habilitar/hora/retensión/ruta | ✅ | 200; 03:00, 14 días |
@@ -216,6 +216,7 @@
 | 2.33.12 | Factura recibida desactivada desaparecía sin forma de reactivar | bandeja **Inactivas** |
 | 2.33.13 | Crear/eliminar promoción no guardaba (transacción faltante) | `@Transactional` + no tragar errores |
 | 2.33.14 | “Activar cuenta” volvía a desactivar | DELETE alterna `status` (`toggleStatus`) |
+| 2.33.15 | “Saltar” en la revisión de artículos daba 415 | `@Consumes(WILDCARD)` + test HTMX |
 
 ## 12. No ejecutado (y por qué)
 
@@ -236,8 +237,8 @@
 - [x] Facturas recibidas: **Pagar** y **Activar/Desactivar** (con bandeja Inactivas, v2.33.12).
 - [x] Promociones: crear y eliminar (v2.33.13); editar pendiente.
 - [x] Inventario: crear ajuste (aplica stock); pendiente aprobar/rechazar/reabrir.
-- [ ] Artículos: “Procesar” / “Procesado rápido” / “Saltar” y buscador CAByS.
+- [x] Artículos: “Procesar” / “Procesado rápido” / “Saltar” (v2.33.15) y buscador CAByS.
 - [x] Usuarios: guardar permisos y “Activar cuenta” (v2.33.14).
-- [ ] Sucursales: registrar un punto de venta QA y eliminarlo.
+- [x] Sucursales: registrar un punto de venta QA, revertir y eliminarlo.
 - [x] Tipo de cambio: tasa manual guardada y fila de historial eliminada.
 - [ ] Cabys: importar catálogo en ventana controlada (llamada externa larga).

@@ -518,7 +518,17 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         authed(session)
                 .when().post(ARTICULOS + "/" + pendiente.getCodigo() + "/revision/saltar")
                 .then()
-                .statusCode(org.hamcrest.Matchers.anyOf(equalTo(200), equalTo(415), equalTo(404)));
+                .statusCode(200);
+
+        // HTMX manda el POST sin cuerpo / form-urlencoded (el modal abre el
+        // wizard desde el navegador). Antes el @Consumes(JSON) del recurso
+        // devolvia 415 y el boton "Saltar" no hacia nada.
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .header("HX-Request", "true")
+                .when().post(ARTICULOS + "/" + pendiente.getCodigo() + "/revision/saltar")
+                .then()
+                .statusCode(200);
 
         org.assertj.core.api.Assertions.assertThat(
                 articulosService.findById(pendiente.getCodigo().intValue()).isProcessed()).isFalse();

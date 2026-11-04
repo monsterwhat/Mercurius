@@ -937,6 +937,7 @@ public class ArticuloResource {
      */
     @POST
     @Path("/{codigo}/revision/saltar")
+    @Consumes(MediaType.WILDCARD)
     @Operation(summary = "Skip the pending article (skipCurrentArticle parity)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Skipped (or next wizard fragment when HX-Request)"),
