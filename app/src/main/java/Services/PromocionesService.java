@@ -60,11 +60,13 @@ public class PromocionesService extends GService<Promocion> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "PromocionesService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating promoción: " + e.getMessage() + " | source=PromocionesService.create()", e);
+            throw e;
         }
     }
 
     @Override
+    @Transactional
     public void delete(Promocion entity) {
         try {
             if (!em.contains(entity)) {
@@ -78,11 +80,13 @@ public class PromocionesService extends GService<Promocion> {
                                 LOG.info("Entity not found" + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting promoción: " + e.getMessage() + " | source=PromocionesService.delete()", e);
+            throw e;
         }
     }
 
     @Override
+    @Transactional
     public void update(Promocion entity) {
         try {
             if(!entity.isActiva()){
@@ -91,7 +95,8 @@ public class PromocionesService extends GService<Promocion> {
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.warn("Error updating entity: " + e.getMessage() + " | source=" + "PromocionesService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating promoción: " + e.getMessage() + " | source=PromocionesService.update()", e);
+            throw e;
         }
     }
 

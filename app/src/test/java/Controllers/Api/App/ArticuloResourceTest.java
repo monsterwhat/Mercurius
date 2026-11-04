@@ -659,12 +659,12 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         authed(session)
                 .when().delete(ARTICULOS + "/promociones/" + promoId)
                 .then()
-                .statusCode(org.hamcrest.Matchers.anyOf(equalTo(200), equalTo(404)));
+                .statusCode(200);
         if (promoId != null) {
             authed(session)
                     .when().get(ARTICULOS + "/promociones/" + promoId)
                     .then()
-                    .statusCode(org.hamcrest.Matchers.anyOf(equalTo(200), equalTo(404)));
+                    .statusCode(404);
         }
     }
 

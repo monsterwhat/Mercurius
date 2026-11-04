@@ -40,6 +40,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -1152,6 +1153,7 @@ public class ArticuloResource {
         @APIResponse(responseCode = "400", description = "Validation failure (items/dates/range)"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
+    @Transactional
     public Response createPromocion(@Nullable PromocionForm body) {
         return doSavePromocion(null, body == null ? new PromocionForm() : body);
     }
@@ -1161,6 +1163,7 @@ public class ArticuloResource {
     @Path("/promociones")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Operation(summary = "Create a promotion from an HTMX form", hidden = true)
+    @Transactional
     public Response createPromocionForm(
             @FormParam("nombre") @Nullable String nombre,
             @FormParam("descuento") @Nullable String descuento,
@@ -1189,6 +1192,7 @@ public class ArticuloResource {
         @APIResponse(responseCode = "404", description = "Unknown id"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
+    @Transactional
     public Response updatePromocion(@PathParam("id") int id, @Nullable PromocionForm body) {
         return doSavePromocion(id, body == null ? new PromocionForm() : body);
     }
@@ -1198,6 +1202,7 @@ public class ArticuloResource {
     @Path("/promociones/{id}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Operation(summary = "Update a promotion from an HTMX form", hidden = true)
+    @Transactional
     public Response updatePromocionForm(
             @PathParam("id") int id,
             @FormParam("nombre") @Nullable String nombre,
