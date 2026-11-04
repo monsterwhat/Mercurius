@@ -364,3 +364,6 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 - **Reloj del sistema:** además del JVM, se cambió la zona del servidor con `timedatectl set-timezone America/Costa_Rica` (antes `Etc/UTC`). Ahora `date`, los logs del sistema y la app coinciden con la hora local (`CST, -0600`); el instante UTC no se alteró.
 
 - **Columna TEXT en producción:** se creó una plantilla de prueba con 453 caracteres de HTML (`201`) y se eliminó (`200`), confirmando que el `ALTER TABLE … TYPE TEXT` resolvió el límite de `VARCHAR(255)`.
+
+- **Despliegue 2.33.45:** `Zona horaria de negocio: America/Costa_Rica` en el arranque, reloj del sistema en `CST (-0600)`, logo intacto (md5 `7f83ec9b…`), login 200 y **0 ERROR** desde el despliegue.
+- Reporte "Ventas por cajero": selección de cajero + rango y botón "Cargar Reportes" funcionan (estado vacío correcto para Admin).
