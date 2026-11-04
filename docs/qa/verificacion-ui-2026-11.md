@@ -49,7 +49,7 @@
 | Cliente (picker) | ✅ | asigna cliente |
 | Cantidad +/- y cantidad directa | ✅ | actualiza carrito |
 | Quitar línea | ✅ | 200 |
-| Ajustar precio (motivo obligatorio) | ✅ | aplica y audita |
+| Ajustar precio (motivo obligatorio) | ✅ | solo rol `admin`; el resto ve el carrito sin el botón |
 | Restaurar precio | ✅ | vuelve al del sistema |
 | Puntos de lealtad (redimir/quitar) | ✅ | preview y descuento |
 | Cancelar venta (confirmación) | ✅ | carrito a ₡0 |
@@ -223,6 +223,7 @@
 | 2.33.18 | REP emitía `NombreComercial` en el receptor (XSD inválido) | receptor REP mínimo |
 | 2.33.18 | FE/ND/FEC/FEE sin `CodigoActividadReceptor` (XSD inválido) | fallback al emisor + test |
 | 2.33.18 | Ajustes aceptaba actividad que no son 6 dígitos | validación `\d{6}` |
+| 2.33.19 | Cualquiera con POS podía rebajar el precio de una línea | descuento/ajuste solo rol `admin` |
 
 ## 12. No ejecutado (y por qué)
 

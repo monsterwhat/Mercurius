@@ -152,6 +152,7 @@
                 {! Ajuste manual del precio: solo para ESTA venta. El modal se
                    precarga desde estos data-* por el puente de factura-body. !}
                 {#if !item.promo}
+                {#if panel.puedeDescontar}
                 <button type="button" class="button is-small is-warning is-outlined"
                         aria-label="Ajustar el precio de {item.nombre}"
                         title="Ajustar precio solo para esta venta"
@@ -162,6 +163,7 @@
                         data-precio-actual="{item.precioMostrado}"
                         data-precio-ajustado="{item.precioPersonalizado ?: ''}"
                         data-precio-motivo="{item.motivoAjuste ?: ''}">{#include _kit/icon name="edit" /}</button>
+                {/if}
                 {/if}
                 <button type="button" class="button is-small is-danger is-outlined"
                         aria-label="Quitar {item.nombre} del carrito"

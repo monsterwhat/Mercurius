@@ -309,11 +309,18 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             // Parity with the JSF price-override binding: the override lives on
             // the cart ROW (ArticuloCarrito.precioPersonalizado), consumed by
             // getPrecioEfectivo() and gated by the facturar override check.
-            for (ArticuloCarrito item : ctx.getCarrito()) {
-                if (!item.isPromo()
-                        && Objects.equals(item.getArticulo().getCodigo(), articulo.getCodigo())) {
-                    item.setPrecioPersonalizado(request.precioPersonalizado);
-                    break;
+            // Solo un administrador puede fijarlo.
+            if (!esAdmin()) {
+                LOG.warn("precioPersonalizado ignorado: el usuario no es administrador | usuario="
+                        + username + " | articulo=" + articulo.getCodigo()
+                        + " | source=PosResource.scan()");
+            } else {
+                for (ArticuloCarrito item : ctx.getCarrito()) {
+                    if (!item.isPromo()
+                            && Objects.equals(item.getArticulo().getCodigo(), articulo.getCodigo())) {
+                        item.setPrecioPersonalizado(request.precioPersonalizado);
+                        break;
+                    }
                 }
             }
         }
@@ -1304,6 +1311,14 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     panelModel(username, message("VALIDATION_ERROR", "error",
                             "codigo es requerido", null))).render());
         }
+        if (!esAdmin()) {
+            LOG.warn("Ajuste de precio rechazado: el usuario no es administrador | usuario=" + username
+                    + " | articulo=" + codigo + " | source=PosResource.priceForm()");
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("DESCUENTO_SOLO_ADMIN", "warn",
+                            "Solo un administrador puede aplicar descuentos o ajustar precios",
+                            "Pida a un administrador que autorice el descuento."))).render());
+        }
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
@@ -1982,6 +1997,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         panel.put("vueltoString", carritoService.getVueltoString(ctx));
         panel.put("hasOverrides", hasOverridesInCarrito(ctx));
         panel.put("authorizedBy", entry.getAuthorizedBy());
+        // Descuentos/ajustes de precio: solo un administrador. El cajero ve el
+        // carrito y cobra, pero no puede rebajar precios ni por línea.
+        panel.put("puedeDescontar", esAdmin());
 
         Clientes cliente = ctx.getSelectedClient();
         boolean clienteValido = cliente != null && cliente.getCode() != 0;
@@ -2274,6 +2292,12 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return null;
         }
         return securityIdentity.getPrincipal().getName();
+    }
+
+    /** Los descuentos y ajustes de precio son exclusivos del rol admin. */
+    private boolean esAdmin() {
+        return securityIdentity != null && !securityIdentity.isAnonymous()
+                && securityIdentity.hasRole("admin");
     }
 
     private @Nullable ArticuloCarrito findLineByArticuloCodigo(

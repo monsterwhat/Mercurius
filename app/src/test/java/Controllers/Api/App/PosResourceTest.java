@@ -823,6 +823,22 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     @Test
     @Order(17)
+    @TestSecurity(user = "cajero-descuentos", roles = {"facturacion"})
+    void facturacionRoleCannotApplyPriceDiscount() {
+        Map<String, String> jar = testIdentityJar();
+        testAuthed(jar)
+                .contentType(ContentType.URLENC)
+                .formParam("codigo", "1")
+                .formParam("precio", "500")
+                .formParam("motivo", "Descuento no autorizado")
+                .when().post(POS + "/item/price-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Solo un administrador puede aplicar descuentos"));
+    }
+
+    @Test
+    @Order(18)
     void cancelClearsCartPaymentsAndOverrideState() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
