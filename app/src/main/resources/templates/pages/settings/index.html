@@ -384,6 +384,36 @@
                         </p>
                     </div>
                 </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label" for="contrasena-correo">Contraseña del correo (SMTP/IMAP)</label>
+                        <div class="control">
+                            <input id="contrasena-correo" class="input" type="password"
+                                   name="contrasenaCorreo" autocomplete="new-password"
+                                   placeholder="Dejar vacío para conservar la actual"/>
+                        </div>
+                        <p class="help mercurius-text-muted">
+                            <strong>Gmail:</strong> active la verificación en 2 pasos y cree una
+                            <em>Contraseña de aplicación</em> (Cuenta de Google → Seguridad →
+                            Contraseñas de aplicaciones), y péguela aquí. No use la contraseña
+                            normal de la cuenta. USUARIO = el correo completo; el host y puerto
+                            por omisión de Gmail son smtp.gmail.com:587 (IMAP: imap.gmail.com:993).
+                        </p>
+                    </div>
+                </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <button type="button" class="button is-light" data-json-save
+                                hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/prueba"
+                                hx-on::after-request="this.classList.remove('is-loading')">
+                            Enviar correo de prueba
+                        </button>
+                        <p class="help mercurius-text-muted">
+                            Usa el correo y la contraseña guardados. El destino es el correo de
+                            notificaciones; si está vacío, el correo principal.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
         {/if}
@@ -901,6 +931,7 @@
             var esTrigger = url.indexOf('backup-trigger') !== -1;
             var esSucursal = url.indexOf('/sucursales') !== -1;
             var esMargen = url.indexOf('/margen') !== -1;
+            var esCorreoPrueba = url.indexOf('correo/prueba') !== -1;
             var severidad = 'is-danger';
             var mensaje = 'No se pudo contactar al servidor';
             if (evt.detail.successful && datos && datos.data) {
@@ -911,6 +942,8 @@
                     mensaje = 'Punto de venta actualizado';
                 } else if (esMargen) {
                     mensaje = 'Márgenes actualizados';
+                } else if (esCorreoPrueba) {
+                    mensaje = 'Correo de prueba enviado a ' + (datos.data.destino || '');
                 } else {
                     mensaje = 'Configuración guardada';
                 }

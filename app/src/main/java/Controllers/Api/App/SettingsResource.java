@@ -106,6 +106,10 @@ public class SettingsResource {
     @Inject
     SucursalService sucursalService;
 
+    @Nonnull
+    @Inject
+    Services.EmailService emailService;
+
     @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
@@ -203,6 +207,7 @@ public class SettingsResource {
             @FormParam("imapCorreoPuerto") @Nullable String imapCorreoPuerto,
             @FormParam("smtpCorreoHost") @Nullable String smtpCorreoHost,
             @FormParam("smtpCorreoPuerto") @Nullable String smtpCorreoPuerto,
+            @FormParam("contrasenaCorreo") @Nullable String contrasenaCorreo,
             @FormParam("nombrePerfil") @Nullable String nombrePerfil,
             @FormParam("nombre") @Nullable String nombre,
             @FormParam("tipoIdentificacion") @Nullable String tipoIdentificacion,
@@ -235,6 +240,8 @@ public class SettingsResource {
         request.imapCorreoPuerto = enBlancoNulo(imapCorreoPuerto);
         request.smtpCorreoHost = smtpCorreoHost;
         request.smtpCorreoPuerto = enBlancoNulo(smtpCorreoPuerto);
+        // Secreto de solo escritura: vacío = conservar la contraseña actual.
+        request.contrasenaCorreo = enBlancoNulo(contrasenaCorreo);
         request.nombrePerfil = nombrePerfil;
         request.nombre = nombre;
         request.tipoIdentificacion = tipoIdentificacion;
@@ -485,6 +492,11 @@ public class SettingsResource {
                             .build();
                 }
                 settings.setSmtpCorreoPuerto(puerto);
+            }
+            // Contraseña de aplicación del correo: solo se escribe si llega un
+            // valor (el campo del formulario es de solo escritura).
+            if (request.contrasenaCorreo != null) {
+                settings.setContrasenaCorreo(request.contrasenaCorreo);
             }
 
             settingsService.update(settings);
@@ -856,6 +868,69 @@ public class SettingsResource {
      * Proyeccion del registro para el asistente: la lista de puntos de venta y
      * cual esta seleccionado, ya resuelto contra la configuracion global.
      */
+    /**
+     * Envía un correo de prueba con las credenciales guardadas (SMTP).
+     *
+     * <p>Devuelve JSON para que el botón {@code data-json-save} de Ajustes
+     * muestre el resultado (éxito o el motivo del fallo) sin recargar.</p>
+     */
+    @POST
+    @Path("/correo/prueba")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Send a test email with the saved SMTP credentials")
+    public Response probarCorreo() {
+        ConfiguracionAplicacion settings = settingsService.returnCurrent();
+        if (settings == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", "No hay configuración guardada."))
+                    .build();
+        }
+        String correo = settings.getCorreoElectronico();
+        String pass = settings.getContrasenaCorreo();
+        if (correo == null || correo.isBlank() || pass == null || pass.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR",
+                            "Configure el correo y la contraseña de aplicación antes de probar."))
+                    .build();
+        }
+        String destino = settings.getCorreoNotificaciones() != null
+                && !settings.getCorreoNotificaciones().isBlank()
+                ? settings.getCorreoNotificaciones().trim() : correo.trim();
+        java.util.concurrent.CompletableFuture<String> resultado = new java.util.concurrent.CompletableFuture<>();
+        emailService.sendEmail(destino, "Prueba de correo - Mercurius",
+                "Este es un correo de prueba enviado desde Mercurius.",
+                correo.trim(), pass.trim(), resultado::complete);
+        String estado;
+        try {
+            estado = resultado.get(45, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            LOG.warn("Correo de prueba sin respuesta en 45s | destino=" + destino, e);
+            return Response.status(Response.Status.GATEWAY_TIMEOUT)
+                    .entity(ApiResponse.error("EMAIL_TIMEOUT",
+                            "El servidor de correo no respondió. Revise host y puerto."))
+                    .build();
+        } catch (RuntimeException | InterruptedException | java.util.concurrent.ExecutionException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            LOG.warn("Error esperando el correo de prueba: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "No se pudo enviar el correo de prueba."))
+                    .build();
+        }
+        if ("Sent".equals(estado)) {
+            LOG.info("Correo de prueba enviado a " + destino
+                    + " | user=" + String.valueOf(currentUserOrNull()));
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("destino", destino);
+            return Response.ok(ApiResponse.ok(data)).build();
+        }
+        LOG.warn("Correo de prueba falló: " + estado + " | destino=" + destino);
+        return Response.status(Response.Status.BAD_GATEWAY)
+                .entity(ApiResponse.error("EMAIL_FAILED", "No se pudo enviar: " + estado))
+                .build();
+    }
+
     private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionada) {
         List<Map<String, Object>> filas = new ArrayList<>();
         Long idSeleccionada = seleccionada == null ? null : seleccionada.getId();
@@ -1073,6 +1148,10 @@ public class SettingsResource {
         /** Puerto SMTP; null/vacio/ilegible = el del preset. */
         @Nullable
         public String smtpCorreoPuerto;
+
+        /** Contraseña de aplicación del correo; null = conservar la actual. */
+        @Nullable
+        public String contrasenaCorreo;
     }
 
     /** Whether a stored provider key names a real preset. */

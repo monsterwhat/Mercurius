@@ -177,16 +177,34 @@ class SettingsPageTest extends AppBase {
         assertTrue(html.contains("toast-container") || html.contains("notification"),
                 "las notificaciones deben seguir la convención del kit");
 
-        // SECRET RULE: no secret field name may ever appear in the page
-        assertFalse(html.contains("contrasena"), "la página no debe mencionar campos de credenciales");
+        // SECRET RULE: ningún secreto se renderiza con valor. La contraseña de
+        // aplicación del correo SÍ tiene un campo propio, de solo escritura
+        // (sin value), porque el operador necesita configurar Gmail; el resto
+        // de credenciales no aparece en la página.
+        assertTrue(html.contains("name=\"contrasenaCorreo\""),
+                "la contraseña de correo debe poder configurarse desde Ajustes");
+        assertFalse(html.contains("contrasenaCorreo\" value="),
+                "la contraseña guardada nunca debe viajar al HTML");
         assertFalse(html.contains("haciendaApiKey"), "la página no debe mencionar haciendaApiKey");
         assertFalse(html.contains("haciendaEncryptionKey"), "la página no debe mencionar haciendaEncryptionKey");
         assertFalse(html.contains("fidesAuthPassword"), "la página no debe mencionar fidesAuthPassword");
         assertFalse(html.contains("certificadoPassword"), "la página no debe mencionar certificadoPassword");
     }
 
-    // ── 2. PUT whitelist round-trip (live contract) ─────────────────────
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void correoDePruebaSinCredencialesSeRechaza() {
+        Map<String, String> jar = csrfJar();
+        given().cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.URLENC)
+                .when().post(BASE + "/correo/prueba")
+                .then()
+                .statusCode(400)
+                .body("error.code", equalTo("VALIDATION_ERROR"));
+    }
 
+    // ── 2. PUT whitelist round-trip (live contract) ─────────────────────
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void putWhitelistRoundTrip() {
