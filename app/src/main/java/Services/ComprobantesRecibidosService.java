@@ -696,6 +696,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         List<String> predicates = new ArrayList<>();
         switch (normalizarBucket(bucket)) {
             case "activas" -> predicates.add("f.status = true");
+            case "inactivas" -> predicates.add("f.status = false");
             case "pagadas" -> predicates.add("(f.paid = true AND f.status = true)");
             case "procesadas" -> predicates.add("(f.processed = true AND f.status = true)");
             case "pendientes" -> {
@@ -774,6 +775,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
         return switch (bucket.trim().toLowerCase(Locale.ROOT)) {
             case "activas" -> "activas";
+            case "inactivas" -> "inactivas";
             case "pagadas" -> "pagadas";
             case "procesadas" -> "procesadas";
             case "pendientes" -> "pendientes";

@@ -659,6 +659,37 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
         }
     }
 
+    @Test
+    void inboxInactivasBucketListsDeactivatedInvoices() {
+        Map<String, String> session = adminSession();
+        String marca = "IT36INA" + uniqueSuffix();
+        ComprobantesRecibidos row = null;
+        try {
+            row = seedRow(marca, LocalDateTime.now().minusDays(2),
+                    BigDecimal.ONE, BigDecimal.ONE, false, false, null);
+            recibidosService.toggle(row); // deja status=false
+
+            // "Todas" es la bandeja de activas: la desactivada no aparece.
+            authed(session)
+                    .queryParam("q", marca)
+                    .when().get(API)
+                    .then()
+                    .statusCode(200)
+                    .body("total", equalTo(0));
+
+            // La bandeja Inactivas es la unica forma de recuperarla.
+            authed(session)
+                    .queryParam("bucket", "inactivas")
+                    .queryParam("q", marca)
+                    .when().get(API)
+                    .then()
+                    .statusCode(200)
+                    .body("total", equalTo(1));
+        } finally {
+            deleteQuietly(row);
+        }
+    }
+
     // ── 7. Inbox kit contract: paging, filter, bucket, sort ─────────────
 
     @Test

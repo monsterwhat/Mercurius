@@ -41,6 +41,13 @@
            href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas"
            hx-target="#{modelo.id}" hx-swap="outerHTML">Vencidas</a>
+        {! Las desactivadas salen de "Todas"; sin esta bandeja no habia forma
+           de volver a activarlas (el boton Activar/Desactivar es un toggle). !}
+        <a class="view-tab {#if modelo.bucket eq 'inactivas'}is-active{/if}"
+           {#if modelo.bucket eq 'inactivas'}aria-current="page"{/if}
+           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=inactivas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=inactivas"
+           hx-target="#{modelo.id}" hx-swap="outerHTML">Inactivas</a>
         {/tabs}
     {/include}
 

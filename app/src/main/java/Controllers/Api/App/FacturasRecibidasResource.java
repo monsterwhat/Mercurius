@@ -170,6 +170,7 @@ public class FacturasRecibidasResource {
     /** Bucket keys (URL-facing); legacy tab titles kept in templates. */
     public static final String BUCKET_TODAS = "todas";
     public static final String BUCKET_ACTIVAS = "activas";
+    public static final String BUCKET_INACTIVAS = "inactivas";
     public static final String BUCKET_PAGADAS = "pagadas";
     public static final String BUCKET_PROCESADAS = "procesadas";
     public static final String BUCKET_PENDIENTES = "pendientes";
@@ -396,6 +397,7 @@ public class FacturasRecibidasResource {
         }
         return switch (bucket.trim().toLowerCase()) {
             case BUCKET_ACTIVAS -> BUCKET_ACTIVAS;
+            case BUCKET_INACTIVAS -> BUCKET_INACTIVAS;
             case BUCKET_PAGADAS -> BUCKET_PAGADAS;
             case BUCKET_PROCESADAS -> BUCKET_PROCESADAS;
             case BUCKET_PENDIENTES -> BUCKET_PENDIENTES;
