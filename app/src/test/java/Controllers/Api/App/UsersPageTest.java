@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -153,7 +154,19 @@ class UsersPageTest extends support.ContextPathIsolation {
         assertNotNull(archived);
         assertFalse(archived.getStatus(), "DELETE must soft-disable the user");
 
-        loginService.delete(archived);
+        // El boton "Activar cuenta" usa el MISMO DELETE: segunda llamada
+        // reactiva. Antes softDelete siempre ponia false y "Activar" no hacia nada.
+        authed(session)
+                .when().delete(BASE + "/api/app/users/" + creado.getId())
+                .then()
+                .statusCode(200)
+                .body("data.status", equalTo(true));
+
+        Usuarios reactivado = loginService.find(creado.getId());
+        assertNotNull(reactivado);
+        assertTrue(reactivado.getStatus(), "the second DELETE must reactivate the user");
+
+        loginService.delete(reactivado);
     }
 
     @Test

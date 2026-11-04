@@ -239,8 +239,7 @@ public class LoginService extends GService<Usuarios> {
     }
 
     @Transactional
-    public void softDelete(Usuarios entity) {
-        try {
+    public void softDelete(Usuarios entity) {        try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
             }
@@ -254,6 +253,30 @@ public class LoginService extends GService<Usuarios> {
             }
         } catch (PersistenceException e) {
                         LOG.warn("Error soft deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LoginService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+        }
+    }
+
+    /**
+     * Alterna el estado activo/inactivo de una cuenta. El endpoint DELETE de
+     * usuarios se usa para las DOS acciones ("Desactivar cuenta" y "Activar
+     * cuenta"); antes solo llamaba a {@link #softDelete}, asi que "Activar"
+     * volvia a desactivar.
+     */
+    @Transactional
+    public void toggleStatus(@Nonnull Usuarios entity) {
+        try {
+            Usuarios existing = em.find(getEntityClass(), entity.getId());
+            if (existing != null) {
+                existing.setStatus(!Boolean.TRUE.equals(existing.getStatus()));
+                em.merge(existing);
+                em.flush();
+            } else {
+                LOG.info("Entity not found | source=LoginService.toggleStatus()");
+            }
+        } catch (PersistenceException e) {
+            LOG.warn("Error cambiando el estado del usuario " + entity.getId() + ": "
+                    + e.getMessage() + " | source=LoginService.toggleStatus()", e);
+            throw e;
         }
     }
 

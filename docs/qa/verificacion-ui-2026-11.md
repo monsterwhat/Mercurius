@@ -96,7 +96,7 @@
 | Pantalla / control | Estado | Evidencia |
 |---|---|---|
 | Inventarios: pestañas y conteos | ✅ | 1.477.227 |
-| Inventarios: Crear Ajuste (diálogo) | 🟡 | abierto; no se guardó |
+| Inventarios: Crear Ajuste (diálogo) | ✅ | creó ajuste manual +1 y aplicó stock; revertido y limpiado |
 | Inventarios: Exportar PDF | ✅ | 200, 118 KB (tope 2.000 con aviso) |
 | Inventarios: procesar/rechazar/reabrir/omitir | 🟡 | no ejecutados (mutan stock) |
 | Alertas: tarjetas, filtros, tabla | ✅ | 4 stock bajo + 18 sobrestock = 22 |
@@ -133,7 +133,7 @@
 | Editar artículo | ✅ | prefill y guardado |
 | Desactivar / Activar | ✅ | toggle y reversa (nuevo endpoint) |
 | Procesar / Procesado rápido / Saltar | 🟡 | no ejecutados |
-| Promociones (crear/editar/borrar) | 🟡 | no ejecutados |
+| Promociones (crear/editar/borrar) | ✅/🟡 | crear y borrar verificados (bug de transacción corregido, v2.33.13); editar no ejecutado |
 | Buscador CAByS dentro del artículo | 🟡 | no ejecutado |
 | Guardar márgenes | ✅ | 200 (historial de prueba limpiado) |
 | Exportar Excel | ✅ | 818 KB |
@@ -154,8 +154,8 @@
 | **Clientes**: crear/editar/desactivar | ✅ | fecha dd/mm/aaaa; QA limpiado |
 | Clientes: buscar nombre en Gometa | 🟡 | no ejecutado |
 | **Usuarios**: crear (rol), editar correo, desactivar | ✅ | QA limpiado |
-| Usuarios: guardar permisos | 🟡 | formulario visible; no se cambiaron permisos |
-| Usuarios: activar cuenta | 🟡 | no ejecutado |
+| Usuarios: guardar permisos | ✅ | `[inventario, usuario]` persistido en BD |
+| Usuarios: activar cuenta | ✅ | bug corregido (v2.33.14): el segundo DELETE reactiva |
 | **Lealtad (gestión)**: guardar cashback/meses | ✅ | 1%/12 y restaurado |
 | Lealtad: ver historial de cliente | 🟡 | no ejecutado |
 | **Clientes (reporte)**: listado y exportar | ✅ | 200 |
@@ -176,7 +176,7 @@
 | **Umbrales de stock**: enlace y página | ✅ | `/app/stock-alert-config` con layout |
 | Umbrales: cargar artículo y guardar | ✅ | 200 + toast |
 | **Tipo de cambio**: modal | ✅ | compra/venta/historial |
-| Tipo de cambio: actualizar / guardar manual | ⛔/🟡 | API externa / cambia la tasa vigente |
+| Tipo de cambio: actualizar / guardar manual | ⛔/✅ | API externa no probada; tasa manual guardada (histórico revertido) |
 | **Perfil**: formularios de correo y contraseña | ⛔ | cambiaría las credenciales de acceso |
 | **Registro de actividades**: listar | ✅ | 142 archivos |
 | Registro: descargar log | ✅ | 200, `text/plain`, attachment |
@@ -214,6 +214,8 @@
 | 2.33.10 | Enlace de umbrales a `/api/...` | `/app/stock-alert-config` |
 | 2.33.11 | “Marcar como Recibida” 415 (cuerpo JSON) | twin de formulario |
 | 2.33.12 | Factura recibida desactivada desaparecía sin forma de reactivar | bandeja **Inactivas** |
+| 2.33.13 | Crear/eliminar promoción no guardaba (transacción faltante) | `@Transactional` + no tragar errores |
+| 2.33.14 | “Activar cuenta” volvía a desactivar | DELETE alterna `status` (`toggleStatus`) |
 
 ## 12. No ejecutado (y por qué)
 
@@ -232,10 +234,10 @@
 ## 13. Pendientes de esta lista (siguiente pasada)
 
 - [x] Facturas recibidas: **Pagar** y **Activar/Desactivar** (con bandeja Inactivas, v2.33.12).
-- [ ] Promociones: crear, editar y eliminar una promoción QA.
-- [ ] Inventario: crear un ajuste, aprobarlo, revertirlo y limpiar movimientos.
+- [x] Promociones: crear y eliminar (v2.33.13); editar pendiente.
+- [x] Inventario: crear ajuste (aplica stock); pendiente aprobar/rechazar/reabrir.
 - [ ] Artículos: “Procesar” / “Procesado rápido” / “Saltar” y buscador CAByS.
-- [ ] Usuarios: guardar permisos y “Activar cuenta”.
+- [x] Usuarios: guardar permisos y “Activar cuenta” (v2.33.14).
 - [ ] Sucursales: registrar un punto de venta QA y eliminarlo.
-- [ ] Tipo de cambio: guardar tasa manual con el mismo valor (y revertir si genera historial).
+- [x] Tipo de cambio: tasa manual guardada y fila de historial eliminada.
 - [ ] Cabys: importar catálogo en ventana controlada (llamada externa larga).

@@ -330,10 +330,9 @@ public class UsersResource {
             }
 
             // Parity: users are never hard-deleted (Clientes.usuario and other
-            // rows reference them); LoginService.softDelete flips status=false,
-            // which findByUsername already filters out.
+            // rows reference them); el endpoint alterna activo/inactivo.
             String antes = DiffUtils.snapshotEntity(user);
-            loginService.softDelete(user);
+            loginService.toggleStatus(user);
 
             // Audit parity with UsersController.toggleUser()
                         LOG.info("Se cambio el estado del usuario: " + user.getUsername() + " | source=" + "UsersResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(user)));
