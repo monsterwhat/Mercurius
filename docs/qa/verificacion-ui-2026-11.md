@@ -421,3 +421,10 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 | Correo de prueba con formato | llega `multipart/mixed` con parte `text/html` de 1.563 caracteres, cabecera con el negocio, pie "Enviado por Mercurius" y `<!doctype html>` (verificado por IMAP) |
 
 **Limpieza:** 8 comprobantes de prueba soft-deleted, stock restaurado a 452, cierre de caja QA borrado, cliente y usuario QA eliminados, correo de prueba borrado. **0 ERROR** desde el despliegue de 2.33.49.
+
+## 17. Mensaje Receptor en recibidas y hallazgo de ventas a crédito
+
+- **Recibidas (verificado visualmente):** el detalle muestra `Mensaje Receptor: PENDIENTE` con **Límite 12/05/2026** para una factura del 01/04/2026 (8 días hábiles desde el primer día del mes siguiente) y las acciones **Aceptar / Enviar Aceptación Parcial / Rechazar**. Están en el lugar correcto (comprador). No se ejecutaron porque envían a Hacienda.
+- **Emitidas:** ya no muestran esas acciones; solo "Eliminar" en contado.
+
+**Hallazgo (pendiente de decisión):** el POS **no ofrece condición de venta** para TE/FE (solo el REP muestra 09/11) y el cobro exige pagar el total. Por eso hoy **no se pueden emitir facturas a crédito** desde la app nueva, y el botón "Marcar como pagada" (que sí existe para crédito) queda inalcanzable en la práctica. Implementarlo implica: selector Contado/Crédito + plazo, permitir facturar sin cobro total y manejar la cuenta por cobrar. No se implementó sin confirmación.
