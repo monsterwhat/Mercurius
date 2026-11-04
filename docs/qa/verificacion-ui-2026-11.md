@@ -358,3 +358,9 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 **Hallazgo importante (hora del servidor):** el servidor corre en **UTC** y la app usaba `LocalDateTime.now()`, así que todas las horas visibles (y la `FechaEmision` de los comprobantes) salían **6 horas adelantadas** respecto a Costa Rica (21:5x vs 15:5x). En Hacienda eso puede rechazar por fecha de emisión futura.
 - Arreglo 2.33.45: `TimeZone.setDefault(America/Costa_Rica)` al arrancar + `-Duser.timezone=America/Costa_Rica` en `mercurius-start.sh`. Verificado: el log pasó de 21:56 a 15:56 sin tocar el reloj del sistema (que sigue en UTC).
 - Los registros anteriores conservan su hora (columnas `timestamp` sin zona); los nuevos se guardan en hora de Costa Rica.
+
+- **Prueba del arreglo:** tras reiniciar con `-Duser.timezone=America/Costa_Rica`, una eliminación de línea en el POS quedó registrada a las **15:58:50** (hora de Costa Rica), mientras los registros viejos del mismo día seguían en 05:38 (UTC). El reloj del sistema no se tocó (sigue en UTC). El registro de prueba se borró.
+
+- **Reloj del sistema:** además del JVM, se cambió la zona del servidor con `timedatectl set-timezone America/Costa_Rica` (antes `Etc/UTC`). Ahora `date`, los logs del sistema y la app coinciden con la hora local (`CST, -0600`); el instante UTC no se alteró.
+
+- **Columna TEXT en producción:** se creó una plantilla de prueba con 453 caracteres de HTML (`201`) y se eliminó (`200`), confirmando que el `ALTER TABLE … TYPE TEXT` resolvió el límite de `VARCHAR(255)`.
