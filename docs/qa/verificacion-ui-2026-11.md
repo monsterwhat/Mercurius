@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.18 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.20 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -50,7 +50,7 @@
 | Cantidad +/- y cantidad directa | ✅ | actualiza carrito |
 | Quitar línea | ✅ | 200 |
 | Ajustar precio (motivo obligatorio) | ✅ | solo rol `admin`; el resto ve el carrito sin el botón |
-| Descuento a toda la factura (% + motivo) | ✅ | solo `admin`; reparte el % por línea y se audita (v2.33.20) |
+| Descuento a toda la factura (% + motivo) | ✅ | solo `admin`; 475 → 427,50 con 10%, retirado a 475; auditado en Reportes |
 | Restaurar precio | ✅ | vuelve al del sistema |
 | Puntos de lealtad (redimir/quitar) | ✅ | preview y descuento |
 | Cancelar venta (confirmación) | ✅ | carrito a ₡0 |
