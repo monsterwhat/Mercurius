@@ -683,9 +683,30 @@ public class EmailService implements Serializable {
 
                 Multipart multipart = new MimeMultipart();
 
-                // Body part
+                // Cuerpo: alternativa texto/HTML. El HTML usa el layout de
+                // marca (tablas + estilos en línea) para que la factura y los
+                // avisos se vean bien en Gmail/Outlook.
+                String negocio = null;
+                try {
+                    Models.ConfiguracionAplicacion ajustes = appSettingsService.returnCurrent();
+                    if (ajustes != null) {
+                        negocio = ajustes.getNombreNegocio() != null && !ajustes.getNombreNegocio().isBlank()
+                                ? ajustes.getNombreNegocio() : ajustes.getNombre();
+                    }
+                } catch (RuntimeException e) {
+                    LOG.warn("No se pudo leer el nombre del negocio para el correo: " + e.getMessage()
+                            + " | source=EmailService.sendEmailsWithAttachments()");
+                }
+                MimeBodyPart textoPart = new MimeBodyPart();
+                textoPart.setContent(body, "text/plain; charset=utf-8");
+                MimeBodyPart htmlPart = new MimeBodyPart();
+                htmlPart.setContent(Services.Correos.EmailLayout.wrap(subject, body, negocio),
+                        "text/html; charset=utf-8");
+                Multipart alternativa = new MimeMultipart("alternative");
+                alternativa.addBodyPart(textoPart);
+                alternativa.addBodyPart(htmlPart);
                 BodyPart bodyPart = new MimeBodyPart();
-                bodyPart.setContent(body, "text/plain; charset=utf-8");
+                bodyPart.setContent(alternativa);
                 multipart.addBodyPart(bodyPart);
 
                 // Attachments

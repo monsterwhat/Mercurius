@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.33 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.34 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -171,8 +171,10 @@
 | Pantalla / control | Estado | Evidencia |
 |---|---|---|
 | **Plantillas**: crear | ✅ | “QA Plantilla” creada (tipo Reportes) |
+| Plantillas: cargar predeterminadas | ✅ | 4 plantillas HTML con estilos (factura, stock, reporte, general); idempotente |
 | Plantillas: editar | ✅ | nombre cambiado a “QA Plantilla editada” |
 | Plantillas: eliminar | ✅ | confirmación + desaparece del listado |
+| Correos del sistema con estilo | ✅ | layout HTML de marca (cabecera, cuerpo, pie) en el envío con adjuntos |
 | **Reportes programados**: crear | ✅ | “QA Reporte”, Semanal, MOVIMIENTOS, correo QA |
 | Reportes programados: editar | ✅ | nombre actualizado |
 | Reportes programados: eliminar | ✅ | confirmación + listado vacío |
@@ -269,6 +271,8 @@
 | 2.33.31 | `/app/reportes/recibos` devolvía “Not Found” pelado | redirige a Facturas recibidas (pendientes) |
 | 2.33.32 | el barrido IMAP fallaba sin decir por qué (breaker abierto) | captura `RuntimeException` y la registra |
 | 2.33.33 | `SettingsDirController.settingsService` sin `@Inject` → NPE en el barrido IMAP | `@Inject` + test de inyección |
+| 2.33.34 | el cuerpo HTML de las plantillas no cabía (`VARCHAR(255)`) | columna `TEXT` + plantillas predeterminadas |
+| 2.33.34 | los correos del sistema salían en texto plano | layout HTML de marca (texto + HTML alternativo) |
 
 ## 12. No ejecutado (y por qué)
 

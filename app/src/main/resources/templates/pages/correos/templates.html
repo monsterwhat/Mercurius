@@ -68,6 +68,10 @@
         {#include _kit/page-header title="Plantillas de Correo Electrónico"
              subtitle="Plantillas reutilizables para el envío automático de reportes" }
             {#actions}
+                <button type="button" class="button is-light"
+                        hx-post="{config:['quarkus.http.root-path']}/api/app/email-templates/predeterminadas"
+                        hx-confirm="¿Cargar las plantillas predeterminadas? Solo se crean las que falten."
+                        hx-disabled-elt="this">Cargar predeterminadas</button>
                 {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-primary"
                      bodyUrl="/api/app/email-templates/formularios/nueva" /}
             {/actions}

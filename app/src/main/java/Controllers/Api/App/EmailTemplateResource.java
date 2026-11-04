@@ -543,6 +543,35 @@ public class EmailTemplateResource {
     }
 
     /**
+     * Carga el catálogo de plantillas predeterminadas (idempotente). Botón de
+     * la página de plantillas: crea las que falten por nombre.
+     */
+    @POST
+    @Path("/predeterminadas")
+    @Consumes(MediaType.WILDCARD)
+    @Operation(summary = "Load the built-in email templates (idempotent)")
+    public Response cargarPredeterminadas() {
+        try {
+            int creadas = emailTemplateService.createDefaults(resolveCurrentUser());
+            LOG.info("Plantillas predeterminadas cargadas: " + creadas
+                    + " | user=" + String.valueOf(resolveCurrentUser())
+                    + " | source=EmailTemplateResource.cargarPredeterminadas()");
+            if (isHxRequest()) {
+                return hxRedirect("/app/correos/plantillas");
+            }
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("creadas", creadas);
+            return Response.ok(ApiResponse.ok(data)).build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error cargando las plantillas predeterminadas", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR",
+                            "No se pudieron cargar las plantillas predeterminadas"))
+                    .build();
+        }
+    }
+
+    /**
      * Form-urlencoded twin of {@link #update(Long, EmailTemplateDTO)} for the
      * HTMX dialog form. Legacy updateTemplate() parity: fechaModificacion
      * stamped on every save, NO duplicate-name re-check, and status left
