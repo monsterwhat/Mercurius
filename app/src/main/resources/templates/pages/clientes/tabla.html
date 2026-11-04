@@ -65,8 +65,8 @@
                 <td>{#if cliente.idNumber??}{cliente.idNumber}{#else}&mdash;{/if}</td>
                 <td>{#if cliente.phoneNumber??}{cliente.phoneNumber}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">{#if cliente.taxpayer}Sí{#else}No{/if}</td>
-                <td class="has-text-centered">
-                    <div class="buttons is-centered" style="margin:0">
+                <td class="has-text-centered" style="white-space:nowrap">
+                    <div class="buttons is-centered" style="margin:0;flex-wrap:nowrap">
                         {! Icon-only row actions are BORDERED buttons: the teal
                            accent is the screen's one filled primary, and a
                            second semantic hue per row is noise. The accessible
