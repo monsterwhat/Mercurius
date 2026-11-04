@@ -54,7 +54,10 @@ public class Encabezado {
             this.clave = src.getClave();
             this.proveedorSistemas = src.getProveedorSistemas();
             this.codigoActividadEmisor = src.getCodigoActividadEmisor();
-            this.codigoActividadReceptor = src.getCodigoActividadReceptor();
+            // El XSD de facturaElectronicaExportacion NO tiene
+            // CodigoActividadReceptor: emitirlo hace fallar la firma con
+            // cvc-complex-type.2.4.a (espera NumeroConsecutivo).
+            this.codigoActividadReceptor = null;
             this.numeroConsecutivo = src.getNumeroConsecutivo();
             this.fechaEmision = src.getFechaEmision();
             this.condicionVenta = src.getCondicionVenta();

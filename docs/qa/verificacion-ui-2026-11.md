@@ -60,7 +60,7 @@
 | FEC/FEE: notas y receptor | ✅ | avisos correctos |
 | Emitir TE/FE | ✅ | documentos creados en pruebas anteriores |
 | Emitir ND/FEC/REP desde el POS | ✅ | ND 00100001030000000001, FEC ...080000000001, REP ...100000000001 (soft-deleted) |
-| Emitir FEE desde el POS | 🟡 | cubierto por tests; no repetido en UI |
+| Emitir FEE desde el POS | ✅ | 00100001050000000001; XSD de exportación corregido (v2.33.22) |
 | Efecto en inventario por tipo | ✅ | FEC suma; ND/REP/NC no mueven; ventas restan |
 | Título del PDF por tipo | ✅ | Factura/Nota/Compra/Exportación/Recibo/Tiquete |
 
@@ -227,6 +227,7 @@
 | 2.33.19 | Cualquiera con POS podía rebajar el precio de una línea | descuento/ajuste solo rol `admin` |
 | 2.33.20 | No existía descuento sobre el total de la factura | % admin-only repartido por línea |
 | 2.33.21 | Buscador de artículos en “Nueva Orden” no devolvía nada | `name="q"` en el input |
+| 2.33.22 | FEE emitía `CodigoActividadReceptor` (XSD de exportación inválido) | el encabezado FEE no lo emite |
 
 ## 12. No ejecutado (y por qué)
 

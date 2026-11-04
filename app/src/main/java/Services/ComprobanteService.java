@@ -999,11 +999,12 @@ public class ComprobanteService implements Serializable {
     }
 
     /**
-     * v4.4: tipos cuyo Encabezado exige {@code CodigoActividadReceptor}.
+     * v4.4: tipos cuyo Encabezado exige {@code CodigoActividadReceptor}. La
+     * factura de exportación (05) NO lo lleva: su XSD espera NumeroConsecutivo.
      */
     private static boolean exigeActividadReceptor(@Nullable String tipoDocumento) {
         return switch (tipoDocumento == null ? "" : tipoDocumento) {
-            case "01", "02", "03", "05", "08" -> true;
+            case "01", "02", "03", "08" -> true;
             default -> false;
         };
     }

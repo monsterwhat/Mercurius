@@ -277,6 +277,23 @@ class JaxbCopiaCompletaTest {
                 .as("REP Receptor no admite OtrasSenasExtranjero").isNull();
     }
 
+    @Test
+    @DisplayName("FEE.Encabezado no emite CodigoActividadReceptor (XSD de exportación)")
+    void feeEncabezadoSinCodigoActividadReceptor() {
+        var src = new Models.Encabezado.Encabezado();
+        src.setCodigoActividadEmisor("620101");
+        src.setCodigoActividadReceptor("620101");
+        src.setNumeroConsecutivo("00100001050000000001");
+
+        var copiado = new Models.Jaxb.FEE.Encabezado(src);
+
+        assertThat(copiado.getCodigoActividadEmisor()).isEqualTo("620101");
+        assertThat(copiado.getCodigoActividadReceptor())
+                .as("el XSD de facturaElectronicaExportacion no admite CodigoActividadReceptor")
+                .isNull();
+        assertThat(copiado.getNumeroConsecutivo()).isEqualTo("00100001050000000001");
+    }
+
     private static org.assertj.core.api.AbstractThrowableAssert<?, ? extends Throwable> assertThatCode(
             org.assertj.core.api.ThrowableAssert.ThrowingCallable callable) {
         return org.assertj.core.api.Assertions.assertThatCode(callable);
