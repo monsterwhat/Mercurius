@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.41 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.42 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -314,3 +314,5 @@
 - [x] Plantillas predeterminadas: las 4 se crean desde la UI (200) y la vista previa devuelve el correo completo con marca y variables sustituidas (asunto Su factura 00100001010000000001).
 - [x] Logo: subida desde Ajustes probada con una imagen distinta (el endpoint público cambia al instante) y restaurado el logo original; login/sidebar/Ajustes apuntan todos a /logo.
 - [ ] **Nota operativa:** la columna EmailTemplate.cuerpoHtml era VARCHAR(255); Hibernate update no cambia tipos, así que en bases existentes hay que ejecutar una vez ALTER TABLE emailtemplate ALTER COLUMN cuerpohtml TYPE TEXT; (ya aplicado en producción). Las instalaciones nuevas la crean como TEXT.
+- [x] Ciclo automático verificado tras el arreglo: 21:30 completado y **0 ERROR** en el log desde el despliegue de 2.33.42.
+- [x] Logging: se eliminó el 	oString() de Usuarios (incluía hash/sal de la contraseña) de 57 logs en 10 recursos; ahora se registra solo el username (Utils.LogUsers). Verificado en el barrido: user=Admin.
