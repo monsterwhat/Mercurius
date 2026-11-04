@@ -910,9 +910,16 @@ public class SettingsResource {
                 && !settings.getCorreoNotificaciones().isBlank()
                 ? settings.getCorreoNotificaciones().trim() : correo.trim();
         java.util.concurrent.CompletableFuture<String> resultado = new java.util.concurrent.CompletableFuture<>();
-        emailService.sendEmail(destino, "Prueba de correo - Mercurius",
-                "Este es un correo de prueba enviado desde Mercurius.",
-                correo.trim(), pass.trim(), resultado::complete);
+        // Mismo camino que usan las facturas (texto + HTML con el layout de
+        // marca), para que el botón de prueba enseñe exactamente lo que recibe
+        // el cliente y no un correo de texto plano distinto.
+        emailService.sendEmailsWithAttachments(java.util.List.of(destino),
+                "Prueba de correo - Mercurius",
+                "Este es un correo de prueba enviado desde Mercurius.\n\n"
+                        + "Si ve el nombre del negocio en la cabecera y el pie de página, "
+                        + "el envío con formato HTML está funcionando.",
+                correo.trim(), pass.trim(),
+                java.util.Collections.emptyList(), resultado::complete);
         String estado;
         try {
             estado = resultado.get(45, java.util.concurrent.TimeUnit.SECONDS);
