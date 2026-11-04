@@ -238,11 +238,11 @@ public class LoteResource {
             }
             loteService.create(nuevo);
                         LOG.info("Lote creado: " + nuevo.getNumeroLote()
-                    + " para articulo " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                    + " para articulo " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(nuevo))).build();
         } catch (RuntimeException e) {
-                        LOG.warn(MSG_ERROR_CREAR + ": " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn(MSG_ERROR_CREAR + ": " + e.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.warn("Error creando el lote", e);
             return serverError(MSG_ERROR_CREAR);
         }
@@ -298,7 +298,7 @@ public class LoteResource {
                 lote.setNotas(emptyToNull(body.notas()));
             }
             loteService.update(lote);
-                        LOG.info("Lote actualizado: " + lote.getNumeroLote() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Lote actualizado: " + lote.getNumeroLote() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "LoteResource.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return Response.ok(ApiResponse.ok(toDTO(lote))).build();
         } catch (RuntimeException e) {
             LOG.warn("Error actualizando el lote " + id, e);
@@ -324,7 +324,7 @@ public class LoteResource {
             }
             String numeroLote = lote.getNumeroLote();
             loteService.delete(lote);
-                        LOG.info("Lote eliminado: " + numeroLote + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Lote eliminado: " + numeroLote + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "LoteResource.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return Response.ok(ApiResponse.ok(Map.of("mensaje", "Lote eliminado"))).build();
         } catch (RuntimeException e) {
             LOG.warn("Error eliminando el lote " + id, e);

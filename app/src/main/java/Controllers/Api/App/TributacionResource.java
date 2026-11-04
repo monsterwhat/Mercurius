@@ -360,7 +360,7 @@ public class TributacionResource {
             }
 
                         LOG.info("Envio masivo de facturas: " + enviadas + " enviadas, " + fallidas
-                            + " fallidas de " + pendientes.size() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.enviarPendientes" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                            + " fallidas de " + pendientes.size() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "TributacionResource.enviarPendientes" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             BulkSendResult resultado = new BulkSendResult(pendientes.size(), enviadas, fallidas,
                     "Envio completado: Enviadas: " + enviadas + ", Fallidas: " + fallidas
@@ -427,7 +427,7 @@ public class TributacionResource {
             }
 
             String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
-                        LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             // El corrector emite SIEMPRE un comprobante nuevo, así que la guarda de
             // idempotencia vive aquí: un rechazo ya sustituido no se vuelve a
@@ -467,7 +467,7 @@ public class TributacionResource {
                         + "Número original: " + consecutivo;
             }
                         LOG.info("Resultado de la corrección de la factura rechazada: " + consecutivo
-                            + " | reemitida=" + reemitida + " | user=" + String.valueOf(currentUser())
+                            + " | reemitida=" + reemitida + " | user=" + Utils.LogUsers.nombre(currentUser())
                             + " | source=" + "TributacionResource.corregirRechazada"
                             + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
@@ -608,7 +608,7 @@ public class TributacionResource {
                     emitidas.size(), recibidas.size(), filas);
             return Response.ok(ApiResponse.ok(resumen)).build();
         } catch (RuntimeException e) {
-            LOG.warn("Error al calcular declaracion IVA: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=TributacionResource.declaracionResumen | antes=null | despues=" + e.getMessage(), e);
+            LOG.warn("Error al calcular declaracion IVA: " + e.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=TributacionResource.declaracionResumen | antes=null | despues=" + e.getMessage(), e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error al calcular la declaración IVA"))
                     .build();

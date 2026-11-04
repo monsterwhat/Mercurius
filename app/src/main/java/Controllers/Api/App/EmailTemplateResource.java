@@ -608,7 +608,7 @@ public class EmailTemplateResource {
         try {
             int creadas = emailTemplateService.createDefaults(resolveCurrentUser());
             LOG.info("Plantillas predeterminadas cargadas: " + creadas
-                    + " | user=" + String.valueOf(resolveCurrentUser())
+                    + " | user=" + Utils.LogUsers.nombre(resolveCurrentUser())
                     + " | source=EmailTemplateResource.cargarPredeterminadas()");
             if (isHxRequest()) {
                 return hxRedirect("/app/correos/plantillas");

@@ -313,7 +313,7 @@ public class OrdenCompraResource {
             ordenCompraService.crearOrden(orden, detalles);
 
             String antes = DiffUtils.snapshotEntity(orden);
-                        LOG.info("Se creó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.create()" + " | antes=" + String.valueOf("") + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                        LOG.info("Se creó la orden de compra: " + orden.getNumeroOrden() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.create()" + " | antes=" + String.valueOf("") + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(orden)))
@@ -366,7 +366,7 @@ public class OrdenCompraResource {
             orden.setUsuario(currentUser());
             ordenCompraService.update(orden);
 
-                        LOG.info("Se actualizó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                        LOG.info("Se actualizó la orden de compra: " + orden.getNumeroOrden() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
@@ -415,7 +415,7 @@ public class OrdenCompraResource {
             String antes = DiffUtils.snapshotEntity(orden);
             ordenCompraService.cambiarEstado(orden, nuevoEstado);
 
-                        LOG.info("Orden " + orden.getNumeroOrden() + ": " + estadoActual + " → " + nuevoEstado + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.cambiarEstado()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                        LOG.info("Orden " + orden.getNumeroOrden() + ": " + estadoActual + " → " + nuevoEstado + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.cambiarEstado()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -457,7 +457,7 @@ public class OrdenCompraResource {
             }
             ordenCompraService.recibirOrden(orden);
 
-                        LOG.info("Se marcó como recibida la orden: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.recibir()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                        LOG.info("Se marcó como recibida la orden: " + orden.getNumeroOrden() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.recibir()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -514,7 +514,7 @@ public class OrdenCompraResource {
             ordenCompraService.cancelarOrden(orden, motivo);
 
                         LOG.info("Se canceló la orden: " + orden.getNumeroOrden()
-                            + (motivo != null ? " - Motivo: " + motivo : "") + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.cancelar()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                            + (motivo != null ? " - Motivo: " + motivo : "") + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.cancelar()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -553,7 +553,7 @@ public class OrdenCompraResource {
             String antes = DiffUtils.snapshotEntity(orden);
             ordenCompraService.softDelete(orden);
 
-                        LOG.info("Se eliminó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
+                        LOG.info("Se eliminó la orden de compra: " + orden.getNumeroOrden() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "OrdenCompraResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return htmlOk(tableInstance(1, 20, null, "asc", null, null, null, null, "info",

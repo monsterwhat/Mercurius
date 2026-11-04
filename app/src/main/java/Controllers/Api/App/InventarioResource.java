@@ -598,7 +598,7 @@ public class InventarioResource {
                 return notFound("No se encontró el movimiento solicitado");
             }
             String antes = DiffUtils.snapshotEntity(seleccionado);
-                        LOG.info("Se ha omitido el movimiento: " + nombreArticuloDe(seleccionado) + " | user=" + String.valueOf(currentUser()) + " | source=" + "InventarioResource.skipCurrentMovement()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(seleccionado)));
+                        LOG.info("Se ha omitido el movimiento: " + nombreArticuloDe(seleccionado) + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "InventarioResource.skipCurrentMovement()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(seleccionado)));
             List<Inventario> pendientes = new ArrayList<>(orEmpty(inventarioService.listAllSinProcesar()));
             pendientes.removeIf(m -> m.getCodigo() == codigo);
             Inventario siguiente = pendientes.isEmpty() ? null : pendientes.get(0);

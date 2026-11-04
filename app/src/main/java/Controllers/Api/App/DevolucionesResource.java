@@ -514,21 +514,21 @@ public class DevolucionesResource {
         try {
             authUser = loginService.findByUsername(username);
             if (authUser == null) {
-                                LOG.info("Intento con usuario inexistente: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.info("Intento con usuario inexistente: " + username + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                                LOG.info("Intento con usuario deshabilitado: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.info("Intento con usuario deshabilitado: " + username + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                                LOG.info("Contraseña incorrecta de: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.info("Contraseña incorrecta de: " + username + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
         } catch (RuntimeException e) {
             // SessionController.authorizeAction parity: an error inside the
             // credential check is alerted and blocks processing.
-                        LOG.warn("Error en authorizeAction: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error en authorizeAction: " + e.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return invalidCredentials();
         }
 
@@ -536,7 +536,7 @@ public class DevolucionesResource {
 
         // ── Legacy authorize(): the exitosa alerta fires BEFORE the
         //    procesarDevolucion guards, so failed validations still carry it.
-                LOG.info("Devolución autorizada por: " + authorizedBy + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                LOG.info("Devolución autorizada por: " + authorizedBy + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
         // ── FASE (a): todo lo que escribe, en una transacción que CONFIRMA
         //    al terminar. Requiere-nueva, no el interceptor de
@@ -550,7 +550,7 @@ public class DevolucionesResource {
         } catch (RuntimeException e) {
             // Legacy catch: alert + error message; the rollback undoes the
             // partial writes and the 500 envelope is the one it always was.
-                        LOG.warn("Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al procesar devolucion: " + e.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.warn("Error procesando la devolucion de la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
@@ -1291,7 +1291,7 @@ public class DevolucionesResource {
                     new EnvioNc(ncComprobante, ncStrategy.getCodigoDocumento(),
                             sucursal, terminal, SITUACION_NC));
         } catch (RuntimeException eNC) {
-                        LOG.warn("Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
+                        LOG.warn("Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
             return NcElectronicaResultado.sinDocumento(
                     "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
                     consecutivoFactura);

@@ -542,7 +542,7 @@ public class ArticuloResource {
                 productoExoneracionService.save(exoneracion);
             }
 
-                        LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
+                        LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
 
             if (isHxRequest()) {
                 return hxRedirect("/app/articulos?tab=" + TAB_ACTIVOS);
@@ -704,7 +704,7 @@ public class ArticuloResource {
                 }
             }
 
-                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updateArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.updateArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
                 return hxRedirect("/app/articulos?tab=" + TAB_ACTIVOS);
@@ -746,7 +746,7 @@ public class ArticuloResource {
             String antes = DiffUtils.snapshotEntity(articulo);
             articulosService.reactivar(articulo);
             LOG.info("Se ha reactivado el artículo: " + articulo.getNombre()
-                    + " | user=" + String.valueOf(currentUser())
+                    + " | user=" + Utils.LogUsers.nombre(currentUser())
                     + " | source=ArticuloResource.activate"
                     + " | antes=" + String.valueOf(antes)
                     + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
@@ -786,7 +786,7 @@ public class ArticuloResource {
             }
             String antes = DiffUtils.snapshotEntity(articulo);
             articulosService.softDelete(articulo);
-                        LOG.info("Se ha eliminado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deleteArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+                        LOG.info("Se ha eliminado el artículo: " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.deleteArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
             if (isHxRequest()) {
                 return tableFragment(TAB_INACTIVOS, 1, 20, null, "asc", null,
                         "warn", "Se desactivo el artículo");
@@ -904,7 +904,7 @@ public class ArticuloResource {
 
             articulo.setProcessed(true);
             articulosService.update(articulo);
-                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updateArticuloRevision" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.updateArticuloRevision" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             boolean rapido = "rapido".equals(modo);
             if (isHxRequest()) {
@@ -951,7 +951,7 @@ public class ArticuloResource {
                 return notFound("No se encontró el artículo solicitado");
             }
             String antes = DiffUtils.snapshotEntity(articulo);
-                        LOG.info("Se ha omitido el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.skipCurrentArticle()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+                        LOG.info("Se ha omitido el artículo: " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.skipCurrentArticle()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             List<Articulos> pendientes = orEmpty(articulosService.listAllSinProcesar());
             Articulos siguiente = pendientes.isEmpty() ? null : pendientes.get(0);
@@ -1035,7 +1035,7 @@ public class ArticuloResource {
             articulo.setPrecios(precios);
             articulosService.update(articulo);
 
-                        LOG.info("Se actualizó el precio del artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePrecio()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
+                        LOG.info("Se actualizó el precio del artículo: " + articulo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.updatePrecio()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
                 return hxRedirect("/app/articulos?tab=" + TAB_CATALOGO);
@@ -1242,7 +1242,7 @@ public class ArticuloResource {
             }
             String antes = DiffUtils.snapshotEntity(promo);
             promoService.delete(promo);
-                        LOG.info("Se elimino la promocion: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deletePromocion()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Se elimino la promocion: " + promo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.deletePromocion()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf((Object) null));
             if (isHxRequest()) {
                 return tableFragment(TAB_PROMOCIONES, 1, 20, null, "asc", null,
                         "warn", "Se elimino la promocion");
@@ -1320,10 +1320,10 @@ public class ArticuloResource {
 
             if (id == null) {
                 promoService.create(promo);
-                                LOG.info("Se creó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createPromocionByDialog()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(promo.getId())));
+                                LOG.info("Se creó la promoción: " + promo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.createPromocionByDialog()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(promo.getId())));
             } else {
                 promoService.update(promo);
-                                LOG.info("Se actualizó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePromocionByDialog()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(promo)));
+                                LOG.info("Se actualizó la promoción: " + promo.getNombre() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ArticuloResource.updatePromocionByDialog()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(promo)));
             }
 
             if (isHxRequest()) {

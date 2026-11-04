@@ -402,7 +402,7 @@ public class RecibosResource {
             }
             enc.setEstado("ACEPTADO");
             comprobantesEmitidosService.update(f);
-                        LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + String.valueOf(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf((Object) null));
             return accionOk(id, "Se marco la factura como pagada!");
         } catch (RuntimeException e) {
             LOG.warn("Error marcando el recibo " + id + " como pagada", e);
@@ -463,7 +463,7 @@ public class RecibosResource {
             String antes = DiffUtils.snapshotEntity(f);
             enc.setEstado("ACEPTADO");
             comprobantesEmitidosService.update(f);
-                        LOG.info("Se acepto la factura #" + f.getId() + " (Mensaje Receptor)" + " | user=" + String.valueOf(currentUser()) + " | source=" + "RecibosResource.accept" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
+                        LOG.info("Se acepto la factura #" + f.getId() + " (Mensaje Receptor)" + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "RecibosResource.accept" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
             return accionOk(id, "Factura aceptada");
         } catch (RuntimeException e) {
             LOG.warn("Error aceptando el recibo " + id, e);
@@ -510,7 +510,7 @@ public class RecibosResource {
             enc.setMotivoRechazo(motivoLimpio);
             comprobantesEmitidosService.update(f);
                         LOG.info("Se rechazo la factura #" + f.getId()
-                            + (motivoLimpio != null ? " Motivo: " + motivoLimpio : "") + " | user=" + String.valueOf(currentUser()) + " | source=" + "RecibosResource.reject" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
+                            + (motivoLimpio != null ? " Motivo: " + motivoLimpio : "") + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "RecibosResource.reject" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
             return accionOk(id, "Factura rechazada");
         } catch (RuntimeException e) {
             LOG.warn("Error rechazando el recibo " + id, e);
@@ -533,10 +533,10 @@ public class RecibosResource {
             String antes = DiffUtils.snapshotEntity(f);
             comprobantesEmitidosService.softDelete(f);
             ComprobantesEmitidos despues = comprobantesEmitidosService.find(id);
-                        LOG.info("La factura ha sido eliminada correctamente." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
+                        LOG.info("La factura ha sido eliminada correctamente." + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
             return accionOk(id, "La factura ha sido eliminada correctamente.");
         } catch (RuntimeException e) {
-                        LOG.warn("Error al eliminar la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al eliminar la factura." + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.warn("Error eliminando el recibo " + id, e);
             return serverError("Error al eliminar la factura.");
         }
@@ -557,10 +557,10 @@ public class RecibosResource {
             String antes = DiffUtils.snapshotEntity(f);
             comprobantesEmitidosService.toggle(f);
             ComprobantesEmitidos despues = comprobantesEmitidosService.find(id);
-                        LOG.info("El estado de la factura ha sido cambiado correctamente." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
+                        LOG.info("El estado de la factura ha sido cambiado correctamente." + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
             return accionOk(id, "El estado de la factura ha sido cambiado correctamente.");
         } catch (RuntimeException e) {
-                        LOG.warn("Error al cambiar el estado de la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al cambiar el estado de la factura." + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.warn("Error cambiando el estado del recibo " + id, e);
             return serverError("Error al cambiar el estado de la factura.");
         }

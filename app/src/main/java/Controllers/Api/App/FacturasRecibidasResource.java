@@ -515,7 +515,7 @@ public class FacturasRecibidasResource {
             String antes = DiffUtils.snapshotEntity(linea);
             linea.setCodigoCabys(codigo);
             lineaDetalleService.update(linea);
-                        LOG.info("Código CAByS de la línea " + lineaId + " corregido a " + codigo + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.corregirLinea()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(linea)));
+                        LOG.info("Código CAByS de la línea " + lineaId + " corregido a " + codigo + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.corregirLinea()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(linea)));
 
             ComprobantesRecibidos actualizada = recibidosService.findByIdWithDetails(id);
             if (isHxRequest()) {
@@ -677,12 +677,12 @@ public class FacturasRecibidasResource {
                 List<String> detalles = new ArrayList<>();
                 for (ValidationError err : preResultado.getErrors()) {
                     detalles.add(err.getField() + ": " + err.getMessage());
-                                        LOG.info(err.getField() + ": " + err.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(err.getMessage()));
+                                        LOG.info(err.getField() + ": " + err.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(err.getMessage()));
                 }
                 if (detalles.isEmpty()) {
                     String msg = "codigoCabys: El código CAByS '999' no tiene 13 dígitos [INVALID_FORMAT]";
                     detalles.add(msg);
-                                        LOG.info(msg + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(msg));
+                                        LOG.info(msg + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(msg));
                 }
                 String resumen = (preResultado.getErrorCount() > 0 ? preResultado.getErrorCount() : detalles.size())
                         + " error(es) de pre-validación impiden enviar el Mensaje Receptor";
@@ -701,7 +701,7 @@ public class FacturasRecibidasResource {
                         .build();
             }
             for (ValidationError warn : preResultado.getWarnings()) {
-                                LOG.info(warn.getField() + ": " + warn.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(warn.getMessage()));
+                                LOG.info(warn.getField() + ": " + warn.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(warn.getMessage()));
             }
 
             // ── Totals: full uses resumen, partial sums accepted lines ──
@@ -865,10 +865,10 @@ public class FacturasRecibidasResource {
             factura.setProcessed(true);
             recibidosService.update(factura);
             String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
-            LOG.info("Factura " + id + " procesada (artículos e inventarios creados) | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()" + " | antes=" + antes + " | despues=" + despues);
+            LOG.info("Factura " + id + " procesada (artículos e inventarios creados) | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()" + " | antes=" + antes + " | despues=" + despues);
             return tablaConToast(bucket, q, "success", "Se procesaron los artículos de la factura");
         } catch (RuntimeException e) {
-            LOG.warn("Error procesando la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()", e);
+            LOG.warn("Error procesando la factura " + id + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()", e);
             return serverError("Error procesando la factura recibida");
         }
     }
@@ -916,10 +916,10 @@ public class FacturasRecibidasResource {
             factura.setPaid(true);
             recibidosService.update(factura);
             String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
-            LOG.info("Factura " + id + " marcada como pagada | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()" + " | antes=" + antes + " | despues=" + despues);
+            LOG.info("Factura " + id + " marcada como pagada | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()" + " | antes=" + antes + " | despues=" + despues);
             return tablaConToast(bucket, q, "success", "Factura marcada como pagada");
         } catch (RuntimeException e) {
-            LOG.warn("Error marcando como pagada la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()", e);
+            LOG.warn("Error marcando como pagada la factura " + id + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()", e);
             return serverError("Error marcando la factura como pagada");
         }
     }
@@ -962,11 +962,11 @@ public class FacturasRecibidasResource {
             String antes = estadoRegistroDe(factura);
             recibidosService.toggle(factura);
             String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
-            LOG.info("Factura " + id + (eraActiva ? " desactivada" : " activada") + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()" + " | antes=" + antes + " | despues=" + despues);
+            LOG.info("Factura " + id + (eraActiva ? " desactivada" : " activada") + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()" + " | antes=" + antes + " | despues=" + despues);
             return tablaConToast(bucket, q, "success",
                     eraActiva ? "Factura desactivada" : "Factura activada");
         } catch (RuntimeException e) {
-            LOG.warn("Error cambiando el estado de la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()", e);
+            LOG.warn("Error cambiando el estado de la factura " + id + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()", e);
             return serverError("Error cambiando el estado de la factura");
         }
     }
@@ -1340,7 +1340,9 @@ public class FacturasRecibidasResource {
                     .build();
         }
         boolean ok = estado != null && estado.startsWith("Processing completed");
-        LOG.info("Revisión manual de correo | user=" + String.valueOf(currentUser())
+        Models.Usuarios usuario = currentUser();
+        LOG.info("Revisión manual de correo | user="
+                + (usuario == null ? "anonimo" : usuario.getUsername())
                 + " | resultado=" + estado);
         if (isHxRequest()) {
             String severidad = ok ? "is-success" : "is-warning";
@@ -1440,7 +1442,7 @@ public class FacturasRecibidasResource {
                         LOG.info("Successfully processed file: " + fileName + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
             return importarProductosDeFacturaRechazada(contenido, fileName, username, e.getMessage());
         } finally {
             AsyncUserContext.clear();
