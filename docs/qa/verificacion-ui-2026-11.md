@@ -279,6 +279,7 @@
 | 2.33.35 | las plantillas no se podían previsualizar | modal de vista previa con datos de ejemplo |
 | 2.33.43 | vista previa de plantillas mostraba el HTML escapado | `EmailLayout.wrapHtml` + iframe con sandbox |
 | 2.33.44 | acciones de fila apiladas en Clientes (celda muy estrecha) | `white-space:nowrap` + `flex-wrap:nowrap` |
+| 2.33.45 | toda la app usaba la hora UTC del servidor (6 h adelantada) | `TimeZone` CR al arrancar + `-Duser.timezone` |
 
 ## 12. No ejecutado (y por qué)
 
@@ -353,3 +354,7 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 - Reportes con datos: Márgenes (28,5% margen), Estacionalidad (gráficos), Pronósticos (MASE/sesgo), Facturas emitidas ✅
 - Tema oscuro: dashboard, tabla de artículos y diálogo de ajuste con buen contraste ✅
 - POS: selector de cliente filtra por nombre y asigna el cliente al carrito (con puntos y descuentos visibles) ✅
+
+**Hallazgo importante (hora del servidor):** el servidor corre en **UTC** y la app usaba `LocalDateTime.now()`, así que todas las horas visibles (y la `FechaEmision` de los comprobantes) salían **6 horas adelantadas** respecto a Costa Rica (21:5x vs 15:5x). En Hacienda eso puede rechazar por fecha de emisión futura.
+- Arreglo 2.33.45: `TimeZone.setDefault(America/Costa_Rica)` al arrancar + `-Duser.timezone=America/Costa_Rica` en `mercurius-start.sh`. Verificado: el log pasó de 21:56 a 15:56 sin tocar el reloj del sistema (que sigue en UTC).
+- Los registros anteriores conservan su hora (columnas `timestamp` sin zona); los nuevos se guardan en hora de Costa Rica.
