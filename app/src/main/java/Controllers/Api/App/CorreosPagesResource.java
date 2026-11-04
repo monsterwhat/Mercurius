@@ -63,6 +63,17 @@ public class CorreosPagesResource {
                 "No se pudieron cargar los reportes programados");
     }
 
+    /**
+     * La raíz {@code /app/correos} no tenía handler y devolvía un "Not Found"
+     * pelado. Se redirige a la pantalla principal del módulo.
+     */
+    @GET
+    @RolesAllowed({"admin", "tributacion", "facturacion"})
+    public Response index() {
+        return Response.seeOther(java.net.URI.create(
+                "/app/correos/reportes")).build();
+    }
+
     @GET
     @Path("/plantillas")
     @RolesAllowed({"admin", "tributacion"})

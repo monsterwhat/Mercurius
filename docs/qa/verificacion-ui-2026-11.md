@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.27 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.28 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -170,6 +170,7 @@
 | **Reportes programados**: crear | ✅ | “QA Reporte”, Semanal, MOVIMIENTOS, correo QA |
 | Reportes programados: editar | ✅ | nombre actualizado |
 | Reportes programados: eliminar | ✅ | confirmación + listado vacío |
+| `/app/correos` (raíz) | ✅ | redirige a `/app/correos/reportes` (antes “Not Found” pelado, v2.33.28) |
 | Envío real de correos | ⛔ | sin SMTP/IMAP configurados |
 
 ## 9. Personas y lealtad
@@ -181,7 +182,7 @@
 | Usuarios: guardar permisos | ✅ | `[inventario, usuario]` persistido en BD |
 | Usuarios: activar cuenta | ✅ | bug corregido (v2.33.14): el segundo DELETE reactiva |
 | **Lealtad (gestión)**: guardar cashback/meses | ✅ | 1%/12 y restaurado |
-| Lealtad: ver historial de cliente | ✅ | modal con estado vacío correcto |
+| Lealtad: ver historial de cliente | ✅ | página Lealtad con cliente real: venta de ₡470,30 al 10% → 47,03 puntos; el modal muestra el movimiento |
 | **Clientes (reporte)**: listado y exportar | ✅ | 200 |
 
 ## 10. Configuración del negocio
@@ -255,6 +256,8 @@
 | 2.33.25 | FEE emitía totales exclusivos de FE (`TotalServExonerado`, `TotalIVADevuelto`…) | resumen FEE ajustado al XSD |
 | 2.33.26 | Perfil aceptaba cualquier texto como correo | validación de formato |
 | 2.33.27 | “Actualizar” tipo de cambio duplicaba la fila del día en cada clic | actualiza la fila de esa fecha |
+| 2.33.28 | `/app/correos` devolvía “Not Found” pelado | redirige a `/app/correos/reportes` |
+| 2.33.28 | plantilla huérfana `pages/stockalert-config/index.html` | eliminada (la página real es `pages/inventario/stock-alert-config`) |
 
 ## 12. No ejecutado (y por qué)
 
@@ -282,4 +285,5 @@
 - [x] Órdenes de compra: crear con buscador y **Archivar** (v2.33.21/.23/.24).
 - [x] Perfil: contraseña re-guardada (mismo valor) + login verificado; correo inválido rechazado (v2.33.26).
 - [x] **Ajustes: código de actividad corregido a `471102`.**
-- Observación: `templates/pages/stockalert-config/index.html` es una plantilla huérfana (la página real usa `pages/inventario/stock-alert-config`); los modales `nueva-config`/`editar-config` de ese archivo no son alcanzables.
+- [x] Lealtad: flujo completo (config 10% → cliente → venta → 47,03 puntos → historial), datos revertidos.
+- [x] `/app/correos` y plantilla huérfana de umbrales corregidos (v2.33.28).
