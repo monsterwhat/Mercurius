@@ -223,6 +223,15 @@ public class FacturasRecibidasResource {
     @Inject
     Parser parser;
 
+    /** Para el botón "Revisar correo ahora" (barrido IMAP manual). */
+    @Nonnull
+    @Inject
+    Services.AppSettingsService appSettingsService;
+
+    @Nonnull
+    @Inject
+    Services.EmailService emailService;
+
     /**
      * EntityManager de la lectura masiva de {@link #procesarArticulos}. El
      * {@code em} de los servicios no sirve desde aquí: los beans
@@ -1294,6 +1303,61 @@ public class FacturasRecibidasResource {
     // ════════════════════════════════════════════════════════════════════
     // XML upload (legacy parseXMLFromUploadedFile/processFacturas → Parser)
     // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Fuerza el barrido del buzón IMAP ahora mismo (sin esperar los 15 minutos
+     * del planificador). Devuelve el resumen del barrido.
+     */
+    @POST
+    @Path("/revisar-correo")
+    @Operation(summary = "Run the IMAP mailbox sweep now")
+    public Response revisarCorreoAhora() {
+        Models.ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
+        String correo = settings == null ? null : settings.getCorreoElectronico();
+        String pass = settings == null ? null : settings.getContrasenaCorreo();
+        if (correo == null || correo.isBlank() || pass == null || pass.isBlank()) {
+            return badRequest("Configure el correo y la contraseña de aplicación en Ajustes antes de revisar.");
+        }
+        java.util.concurrent.CompletableFuture<String> resultado = new java.util.concurrent.CompletableFuture<>();
+        emailService.processUnreadXmlAttachments(correo, pass, resultado::complete);
+        String estado;
+        try {
+            estado = resultado.get(150, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            LOG.warn("Revisión manual de correo sin respuesta en 150s", e);
+            return Response.status(Response.Status.GATEWAY_TIMEOUT)
+                    .entity(ApiResponse.error("EMAIL_TIMEOUT",
+                            "El servidor de correo no respondió. Intente de nuevo."))
+                    .build();
+        } catch (RuntimeException | InterruptedException | java.util.concurrent.ExecutionException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            LOG.warn("Error en la revisión manual de correo: " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(ApiResponse.error("INTERNAL_ERROR",
+                            "No se pudo revisar el correo."))
+                    .build();
+        }
+        boolean ok = estado != null && estado.startsWith("Processing completed");
+        LOG.info("Revisión manual de correo | user=" + String.valueOf(currentUser())
+                + " | resultado=" + estado);
+        if (isHxRequest()) {
+            String severidad = ok ? "is-success" : "is-warning";
+            String mensaje = estado == null ? "Sin respuesta del correo" : estado;
+            return htmlOk("<div class=\"notification " + severidad + "\">"
+                    + mensaje.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    + "</div>");
+        }
+        if (ok) {
+            java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+            data.put("resultado", estado);
+            return Response.ok(ApiResponse.ok(data)).build();
+        }
+        return Response.status(Response.Status.BAD_GATEWAY)
+                .entity(ApiResponse.error("EMAIL_SWEEP_FAILED", String.valueOf(estado)))
+                .build();
+    }
 
     /**
      * POST /upload — multipart port of the legacy upload dialogs. Every file

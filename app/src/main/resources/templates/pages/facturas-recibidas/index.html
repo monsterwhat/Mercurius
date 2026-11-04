@@ -68,6 +68,15 @@
                     <button class="button is-primary" type="submit">Procesar Facturas</button>
                 </div>
             </form>
+            <div class="field mt-3" style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
+                <button type="button" class="button is-light"
+                        hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/revisar-correo"
+                        hx-target="#upload-resultado" hx-swap="innerHTML"
+                        hx-disabled-elt="this">Revisar correo ahora</button>
+                <span class="help mercurius-text-muted">
+                    Fuerza la lectura del buzón IMAP sin esperar el ciclo automático de 15 minutos.
+                </span>
+            </div>
             <div id="upload-resultado" role="status" aria-live="polite"></div>
             {/content}
         {/include}

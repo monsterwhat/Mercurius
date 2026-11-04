@@ -1,7 +1,7 @@
 # Verificación manual de la UI — Mercurius
 
 - **Fecha:** 2026-11-03
-- **Versión verificada:** v2.33.34 (producción interna, ambiente Hacienda `sandbox`)
+- **Versión verificada:** v2.33.35 (producción interna, ambiente Hacienda `sandbox`)
 - **Método:** navegación real en `https://mercurius.tamarindorents.com/Mercurius` y por la conexión directa `http://192.168.100.99:8081/Mercurius`, abriendo cada pantalla y diálogo, ejecutando la acción y comprobando la respuesta HTTP y/o el estado en PostgreSQL. Los flujos con efectos externos (Hacienda, correo real) o destructivos se marcan como no ejecutados.
 - **Alcance temporal:** algunas filas ✅ provienen de las rondas anteriores de la misma QA (emisión TE/FE, puntos, ajuste de precio en POS); no se repitieron en la última pasada para no duplicar trabajo ni generar datos. El resto se ejecutó en esta verificación.
 - **Regla de la sesión:** no se envió ningún documento a Tributación.
@@ -78,6 +78,7 @@
 | Emitidas: pagar / procesar / aceptar / rechazar | ⛔/🟡 | “Procesar” envía a Hacienda; aceptar/rechazar son locales pero no se ejecutaron |
 | **Recibidas**: lista, búsqueda, cubetas | ✅ | 200 |
 | Recibidas: formulario de carga | ✅ | XML real v4.4 → “1 archivo procesado”; inválidos → error por archivo (sin escrituras) |
+| Recibidas: “Revisar correo ahora” | ✅ | dispara el barrido IMAP al instante y muestra el resumen (v2.33.35) |
 | Recibidas: drawer + prevalidación | ✅ | panel carga |
 | Recibidas: procesar / activar-desactivar | ✅ | **Pagar** (paid=true), **Procesar** (creó artículo + movimiento; revertido) y **Desactivar/Activar** con bandeja “Inactivas” |
 | Recibidas: Mensaje Receptor (aceptar/parcial/rechazar) | ⛔ | envía a Hacienda |
@@ -172,6 +173,7 @@
 |---|---|---|
 | **Plantillas**: crear | ✅ | “QA Plantilla” creada (tipo Reportes) |
 | Plantillas: cargar predeterminadas | ✅ | 4 plantillas HTML con estilos (factura, stock, reporte, general); idempotente |
+| Plantillas: vista previa | ✅ | modal con datos de ejemplo (v2.33.35) |
 | Plantillas: editar | ✅ | nombre cambiado a “QA Plantilla editada” |
 | Plantillas: eliminar | ✅ | confirmación + desaparece del listado |
 | Correos del sistema con estilo | ✅ | layout HTML de marca (cabecera, cuerpo, pie) en el envío con adjuntos |
@@ -273,6 +275,8 @@
 | 2.33.33 | `SettingsDirController.settingsService` sin `@Inject` → NPE en el barrido IMAP | `@Inject` + test de inyección |
 | 2.33.34 | el cuerpo HTML de las plantillas no cabía (`VARCHAR(255)`) | columna `TEXT` + plantillas predeterminadas |
 | 2.33.34 | los correos del sistema salían en texto plano | layout HTML de marca (texto + HTML alternativo) |
+| 2.33.35 | no había forma de forzar la revisión del correo | botón “Revisar correo ahora” + endpoint |
+| 2.33.35 | las plantillas no se podían previsualizar | modal de vista previa con datos de ejemplo |
 
 ## 12. No ejecutado (y por qué)
 

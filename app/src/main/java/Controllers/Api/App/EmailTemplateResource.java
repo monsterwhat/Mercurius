@@ -141,6 +141,10 @@ public class EmailTemplateResource {
     @Inject
     Template formPlantilla;
 
+    @Location("pages/correos/preview-plantilla.html")
+    @Inject
+    Template previewPlantilla;
+
     /**
      * Paginated template listing; optional {@code q} filters by name
      * (case-insensitive substring), mirroring the legacy nombre filter.
@@ -463,8 +467,7 @@ public class EmailTemplateResource {
 
     /** Prefilled plantilla edit form (modal body), looked up by id. */
     @GET
-    @Path("/formularios/{id}")
-    @Produces(MediaType.TEXT_HTML)
+    @Path("/formularios/{id}")    @Produces(MediaType.TEXT_HTML)
     @Operation(summary = "Edit-plantilla form fragment (modal body)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Form HTML"),
@@ -483,6 +486,41 @@ public class EmailTemplateResource {
                 .data("errorTipo", null)
                 .data("toastSeverity", null)
                 .data("toastMessage", null));
+    }
+
+    /**
+     * Vista previa de una plantilla con datos de ejemplo (modal body). Era el
+     * único hueco documentado del módulo de plantillas.
+     */
+    @GET
+    @Path("/{id}/preview")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Render one plantilla with sample values (modal body)")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Preview HTML"),
+        @APIResponse(responseCode = "404", description = "Unknown id")
+    })
+    public Response preview(@PathParam("id") Long id) {
+        EmailTemplate template = emailTemplateService.find(id);
+        if (template == null) {
+            return notFound(id);
+        }
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("cliente", "Cliente de ejemplo");
+        variables.put("consecutivo", "00100001010000000001");
+        variables.put("fecha", "04/11/2026");
+        variables.put("total", "₡11.300,00");
+        variables.put("cantidad", "3");
+        variables.put("detalle", "ARROZ 1KG — quedan 2 (mínimo 5)<br>CAFÉ 500G — quedan 0 (mínimo 4)");
+        variables.put("reporte", "Ventas del mes");
+        variables.put("periodo", "Octubre 2026");
+        variables.put("asunto", "Aviso importante");
+        variables.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
+        variables.put("enlace", "#");
+        String html = emailTemplateService.procesarPlantilla(template, variables);
+        return htmlOk(previewPlantilla
+                .data("plantilla", template)
+                .data("html", html));
     }
 
     /**

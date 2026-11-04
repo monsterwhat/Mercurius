@@ -72,6 +72,11 @@
                 <td>{#if plantilla.fechaModificacion??}{plantilla.fechaModificacion}{#else}<span class="kit-empty">&mdash;</span>{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small" title="Vista previa"
+                                aria-label="Vista previa de {plantilla.nombre}"
+                                aria-haspopup="dialog" data-kit-open="preview-plantilla"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/email-templates/{plantilla.id}/preview"
+                                hx-target="#preview-plantilla-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         <button type="button" class="button is-small" title="Editar plantilla"
                                 aria-label="Editar plantilla {plantilla.nombre}"
                                 aria-haspopup="dialog" data-kit-open="editar-plantilla"
