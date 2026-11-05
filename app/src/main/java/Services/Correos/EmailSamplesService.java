@@ -72,7 +72,7 @@ public class EmailSamplesService {
                 filas("SELECT a.nombre, s.stock, COALESCE(d.nombre, '—') "
                         + "FROM articulos a JOIN articulostock s ON s.codigobarra = a.codigobarra "
                         + "LEFT JOIN departamento d ON d.id = a.departamento_id "
-                        + "ORDER BY s.stock DESC", 4)));
+                        + "WHERE s.stock >= 0 ORDER BY s.stock DESC", 4)));
         lista.add(new ReporteSample("Departamentos",
                 new String[] {"Departamento", "Artículos"},
                 filas("SELECT d.nombre, count(a.codigo) FROM departamento d "
@@ -88,7 +88,7 @@ public class EmailSamplesService {
                 filas("SELECT a.nombre, s.stock, COALESCE(d.nombre, '—') "
                         + "FROM articulos a JOIN articulostock s ON s.codigobarra = a.codigobarra "
                         + "LEFT JOIN departamento d ON d.id = a.departamento_id "
-                        + "ORDER BY s.stock ASC", 4)));
+                        + "WHERE s.stock >= 0 ORDER BY s.stock ASC", 4)));
         return lista;
     }
 
@@ -116,6 +116,12 @@ public class EmailSamplesService {
         }
         if (valor instanceof Timestamp ts) {
             return ts.toLocalDateTime().format(FECHA);
+        }
+        if (valor instanceof java.time.LocalDateTime ldt) {
+            return ldt.format(FECHA);
+        }
+        if (valor instanceof java.sql.Date d) {
+            return d.toLocalDate().format(FECHA);
         }
         if (valor instanceof BigDecimal bd) {
             return bd.stripTrailingZeros().toPlainString();
@@ -209,7 +215,7 @@ public class EmailSamplesService {
             List<Object[]> bajos = em.createNativeQuery(
                     "SELECT a.nombre, s.stock FROM articulos a "
                             + "JOIN articulostock s ON s.codigobarra = a.codigobarra "
-                            + "WHERE s.stock <= 5 "
+                            + "WHERE s.stock >= 0 AND s.stock <= 5 "
                             + "ORDER BY s.stock ASC LIMIT 4")
                     .getResultList();
             if (!bajos.isEmpty()) {
