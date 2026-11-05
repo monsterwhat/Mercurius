@@ -110,8 +110,16 @@ public class EmailSamplesService {
         return out;
     }
 
-    private static String formatear(Object valor) {
-        if (valor == null) {
+    /** Monto con formato de Costa Rica: 1.234,56. */
+    private static String moneda(Object valor) {
+        if (valor instanceof Number n) {
+            String s = String.format(java.util.Locale.US, "%,.2f", n.doubleValue());
+            return s.replace(",", "X").replace(".", ",").replace("X", ".");
+        }
+        return formatear(valor);
+    }
+
+    private static String formatear(Object valor) {        if (valor == null) {
             return "—";
         }
         if (valor instanceof Timestamp ts) {
@@ -183,11 +191,11 @@ public class EmailSamplesService {
         v.put("enlace", "https://mercurius.tamarindorents.com/Mercurius");
         try {
             @SuppressWarnings("unchecked")
-            List<Object[]> clientes = em.createNativeQuery(
+            List<String> clientes = em.createNativeQuery(
                     "SELECT name FROM clients WHERE name IS NOT NULL ORDER BY code LIMIT 1")
                     .getResultList();
-            if (!clientes.isEmpty() && clientes.get(0)[0] != null) {
-                v.put("cliente", clientes.get(0)[0].toString());
+            if (!clientes.isEmpty() && clientes.get(0) != null) {
+                v.put("cliente", clientes.get(0));
             }
         } catch (RuntimeException e) {
             LOG.warn("Muestra: no se pudo leer un cliente real: " + e.getMessage(), e);
@@ -205,7 +213,7 @@ public class EmailSamplesService {
                 Object[] d = docs.get(0);
                 v.put("consecutivo", formatear(d[0]));
                 v.put("fecha", formatear(d[1]));
-                v.put("total", "₡" + formatear(d[2]));
+                v.put("total", "₡" + moneda(d[2]));
             }
         } catch (RuntimeException e) {
             LOG.warn("Muestra: no se pudo leer el último comprobante: " + e.getMessage(), e);
