@@ -444,3 +444,14 @@ Navegación real con Chromium sobre `http://192.168.100.99:8081/Mercurius`, logi
 - El pie del layout incluye `https://github.com/monsterwhat/Mercurius`.
 
 **POS de crédito:** no existe otra página de POS; solo `/app/pos` y `/app/pos/standalone`. No hay selector Contado/Crédito ni forma de facturar sin cobrar el total, por lo que hoy no se pueden emitir ventas a crédito. Queda como hallazgo pendiente de decisión (ver sección 17).
+
+## 19. Muestras de correo con datos reales y adjuntos (2.33.51–2.33.54)
+
+El botón "Enviar muestras (plantillas y reportes)" ahora manda **10 correos** con datos y archivos reales:
+
+- **Plantilla Factura electrónica:** cliente real (`JR. ALVARO PADILLA ROSSI`), consecutivo real `00100001040000815772`, fecha `30/10/2026 22:25`, total `₡575,22` y **adjuntos PDF + XML** del comprobante.
+- **Plantilla Reporte programado:** adjunta el XLSX real del reporte de inventarios.
+- **6 reportes** (Movimientos, Facturación, Artículos, Departamentos, Familias, Inventarios): filas leídas de la base (facturas, artículos, departamentos y familias reales), **XLSX adjunto** y fechas `dd/MM/yyyy HH:mm`.
+- La alerta de stock usa artículos reales con stock bajo (sin negativos) y el pie enlaza el repositorio.
+
+**Iteraciones hasta dejarlo bien (todas desplegadas y verificadas por IMAP):** columnas equivocadas (`clients.nombre`, `resumen_factura.totalcomprobante`), fechas ISO (`LocalDateTime`), stock negativo en las muestras, y un `String` casteado a `Object[]` que dejaba "Cliente de ejemplo".
