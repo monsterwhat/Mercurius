@@ -98,6 +98,11 @@ public class SettingsResource {
     @Inject
     Services.Correos.EmailTemplateService emailTemplateService;
 
+    /** Datos reales y adjuntos para las muestras de correo. */
+    @Nonnull
+    @Inject
+    Services.Correos.EmailSamplesService emailSamplesService;
+
     @Nonnull
     @Inject
     BackupService backupService;
@@ -956,10 +961,10 @@ public class SettingsResource {
                 .build();
     }
 
-    /**
-     * Envía una muestra de cada plantilla de correo y de cada reporte
-     * programado, para revisar el formato de marca en el cliente real.
-     * Solo admin (clase) y con CSRF; usa las credenciales guardadas.
+        /**
+     * Envía una muestra de cada plantilla y de cada reporte, con datos reales
+     * y los adjuntos que el correo promete (PDF/XML de la factura, XLSX del
+     * reporte).
      */
     @POST
     @Path("/correo/muestras")
@@ -984,6 +989,16 @@ public class SettingsResource {
                 && !settings.getCorreoNotificaciones().isBlank()
                 ? settings.getCorreoNotificaciones().trim() : correo.trim();
         String negocio = settings.getNombreNegocio();
+        java.util.Map<String, String> variables = emailSamplesService.variablesReales();
+        java.util.List<Services.Correos.EmailSamplesService.ReporteSample> reportes =
+                emailSamplesService.reportes();
+        java.util.List<java.io.File> adjuntoInventario = java.util.Collections.emptyList();
+        for (Services.Correos.EmailSamplesService.ReporteSample r : reportes) {
+            if ("Inventarios".equals(r.titulo())) {
+                adjuntoInventario = emailSamplesService.adjuntosReporte(r);
+                break;
+            }
+        }
         int enviados = 0;
         int fallidos = 0;
 
@@ -991,19 +1006,27 @@ public class SettingsResource {
             if (!plantilla.isStatus()) {
                 continue;
             }
+            String nombre = plantilla.getNombre() == null ? "" : plantilla.getNombre().toLowerCase();
             String asunto = "Muestra de plantilla: " + plantilla.getNombre();
-            String cuerpo = emailTemplateService.procesarPlantilla(plantilla, variablesMuestra());
-            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim())) {
+            String cuerpo = emailTemplateService.procesarPlantilla(plantilla, variables);
+            java.util.List<java.io.File> adjuntos = new java.util.ArrayList<>();
+            if (nombre.contains("factura")) {
+                adjuntos.addAll(emailSamplesService.adjuntosFactura());
+            } else if (nombre.contains("reporte")) {
+                adjuntos.addAll(adjuntoInventario);
+            }
+            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim(), adjuntos)) {
                 enviados++;
             } else {
                 fallidos++;
             }
         }
 
-        for (String[] reporte : REPORTES_MUESTRA) {
-            String asunto = "Muestra de reporte: " + reporte[0];
-            String cuerpo = htmlReporteMuestra(reporte);
-            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim())) {
+        for (Services.Correos.EmailSamplesService.ReporteSample reporte : reportes) {
+            String asunto = "Muestra de reporte: " + reporte.titulo();
+            String cuerpo = emailSamplesService.html(reporte);
+            java.util.List<java.io.File> adjuntos = emailSamplesService.adjuntosReporte(reporte);
+            if (enviarHtml(destino, asunto, cuerpo, negocio, correo.trim(), pass.trim(), adjuntos)) {
                 enviados++;
             } else {
                 fallidos++;
@@ -1020,57 +1043,14 @@ public class SettingsResource {
         return Response.ok(ApiResponse.ok(data)).build();
     }
 
-    /** Reportes con su tabla de muestra: {título, col1, col2, col3}. */
-    private static final String[][] REPORTES_MUESTRA = {
-        {"Movimientos de inventario", "Fecha", "Artículo", "Cantidad"},
-        {"Facturación", "Consecutivo", "Cliente", "Total"},
-        {"Artículos", "Artículo", "Vendidos", "Ingreso"},
-        {"Departamentos", "Departamento", "Ventas", "Margen"},
-        {"Familias", "Familia", "Ventas", "Margen"},
-        {"Inventarios", "Artículo", "Stock", "Óptimo"}
-    };
-
-    private static Map<String, String> variablesMuestra() {
-        Map<String, String> v = new LinkedHashMap<>();
-        v.put("cliente", "Cliente de ejemplo");
-        v.put("consecutivo", "00100001010000000001");
-        v.put("fecha", "04/11/2026");
-        v.put("total", "₡11.300,00");
-        v.put("cantidad", "3");
-        v.put("detalle", "ARROZ 1KG — quedan 2 (mínimo 5)<br>CAFÉ 500G — quedan 0 (mínimo 4)");
-        v.put("reporte", "Ventas del mes");
-        v.put("periodo", "Octubre 2026");
-        v.put("asunto", "Aviso importante");
-        v.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
-        v.put("enlace", "https://mercurius.tamarindorents.com/Mercurius");
-        return v;
-    }
-
-    private static String htmlReporteMuestra(String[] reporte) {
-        String fila = "<tr>"
-                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151\">04/11/2026</td>"
-                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151\">Producto de ejemplo</td>"
-                + "<td style=\"padding:8px 10px;border-bottom:1px solid #eef2f7;color:#374151;text-align:right\">3</td>"
-                + "</tr>";
-        return "<h2 style=\"margin:0 0 8px;color:#0b3b8c;font-size:19px\">" + reporte[0] + "</h2>"
-                + "<p style=\"margin:0 0 16px;color:#1f2937;font-size:14px\">"
-                + "Así se ve el correo de un reporte programado. Los datos reales se generan al enviar.</p>"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" "
-                + "style=\"border:1px solid #e5e9f2;border-radius:8px\">"
-                + "<tr style=\"background:#f8fafc\">"
-                + "<th style=\"padding:8px 10px;text-align:left;font-size:12px;color:#6b7280\">" + reporte[1] + "</th>"
-                + "<th style=\"padding:8px 10px;text-align:left;font-size:12px;color:#6b7280\">" + reporte[2] + "</th>"
-                + "<th style=\"padding:8px 10px;text-align:right;font-size:12px;color:#6b7280\">" + reporte[3] + "</th>"
-                + "</tr>" + fila + fila + fila + "</table>";
-    }
-
-    /** Envía HTML con el layout de marca; true si Gmail lo aceptó. */
+    /** Envía HTML con el layout de marca y adjuntos; true si el SMTP aceptó. */
     private boolean enviarHtml(String destino, String asunto, String cuerpoHtml,
-                               @Nullable String negocio, String correo, String pass) {
+                               @Nullable String negocio, String correo, String pass,
+                               @Nonnull java.util.List<java.io.File> adjuntos) {
         String html = Services.Correos.EmailLayout.wrapHtml(asunto, cuerpoHtml, negocio);
         java.util.concurrent.CompletableFuture<String> resultado = new java.util.concurrent.CompletableFuture<>();
-        emailService.sendHtmlEmails(java.util.List.of(destino), asunto, html, correo, pass,
-                resultado::complete);
+        emailService.sendHtmlEmailsWithAttachments(java.util.List.of(destino), asunto, html,
+                correo, pass, adjuntos, resultado::complete);
         try {
             return "Sent".equals(resultado.get(30, java.util.concurrent.TimeUnit.SECONDS));
         } catch (java.util.concurrent.TimeoutException e) {
@@ -1085,7 +1065,7 @@ public class SettingsResource {
         }
     }
 
-    private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionada) {
+private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionada) {
         List<Map<String, Object>> filas = new ArrayList<>();
         Long idSeleccionada = seleccionada == null ? null : seleccionada.getId();
         for (Sucursal fila : sucursalService.listar()) {

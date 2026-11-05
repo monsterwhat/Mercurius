@@ -317,6 +317,87 @@ public class EmailService implements Serializable {
                 LOG.warn("FALLBACK: sendHtmlEmails failed, notifying via callback" + " | source=" + "EmailService.sendHtmlEmailsFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         CompletableFuture.runAsync(() -> callback.accept("HTML email send failed: Timeout or error - please try again later"));
     }
+
+    /**
+     * Envía un HTML ya construido (con su propio layout) más adjuntos.
+     * Es el camino de las muestras de plantillas/reportes: conserva el HTML
+     * tal cual y añade archivos reales (PDF/XML/XLSX) al mismo correo.
+     */
+    @Timeout(value = 120, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 2000, jitter = 500)
+    @Fallback(fallbackMethod = "sendHtmlEmailsWithAttachmentsFallback")
+    public void sendHtmlEmailsWithAttachments(@Nonnull List<String> to, @Nonnull String subject,
+                                              @Nonnull String htmlBody, @Nullable String email,
+                                              @Nullable String pass, @Nullable List<File> attachments,
+                                              @Nonnull Consumer<String> callback) {
+        final String[] status = {null};
+
+        if (email != null && pass != null) {
+            Properties props = propsSmtp();
+            Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
+                @Override
+                protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+                    return new jakarta.mail.PasswordAuthentication(email, pass);
+                }
+            });
+            try {
+                Message message = new MimeMessage(session);
+                message.setFrom(new InternetAddress(email));
+                InternetAddress[] toAddresses = new InternetAddress[to.size()];
+                for (int i = 0; i < to.size(); i++) {
+                    toAddresses[i] = new InternetAddress(to.get(i));
+                }
+                message.setRecipients(Message.RecipientType.TO, toAddresses);
+                message.setSubject(subject);
+
+                MimeBodyPart textoPart = new MimeBodyPart();
+                textoPart.setContent("Este correo requiere un cliente que muestre HTML.",
+                        "text/plain; charset=utf-8");
+                MimeBodyPart htmlPart = new MimeBodyPart();
+                htmlPart.setContent(htmlBody, "text/html; charset=utf-8");
+                Multipart alternativa = new MimeMultipart("alternative");
+                alternativa.addBodyPart(textoPart);
+                alternativa.addBodyPart(htmlPart);
+
+                Multipart mixed = new MimeMultipart("mixed");
+                MimeBodyPart cuerpo = new MimeBodyPart();
+                cuerpo.setContent(alternativa);
+                mixed.addBodyPart(cuerpo);
+
+                if (attachments != null) {
+                    for (File adjunto : attachments) {
+                        if (adjunto != null && adjunto.exists()) {
+                            MimeBodyPart parte = new MimeBodyPart();
+                            parte.setDataHandler(new jakarta.activation.DataHandler(
+                                    new jakarta.activation.FileDataSource(adjunto)));
+                            parte.setFileName(adjunto.getName());
+                            mixed.addBodyPart(parte);
+                        }
+                    }
+                }
+
+                message.setContent(mixed);
+                Transport.send(message);
+                status[0] = "Sent";
+            } catch (MessagingException e) {
+                status[0] = "Encountered an Error: " + e.getLocalizedMessage();
+                LOG.warn("Error sending HTML email with attachments: " + e.getMessage()
+                        + " | source=EmailService.sendHtmlEmailsWithAttachments()", e);
+            }
+        } else {
+            status[0] = "No Email Setup!";
+        }
+        callback.accept(status[0]);
+    }
+
+    private void sendHtmlEmailsWithAttachmentsFallback(List<String> to, String subject,
+                                                       String htmlBody, String email, String pass,
+                                                       List<File> attachments, Consumer<String> callback) {
+        LOG.warn("FALLBACK: sendHtmlEmailsWithAttachments failed"
+                + " | source=EmailService.sendHtmlEmailsWithAttachmentsFallback()");
+        CompletableFuture.runAsync(() -> callback.accept(
+                "HTML email send failed: Timeout or error - please try again later"));
+    }
     
     @Timeout(value = 120, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 2000, jitter = 500)
