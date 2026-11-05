@@ -62,15 +62,16 @@ public class EmailSamplesService {
                         + "ORDER BY i.fechamovimiento DESC", 4)));
         lista.add(new ReporteSample("Facturación",
                 new String[] {"Consecutivo", "Fecha", "Total"},
-                filas("SELECT e.numero_consecutivo, e.fecha_emision, r.totalcomprobante "
+                filas("SELECT e.numero_consecutivo, e.fecha_emision, r.total_venta "
                         + "FROM comprobantesemitidos c "
                         + "JOIN encabezado e ON e.id = c.encabezado_id "
                         + "JOIN resumen_factura r ON r.id = c.resumen_id "
                         + "WHERE c.status = true ORDER BY e.fecha_emision DESC", 4)));
         lista.add(new ReporteSample("Artículos",
-                new String[] {"Artículo", "Stock", "Óptimo"},
-                filas("SELECT a.nombre, s.stock, a.stockoptimo "
+                new String[] {"Artículo", "Stock", "Departamento"},
+                filas("SELECT a.nombre, s.stock, COALESCE(d.nombre, '—') "
                         + "FROM articulos a JOIN articulostock s ON s.codigobarra = a.codigobarra "
+                        + "LEFT JOIN departamento d ON d.id = a.departamento_id "
                         + "ORDER BY s.stock DESC", 4)));
         lista.add(new ReporteSample("Departamentos",
                 new String[] {"Departamento", "Artículos"},
@@ -83,10 +84,11 @@ public class EmailSamplesService {
                         + "LEFT JOIN articulos a ON a.familia_id = f.id "
                         + "GROUP BY f.nombre ORDER BY count(a.codigo) DESC", 4)));
         lista.add(new ReporteSample("Inventarios",
-                new String[] {"Artículo", "Stock", "Óptimo"},
-                filas("SELECT a.nombre, s.stock, a.stockoptimo "
+                new String[] {"Artículo", "Stock", "Departamento"},
+                filas("SELECT a.nombre, s.stock, COALESCE(d.nombre, '—') "
                         + "FROM articulos a JOIN articulostock s ON s.codigobarra = a.codigobarra "
-                        + "ORDER BY (s.stock - COALESCE(a.stockoptimo, 0)) ASC", 4)));
+                        + "LEFT JOIN departamento d ON d.id = a.departamento_id "
+                        + "ORDER BY s.stock ASC", 4)));
         return lista;
     }
 
@@ -176,7 +178,7 @@ public class EmailSamplesService {
         try {
             @SuppressWarnings("unchecked")
             List<Object[]> clientes = em.createNativeQuery(
-                    "SELECT nombre FROM clients WHERE name IS NOT NULL AND status = true ORDER BY code LIMIT 1")
+                    "SELECT name FROM clients WHERE name IS NOT NULL ORDER BY code LIMIT 1")
                     .getResultList();
             if (!clientes.isEmpty() && clientes.get(0)[0] != null) {
                 v.put("cliente", clientes.get(0)[0].toString());
@@ -187,7 +189,7 @@ public class EmailSamplesService {
         try {
             @SuppressWarnings("unchecked")
             List<Object[]> docs = em.createNativeQuery(
-                    "SELECT e.numero_consecutivo, e.fecha_emision, r.totalcomprobante "
+                    "SELECT e.numero_consecutivo, e.fecha_emision, r.total_venta "
                             + "FROM comprobantesemitidos c "
                             + "JOIN encabezado e ON e.id = c.encabezado_id "
                             + "JOIN resumen_factura r ON r.id = c.resumen_id "
@@ -205,9 +207,9 @@ public class EmailSamplesService {
         try {
             @SuppressWarnings("unchecked")
             List<Object[]> bajos = em.createNativeQuery(
-                    "SELECT a.nombre, s.stock, a.stockoptimo FROM articulos a "
+                    "SELECT a.nombre, s.stock FROM articulos a "
                             + "JOIN articulostock s ON s.codigobarra = a.codigobarra "
-                            + "WHERE a.stockoptimo IS NOT NULL AND s.stock <= a.stockoptimo "
+                            + "WHERE s.stock <= 5 "
                             + "ORDER BY s.stock ASC LIMIT 4")
                     .getResultList();
             if (!bajos.isEmpty()) {
@@ -217,8 +219,7 @@ public class EmailSamplesService {
                         detalle.append("<br>");
                     }
                     detalle.append(formatear(b[0])).append(" — quedan ")
-                           .append(formatear(b[1])).append(" (óptimo ")
-                           .append(formatear(b[2])).append(")");
+                           .append(formatear(b[1]));
                 }
                 v.put("detalle", detalle.toString());
             }
