@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.not;
 @Tag("reportes-pages")
 class ProveedoresReportesPageTest extends support.ContextPathIsolation {
 
-    private static final String PAGE_URL = "/Mercurius/app/reportes/proveedores";
+    private static final String PAGE_URL = "/app/reportes/proveedores";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})

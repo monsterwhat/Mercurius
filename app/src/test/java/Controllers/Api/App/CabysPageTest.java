@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 @Tag("w4b-views")
 class CabysPageTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String TABLE_URL = BASE + "/api/app/cabys/table";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -166,7 +166,7 @@ class CabysPageTest extends support.ContextPathIsolation {
                     .when().put(BASE + "/api/app/cabys/" + codigo)
                     .then()
                     .statusCode(200)
-                    .header("HX-Redirect", equalTo("/Mercurius/app/cabys"));
+                    .header("HX-Redirect", equalTo("/app/cabys"));
 
             Models.Cabys updated = cabysService.find(codigo);
             assertNotNull(updated);

@@ -69,7 +69,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("POS concurrente: diez ventas a la vez facturan diez veces")
 class PosFacturarConcurrenteTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
     private static final int CAJEROS = 10;
 

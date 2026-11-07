@@ -52,7 +52,7 @@
                    placeholder="Buscar órdenes..."
                    aria-label="Buscar órdenes por número, proveedor o estado"
                    enterkeyhint="search"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#filtros-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -83,26 +83,26 @@
                         <button type="button" class="button is-small" title="Ver detalles"
                                 aria-label="Ver detalles de la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="detalle-orden"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/detalle"
+                                hx-get="/api/app/ordenes/{fila.id}/detalle"
                                 hx-target="#detalle-orden-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {#if fila.puedeEditar}
                         <button type="button" class="button is-small" title="Editar orden"
                                 aria-label="Editar la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="editar-orden"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/formularios/{fila.id}"
+                                hx-get="/api/app/ordenes/formularios/{fila.id}"
                                 hx-target="#editar-orden-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         {/if}
                         {#if fila.puedeCambiarEstado}
                         <button type="button" class="button is-small" title="Cambiar estado"
                                 aria-label="Cambiar el estado de la orden {fila.numeroOrden}"
                                 aria-haspopup="dialog" data-kit-open="estado-orden"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/estado"
+                                hx-get="/api/app/ordenes/{fila.id}/estado"
                                 hx-target="#estado-orden-body" hx-swap="innerHTML">{#include _kit/icon name="arrow-right" /}</button>
                         {/if}
                         {#if fila.puedeEliminar}
                         <button type="button" class="button is-small is-danger" title="Archivar orden"
                                 aria-label="Archivar la orden {fila.numeroOrden}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}"
+                                hx-delete="/api/app/ordenes/{fila.id}"
                                 hx-confirm="¿Archivar la orden {fila.numeroOrden}? Dejará de aparecer en el listado y no se puede deshacer."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                         {/if}

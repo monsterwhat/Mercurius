@@ -17,7 +17,7 @@
                        arithmetic-free. When absent only prev/next render.
     baseUrl    String   - context-path-relative endpoint, e.g.
                        "/app/articulos". The deployment root is read from
-                       configuration ({config:['quarkus.http.root-path']}) and
+                       configuration () and
                        prepended HERE - callers must NOT pre-prefix it.
     params     Map<String,Object> - OPTIONAL extra query params preserved
                        on every emitted href (filters, sort, dir...).
@@ -26,7 +26,7 @@
                        the map: "page" and "size" (emitted by this
                        template itself).
 
-  LINK SHAPE produced: {root-path}{baseUrl}?page=N[&size=S][&k=v ...]
+  LINK SHAPE produced: {baseUrl}?page=N[&size=S][&k=v ...]
   ("page" first, then every preserved param prefixed with "&", so no
   separator logic is needed inside the template).
 !}
@@ -42,7 +42,7 @@
 
     {#if page > 1}
     <a class="pagination-previous" rel="prev"
-       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page - 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       href="{baseUrl}?page={page - 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
        data-kit-page="{page - 1}">Anterior</a>
     {#else}
     <button class="pagination-previous" type="button" disabled>Anterior</button>
@@ -50,7 +50,7 @@
 
     {#if page < totalPages}
     <a class="pagination-next" rel="next"
-       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page + 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       href="{baseUrl}?page={page + 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
        data-kit-page="{page + 1}">Siguiente</a>
     {#else}
     <button class="pagination-next" type="button" disabled>Siguiente</button>
@@ -59,24 +59,24 @@
     <ul class="pagination-list">
         {#if page > 1}
         <li><a class="pagination-link" aria-label="Primera página" title="Primera página"
-               href="{config:['quarkus.http.root-path']}{baseUrl}?page=1{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&laquo;</a></li>
+               href="{baseUrl}?page=1{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&laquo;</a></li>
         {/if}
         {#if pages??}
         {#for num in pages}
             {#if num == page}
             <li><a class="pagination-link is-current" aria-current="page"
                    aria-label="Página {num}, actual"
-                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+                   href="{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {#else}
             <li><a class="pagination-link"
                    aria-label="Página {num}"
-                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+                   href="{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {/if}
         {/for}
         {/if}
         {#if page < totalPages}
         <li><a class="pagination-link" aria-label="Última página" title="Última página"
-               href="{config:['quarkus.http.root-path']}{baseUrl}?page={totalPages}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&raquo;</a></li>
+               href="{baseUrl}?page={totalPages}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">&raquo;</a></li>
         {/if}
     </ul>
 </nav>

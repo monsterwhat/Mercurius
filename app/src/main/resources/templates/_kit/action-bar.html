@@ -35,7 +35,7 @@
   EXAMPLE
     {#include _kit/action-bar count=modelo.total countLabel="Articulos" }
       {#actions}
-        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+        <form method="post" action="/api/app/export">
           <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
           <input type="hidden" name="dataset" value="articulos"/>
           <input type="hidden" name="type" value="xlsx"/>

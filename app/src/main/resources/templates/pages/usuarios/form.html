@@ -45,7 +45,7 @@
     </p>
 
     {! ── Cuenta: PUT /{id} (username + email) ────────────────────────── !}
-    <form class="mb-5" hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}"
+    <form class="mb-5" hx-put="/api/app/users/{usuario.id}"
           hx-target="#forma-usuario" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
@@ -83,7 +83,7 @@
     <hr/>
 
     {! ── Permisos: PUT /{id}/permisos (groupName only) ────────────────── !}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}/permisos"
+    <form hx-put="/api/app/users/{usuario.id}/permisos"
           hx-target="#forma-usuario" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
@@ -139,7 +139,7 @@
     </form>
     {#else}
     {! ── Crear: POST /api/app/users ───────────────────────────────────── !}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/users"
+    <form hx-post="/api/app/users"
           hx-target="#forma-usuario" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"

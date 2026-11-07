@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 @Tag("w4b-views")
 class ClientsListContractTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String LIST_URL = BASE + "/api/app/clientes";
     private static final String SEEDED_CLIENT = "Cliente Contado";
     private static final String CSRF_COOKIE = "csrf-token";

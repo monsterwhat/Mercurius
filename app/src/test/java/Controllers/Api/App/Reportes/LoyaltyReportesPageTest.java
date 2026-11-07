@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("reportes-pages")
 class LoyaltyReportesPageTest extends support.ContextPathIsolation {
 
-    private static final String PAGE_URL = "/Mercurius/app/reportes/loyalty";
+    private static final String PAGE_URL = "/app/reportes/loyalty";
 
     @Inject
     LoyaltyService loyaltyService;

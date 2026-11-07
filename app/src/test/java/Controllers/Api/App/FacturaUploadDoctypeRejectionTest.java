@@ -41,7 +41,7 @@ import support.FacturasReales;
 @DisplayName("Subida de facturas: un DOCTYPE nunca se acepta")
 class FacturaUploadDoctypeRejectionTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/facturas-recibidas";
 
     private Map<String, String> adminSession() {

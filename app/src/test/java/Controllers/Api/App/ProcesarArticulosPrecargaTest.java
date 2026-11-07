@@ -111,7 +111,7 @@ class ProcesarArticulosPrecargaTest extends support.ContextPathIsolation {
 
     private static final Logger LOG = Logger.getLogger(ProcesarArticulosPrecargaTest.class);
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/facturas-recibidas";
     /** Usuario sembrado en la base %test: el mismo que resuelve currentUser(). */
     private static final String USUARIO = "admin";

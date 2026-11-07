@@ -154,7 +154,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
      * application.properties para que el filtro no se rompa si la propiedad no
      * estuviera definida.
      */
-    @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/Mercurius")
+    @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/")
     String rootPath;
 
     // ── Decisiones de ruteo (puras, sin CDI: se prueban sin arranque) ────────

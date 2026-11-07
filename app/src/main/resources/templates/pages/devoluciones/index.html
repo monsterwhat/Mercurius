@@ -48,8 +48,8 @@
         {#include _kit/surface title="Buscar Factura" }
             {#content}
             <form id="busqueda-form" method="get"
-                  action="{config:['quarkus.http.root-path']}/app/devoluciones"
-                  hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                  action="/app/devoluciones"
+                  hx-get="{baseUrl}"
                   hx-target="#resultados" hx-swap="innerHTML">
                 <div class="field" role="radiogroup" aria-labelledby="tipo-busqueda-label">
                     <label class="label" id="tipo-busqueda-label">Tipo de Búsqueda</label>
@@ -99,7 +99,7 @@
                         <td class="has-text-centered">
                             <button type="button" class="button is-small"
                                     aria-label="Seleccionar la factura {#if f.consecutivo??}{f.consecutivo}{#else}{f.id}{/if} para la devolución"
-                                    hx-get="{config:['quarkus.http.root-path']}/api/app/devoluciones/{f.id}/lineas"
+                                    hx-get="/api/app/devoluciones/{f.id}/lineas"
                                     hx-target="#devolucion-panel" hx-swap="innerHTML">
                                 Seleccionar
                             </button>
@@ -110,8 +110,8 @@
                         {#if busquedaActiva}
                         <p class="kit-empty">No se encontraron facturas{#if q??}{#if !q.isEmpty()} para &laquo;{q}&raquo;{/if}{/if}.</p>
                         <a class="button is-small mt-2"
-                           href="{config:['quarkus.http.root-path']}{baseUrl}"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                           href="{baseUrl}"
+                           hx-get="{baseUrl}"
                            hx-target="#resultados" hx-swap="innerHTML">Limpiar b&uacute;squeda</a>
                         {#else}
                         <p class="kit-empty">Ingrese un consecutivo o el nombre del cliente y presione Buscar.</p>

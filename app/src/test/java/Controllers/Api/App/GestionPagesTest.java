@@ -18,29 +18,29 @@ import static org.hamcrest.Matchers.not;
 @Tag("gestion-pages")
 class GestionPagesTest extends support.ContextPathIsolation {
 
-    private static final String GESTION = "/Mercurius/app/gestion";
-    private static final String ORDENES = "/Mercurius/app/compras/ordenes";
+    private static final String GESTION = "/app/gestion";
+    private static final String ORDENES = "/app/compras/ordenes";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void adminSeesManagementCardsAndTheOrdersPage() {
         given().when().get(GESTION).then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/articulos\""))
-                .body(containsString("href=\"/Mercurius/app/compras/ordenes\""))
-                .body(containsString("href=\"/Mercurius/app/usuarios\""))
-                .body(containsString("href=\"/Mercurius/app/clientes\""))
-                .body(containsString("href=\"/Mercurius/app/caja\""))
-                .body(containsString("href=\"/Mercurius/app/loyalty\""))
-                .body(containsString("href=\"/Mercurius/app/categorias?tab=familias\""))
-                .body(containsString("href=\"/Mercurius/app/categorias?tab=departamentos\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/inventario/etiquetas\""));
+                .body(containsString("href=\"/app/articulos\""))
+                .body(containsString("href=\"/app/compras/ordenes\""))
+                .body(containsString("href=\"/app/usuarios\""))
+                .body(containsString("href=\"/app/clientes\""))
+                .body(containsString("href=\"/app/caja\""))
+                .body(containsString("href=\"/app/loyalty\""))
+                .body(containsString("href=\"/app/categorias?tab=familias\""))
+                .body(containsString("href=\"/app/categorias?tab=departamentos\""))
+                .body(containsString("href=\"/app/reportes/inventario/etiquetas\""));
 
         given().when().get(ORDENES).then().statusCode(200)
                 .body(containsString("Órdenes de Compra"))
                 .body(containsString("data-kit-table"));
 
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/gestion\""));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(containsString("href=\"/app/gestion\""));
     }
 
     @Test
@@ -48,9 +48,9 @@ class GestionPagesTest extends support.ContextPathIsolation {
     void inventarioSeesStockCardsAndOrdersButNotUsers() {
         given().when().get(GESTION).then().statusCode(200)
                 .body(containsString("Órdenes de compra"))
-                .body(containsString("href=\"/Mercurius/app/inventarios\""))
-                .body(not(containsString("href=\"/Mercurius/app/usuarios\"")))
-                .body(not(containsString("href=\"/Mercurius/app/correos/plantillas\"")));
+                .body(containsString("href=\"/app/inventarios\""))
+                .body(not(containsString("href=\"/app/usuarios\"")))
+                .body(not(containsString("href=\"/app/correos/plantillas\"")));
 
         given().when().get(ORDENES).then().statusCode(200)
                 .body(containsString("Órdenes de Compra"));
@@ -60,10 +60,10 @@ class GestionPagesTest extends support.ContextPathIsolation {
     @TestSecurity(user = "tributacion", roles = {"tributacion"})
     void tributacionSeesMailCardsButNotStockOrOrders() {
         given().when().get(GESTION).then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/correos/plantillas\""))
-                .body(containsString("href=\"/Mercurius/app/correos/reportes\""))
+                .body(containsString("href=\"/app/correos/plantillas\""))
+                .body(containsString("href=\"/app/correos/reportes\""))
                 .body(not(containsString("Órdenes de compra")))
-                .body(not(containsString("href=\"/Mercurius/app/articulos\"")));
+                .body(not(containsString("href=\"/app/articulos\"")));
 
         given().when().get(ORDENES).then().statusCode(403);
     }

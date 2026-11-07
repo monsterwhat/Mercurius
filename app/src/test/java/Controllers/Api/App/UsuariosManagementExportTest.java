@@ -25,9 +25,9 @@ import static org.hamcrest.Matchers.notNullValue;
 @Tag("gestion-pages")
 class UsuariosManagementExportTest extends support.ContextPathIsolation {
 
-    private static final String PAGE = "/Mercurius/app/usuarios";
-    private static final String OLD_REPORT = "/Mercurius/app/reportes/usuarios";
-    private static final String EXPORT = "/Mercurius/api/app/export";
+    private static final String PAGE = "/app/usuarios";
+    private static final String OLD_REPORT = "/app/reportes/usuarios";
+    private static final String EXPORT = "/api/app/export";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})

@@ -31,7 +31,7 @@
              subtitle="Estado de facturas y envíos programados"}
             {#actions}
                 <button type="button" class="button is-primary"
-                        hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/enviar-pendientes"
+                        hx-post="/api/app/tributacion/consultas/enviar-pendientes"
                         hx-confirm="¿Enviar las facturas pendientes a Hacienda?"
                         hx-disabled-elt="this"
                         {#if contadorPendientes == 0}disabled{/if}>
@@ -51,7 +51,7 @@
                       class="kit-countdown kit-code"
                       role="timer"
                       title="{proximoEnvioDisplay}"
-                      hx-get="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/countdown"
+                      hx-get="/api/app/tributacion/consultas/countdown"
                       hx-trigger="every 5s"
                       hx-swap="outerHTML">{#if hasProximoEnvio}{proximoEnvioDisplay} &mdash; {countdownDisplay}{#else}No hay envíos programados{/if}</span>
             </p>
@@ -161,7 +161,7 @@
                         <td>
                             <button type="button" class="button is-small"
                                     title="Art. 19: se emite un comprobante nuevo que referencia el rechazado con el código 16. No corresponde nota de crédito."
-                                    hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/{f.id}/corregir"
+                                    hx-post="/api/app/tributacion/consultas/{f.id}/corregir"
                                     hx-disabled-elt="this"
                                     hx-confirm="¿Reemitir {f.consecutivo}? El comprobante rechazado no tiene validez fiscal (Art. 19): se emitirá uno nuevo que lo referencia con el código 16, sin nota de crédito.">
                                 Reemitir

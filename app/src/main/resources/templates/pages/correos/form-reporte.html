@@ -47,10 +47,10 @@
 !}
 <div id="forma-reporte">
     {#if modo == 'editar' && reporte??}
-    <form hx-put="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}"
+    <form hx-put="/api/app/reportes-programados/{reporte.id}"
           hx-target="#forma-reporte" hx-swap="outerHTML">
     {#else}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/reportes-programados"
+    <form hx-post="/api/app/reportes-programados"
           hx-target="#forma-reporte" hx-swap="outerHTML">
     {/if}
         <div class="field">

@@ -23,7 +23,7 @@
                    placeholder="Buscar movimientos inactivos..."
                    aria-label="Buscar movimientos inactivos por artículo, código o tipo de movimiento"
                    enterkeyhint="search"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -49,7 +49,7 @@
                     <button type="button" class="button is-small" title="Ver detalles"
                             aria-label="Ver detalles del ajuste {movimiento.codigo}"
                             aria-haspopup="dialog" data-kit-open="detalles-ajuste"
-                            hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
+                            hx-get="/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
                             hx-target="#detalles-ajuste-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                 </td>
             </tr>

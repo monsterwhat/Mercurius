@@ -188,7 +188,7 @@ public class EmailSamplesService {
         v.put("periodo", "Noviembre 2026");
         v.put("asunto", "Aviso importante");
         v.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
-        v.put("enlace", "https://mercurius.tamarindorents.com/Mercurius");
+        v.put("enlace", "https://mercurius.tamarindorents.com/");
         try {
             @SuppressWarnings("unchecked")
             List<String> clientes = em.createNativeQuery(

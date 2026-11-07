@@ -38,7 +38,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CorreosAdminPagesTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String TEMPLATES_PAGE = BASE + "/api/app/email-templates/table";
     private static final String REPORTES_PAGE = BASE + "/api/app/reportes-programados/table";
     private static final String CSRF_COOKIE = "csrf-token";
@@ -92,12 +92,12 @@ class CorreosAdminPagesTest extends support.ContextPathIsolation {
                 .when().get(TEMPLATES_PAGE)
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
         given().redirects().follow(false)
                 .when().get(REPORTES_PAGE)
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test

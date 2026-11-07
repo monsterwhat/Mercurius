@@ -66,7 +66,7 @@ import org.junit.jupiter.api.Test;
 @Tag("auth-matrix")
 class CsrfEnforcementTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String SESSION_COOKIE = "quarkus-credential";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -212,7 +212,7 @@ class CsrfEnforcementTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/auth/logout")
                 .then()
                 .statusCode(303)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test
@@ -229,7 +229,7 @@ class CsrfEnforcementTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/auth/logout")
                 .then()
                 .statusCode(303)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     // ── behavior PIN: j_security_check sits OUTSIDE the JAX-RS chain ────
@@ -248,6 +248,6 @@ class CsrfEnforcementTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/j_security_check")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login?error"));
+                .header("Location", containsString("/login?error"));
     }
 }

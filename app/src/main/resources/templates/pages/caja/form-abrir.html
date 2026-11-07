@@ -36,7 +36,7 @@
 {#include _kit/surface id="panel-abrir-caja" title="Abrir Sesión de Caja" }
     {#content}
     <form id="forma-abrir-caja"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/caja/open/form"
+          hx-post="/api/app/caja/open/form"
           hx-target="#caja-estado" hx-swap="innerHTML">
         <div class="columns">
             <div class="column is-one-third">

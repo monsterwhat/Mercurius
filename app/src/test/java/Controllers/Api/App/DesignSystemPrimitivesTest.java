@@ -174,7 +174,7 @@ class DesignSystemPrimitivesTest {
         String enlace = metric.data("label", "Activos").data("value", 1284)
                 .data("href", "?tab=activos").render();
         assertTrue(enlace.contains("<a class=\"metric-card is-interactive\""), "href must render an anchor");
-        assertTrue(enlace.contains("href=\"/Mercurius?tab=activos\""),
+        assertTrue(enlace.contains("href=\"?tab=activos\""),
                 "the kit prepends the deployment root to the href - the page never writes it, and the"
                         + " raw {config:[...]} expression must never reach the markup");
     }

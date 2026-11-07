@@ -16,7 +16,7 @@
                     <label class="label" for="facturas-q">Búsqueda general</label>
                     <input class="input" type="text" id="facturas-q" name="q" value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Consecutivo, emisor, condición, fecha…"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                           hx-get="{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#facturas-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
@@ -48,7 +48,7 @@
         </div>
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="facturas"/>
                 <input type="hidden" name="type" value="xlsx"/>

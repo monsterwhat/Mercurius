@@ -478,8 +478,8 @@ public class PDFGenerator {
             baos.writeTo(outputStream);
         }
 
-        // Get the application's base URL
-        String baseUrl = "/Mercurius";
+        // Application root (empty when deployed at "/")
+        String baseUrl = "";
 
         // Store local path (for direct file access, avoids URL round-trip)
         this.pdfLocalPath = filePath;

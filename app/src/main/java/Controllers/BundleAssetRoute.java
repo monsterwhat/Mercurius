@@ -19,7 +19,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * pages render their assets with the bundler's Qute tag
  * ({@code {#bundle /}} in {@code templates/layout.html} and
  * {@code templates/login.html}), which emits
- * {@code /Mercurius/static/bundle/app-<hash>.js}. Those bytes ARE in the
+ * {@code /static/bundle/app-<hash>.js}. Those bytes ARE in the
  * runner jar, at {@code META-INF/resources/static/bundle/}. They are still
  * never served, and the login page therefore loads unstyled and without JS.
  *
@@ -78,10 +78,10 @@ import jakarta.enterprise.context.ApplicationScoped;
  *
  * <p>Public in the permission policy
  * ({@code quarkus.http.auth.permission.public.paths} lists
- * {@code /static/bundle/*} and {@code /Mercurius/static/bundle/*}), so
+ * {@code /static/bundle/*}), so
  * anonymous callers reach it without a form-auth challenge. The route path is
- * relative to {@code quarkus.http.root-path=/Mercurius}, so it answers the
- * prefixed path the templates emit.
+ * relative to {@code quarkus.http.root-path} (currently {@code /}), so it
+ * answers the path the templates emit.
  */
 @ApplicationScoped
 public class BundleAssetRoute {

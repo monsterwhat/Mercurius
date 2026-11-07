@@ -95,7 +95,7 @@
 !}
 {@java.lang.String label}
 {@java.lang.Object value}
-{#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{config:['quarkus.http.root-path']}{href}"{#if id??} id="{id}"{/if}{#if active??}{#if active} aria-current="page"{/if}{/if}>
+{#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{href}"{#if id??} id="{id}"{/if}{#if active??}{#if active} aria-current="page"{/if}{/if}>
 <span class="metric-label">{label}</span>
 <span class="metric-value">{#if value != null}{value}{#else}<span class="kit-empty">Sin dato</span>{/if}</span>
 {#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}

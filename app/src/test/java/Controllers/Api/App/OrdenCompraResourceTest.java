@@ -55,7 +55,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class OrdenCompraResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
 
@@ -243,7 +243,7 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .when().get(BASE + "/api/app/ordenes")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test
@@ -255,7 +255,7 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/ordenes")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test

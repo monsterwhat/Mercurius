@@ -65,7 +65,7 @@
                      bodyUrl="/api/app/reportes-programados/formularios/nueva" /}
                 {/if}
                 {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion') || inject:securityIdentity.hasRole('tributacion')}
-                <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                <form method="post" action="/api/app/export">
                     <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                     <input type="hidden" name="dataset" value="correos"/>
                     <input type="hidden" name="type" value="xlsx"/>
@@ -93,7 +93,7 @@
                                value="{#if tablaReportes.q??}{tablaReportes.q}{/if}"
                                autocomplete="off" enterkeyhint="search"
                                placeholder="Nombre, correo, frecuencia o reporte"
-                               hx-get="{config:['quarkus.http.root-path']}{tablaReportes.baseUrl}"
+                               hx-get="{tablaReportes.baseUrl}"
                                hx-trigger="keyup changed delay:300ms, search"
                                hx-sync="this:replace"
                                hx-target="#{tablaReportes.id}" hx-swap="outerHTML"/>

@@ -5,11 +5,11 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Bare-root redirect. The application lives under
- * {@code quarkus.http.root-path=/Mercurius}, so JAX-RS resources (including
- * RootRedirectResource) can never match a request to {@code /} itself — it
- * 404s before reaching the app router. This raw Vert.x route is absolute
- * (not root-path prefixed) and sends bare-root hits to the dashboard.
+ * Bare-root redirect. The application is deployed at the server root
+ * ({@code quarkus.http.root-path=/}), so this raw Vert.x route and
+ * {@link RootRedirectResource} both answer {@code /}. The route stays as a
+ * direct safety net should the JAX-RS root resource ever be pre-empted, and
+ * sends bare-root hits to the dashboard.
  *
  * <p>Answers 303 (seeOther) to the dashboard for anonymous and authenticated
  * callers alike, mirroring {@link RootRedirectResource} so both root hops
@@ -26,7 +26,7 @@ public class RootLoginRedirectRoute {
     void root(RoutingContext rc) {
         rc.response()
                 .setStatusCode(303)
-                .putHeader("Location", "/Mercurius/app/dashboard")
+                .putHeader("Location", "/app/dashboard")
                 .end();
     }
 }

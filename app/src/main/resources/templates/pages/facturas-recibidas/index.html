@@ -37,7 +37,7 @@
         {#include _kit/surface title="Subir Facturas Electrónicas"}
             {#content}
             <form id="recibidas-upload-forma"
-                  hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/upload"
+                  hx-post="/api/app/facturas-recibidas/upload"
                   hx-encoding="multipart/form-data"
                   hx-target="#upload-resultado" hx-swap="innerHTML"
                   hx-disabled-elt="find button[type='submit']">
@@ -70,7 +70,7 @@
             </form>
             <div class="field mt-3" style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
                 <button type="button" class="button is-light"
-                        hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/revisar-correo"
+                        hx-post="/api/app/facturas-recibidas/revisar-correo"
                         hx-target="#upload-resultado" hx-swap="innerHTML"
                         hx-disabled-elt="this">Revisar correo ahora</button>
                 <span class="help mercurius-text-muted">
@@ -89,7 +89,7 @@
     {! Export XLSX for the due-date buckets only (D2). !}
     {#if (bucket == 'pendientes' || bucket == 'vencidas') && (inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion'))}
     <div class="buttons mt-4">
-        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+        <form method="post" action="/api/app/export">
             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
             <input type="hidden" name="dataset" value="{#if bucket == 'pendientes'}recibos-pendientes{#else}recibos-vencidos{/if}"/>
             <input type="hidden" name="type" value="xlsx"/>

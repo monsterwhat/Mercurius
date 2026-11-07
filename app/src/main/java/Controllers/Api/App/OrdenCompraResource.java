@@ -154,8 +154,8 @@ public class OrdenCompraResource {
     @Inject
     RoutingContext routing;
 
-    /** Root path for HX-Redirect targets (fixed /Mercurius in this app). */
-    @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/Mercurius")
+    /** Root path for HX-Redirect targets ("" when deployed at the server root). */
+    @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/")
     String rootPath;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
@@ -970,7 +970,8 @@ public class OrdenCompraResource {
     }
 
     private String tablaUrl() {
-        return rootPath + "/app/compras/ordenes";
+        String base = rootPath == null || rootPath.isBlank() || "/".equals(rootPath) ? "" : rootPath;
+        return base + "/app/compras/ordenes";
     }
 
     private static Response badRequest(String message) {

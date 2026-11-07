@@ -99,11 +99,8 @@ public class RecibosReportesResource {
 
     @Nonnull
     private Response redirigirABandeja(@Nonnull String bucket) {
-        String root = org.eclipse.microprofile.config.ConfigProvider.getConfig()
-                .getValue("quarkus.http.root-path", String.class);
         return Response.status(Response.Status.FOUND)
-                .header("Location", (root == null ? "" : root)
-                        + "/app/facturas-recibidas?bucket=" + bucket)
+                .header("Location", "/app/facturas-recibidas?bucket=" + bucket)
                 .build();
     }
 

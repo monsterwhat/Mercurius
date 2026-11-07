@@ -9,10 +9,9 @@ import java.net.URI;
 /**
  * Legacy XHTML redirect trap — old JSF entry points (/index.xhtml,
  * /secured/index.xhtml) now redirect to the new Qute/HTMX app.
- * Locations carry the /Mercurius root-path prefix verbatim: JAX-RS redirect
- * targets are emitted as-is (no prefix is added), so unprefixed targets 404.
- * Bare "/" itself never reaches this resource (outside the app router) —
- * see RootLoginRedirectRoute for that hop.
+ * The application is deployed at the server root (quarkus.http.root-path=/),
+ * so targets are plain absolute paths: the container prepends the root path
+ * (a no-op at "/") and a prefix written here would be applied twice.
  *
  * <p>Every hop answers a single seeOther to the dashboard, for anonymous and
  * authenticated callers alike: "/" and "/app" are permitted by the public
@@ -27,7 +26,7 @@ import java.net.URI;
 public class RootRedirectResource {
 
     private Response redirectToApp() {
-        return Response.seeOther(URI.create("/Mercurius/app/dashboard")).build();
+        return Response.seeOther(URI.create("/app/dashboard")).build();
     }
 
     @GET

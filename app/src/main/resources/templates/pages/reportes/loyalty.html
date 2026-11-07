@@ -55,7 +55,7 @@
                                 <button type="button" class="button is-small"
                                         aria-haspopup="dialog" data-kit-open="loyalty-historial"
                                         aria-label="Ver historial de {c.name}"
-                                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
+                                        hx-get="{baseUrl}/{c.code}/historial"
                                         hx-target="#loyalty-historial-body"
                                         hx-swap="innerHTML">Ver historial</button>
                             </td>
@@ -76,7 +76,7 @@
                 <input class="input" type="text" id="loyalty-q" name="q"
                        value="{#if filtros.q??}{filtros.q}{/if}"
                        placeholder="Nombre, correo, cédula, puntos."
-                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-get="{baseUrl}"
                        hx-trigger="keyup changed delay:300ms"
                        hx-include="closest form"
                        hx-target="#loyalty-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
@@ -102,7 +102,7 @@
                             <button type="button" class="button is-small"
                                     aria-haspopup="dialog" data-kit-open="loyalty-historial"
                                     aria-label="Ver historial de {c.name}"
-                                    hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
+                                    hx-get="{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
                                     hx-swap="innerHTML">Ver historial</button>
                         </td>
@@ -127,7 +127,7 @@
             {/footer}
         {/include}
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="loyalty"/>
                 <input type="hidden" name="type" value="xlsx"/>

@@ -62,7 +62,7 @@
                    placeholder="Buscar en todos los campos…"
                    aria-label="Buscar artículos por nombre, código o código de barras"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -102,35 +102,35 @@
                         <button type="button" class="button is-small" title="Editar artículo"
                                 aria-label="Editar artículo"
                                 aria-haspopup="dialog" data-kit-open="editar-articulo"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/articulos/{articulo.codigo}"
+                                hx-get="/api/app/articulos/formularios/articulos/{articulo.codigo}"
                                 hx-target="#editar-articulo-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small" title="Desactivar artículo"
                                 aria-label="Desactivar artículo"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+                                hx-delete="/api/app/articulos/{articulo.codigo}"
                                 hx-confirm="¿Desactivar el artículo {articulo.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                         {#else if modelo.tab == 'inactivos'}
                         <button type="button" class="button is-small" title="Activar artículo"
                                 aria-label="Activar artículo"
-                                hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/activar"
+                                hx-put="/api/app/articulos/{articulo.codigo}/activar"
                                 hx-confirm="¿Activar el artículo {articulo.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                         <button type="button" class="button is-small" title="Ver detalles"
                                 aria-label="Ver detalles"
                                 aria-haspopup="dialog" data-kit-open="detalles-articulo"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+                                hx-get="/api/app/articulos/{articulo.codigo}"
                                 hx-target="#detalles-articulo-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {#else if modelo.tab == 'pendientes'}
                         <button type="button" class="button is-small" title="Procesar artículo"
                                 aria-label="Procesar artículo"
                                 aria-haspopup="dialog" data-kit-open="revision-articulo"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/revision/{articulo.codigo}"
+                                hx-get="/api/app/articulos/formularios/revision/{articulo.codigo}"
                                 hx-target="#revision-articulo-body" hx-swap="innerHTML">{#include _kit/icon name="refresh" /}</button>
                         {#else}
                         <button type="button" class="button is-small" title="Ver detalles"
                                 aria-label="Ver detalles"
                                 aria-haspopup="dialog" data-kit-open="detalles-articulo"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+                                hx-get="/api/app/articulos/{articulo.codigo}"
                                 hx-target="#detalles-articulo-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {/if}
                     </div>
@@ -143,7 +143,7 @@
                     <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
                     <p class="help">Revise la ortografía o busque por código de barra.</p>
                     <button type="button" class="button is-small mt-2"
-                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-get="{modelo.baseUrl}"
                             hx-include="#tab-{modelo.id}"
                             hx-on::before-request="document.getElementById('buscar-{modelo.id}').focus()"
                             hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>

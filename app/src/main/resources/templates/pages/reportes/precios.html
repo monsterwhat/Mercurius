@@ -16,7 +16,7 @@
                     <input class="input" type="search" id="precios-articulo" name="q" autocomplete="off"
                            placeholder="Escribí el nombre o el código (por ejemplo, imperial)"
                            aria-describedby="precios-articulo-ayuda"
-                           hx-get="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios/selector"
+                           hx-get="/app/reportes/inventario/precios/selector"
                            hx-trigger="input changed delay:300ms, search"
                            hx-target="#precios-selector-resultados" hx-swap="outerHTML"/>
                     <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
@@ -33,7 +33,7 @@
         {#if !filtros.q.isEmpty()}
         <p class="help mt-3">
             Mostrando el historial de <strong class="kit-code">{filtros.q}</strong>.
-            <a href="{config:['quarkus.http.root-path']}{baseUrl}">Ver todos los artículos</a>
+            <a href="{baseUrl}">Ver todos los artículos</a>
         </p>
         {/if}
         {/if}
@@ -49,14 +49,14 @@
                     <div class="control">
                         <button class="button is-primary" type="submit">Filtrar</button>
                         <a class="button"
-                           href="{config:['quarkus.http.root-path']}{baseUrl}">Limpiar</a>
+                           href="{baseUrl}">Limpiar</a>
                     </div>
                     {/include}
 
         {#include pages/reportes/_tablas/precios /}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="precios"/>
                 <input type="hidden" name="type" value="xlsx"/>

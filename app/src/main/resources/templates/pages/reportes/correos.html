@@ -17,7 +17,7 @@
                     <input class="input" type="text" id="correos-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Nombre, correos, frecuencia, reportes…"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                           hx-get="{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#correos-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="correos"/>
                 <input type="hidden" name="type" value="xlsx"/>

@@ -33,7 +33,7 @@
        falling through to a native GET submit (which reloaded the whole till
        with the dialog open). !}
     <form id="forma-pagos"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/payment-entries-form"
+          hx-post="/api/app/pos/payment-entries-form"
           hx-target="#dialog-pago-body" hx-swap="outerHTML"
           hx-disabled-elt="#btn-calcular-vuelto">
         <div class="table-container">

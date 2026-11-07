@@ -22,7 +22,7 @@
                    aria-label="Buscar artículo por nombre, código o código de barras"
                    spellcheck="false" autocapitalize="off"
                    placeholder="Buscar por nombre, código o código de barras..."
-                   hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker"
+                   hx-get="/api/app/pos/articulos-picker"
                    hx-trigger="keyup changed delay:250ms"
                    hx-sync="this:replace"
                    hx-target="#articulos-picker-fragmento" hx-swap="outerHTML"
@@ -59,7 +59,7 @@
                 {! Form owns the request so Enter adds the row instead of
                    falling through to a native GET submit. !}
                 <form style="display:inline"
-                      hx-post="{config:['quarkus.http.root-path']}/api/app/pos/articulo-add-form"
+                      hx-post="/api/app/pos/articulo-add-form"
                       hx-target="#cart-panel" hx-swap="outerHTML"
                       hx-disabled-elt="find button[type='submit']">
                     <input type="hidden" name="articuloId" value="{hit.codigo}"/>

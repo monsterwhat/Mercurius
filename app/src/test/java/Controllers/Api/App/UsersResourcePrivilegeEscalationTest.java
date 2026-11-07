@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UsersResource: la escalada de privilegios vertical esta cerrada")
 class UsersResourcePrivilegeEscalationTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius/api/app/users";
+    private static final String BASE = "/api/app/users";
     private static final long ID_QUE_NO_EXISTE = 999_999L;
 
     // ── permiso: un 'usuario' NO puede otorgar roles ────────────────────────

@@ -55,7 +55,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("POS: reintentar una venta no factura dos veces")
 class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
 
     @Inject ArticulosService articulosService;

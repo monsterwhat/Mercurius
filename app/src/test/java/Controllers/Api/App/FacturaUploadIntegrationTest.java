@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 @Tag("facturas-recibidas")
 class FacturaUploadIntegrationTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/facturas-recibidas";
     private static final String CABYS_ACTIVO = "0111010010010";
 

@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.not;
 @Tag("reportes-pages")
 class ReportsHubLinksTest extends support.ContextPathIsolation {
 
-    private static final String HUB = "/Mercurius/app/reportes";
+    private static final String HUB = "/app/reportes";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
@@ -31,9 +31,9 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString(
-                        "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/facturas\""
+                        "<a class=\"menu-link py-3 px-3\" href=\"/app/facturas\""
                                 + " title=\"Facturas emitidas: gestión y operación\">"))
-                .body(not(containsString("href=\"/Mercurius/app/recibos\"")));
+                .body(not(containsString("href=\"/app/recibos\"")));
     }
 
     /**
@@ -49,8 +49,8 @@ class ReportsHubLinksTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(not(containsString(
-                        "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/categorias?tab=departamentos\"")))
+                        "<a class=\"menu-link py-3 px-3\" href=\"/app/categorias?tab=departamentos\"")))
                 .body(not(containsString(
-                        "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius/app/categorias?tab=familias\"")));
+                        "<a class=\"menu-link py-3 px-3\" href=\"/app/categorias?tab=familias\"")));
     }
 }

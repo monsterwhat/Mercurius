@@ -21,7 +21,7 @@
                    placeholder="Buscar departamentos…"
                    aria-label="Buscar departamentos por nombre o contacto"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-departamentos"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -68,12 +68,12 @@
                         <button type="button" class="button is-small" title="Editar departamento"
                                 aria-label="Editar departamento"
                                 aria-haspopup="dialog" data-kit-open="editar-departamento"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/departamento/{departamento.id}"
+                                hx-get="/api/app/categorias/formularios/departamento/{departamento.id}"
                                 hx-target="#editar-departamento-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small"
                                 title="{#if departamento.status?? && departamento.status}Desactivar departamento{#else}Activar departamento{/if}"
                                 aria-label="{#if departamento.status?? && departamento.status}Desactivar departamento{#else}Activar departamento{/if}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
+                                hx-delete="/api/app/categorias/departamentos/{departamento.id}"
                                 hx-confirm="{#if departamento.status?? && departamento.status}¿Desactivar el departamento {departamento.nombre}?{#else}¿Activar el departamento {departamento.nombre}?{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
@@ -86,7 +86,7 @@
                     <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
                     <p class="help">Revise el nombre o limpie la búsqueda.</p>
                     <button type="button" class="button is-small mt-2"
-                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-get="{modelo.baseUrl}"
                             hx-include="#tab-departamentos"
                             hx-on::before-request="document.getElementById('buscar-departamentos').focus()"
                             hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>

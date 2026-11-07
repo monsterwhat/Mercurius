@@ -19,7 +19,7 @@
         {#for a in resultados}
         <li>
             <a class="is-flex is-align-items-center" style="gap:.5rem"
-               href="{config:['quarkus.http.root-path']}{baseUrl}?q={a.codigoBarra}">
+               href="{baseUrl}?q={a.codigoBarra}">
                 <span class="kit-code">{a.codigoBarra}</span>
                 <span class="table-clamp" title="{a.nombre}">{a.nombre}</span>
             </a>

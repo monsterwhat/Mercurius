@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 @Tag("design-system")
 class TablaColumnasTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     private static final Pattern TH = Pattern.compile("<th[^>]*>");
     private static final Pattern TD = Pattern.compile("<td[^>]*>");

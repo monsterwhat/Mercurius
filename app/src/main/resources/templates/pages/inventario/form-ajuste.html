@@ -17,7 +17,7 @@
 !}
 {#include _kit/surface }
     {#content}
-    <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes"
+    <form hx-post="/api/app/inventario/ajustes"
           hx-target="#crear-ajuste-body" hx-swap="innerHTML">
         <div class="field">
             <label class="label" for="ajuste-articulo-display">Artículo *</label>
@@ -29,7 +29,7 @@
                 <button type="button" class="button"
                         aria-haspopup="dialog" aria-label="Buscar artículo"
                         data-kit-open="selector-articulo-ajuste"
-                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/ajuste/articulos"
+                        hx-get="/api/app/articulos/formularios/ajuste/articulos"
                         hx-target="#selector-articulo-ajuste-body" hx-swap="innerHTML">Buscar</button>
             </div>
             <input type="hidden" id="ajuste-articulo-id" name="articuloId"/>

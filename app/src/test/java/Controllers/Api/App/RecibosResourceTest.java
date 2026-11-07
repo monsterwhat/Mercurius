@@ -65,7 +65,7 @@ import org.junit.jupiter.api.Test;
 @Tag("recibos")
 class RecibosResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/recibos";
     // La pantalla de las EMITIDAS quedo en /app/facturas ("recibos" son las
     // facturas que se reciben).

@@ -27,10 +27,10 @@
 !}
 <div id="forma-articulo">
     {#if modo == 'editar' && articulo??}
-    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="/api/app/articulos/{articulo.codigo}"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {#else}
-    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/articulos"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="/api/app/articulos"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {/if}
         {#if errorMensaje??}
@@ -65,7 +65,7 @@
                        value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
-                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
+                        hx-get="/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
             </div>
             <p class="help" id="articulo-cabys-ayuda">Requerido para facturar electrónicamente.</p>
@@ -307,7 +307,7 @@
                     if (!nombre || !nombre.trim()) {
                         return;
                     }
-                    var url = '{config:['quarkus.http.root-path']}/api/app/categorias/' + (esDepartamento ? 'departamentos' : 'familias');
+                    var url = '/api/app/categorias/' + (esDepartamento ? 'departamentos' : 'familias');
                     var body = new URLSearchParams();
                     body.append('nombre', nombre.trim());
                     fetch(url, {

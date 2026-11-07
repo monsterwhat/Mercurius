@@ -19,11 +19,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * Serves the NEW-world Qute login page ({@code templates/login.html}) at
- * {@code GET /Mercurius/login} (path relative to {@code quarkus.http.root-path=/Mercurius}).
+ * {@code GET /login} (the app is mounted at {@code quarkus.http.root-path=/}).
  *
  * <p>This page backs Quarkus form-based cookie auth (T13 config block): the
  * form-auth mechanism redirects unauthenticated users here, and after failed
- * credentials it redirects back to {@code /Mercurius/login?error}. The
+ * credentials it redirects back to {@code /login?error}. The
  * {@code error} query flag is read via the standard JAX-RS
  * {@link QueryParam} contract and forwarded to the template so it can render
  * the error banner conditionally.</p>
@@ -58,7 +58,7 @@ public class LoginPageResource {
      * Renders the standalone login page.
      *
      * @param error presence marker appended by the form-auth mechanism's
-     *              error-page redirect ({@code /Mercurius/login?error});
+     *              error-page redirect ({@code /login?error});
      *              any non-blank value turns the banner on
      */
     @GET

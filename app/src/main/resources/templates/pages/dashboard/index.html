@@ -49,8 +49,8 @@
                    Criterion §10.6: both destinations are `admin,facturacion`, so
                    every other role would get a 403 from a button it can see. !}
                 {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('facturacion')}
-                <a class="button" href="{config:['quarkus.http.root-path']}/app/facturas">Facturas Emitidas</a>
-                <a class="button" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas">Facturas Recibidas</a>
+                <a class="button" href="/app/facturas">Facturas Emitidas</a>
+                <a class="button" href="/app/facturas-recibidas">Facturas Recibidas</a>
                 {/if}
             {/actions}
         {/include}
@@ -81,8 +81,8 @@
         </div>
 
         <div id="panel-graficas" class="columns is-variable is-4 is-multiline mt-5"
-             data-root="{config:['quarkus.http.root-path']}"
-             data-base="{config:['quarkus.http.root-path']}/app/dashboard/data">
+             data-root=""
+             data-base="/app/dashboard/data">
             <div class="column is-12-tablet is-6-desktop">
                 {! A canvas is opaque to a screen reader, so the chart carries a
                    descriptive name and a text description of what the two series
@@ -270,7 +270,7 @@
             {#content}
             <p class="has-text-weight-medium mb-3">{ultimaTransaccion}</p>
             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
-            <a class="button is-small" href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard">
+            <a class="button is-small" href="/app/tributacion/dashboard">
                 Ver estado de Hacienda
             </a>
             {/if}

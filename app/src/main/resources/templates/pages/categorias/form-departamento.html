@@ -17,10 +17,10 @@
 !}
 <div id="forma-departamento">
     {#if modo == 'editar' && departamento??}
-    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="/api/app/categorias/departamentos/{departamento.id}"
           hx-target="#forma-departamento" hx-swap="outerHTML">
     {#else}
-    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="/api/app/categorias/departamentos"
           hx-target="#forma-departamento" hx-swap="outerHTML">
     {/if}
         <div class="field">

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("reportes-pages")
 class FacturasReportesPageTest extends support.ContextPathIsolation {
 
-    private static final String PAGE_URL = "/Mercurius/app/reportes/facturas";
+    private static final String PAGE_URL = "/app/reportes/facturas";
 
     @Inject
     ComprobantesEmitidosService comprobantesService;

@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.not;
 @Tag("reportes-pages")
 class D14UploadSurfacesTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     @Test
     @TestSecurity(user = "facturador", roles = {"facturacion"})

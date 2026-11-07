@@ -36,7 +36,7 @@
                    placeholder="Buscar códigos CAByS…"
                    aria-label="Buscar códigos CAByS por código o descripción"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
                    hx-target="#resultados-{modelo.id}" hx-swap="outerHTML"
@@ -65,7 +65,7 @@
                     <button type="button" class="button is-small" title="Editar código CAByS"
                             aria-label="Editar código CAByS" aria-haspopup="dialog"
                             data-kit-open="editar-cabys"
-                            hx-get="{config:['quarkus.http.root-path']}/api/app/cabys/formularios/{cabys.codigo}"
+                            hx-get="/api/app/cabys/formularios/{cabys.codigo}"
                             hx-target="#editar-cabys-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                 </td>
             </tr>
@@ -76,7 +76,7 @@
                     <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
                     <p class="help">Busque por código o por una palabra de la descripción. Si el código no existe, use «Importar/Actualizar Catálogo».</p>
                     <button type="button" class="button is-small mt-2"
-                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-get="{modelo.baseUrl}"
                             hx-on::before-request="document.getElementById('buscar-cabys').focus()"
                             hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>
                     {#else}

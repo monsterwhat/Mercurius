@@ -34,7 +34,7 @@
                    placeholder="Buscar en ajustes activos..."
                    aria-label="Buscar ajustes activos por artículo, código o tipo de movimiento"
                    enterkeyhint="search"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -64,11 +64,11 @@
                         <button type="button" class="button is-small" title="Ver detalles"
                                 aria-label="Ver detalles del ajuste {movimiento.codigo}"
                                 aria-haspopup="dialog" data-kit-open="detalles-ajuste"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
+                                hx-get="/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
                                 hx-target="#detalles-ajuste-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         <button type="button" class="button is-small" title="Desactivar ajuste"
                                 aria-label="Desactivar el ajuste {movimiento.codigo}"
-                                hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
+                                hx-post="/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
                                 hx-confirm="¿Desactivar el ajuste {movimiento.codigo}? Pasará a la pestaña Inactivos."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>

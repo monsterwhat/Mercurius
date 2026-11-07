@@ -62,7 +62,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class InventarioResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
     /** NumeroConsecutivo inside sample-adjustment.xml (see fixture header). */
@@ -179,7 +179,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .when().get(BASE + "/api/app/inventario/ajustes")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test

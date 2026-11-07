@@ -36,11 +36,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RecibosReportesPageTest extends support.ContextPathIsolation {
 
     /** Rutas viejas: ahora son redirecciones al buzón. */
-    private static final String PENDIENTES_URL = "/Mercurius/app/reportes/recibos/pendientes";
-    private static final String VENCIDOS_URL = "/Mercurius/app/reportes/recibos/vencidos";
+    private static final String PENDIENTES_URL = "/app/reportes/recibos/pendientes";
+    private static final String VENCIDOS_URL = "/app/reportes/recibos/vencidos";
 
     /** Tabla del buzón de facturas recibidas (fragmento). */
-    private static final String TABLA_URL = "/Mercurius/api/app/facturas-recibidas/tabla";
+    private static final String TABLA_URL = "/api/app/facturas-recibidas/tabla";
 
     @Inject
     ComprobantesRecibidosService recibidosService;
@@ -50,7 +50,7 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
     void rutasViejasRedirigenAlBuzon() {
         // La raíz también: antes devolvía "Not Found" pelado.
         given().redirects().follow(false)
-                .when().get("/Mercurius/app/reportes/recibos")
+                .when().get("/app/reportes/recibos")
                 .then()
                 .statusCode(302)
                 .header("Location", containsString("/app/facturas-recibidas?bucket=pendientes"));

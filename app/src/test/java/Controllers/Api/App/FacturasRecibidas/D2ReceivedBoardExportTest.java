@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.not;
 @Tag("facturas-recibidas")
 class D2ReceivedBoardExportTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})

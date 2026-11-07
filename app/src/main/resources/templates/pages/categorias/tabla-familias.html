@@ -37,7 +37,7 @@
                    placeholder="Buscar familias…"
                    aria-label="Buscar familias por nombre"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-familias"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -75,12 +75,12 @@
                         <button type="button" class="button is-small" title="Editar familia"
                                 aria-label="Editar familia"
                                 aria-haspopup="dialog" data-kit-open="editar-familia"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/familia/{familia.id}"
+                                hx-get="/api/app/categorias/formularios/familia/{familia.id}"
                                 hx-target="#editar-familia-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small"
                                 title="{#if familia.status?? && familia.status}Desactivar familia{#else}Activar familia{/if}"
                                 aria-label="{#if familia.status?? && familia.status}Desactivar familia{#else}Activar familia{/if}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
+                                hx-delete="/api/app/categorias/familias/{familia.id}"
                                 hx-confirm="{#if familia.status?? && familia.status}¿Desactivar la familia {familia.nombre}?{#else}¿Activar la familia {familia.nombre}?{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
@@ -93,7 +93,7 @@
                     <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
                     <p class="help">Revise el nombre o limpie la búsqueda.</p>
                     <button type="button" class="button is-small mt-2"
-                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-get="{modelo.baseUrl}"
                             hx-include="#tab-familias"
                             hx-on::before-request="document.getElementById('buscar-familias').focus()"
                             hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>

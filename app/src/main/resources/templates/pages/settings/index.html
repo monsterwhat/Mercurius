@@ -84,16 +84,10 @@
 
   CSRF is inherited from layout.html body hx-headers.
 
-  ROOT PATH (W2): every URL below is prefixed with
-  {config:['quarkus.http.root-path']}, never a hard-coded literal. The previous
-  version of this comment claimed the opposite - that quarkus.http.root-path is
-  "build-time-fixed and absent from the runtime config namespace outside dev
-  mode, so {config:} expressions risk TemplateException on packaged runs". That
-  claim was STALE: quarkus.http.root-path is declared in application.properties
-  and resolves at render time, and pages that already used the {config:} form
-  (pages/recibos/*) render fine. The whole codebase was hard-coded on the
-  strength of that stale note; W2 reversed it. Pinned by
-  RootPathNormalizationTest.
+  ROOT PATH: the application is served at the server root
+  (quarkus.http.root-path=/), so every URL below is an absolute root path
+  (/app/...). A deployment prefix must NOT be reintroduced: at "/" it would
+  emit a doubled slash before app/..., a protocol-relative URL. Pinned by RootPathNormalizationTest.
   Alpine braces ALWAYS carry a space after "{" (Qute golden rule); script
   braces open before whitespace.
 !}
@@ -159,7 +153,7 @@
                         <span class="status-chip is-neutral">En uso</span>
                         {#else}
                         <form class="is-inline" data-json-save
-                              hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/seleccionar"
+                              hx-post="{baseUrl}/sucursales/seleccionar"
                               hx-on::after-request="if (event.detail.successful) window.location.reload()">
                             <input type="hidden" name="id" value="{s.id}"/>
                             <button class="button is-small" type="submit"
@@ -168,7 +162,7 @@
                         </form>
                         {/if}
                         <form class="is-inline" data-json-save
-                              hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/activo"
+                              hx-post="{baseUrl}/sucursales/activo"
                               hx-on::after-request="if (event.detail.successful) window.location.reload()"
                               hx-confirm="{#if s.activo}¿Desactivar la terminal {s.codigoTerminal}? Dejará de poder emitir comprobantes.{#else}¿Activar la terminal {s.codigoTerminal}?{/if}">
                             <input type="hidden" name="id" value="{s.id}"/>
@@ -195,7 +189,7 @@
         <hr/>
 
         <h3 class="title is-6">Registrar un punto de venta</h3>
-        <form hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales"
+        <form hx-post="{baseUrl}/sucursales"
               hx-on::after-request="if (event.detail.successful) window.location.reload()"
               data-json-save>
             <div class="columns is-multiline">
@@ -249,7 +243,7 @@
          (the JSON endpoint answers 415 to a browser form). Same merge, same
          whitelist, same audit entry. ── !}
     <form id="ajustes-forma" data-json-save
-          hx-post="{config:['quarkus.http.root-path']}{baseUrl}/form"
+          hx-post="{baseUrl}/form"
           hx-target="#ajustes-forma" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
@@ -413,12 +407,12 @@
                     <div class="field">
                         <div class="buttons">
                             <button type="button" class="button is-light" data-json-save
-                                    hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/prueba"
+                                    hx-post="/api/app/settings/correo/prueba"
                                     hx-on::after-request="this.classList.remove('is-loading')">
                                 Enviar correo de prueba
                             </button>
                             <button type="button" class="button is-light" data-json-save
-                                    hx-post="{config:['quarkus.http.root-path']}/api/app/settings/correo/muestras"
+                                    hx-post="/api/app/settings/correo/muestras"
                                     hx-confirm="¿Enviar una muestra de cada plantilla y de cada reporte? Son varios correos."
                                     hx-on::after-request="this.classList.remove('is-loading')">
                                 Enviar muestras (plantillas y reportes)
@@ -476,7 +470,7 @@
                 {! Bordered, not is-success: green is a status hue, and the
                    screen's one filled primary is the save action. !}
                 <button class="button" type="button" data-json-save
-                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
+                        hx-post="{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
                         hx-confirm="¿Ejecutar un respaldo ahora? Puede tardar varios minutos y no se puede cancelar."
                         hx-on::before-request="this.classList.add('is-loading')"
@@ -564,7 +558,7 @@
                         <td class="has-text-centered">
                             <a class="button is-small"
                                aria-label="Descargar {entrada.archivo}"
-                               href="{config:['quarkus.http.root-path']}/api/app/settings/backup-descargar?archivo={entrada.archivo}">
+                               href="/api/app/settings/backup-descargar?archivo={entrada.archivo}">
                                 {#include _kit/icon name="download" /}
                                 <span>Descargar</span></a>
                         </td>
@@ -582,7 +576,7 @@
                     <span class="kit-code" style="word-break:break-all">{backupRutaEfectiva}</span>
                 </p>
                 <button class="button is-medium" type="button" data-json-save
-                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
+                        hx-post="{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
                         hx-on::before-request="this.classList.add('is-loading')"
                         hx-on::after-request="this.classList.remove('is-loading'); event.detail.successful && window.location.reload()">
@@ -616,7 +610,7 @@
                     <figure class="image is-64x64"
                             style="border:1px solid var(--merc-border);border-radius:8px;overflow:hidden;background:var(--merc-surface);margin:0">
                         {#if settings.logoMimeType??}
-                        <img src="{config:['quarkus.http.root-path']}/logo" alt="Logo actual de la empresa"/>
+                        <img src="/logo" alt="Logo actual de la empresa"/>
                         {#else}
                         <div class="has-text-centered mercurius-text-muted" style="padding:1.25rem .25rem">
                             {#include _kit/icon name="file" /}
@@ -638,7 +632,7 @@
                             </label>
                         </div>
                         <button class="button mt-2" type="button"
-                                hx-post="{config:['quarkus.http.root-path']}{baseUrl}/logo"
+                                hx-post="{baseUrl}/logo"
                                 hx-encoding="multipart/form-data"
                                 hx-include="#logo-archivo"
                                 hx-swap="none"
@@ -875,7 +869,7 @@
                 <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Margen de reorden</p><p>30 días</p></div>
             </div>
             <a class="button"
-               href="{config:['quarkus.http.root-path']}/app/stock-alert-config">
+               href="/app/stock-alert-config">
                 {#include _kit/icon name="chart" /}
                 <span>Configurar umbrales por artículo</span></a>
         </div>

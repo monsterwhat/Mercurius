@@ -89,7 +89,7 @@
             {#chartBody}
             <canvas id="grafica-fecha-historica" role="img"
                     aria-label="Ventas del mismo día o mes a través de los últimos años"
-                    data-root="{config:['quarkus.http.root-path']}"
+                    data-root=""
                     data-mes="{filtros.mes}" data-dia="{filtros.dia}" data-anos="{filtros.anos}"
                     data-dimension="{filtros.dimension}" data-items="{filtros.items}">
                 Su navegador no soporta canvas.
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="ventas-fecha-historica"/>
                 <input type="hidden" name="type" value="xlsx"/>

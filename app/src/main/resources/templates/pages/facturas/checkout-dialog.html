@@ -38,7 +38,7 @@
     </div>
 
     <form id="forma-cobro"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
+          hx-post="/api/app/pos/facturar-form"
           hx-include="#forma-tipo-documento"
           hx-target="#facturar-resultado" hx-swap="innerHTML"
           hx-disabled-elt="#btn-cobro-facturar">

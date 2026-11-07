@@ -40,7 +40,7 @@
                    autocomplete="off" spellcheck="false" enterkeyhint="search"
                    placeholder="Buscar clientes por nombre, correo o identificación"
                    hx-preserve="true"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML" hx-sync="this:replace"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
@@ -74,14 +74,14 @@
                         <button type="button" class="button is-small" title="Editar cliente"
                                 aria-label="Editar cliente"
                                 aria-haspopup="dialog" data-kit-open="editar-cliente"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{cliente.code}"
+                                hx-get="/api/app/clientes/formularios/{cliente.code}"
                                 hx-target="#editar-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         {! The name and what will happen are both in the question:
                            a bare "Cambiar estado" made the operator guess. !}
                         <button type="button" class="button is-small"
                                 title="{#if cliente.status}Desactivar cliente{#else}Activar cliente{/if}"
                                 aria-label="{#if cliente.status}Desactivar cliente{#else}Activar cliente{/if}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/clientes/{cliente.code}"
+                                hx-delete="/api/app/clientes/{cliente.code}"
                                 hx-confirm="{#if cliente.status}¿Desactivar al cliente {cliente.name}? Dejará de aparecer como activo.{#else}¿Activar al cliente {cliente.name}? Volverá a aparecer como activo.{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>

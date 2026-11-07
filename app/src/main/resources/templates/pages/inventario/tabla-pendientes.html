@@ -24,7 +24,7 @@
                    placeholder="Buscar movimientos pendientes..."
                    aria-label="Buscar movimientos pendientes por artículo, código o tipo de movimiento"
                    enterkeyhint="search"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -51,11 +51,11 @@
                         <button type="button" class="button is-small" title="Procesar movimiento"
                                 aria-label="Procesar el movimiento {movimiento.codigo}"
                                 aria-haspopup="dialog" data-kit-open="revision-ajuste"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/revision/{movimiento.codigo}"
+                                hx-get="/api/app/inventario/formularios/revision/{movimiento.codigo}"
                                 hx-target="#revision-ajuste-body" hx-swap="innerHTML">Procesar</button>
                         <button type="button" class="button is-small is-danger" title="Rechazar movimiento"
                                 aria-label="Rechazar el movimiento {movimiento.codigo}"
-                                hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
+                                hx-post="/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
                                 hx-confirm="¿Rechazar el movimiento {movimiento.codigo}? Quedará en la pestaña Inactivos."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="close" /}</button>
                     </div>

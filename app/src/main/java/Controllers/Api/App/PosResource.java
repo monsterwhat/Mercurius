@@ -2534,7 +2534,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 .build();
     }
 
-    /** Context-path-relative base ("/Mercurius/") for building stable URLs. */
+    /** Context-path-relative base ("/") for building stable URLs. */
     private @Nonnull String uriBasePath() {
         String path = uriInfo.getBaseUri().getPath();
         return path != null ? path : "/";

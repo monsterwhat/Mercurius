@@ -18,7 +18,7 @@
         </div>
         <div class="level-right">
             <button type="button" class="button is-small"
-                    hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}"
+                    hx-get="/api/app/recibos/{vista.detalle.id}"
                     hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">
                 {#include _kit/icon name="refresh" /}
                 <span>Refrescar</span>
@@ -71,7 +71,7 @@
         {#if !vista.notaCredito && vista.detalle.condicionVenta?? && vista.detalle.condicionVenta == '02'}
         <button type="button" class="button"
                 {#if vista.pagada}disabled{/if}
-                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/pay"
+                hx-post="/api/app/recibos/{vista.detalle.id}/pay"
                 hx-target="#recibos-tablero" hx-swap="outerHTML"
                 hx-disabled-elt="this"
                 hx-confirm="&iquest;Marcar como pagada la factura?">Marcar como pagada</button>
@@ -82,7 +82,7 @@
     <div class="field mt-2">
         <div class="control">
             <button type="button" class="button is-danger is-light"
-                    hx-delete="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}"
+                    hx-delete="/api/app/recibos/{vista.detalle.id}"
                     hx-swap="none" hx-disabled-elt="this"
                     hx-confirm="&iquest;Eliminar esta factura del listado? No devuelve el inventario ni libera el consecutivo."
                     hx-on::after-request="if (event.detail.successful) { window.location.reload(); }">

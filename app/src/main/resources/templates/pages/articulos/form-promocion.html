@@ -34,12 +34,12 @@
 !}
 <div id="forma-promocion">
     {#if modo == 'editar' && promocion??}
-    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="/api/app/articulos/promociones/{promocion.id}"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '{#if promocion.fechaInicio??}{time:format(promocion.fechaInicio, 'yyyy-MM-dd')}{/if}',
                     fin: '{#if promocion.fechaFin??}{time:format(promocion.fechaFin, 'yyyy-MM-dd')}{/if}' }">
     {#else}
-    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/promociones"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="/api/app/articulos/promociones"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '', fin: '' }">
     {/if}
@@ -89,7 +89,7 @@
             {/for}
             <button type="button" class="button is-small mt-2"
                     aria-haspopup="dialog" data-kit-open="selector-articulo-promo"
-                    hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
+                    hx-get="/api/app/articulos/formularios/promociones/articulos"
                     hx-target="#selector-articulo-promo-body" hx-swap="innerHTML">Agregar Producto</button>
             <p id="promo-items-estado" class="is-sr-only" role="status" aria-live="polite"></p>
         </div>

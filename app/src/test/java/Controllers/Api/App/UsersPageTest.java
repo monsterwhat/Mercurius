@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 @Tag("w4b-views")
 class UsersPageTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String TABLE_URL = BASE + "/api/app/users/table";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -196,7 +196,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                     .when().post(BASE + "/api/app/users")
                     .then()
                     .statusCode(200)
-                    .header("HX-Redirect", equalTo("/Mercurius/app/usuarios"));
+                    .header("HX-Redirect", equalTo("/app/usuarios"));
 
             Usuarios creado = loginService.findByUsername(marker);
             assertNotNull(creado, "the HTMX form twin must persist the user");

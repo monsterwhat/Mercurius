@@ -79,7 +79,7 @@ import org.junit.jupiter.api.Test;
 @Tag("tributacion")
 class TributacionResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/tributacion";
     private static final String PAGES = BASE + "/app/tributacion";
     private static final String CSRF_COOKIE = "csrf-token";

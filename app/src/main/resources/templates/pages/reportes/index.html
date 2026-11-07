@@ -119,7 +119,7 @@
                 <ul class="menu-list">
                     {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Facturación de Artículos</span>
                                 <span class="is-size-7 mercurius-text-muted">Ventas por artículo</span>
@@ -130,7 +130,7 @@
                     {/if}
                     {#if inject:securityIdentity.hasRole('admin')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/facturas" title="Lista completa de facturas emitidas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Reporte de facturas emitidas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -138,7 +138,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/carrito-modificaciones" title="Cambios que hicieron los cajeros en el carrito antes de facturar">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/carrito-modificaciones" title="Cambios que hicieron los cajeros en el carrito antes de facturar">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Cambios de carrito</span>
                                 <span class="is-size-7 mercurius-text-muted">Líneas eliminadas, ventas canceladas y precios ajustados</span>
@@ -149,7 +149,7 @@
                     {/if}
                     {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Tendencias de Ventas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -157,7 +157,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Ventas por Fecha Histórica</span>
                                 <span class="is-size-7 mercurius-text-muted">Mismo día o mes, varios años</span>
@@ -166,7 +166,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Productos Destacados</span>
                                 <span class="is-size-7 mercurius-text-muted">Mejor rendimiento en ventas</span>
@@ -176,7 +176,7 @@
                     </li>
                     {/if}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Estacionalidad</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -185,7 +185,7 @@
                     </li>
                     {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('tributacion')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">
+                        <a class="menu-link py-3 px-3" href="/app/tributacion/declaracion" title="Resumen de impuestos por período">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Resumen de Impuestos</span>
                                 <span class="is-size-7 mercurius-text-muted">Por período</span>
@@ -220,7 +220,7 @@
                 <ul class="menu-list">
                     {#if inject:securityIdentity.hasRole('admin')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas" title="Facturas emitidas: gestión y operación">
+                        <a class="menu-link py-3 px-3" href="/app/facturas" title="Facturas emitidas: gestión y operación">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Facturas emitidas (gestión)</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -228,7 +228,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas" title="Facturas recibidas: pendientes de pago y vencidas">
+                        <a class="menu-link py-3 px-3" href="/app/facturas-recibidas" title="Facturas recibidas: pendientes de pago y vencidas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Facturas recibidas</span>
                                 <span class="is-size-7 mercurius-text-muted">Pendientes de pago y vencidas</span>
@@ -237,7 +237,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/correos/reportes" title="Configuración de envío automático de reportes">
+                        <a class="menu-link py-3 px-3" href="/app/correos/reportes" title="Configuración de envío automático de reportes">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Correos Programados</span>
                                 <span class="is-size-7 mercurius-text-muted">Envío automático</span>
@@ -247,7 +247,7 @@
                     </li>
                     {/if}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">
+                        <a class="menu-link py-3 px-3" href="/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Plantillas de Correo</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -277,7 +277,7 @@
             <div class="surface-body">
                 <ul class="menu-list">
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de inventario por rango de fechas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/articulos/fechas" title="Movimientos de inventario por rango de fechas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Movimientos de inventario</span>
                                 <span class="is-size-7 mercurius-text-muted">Por rango de fechas</span>
@@ -286,7 +286,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/inventario/resumen" title="Estado general del inventario">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Resumen de Inventario</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -295,7 +295,7 @@
                     </li>
                     {#if inject:securityIdentity.hasRole('admin')}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Márgenes de Utilidad</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -304,7 +304,7 @@
                     </li>
                     {/if}
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Mermas y Pérdidas</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -312,7 +312,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/inventario/precios" title="Histórico de precios de artículos">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Histórico de precios</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -320,7 +320,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/proveedores" title="Métricas de rendimiento de proveedores">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/proveedores" title="Métricas de rendimiento de proveedores">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Métricas de proveedores</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -349,7 +349,7 @@
             <div class="surface-body">
                 <ul class="menu-list">
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/clientes" title="Reporte de clientes registrados">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Clientes</span>
                                 <span class="icon is-small ml-auto mercurius-text-muted">{#include _kit/icon name="arrow-right" size="small" /}</span>
@@ -357,7 +357,7 @@
                         </a>
                     </li>
                     <li x-show="coincide($el.textContent)">
-                        <a class="menu-link py-3 px-3" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">
+                        <a class="menu-link py-3 px-3" href="/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">
                             <span class="is-flex is-align-items-center is-flex-wrap-wrap is-gap-2">
                                 <span class="has-text-weight-medium">Puntos y Recompensas</span>
                                 <span class="is-size-7 mercurius-text-muted">Programa de lealtad</span>

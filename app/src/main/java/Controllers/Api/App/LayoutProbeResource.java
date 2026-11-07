@@ -16,8 +16,8 @@ import java.util.Map;
  * Scaffolding smoke-probe that renders the new base Qute layout TODAY, while
  * the declarative auth policies are still dormant (plan task T11).
  *
- * <p>Serves {@code GET /app/_probe} (full URL {@code /Mercurius/app/_probe}
- * under the configured {@code quarkus.http.root-path}) returning
+ * <p>Serves {@code GET /app/_probe} (the app is mounted at the server root:
+ * {@code quarkus.http.root-path=/}) returning
  * {@code templates/pages/probe.html}, which includes the shared
  * {@code templates/layout.html}: role-gated navbar fragment, toast container
  * fed with one sample notification per severity, footer and the web-bundler

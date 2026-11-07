@@ -123,7 +123,7 @@
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="-1"/>
                     <button type="button" class="button is-small" aria-label="Restar uno de {item.nombre}"
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-post="/api/app/pos/item/{item.codigo}/qty-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
                             hx-disabled-elt="this">&minus;</button>
                 </form>
@@ -131,7 +131,7 @@
                    instead of falling through to a native GET submit (which
                    reloaded the whole till). !}
                 <form class="is-inline" style="display:inline"
-                      hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-set-form"
+                      hx-post="/api/app/pos/item/{item.codigo}/qty-set-form"
                       hx-trigger="change, submit"
                       hx-target="#cart-panel" hx-swap="outerHTML">
                     <input type="number" name="cantidad" step="any" min="0"
@@ -141,7 +141,7 @@
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="1"/>
                     <button type="button" class="button is-small" aria-label="Sumar uno de {item.nombre}"
-                            hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-post="/api/app/pos/item/{item.codigo}/qty-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
                             hx-disabled-elt="this">+</button>
                 </form>
@@ -168,7 +168,7 @@
                 <button type="button" class="button is-small is-danger is-outlined"
                         aria-label="Quitar {item.nombre} del carrito"
                         title="Quitar del carrito"
-                        hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/remove-form"
+                        hx-post="/api/app/pos/item/{item.codigo}/remove-form"
                         hx-target="#cart-panel" hx-swap="outerHTML"
                         hx-disabled-elt="this">{#include _kit/icon name="trash" /}</button>
             </td>
@@ -206,7 +206,7 @@
        A hidden input outside the group is the one value hx-include picks for
        the reset. !}
     <form id="forma-puntos" class="field has-addons" style="margin-bottom:0.5rem"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form"
+          hx-post="/api/app/pos/puntos-form"
           hx-target="#cart-panel" hx-swap="outerHTML"
           hx-disabled-elt="#btn-aplicar-puntos">
         <div class="control">
@@ -220,7 +220,7 @@
         </div>
         <div class="control">
             <button type="button" class="button is-small"
-                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="#puntos-quitar"
+                    hx-post="/api/app/pos/puntos-form" hx-include="#puntos-quitar"
                     hx-target="#cart-panel" hx-swap="outerHTML"
                     hx-disabled-elt="this">Quitar puntos</button>
         </div>
@@ -233,7 +233,7 @@
        ajuste de precio por línea, así el IVA y el XML siguen siendo válidos. !}
     {#if panel.puedeDescontar && !panel.vacio}
     <form id="forma-descuento" class="field has-addons" style="margin-bottom:0.5rem"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/descuento-form"
+          hx-post="/api/app/pos/descuento-form"
           hx-target="#cart-panel" hx-swap="outerHTML"
           hx-disabled-elt="#btn-aplicar-descuento">
         <div class="control">
@@ -252,7 +252,7 @@
         </div>
         <div class="control">
             <button type="button" class="button is-small"
-                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/descuento-form"
+                    hx-post="/api/app/pos/descuento-form"
                     hx-vals='{"restaurar":"1"}'
                     hx-target="#cart-panel" hx-swap="outerHTML"
                     hx-confirm="¿Quitar el descuento de todas las líneas?"
@@ -280,14 +280,14 @@
 
     <div class="buttons" style="margin-bottom:0">
         <button type="button" id="btn-cancelar" class="button is-medium is-danger is-outlined"
-                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/cancel-form"
+                hx-post="/api/app/pos/cancel-form"
                 hx-confirm="¿Cancelar la venta actual?"
                 hx-target="#cart-panel" hx-swap="outerHTML"
                 hx-disabled-elt="this">Cancelar venta</button>
         <button type="button" id="btn-facturar" class="button is-medium is-primary"{#if panel.vacio} disabled{/if}
                 aria-haspopup="dialog" data-kit-open="modal-cobro"
                 hx-include="#forma-tipo-documento"
-                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/checkout-dialog"
+                hx-get="/api/app/pos/checkout-dialog"
                 hx-target="#modal-cobro-body" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>
     </div>
     </div>
@@ -306,7 +306,7 @@
                 <button class="delete" type="button" aria-label="Cerrar" @click="open = false"></button>
             </header>
             <form id="forma-precio"
-                  hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/price-form"
+                  hx-post="/api/app/pos/item/price-form"
                   hx-target="#cart-panel" hx-swap="outerHTML"
                   hx-disabled-elt="find button[type='submit']">
                 <section class="modal-card-body">

@@ -69,7 +69,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PosResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -691,7 +691,7 @@ class PosResourceTest extends support.ContextPathIsolation {
                 .body("data.comprobanteId", notNullValue())
                 .body("data.haciendaEstado", notNullValue());
         String pdfUrl = facturado.then().extract().jsonPath().getString("data.pdfUrl");
-        assertThat(pdfUrl).startsWith("/Mercurius/api/app/pos/facturas/tiqueteElectronico_");
+        assertThat(pdfUrl).startsWith("/api/app/pos/facturas/tiqueteElectronico_");
 
         // The URL streams the generated PDF bytes (octet-stream, %PDF magic).
         byte[] bytes = authed(session)

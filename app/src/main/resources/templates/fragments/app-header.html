@@ -32,7 +32,7 @@
         {! Lanzador POS: mismo contrato declarativo que el navbar (kitPopup). !}
         {#if inject:securityIdentity.hasRole('facturacion')}
         <a class="button is-dark"
-           href="{config:['quarkus.http.root-path']}/app/pos/standalone"
+           href="/app/pos/standalone"
            target="_blank" rel="noopener" data-planned-route="/app/facturas/nueva"
            data-kit-popup="nuevaFactura"
            data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
@@ -49,8 +49,8 @@
                 <span class="app-header-user-name">{inject:securityIdentity.username}</span>
             </button>
             <div class="app-header-user-menu" id="app-header-user-menu" data-header-user-menu role="menu">
-                <a role="menuitem" href="{config:['quarkus.http.root-path']}/app/perfil" data-planned-route="/app/perfil">Perfil</a>
-                <form method="post" action="{config:['quarkus.http.root-path']}/api/app/auth/logout">
+                <a role="menuitem" href="/app/perfil" data-planned-route="/app/perfil">Perfil</a>
+                <form method="post" action="/api/app/auth/logout">
                     <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
                     <button type="submit" role="menuitem">Cerrar sesión</button>
                 </form>

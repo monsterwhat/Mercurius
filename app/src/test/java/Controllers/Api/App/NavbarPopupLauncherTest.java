@@ -60,7 +60,7 @@ import org.junit.jupiter.api.Test;
 @Tag("design-system")
 class NavbarPopupLauncherTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     /** Layout page a facturacion-only identity can open. */
     private static final String RECIBOS_URL = "/app/facturas";
@@ -68,8 +68,7 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
     /** Layout page a registro-only identity can open. */
     private static final String REPORTES_URL = "/app/reportes";
 
-    private static final String ROOT = "/Mercurius";
-
+    private static final String ROOT = "";
     private static final String CONFIG_EXPR = "{config:['quarkus.http.root-path']}";
 
     /** The window name the POS must be opened in, and reused across clicks. */
@@ -114,14 +113,14 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
 
     @Test
     @TestSecurity(user = "cajero", roles = {"facturacion"})
-    @DisplayName("the popup URL is the anchor's own href, root-prefixed exactly once")
+    @DisplayName("the popup URL is the anchor's own href, absolute with a single slash")
     void popupUrlComesFromTheRootPrefixedHref() {
         String body = html(BASE + RECIBOS_URL);
 
         assertTrue(body.contains("href=\"" + ROOT + "/app/pos/standalone\""),
-                "the href the handler reads must carry the resolved deployment root");
+                "the href the handler reads must be an absolute application path");
         assertFalse(body.contains(CONFIG_EXPR), "the config expression must resolve, not leak");
-        assertFalse(body.contains(ROOT + ROOT), "the root must not be applied twice");
+        assertFalse(body.contains("//app/"), "the URL must not carry a doubled slash");
         assertFalse(body.contains("config:"), "no config expression may leak into the markup");
     }
 

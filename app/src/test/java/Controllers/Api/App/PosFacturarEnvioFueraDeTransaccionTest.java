@@ -111,7 +111,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("POS: confirmar antes de enviar; el envío no retiene el consecutivo")
 class PosFacturarEnvioFueraDeTransaccionTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
     private static final String USUARIO = "admin";
 

@@ -55,7 +55,7 @@
      subtitle="Valores generales del programa de lealtad; se aplican a todos los clientes." }
     {#content}
     <form id="forma-ajustes"
-          hx-put="{config:['quarkus.http.root-path']}/api/app/loyalty/settings/form"
+          hx-put="/api/app/loyalty/settings/form"
           hx-target="#panel-ajustes" hx-swap="outerHTML">
         <div class="columns">
             <div class="column is-one-third">

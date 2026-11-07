@@ -63,15 +63,15 @@ public class FallbackResource {
         String p = normalized == null ? "" : normalized;
         if (p.equals("/") || p.isEmpty() || p.equals("index.html") || p.equals("index.xhtml")
                 || p.equals("secured/index.xhtml") || p.equals("/index.html") || p.equals("/index.xhtml")
-                || p.equals("/secured/index.xhtml") || requestPath.endsWith("/Mercurius/")
-                || requestPath.endsWith("/Mercurius/index.html") || requestPath.endsWith("/Mercurius/index.xhtml")) {
+                || p.equals("/secured/index.xhtml") || requestPath.endsWith("/index.html")
+                || requestPath.endsWith("/index.xhtml")) {
             return Response.seeOther(URI.create("/app/dashboard")).build();
         }
         boolean isApi = normalized.contains("api/") || normalized.startsWith("api/") || normalized.startsWith("/api/");
         if (!isApi && normalized.contains("/api/")) {
             isApi = true;
         }
-        // Use request URI path which includes /Mercurius prefix if present
+        // Use the request URI path (absolute, including the deployment root).
         if (!isApi && requestPath.contains("/api/")) {
             isApi = true;
         }
@@ -86,9 +86,9 @@ public class FallbackResource {
             return Response.seeOther(URI.create("/login")).build();
         }
         // Signed-in operator on a stale link: bounce to the dashboard rather
-        // than render a dead end. The target is deployment-relative: the
-        // container prepends the root path, so writing /Mercurius here became
-        // /Mercurius/Mercurius/app and looped forever.
+        // than render a dead end. Targets stay deployment-relative: the
+        // container prepends the root path, so a literal prefix here would be
+        // applied twice.
         return Response.seeOther(URI.create("/app")).build();
     }
 

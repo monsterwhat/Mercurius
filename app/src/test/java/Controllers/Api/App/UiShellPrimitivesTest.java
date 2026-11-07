@@ -80,9 +80,9 @@ class UiShellPrimitivesTest {
                 .data("actionLabel", "Ver artículos")
                 .render();
 
-        assertTrue(html.contains("href=\"/Mercurius/app/articulos\""),
+        assertTrue(html.contains("href=\"/app/articulos\""),
                 "the kit prefixes the deployment root exactly once");
-        assertFalse(html.contains("/Mercurius/Mercurius"), "no double prefix");
+        assertFalse(html.contains("/Mercurius"), "no double prefix");
     }
 
     @Test

@@ -118,7 +118,7 @@ class DevolucionEnvioFueraDeTransaccionTest extends support.ContextPathIsolation
 
     private static final Logger LOG = Logger.getLogger(DevolucionEnvioFueraDeTransaccionTest.class);
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/devoluciones";
 
     /** import-test.sql: admin / admin123 (BCrypt cost 12), rol admin. */

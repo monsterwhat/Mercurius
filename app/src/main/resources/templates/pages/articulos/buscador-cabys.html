@@ -25,7 +25,7 @@
                    placeholder="Buscar por descripción…"
                    aria-label="Buscar código CAByS por descripción"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys"
+                   hx-get="/api/app/articulos/cabys"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
                    hx-target="#buscador-cabys-resultados" hx-swap="outerHTML"

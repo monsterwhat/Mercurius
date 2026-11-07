@@ -9,10 +9,10 @@
 
   Path facts (Quarkus 3.36.2):
   - The FormAuthenticationMechanism's POST endpoint is the context-relative
-    "j_security_check" (the app router is mounted under quarkus.http.root-path;
-    the mechanism matches normalizedPath().endsWith("/j_security_check")). The
-    form action below is deliberately RELATIVE so it resolves against the
-    deployment root without this template knowing what that root is.
+    "j_security_check" (the mechanism matches
+    normalizedPath().endsWith("/j_security_check")). The form action below is
+    deliberately RELATIVE so it resolves against the current page, whose path
+    is /login at the server root.
   - Logo: fragments/logo-img points at the PUBLIC /logo endpoint, which serves
     the logo uploaded in Ajustes (or the factory PNG when none is set), so the
     same image shows on the login screen and across the whole app.
@@ -52,7 +52,7 @@
                             </div>
 
                             {! Rendered only when Quarkus form auth redirects back to
-                               {config:['quarkus.http.root-path']}/login?error after failed credentials. !}
+                               /login?error after failed credentials. !}
                             {#if error}
                             <div class="notification is-danger is-light" role="alert" id="login-error">
                                 <strong>Usuario o contraseña incorrectos.</strong>

@@ -82,7 +82,7 @@ import org.junit.jupiter.api.Test;
 @Tag("auth-matrix")
 class AuthJourneyTest {
 
-    private static final String BASE = "http://localhost:" + System.getProperty("quarkus.http.test-port", "8081") + "/Mercurius";
+    private static final String BASE = "http://localhost:" + System.getProperty("quarkus.http.test-port", "8081");
     private static final String SESSION_COOKIE = "quarkus-credential";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -182,7 +182,7 @@ class AuthJourneyTest {
         Response login = freshLogin();
         login.then()
                 .statusCode(302)
-                .header("Location", endsWith("/Mercurius/app"));
+                .header("Location", endsWith("/app"));
 
         String session = setCookieHeader(login, SESSION_COOKIE);
         org.junit.jupiter.api.Assertions.assertNotNull(session,
@@ -245,7 +245,7 @@ class AuthJourneyTest {
                 .when().post(BASE + "/j_security_check")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/app/dashboard"));
+                .header("Location", containsString("/app/dashboard"));
     }
 
     @Test
@@ -258,7 +258,7 @@ class AuthJourneyTest {
 
         bad.then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login?error"));
+                .header("Location", containsString("/login?error"));
 
         org.junit.jupiter.api.Assertions.assertNull(setCookieHeader(bad, SESSION_COOKIE),
                 "failed login must NOT issue a quarkus-credential cookie");

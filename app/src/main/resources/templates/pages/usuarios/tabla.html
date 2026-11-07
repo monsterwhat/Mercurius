@@ -41,7 +41,7 @@
                    autocomplete="off" spellcheck="false" enterkeyhint="search"
                    placeholder="Buscar por usuario, correo, rol o estado"
                    hx-preserve="true"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML" hx-sync="this:replace"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
@@ -74,14 +74,14 @@
                         <button type="button" class="button is-small" title="Editar usuario"
                                 aria-label="Editar usuario"
                                 aria-haspopup="dialog" data-kit-open="editar-usuario"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/users/formularios/{usuario.id}"
+                                hx-get="/api/app/users/formularios/{usuario.id}"
                                 hx-target="#editar-usuario-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         {! The confirm names the account and the consequence;
                            "Cambiar estado" alone made the operator guess. !}
                         <button type="button" class="button is-small"
                                 title="{#if usuario.status}Desactivar cuenta{#else}Activar cuenta{/if}"
                                 aria-label="{#if usuario.status}Desactivar cuenta{#else}Activar cuenta{/if}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}"
+                                hx-delete="/api/app/users/{usuario.id}"
                                 hx-confirm="{#if usuario.status}¿Desactivar la cuenta de {usuario.username}? No podrá iniciar sesión.{#else}¿Activar la cuenta de {usuario.username}? Podrá iniciar sesión de nuevo.{/if}"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
@@ -103,7 +103,7 @@
        workbook matches the visible table. !}
     {#if inject:securityIdentity.hasRole('admin')}
     <div class="buttons mt-4">
-        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+        <form method="post" action="/api/app/export">
             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
             <input type="hidden" name="dataset" value="usuarios"/>
             <input type="hidden" name="type" value="xlsx"/>

@@ -16,8 +16,8 @@
            la busqueda. La pestana cambia de estado llevandola. !}
         {#include _kit/view-tabs ariaLabel="Vistas de recibos"}
             {#tabs}
-            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes?q={filtros.q ?: ''}">Pendientes</a>
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos?q={filtros.q ?: ''}">Vencidos</a>
+            <a class="view-tab is-active" aria-current="page" href="/app/reportes/recibos/pendientes?q={filtros.q ?: ''}">Pendientes</a>
+            <a class="view-tab" href="/app/reportes/recibos/vencidos?q={filtros.q ?: ''}">Vencidos</a>
             {/tabs}
         {/include}
 
@@ -25,7 +25,7 @@
         <div class="notification">
             Este reporte es de solo lectura. Para marcar como pagadas, procesar o
             activar/desactivar las facturas recibidas,
-            <a href="{config:['quarkus.http.root-path']}/app/facturas-recibidas">Ir a facturas recibidas</a>
+            <a href="/app/facturas-recibidas">Ir a facturas recibidas</a>
             (pestañas Todas / Pagadas / Procesadas).
         </div>
 
@@ -35,7 +35,7 @@
                     <input class="input" type="text" id="recibos-pendientes-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Consecutivo, emisor, condición, fecha…"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                           hx-get="{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#recibos-pendientes-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
@@ -71,7 +71,7 @@
         </div>
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="recibos-pendientes"/>
                 <input type="hidden" name="type" value="xlsx"/>

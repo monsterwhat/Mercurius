@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 @Tag("w4b-views")
 class ClientesPageTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String TABLE_URL = BASE + "/api/app/clientes/table";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -202,7 +202,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/clientes")
                 .then()
                 .statusCode(200)
-                .header("HX-Redirect", equalTo("/Mercurius/app/clientes"));
+                .header("HX-Redirect", equalTo("/app/clientes"));
 
         Integer code = authed(session)
                 .queryParam("q", marker)

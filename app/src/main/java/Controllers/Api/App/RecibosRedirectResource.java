@@ -9,7 +9,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * "Recibos" son las facturas que se RECIBEN (las que pasan los proveedores).
@@ -32,9 +31,8 @@ public class RecibosRedirectResource {
 
     @GET
     public Response recibidos() {
-        String root = ConfigProvider.getConfig().getValue("quarkus.http.root-path", String.class);
         return Response.status(Response.Status.FOUND)
-                .header("Location", (root == null ? "" : root) + RECIBIDAS)
+                .header("Location", RECIBIDAS)
                 .build();
     }
 }

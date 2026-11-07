@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag("reportes-pages")
 class EstacionalidadReportesPageTest extends support.ContextPathIsolation {
 
-    private static final String PAGE_URL = "/Mercurius/app/reportes/estacionalidad";
+    private static final String PAGE_URL = "/app/reportes/estacionalidad";
 
     @Inject
     SeasonalityService seasonalityService;

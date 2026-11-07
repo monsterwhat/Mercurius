@@ -85,7 +85,7 @@
                 <button type="button" class="button is-medium is-primary is-outlined" aria-haspopup="dialog"
                         title="Buscar y asignar un cliente"
                         data-kit-open="modal-cliente"
-                        hx-get="{config:['quarkus.http.root-path']}/api/app/pos/client-picker?q="
+                        hx-get="/api/app/pos/client-picker?q="
                         hx-target="#modal-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="search" /} Cliente</button>
             </div>
         </div>
@@ -118,7 +118,7 @@
        guarantee implicit submission). !}
     <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
           aria-label="Agregar artículo por código de barras"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
+          hx-post="/api/app/pos/scan-form"
           hx-target="#cart-panel" hx-swap="outerHTML"
           hx-disabled-elt="#btn-agregar-scan">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:0">
@@ -140,7 +140,7 @@
                 <button type="button" class="button is-medium is-fullwidth" aria-haspopup="dialog"
                         title="Buscar y agregar un artículo"
                         data-kit-open="modal-articulos"
-                        hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
+                        hx-get="/api/app/pos/articulos-picker?q="
                         hx-target="#modal-articulos-body" hx-swap="innerHTML">{#include _kit/icon name="search" /} Buscar</button>
             </div>
         </div>
@@ -342,7 +342,7 @@
             }
             var seq = ++puntosSeq;
             puntosTimer = window.setTimeout(function () {
-                fetch('{config:['quarkus.http.root-path']}/api/app/pos/puntos-preview?puntos=' + encodeURIComponent(valor))
+                fetch('/api/app/pos/puntos-preview?puntos=' + encodeURIComponent(valor))
                     .then(function (r) {
                         return r.json();
                     })

@@ -76,7 +76,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("POS: canje y otorgamiento de puntos sin pérdida silenciosa")
 class PosFacturarPuntosTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
 
     /** Exento de IVA: el total de la venta es el precio efectivo, exacto. */

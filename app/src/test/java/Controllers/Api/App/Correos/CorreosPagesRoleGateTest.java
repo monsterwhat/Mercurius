@@ -21,8 +21,8 @@ import static io.restassured.RestAssured.given;
 @Tag("reportes-pages")
 class CorreosPagesRoleGateTest extends support.ContextPathIsolation {
 
-    private static final String REPORTES = "/Mercurius/app/correos/reportes";
-    private static final String PLANTILLAS = "/Mercurius/app/correos/plantillas";
+    private static final String REPORTES = "/app/correos/reportes";
+    private static final String PLANTILLAS = "/app/correos/plantillas";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})

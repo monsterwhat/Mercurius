@@ -18,8 +18,8 @@
            el rango; la seccion es propia de cada tablero. !}
         {#include _kit/view-tabs ariaLabel="Analisis en el tiempo"}
             {#tabs}
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias?desde={filtroInicio}&hasta={filtroFin}">Tendencias</a>
-            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad?inicio={filtroInicio}&fin={filtroFin}">Estacionalidad</a>
+            <a class="view-tab" href="/app/reportes/articulos/tendencias?desde={filtroInicio}&hasta={filtroFin}">Tendencias</a>
+            <a class="view-tab is-active" aria-current="page" href="/app/reportes/estacionalidad?inicio={filtroInicio}&fin={filtroFin}">Estacionalidad</a>
             {/tabs}
         {/include}
 
@@ -168,7 +168,7 @@
         </div>
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="estacionalidad"/>
                 <input type="hidden" name="type" value="xlsx"/>

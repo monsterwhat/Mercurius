@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.not;
 @Tag("reportes-pages")
 class ReportsHubRolesTest extends support.ContextPathIsolation {
 
-    private static final String HUB = "/Mercurius/app/reportes";
+    private static final String HUB = "/app/reportes";
 
     /**
      * The hub's own rows use this exact markup. Scoping to it is what keeps
@@ -26,7 +26,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
      * /app/articulos and /app/inventarios for the inventory role.
      */
     private static final String MENU_LINK =
-            "<a class=\"menu-link py-3 px-3\" href=\"/Mercurius";
+            "<a class=\"menu-link py-3 px-3\" href=\"";
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
@@ -40,9 +40,9 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("4 informes"))
                 .body(containsString("6 informes"))
                 .body(containsString("2 informes"))
-                .body(containsString("href=\"/Mercurius/app/facturas\""))
-                .body(containsString("href=\"/Mercurius/app/facturas-recibidas\""))
-                .body(containsString("href=\"/Mercurius/app/correos/reportes\""));
+                .body(containsString("href=\"/app/facturas\""))
+                .body(containsString("href=\"/app/facturas-recibidas\""))
+                .body(containsString("href=\"/app/correos/reportes\""));
     }
 
     @Test
@@ -52,11 +52,11 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(containsString("Reportes de Facturación"))
                 .body(containsString("Reportes de Inventarios"))
                 .body(containsString("5 informes"))
-                .body(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\""))
+                .body(containsString("href=\"/app/reportes/articulos/fechas\""))
                 .body(not(containsString(MENU_LINK + "/app/articulos\"")))
                 .body(not(containsString("Facturas y correo")))
-                .body(not(containsString("href=\"/Mercurius/app/facturas\"")))
-                .body(not(containsString("href=\"/Mercurius/app/tributacion/declaracion\"")));
+                .body(not(containsString("href=\"/app/facturas\"")))
+                .body(not(containsString("href=\"/app/tributacion/declaracion\"")));
     }
 
     @Test
@@ -97,9 +97,9 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 .body(not(containsString(MENU_LINK + "/app/reportes/articulos/departamentos\"")));
 
         // The cuts are still one click away from the canonical screen.
-        given().when().get("/Mercurius/app/reportes/articulos/ventas").then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/reportes/articulos/familias?"))
-                .body(containsString("href=\"/Mercurius/app/reportes/articulos/departamentos?"));
+        given().when().get("/app/reportes/articulos/ventas").then().statusCode(200)
+                .body(containsString("href=\"/app/reportes/articulos/familias?"))
+                .body(containsString("href=\"/app/reportes/articulos/departamentos?"));
     }
 
     /**
@@ -118,9 +118,9 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
                 // Rep. tendencias' cross-role cut stays reachable for every role.
                 .body(containsString(MENU_LINK + "/app/reportes/estacionalidad\""));
 
-        given().when().get("/Mercurius/app/reportes/inventario/resumen").then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/reportes/inventario/alertas?"))
-                .body(containsString("href=\"/Mercurius/app/reportes/inventario/pronosticos?"));
+        given().when().get("/app/reportes/inventario/resumen").then().statusCode(200)
+                .body(containsString("href=\"/app/reportes/inventario/alertas?"))
+                .body(containsString("href=\"/app/reportes/inventario/pronosticos?"));
     }
 
     /**
@@ -131,17 +131,17 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "almacenero", roles = {"inventario"})
     void dashboardHidesInvoiceBoardsFromRolesThatCannotOpenThem() {
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(not(containsString("href=\"/Mercurius/app/facturas\"")))
-                .body(not(containsString("href=\"/Mercurius/app/facturas-recibidas\"")));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/app/facturas\"")))
+                .body(not(containsString("href=\"/app/facturas-recibidas\"")));
     }
 
     @Test
     @TestSecurity(user = "facturador", roles = {"facturacion"})
     void dashboardShowsInvoiceBoardsToFacturacion() {
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/facturas\""))
-                .body(containsString("href=\"/Mercurius/app/facturas-recibidas\""));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(containsString("href=\"/app/facturas\""))
+                .body(containsString("href=\"/app/facturas-recibidas\""));
     }
 
     /**
@@ -160,7 +160,7 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "inventario", roles = {"inventario"})
     void movimientosIsAnInventoryReportNotASalesTab() {
-        given().when().get("/Mercurius/app/reportes/articulos/fechas").then().statusCode(200)
+        given().when().get("/app/reportes/articulos/fechas").then().statusCode(200)
                 .body(containsString("Reporte de Movimientos de Inventario"))
                 .body(not(containsString("Vistas de ventas")))
                 .body(not(containsString(">Por fecha<")));
@@ -171,13 +171,13 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
     void tributacionSeesTaxAndMailButNotStock() {
         given().when().get(HUB).then().statusCode(200)
                 .body(containsString("Facturas y correo"))
-                .body(containsString("href=\"/Mercurius/app/tributacion/declaracion\""))
-                .body(containsString("href=\"/Mercurius/app/correos/plantillas\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/estacionalidad\""))
+                .body(containsString("href=\"/app/tributacion/declaracion\""))
+                .body(containsString("href=\"/app/correos/plantillas\""))
+                .body(containsString("href=\"/app/reportes/estacionalidad\""))
                 .body(containsString("1 informes"))
                 .body(not(containsString("Reportes de Inventarios")))
-                .body(not(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\"")))
-                .body(not(containsString("href=\"/Mercurius/app/articulos\"")));
+                .body(not(containsString("href=\"/app/reportes/articulos/fechas\"")))
+                .body(not(containsString("href=\"/app/articulos\"")));
     }
 
     @Test
@@ -186,46 +186,46 @@ class ReportsHubRolesTest extends support.ContextPathIsolation {
         given().when().get(HUB).then().statusCode(200)
                 .body(containsString("Reportes de Facturación"))
                 .body(containsString("Reportes de Usuarios"))
-                .body(containsString("href=\"/Mercurius/app/reportes/estacionalidad\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/clientes\""))
-                .body(containsString("href=\"/Mercurius/app/reportes/loyalty\""))
+                .body(containsString("href=\"/app/reportes/estacionalidad\""))
+                .body(containsString("href=\"/app/reportes/clientes\""))
+                .body(containsString("href=\"/app/reportes/loyalty\""))
                 .body(containsString("1 informes"))
                 .body(not(containsString("Facturas y correo")))
                 .body(not(containsString("Reportes de Inventarios")))
-                .body(not(containsString("href=\"/Mercurius/app/reportes/articulos/fechas\"")));
+                .body(not(containsString("href=\"/app/reportes/articulos/fechas\"")));
     }
 
     @Test
     @TestSecurity(user = "registro", roles = {"registro"})
     void registroReachesRegistrosFromAjustesNotFromTheHub() {
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/registros/log\""))
-                .body(not(containsString("href=\"/Mercurius/app/correos/plantillas\"")));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(containsString("href=\"/app/registros/log\""))
+                .body(not(containsString("href=\"/app/correos/plantillas\"")));
     }
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void adminKeepsPlantillasInTheHubAndNoLongerInAjustes() {
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(not(containsString("href=\"/Mercurius/app/correos/plantillas\"")));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/app/correos/plantillas\"")));
 
         given().when().get(HUB).then().statusCode(200)
-                .body(containsString("href=\"/Mercurius/app/correos/plantillas\""));
+                .body(containsString("href=\"/app/correos/plantillas\""));
     }
 
     @Test
     @TestSecurity(user = "facturacion", roles = {"facturacion"})
     void facturacionStillCannotOpenTheHubButSeesNoNavbarEntry() {
         given().when().get(HUB).then().statusCode(403);
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(not(containsString("href=\"/Mercurius/app/reportes\"")));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/app/reportes\"")));
     }
 
     @Test
     @TestSecurity(user = "usuario", roles = {"usuario"})
     void usuarioStillCannotOpenTheHubButSeesNoNavbarEntry() {
         given().when().get(HUB).then().statusCode(403);
-        given().when().get("/Mercurius/app/dashboard").then().statusCode(200)
-                .body(not(containsString("href=\"/Mercurius/app/reportes\"")));
+        given().when().get("/app/dashboard").then().statusCode(200)
+                .body(not(containsString("href=\"/app/reportes\"")));
     }
 }

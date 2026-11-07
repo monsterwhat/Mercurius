@@ -28,25 +28,25 @@
         {#tabs}
         <a class="view-tab {#if modelo.bucket eq 'todas'}is-active{/if}"
            {#if modelo.bucket eq 'todas'}aria-current="page"{/if}
-           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=todas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
-           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=todas"
+           href="{modelo.baseUrl}?bucket=todas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{modelo.baseUrl}?bucket=todas"
            hx-target="#{modelo.id}" hx-swap="outerHTML">Todas</a>
         <a class="view-tab {#if modelo.bucket eq 'pendientes'}is-active{/if}"
            {#if modelo.bucket eq 'pendientes'}aria-current="page"{/if}
-           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=pendientes{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
-           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=pendientes"
+           href="{modelo.baseUrl}?bucket=pendientes{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{modelo.baseUrl}?bucket=pendientes"
            hx-target="#{modelo.id}" hx-swap="outerHTML">Pendientes de pago</a>
         <a class="view-tab {#if modelo.bucket eq 'vencidas'}is-active{/if}"
            {#if modelo.bucket eq 'vencidas'}aria-current="page"{/if}
-           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
-           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=vencidas"
+           href="{modelo.baseUrl}?bucket=vencidas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{modelo.baseUrl}?bucket=vencidas"
            hx-target="#{modelo.id}" hx-swap="outerHTML">Vencidas</a>
         {! Las desactivadas salen de "Todas"; sin esta bandeja no habia forma
            de volver a activarlas (el boton Activar/Desactivar es un toggle). !}
         <a class="view-tab {#if modelo.bucket eq 'inactivas'}is-active{/if}"
            {#if modelo.bucket eq 'inactivas'}aria-current="page"{/if}
-           href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=inactivas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
-           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket=inactivas"
+           href="{modelo.baseUrl}?bucket=inactivas{#if q??}{#if !q.isEmpty()}&q={q}{/if}{/if}"
+           hx-get="{modelo.baseUrl}?bucket=inactivas"
            hx-target="#{modelo.id}" hx-swap="outerHTML">Inactivas</a>
         {/tabs}
     {/include}
@@ -59,7 +59,7 @@
             <input class="input" type="text" id="recibidas-busqueda" name="q"
                    value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar por emisor, consecutivo, actividad..."
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-get="{modelo.baseUrl}?bucket={modelo.bucket}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"
                    hx-preserve="true" hx-sync="this:replace"/>
@@ -107,28 +107,28 @@
                         {#if !factura.processed && factura.status}
                         <button type="button" class="button is-small is-outlined"
                                 title="Procesar factura: crea los artículos y los movimientos de inventario"
-                                hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/procesar"
+                                hx-put="/api/app/facturas-recibidas/{factura.id}/procesar"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
                                 hx-disabled-elt="this"
                                 hx-confirm="¿Procesar la factura? Se crearán los artículos y los movimientos de inventario.">Procesar</button>
                         {/if}
                         {#if !factura.paid && factura.status}
                         <button type="button" class="button is-small is-outlined" title="Marcar como pagada"
-                                hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/pagar"
+                                hx-put="/api/app/facturas-recibidas/{factura.id}/pagar"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
                                 hx-disabled-elt="this"
                                 hx-confirm="¿Marcar la factura como pagada?">Pagar</button>
                         {/if}
                         <button type="button" class="button is-small is-outlined"
                                 title="Activar o desactivar la factura"
-                                hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}/toggle"
+                                hx-put="/api/app/facturas-recibidas/{factura.id}/toggle"
                                 hx-include="#recibidas-cubeta, #recibidas-busqueda"
                                 hx-disabled-elt="this"
                                 hx-confirm="¿{factura.status ? 'Desactivar' : 'Activar'} la factura?">{factura.status ? 'Desactivar' : 'Activar'}</button>
                         <button type="button" class="button is-small is-outlined" title="Revisar el detalle de la factura"
                                 aria-label="Revisar el detalle de la factura {#if factura.consecutivo??}{factura.consecutivo}{#else}{factura.id}{/if}"
                                 aria-haspopup="dialog" data-kit-open="detalle-factura"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{factura.id}"
+                                hx-get="/api/app/facturas-recibidas/{factura.id}"
                                 hx-target="#detalle-factura-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                     </div>
                 </td>
@@ -138,8 +138,8 @@
                 <p class="kit-empty">No se encontraron facturas recibidas{#if q??}{#if !q.isEmpty()} para &laquo;{q}&raquo;{/if}{/if} en esta bandeja.</p>
                 {#if q??}{#if !q.isEmpty()}
                 <a class="button is-small mt-2"
-                   href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   href="{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-get="{modelo.baseUrl}?bucket={modelo.bucket}"
                    hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar b&uacute;squeda</a>
                 {/if}{/if}
             </td></tr>

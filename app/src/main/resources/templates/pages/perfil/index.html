@@ -76,7 +76,7 @@
         {! ── Cambiar correo electrónico ──────────────────────────── !}
         {#include _kit/surface title="Cambiar correo electrónico"}
             {#content}
-            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/email"
+            <form hx-put="/api/app/perfil/email"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">
@@ -98,7 +98,7 @@
         {! ── Cambiar contraseña ──────────────────────────────────── !}
         {#include _kit/surface title="Cambiar contraseña"}
             {#content}
-            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/password"
+            <form hx-put="/api/app/perfil/password"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <p class="help mercurius-text-muted mb-4">

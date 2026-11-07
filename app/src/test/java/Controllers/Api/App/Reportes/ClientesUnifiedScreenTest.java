@@ -20,8 +20,8 @@ import java.util.List;
 @Tag("reportes-pages")
 class ClientesUnifiedScreenTest extends support.ContextPathIsolation {
 
-    private static final String PAGE_URL = "/Mercurius/app/reportes/clientes";
-    private static final String BASE = "/Mercurius";
+    private static final String PAGE_URL = "/app/reportes/clientes";
+    private static final String BASE = "";
     private static final String SEEDED_CLIENT = "Cliente Contado";
 
     @Inject

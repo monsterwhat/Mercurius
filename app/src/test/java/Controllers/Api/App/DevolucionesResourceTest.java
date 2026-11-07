@@ -71,7 +71,7 @@ import io.restassured.specification.RequestSpecification;
 @Tag("devoluciones")
 class DevolucionesResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/devoluciones";
     private static final String PAGES = BASE + "/app/devoluciones";
     private static final String CSRF_COOKIE = "csrf-token";

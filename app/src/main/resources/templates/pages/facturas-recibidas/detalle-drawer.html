@@ -77,7 +77,7 @@
         </div>
         <div class="level-right">
             <button type="button" class="button is-small"
-                    hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/prevalidacion"
+                    hx-get="/api/app/facturas-recibidas/{d.id}/prevalidacion"
                     hx-target="#prevalidacion-panel" hx-swap="innerHTML"
                     hx-disabled-elt="this">
                 {#include _kit/icon name="refresh" /}
@@ -86,7 +86,7 @@
         </div>
     </div>
     <div id="prevalidacion-panel" aria-live="polite"
-         hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/prevalidacion"
+         hx-get="/api/app/facturas-recibidas/{d.id}/prevalidacion"
          hx-trigger="load" hx-swap="innerHTML">
         <p class="kit-empty">Validando la factura&hellip;</p>
     </div>
@@ -94,7 +94,7 @@
     {! ── Líneas (revisión + corrección CAByS + aceptación parcial) ───── !}
     <hr/>
     <form id="recibidas-lineas-forma"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+          hx-post="/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
           hx-target="#detalle-factura-body" hx-swap="innerHTML"
           hx-disabled-elt="find button[type='submit']">
         <input type="hidden" name="codigoMensaje" value="2"/>
@@ -127,7 +127,7 @@
                                aria-label="Código CAByS de la línea {#if linea.numeroLinea??}{linea.numeroLinea}{#else}{linea.id}{/if}"
                                name="codigoCabys-{linea.id}" value="{#if linea.codigoCabys??}{linea.codigoCabys}{/if}"
                                title="Corregir código CAByS (13 dígitos)"
-                               hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/lineas/{linea.id}"
+                               hx-put="/api/app/facturas-recibidas/{d.id}/lineas/{linea.id}"
                                hx-trigger="change" hx-target="#detalle-factura-body" hx-swap="innerHTML"/>
                     </td>
                     <td class="num">{#if linea.cantidad??}{fmt:numero(linea.cantidad)}{#else}&mdash;{/if}</td>
@@ -151,14 +151,14 @@
 
     {! ── Mensaje Receptor: aceptar / rechazar (legacy parity) ────────── !}
     <div class="buttons mt-2">
-        <form hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+        <form hx-post="/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
               hx-target="#detalle-factura-body" hx-swap="innerHTML"
               hx-disabled-elt="find button[type='submit']">
             <input type="hidden" name="codigoMensaje" value="1"/>
             <button class="button is-primary" type="submit"
                     hx-confirm="¿Aceptar la factura y enviar el Mensaje Receptor a Hacienda?">Aceptar Factura</button>
         </form>
-        <form hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+        <form hx-post="/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
               hx-target="#detalle-factura-body" hx-swap="innerHTML"
               hx-disabled-elt="find button[type='submit']">
             <input type="hidden" name="codigoMensaje" value="3"/>

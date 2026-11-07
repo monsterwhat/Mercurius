@@ -17,9 +17,9 @@ import static org.hamcrest.Matchers.not;
 @QuarkusTest
 class CorreosManagementExportTest extends support.ContextPathIsolation {
 
-    private static final String MGMT_PAGE = "/Mercurius/app/correos/reportes";
-    private static final String REPORT_PAGE = "/Mercurius/app/reportes/correos";
-    private static final String EXPORT = "/Mercurius/api/app/export";
+    private static final String MGMT_PAGE = "/app/correos/reportes";
+    private static final String REPORT_PAGE = "/app/reportes/correos";
+    private static final String EXPORT = "/api/app/export";
 
     @Test
     @TestSecurity(user = "tributacion-user", roles = {"tributacion"})

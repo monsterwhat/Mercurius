@@ -33,7 +33,7 @@
     {! One form, so Enter in the username field submits it like the button:
        hx-post lived on the button and the keyboard had no way through. !}
     <form id="forma-autorizacion"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/override-authorize-form"
+          hx-post="/api/app/pos/override-authorize-form"
           hx-target="#modal-autorizacion-body" hx-swap="outerHTML"
           hx-disabled-elt="find button">
         <div class="field">

@@ -177,12 +177,17 @@ public class TributacionResource {
     HttpHeaders httpHeaders;
 
     /**
-     * Same root-path the _kit fragments resolve via
-     * {config:['quarkus.http.root-path']} in Qute; needed here because the
-     * countdown fragment is built in Java, where Qute expressions do not run.
+     * Deployment root, normalized to "" when the app is served at "/"; needed
+     * here because the countdown fragment is built in Java, where Qute
+     * expressions do not run.
      */
     @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/")
     String rootPath;
+
+    /** Root path normalized to empty at "/" so URLs never start with "//". */
+    private String rootBase() {
+        return rootPath == null || rootPath.isBlank() || "/".equals(rootPath) ? "" : rootPath;
+    }
 
     // ════════════════════════════════════════════════════════════════════
     // Dashboard (legacy HaciendaDashboardController)
@@ -675,7 +680,7 @@ public class TributacionResource {
         sb.append("<span id=\"consultas-countdown\" class=\"is-family-monospace has-text-weight-bold is-size-4\" style=\"color:white\"")
                 .append(" data-countdown-display=\"").append(escape(dto.countdownDisplay())).append("\"")
                 .append(" title=\"").append(escape(dto.proximoEnvioDisplay())).append("\"")
-                .append(" hx-get=\"").append(rootPath).append("/api/app/tributacion/consultas/countdown\"")
+                .append(" hx-get=\"").append(rootBase()).append("/api/app/tributacion/consultas/countdown\"")
                 .append(" hx-trigger=\"every 5s\"")
                 .append(" hx-swap=\"outerHTML\">")
                 .append(escape(dto.proximoEnvioDisplay()))

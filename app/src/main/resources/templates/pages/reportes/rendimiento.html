@@ -58,7 +58,7 @@
         {#include pages/reportes/_tablas/rendimiento /}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="rendimiento"/>
                 <input type="hidden" name="type" value="xlsx"/>
@@ -72,7 +72,7 @@
             {#chartBody}
                 <canvas id="grafica-rendimiento" role="img"
                         aria-label="Ventas por departamento en colones del período seleccionado"
-                        data-root="{config:['quarkus.http.root-path']}"
+                        data-root=""
                         data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
                     Su navegador no soporta canvas.
                 </canvas>

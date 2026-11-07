@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("loyalty-pages")
 class LoyaltyAdminPageTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String PAGE_URL = BASE + "/api/app/loyalty/table";
     private static final String SETTINGS_FORM_URL = BASE + "/api/app/loyalty/settings/form";
     private static String drawerUrl(int clientCode) {

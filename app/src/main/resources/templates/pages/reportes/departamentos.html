@@ -34,9 +34,9 @@
            los tres y nunca rompe el ? con un & huerfano. !}
         {#include _kit/view-tabs ariaLabel="Vistas de ventas"}
             {#tabs}
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por cajero</a>
-            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por departamento</a>
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por familia</a>
+            <a class="view-tab" href="/app/reportes/articulos/ventas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por cajero</a>
+            <a class="view-tab is-active" aria-current="page" href="/app/reportes/articulos/departamentos?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por departamento</a>
+            <a class="view-tab" href="/app/reportes/articulos/familias?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por familia</a>
             {/tabs}
         {/include}
 
@@ -46,7 +46,7 @@
         {/include}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="reportes-departamentos"/>
                 <input type="hidden" name="type" value="xlsx"/>

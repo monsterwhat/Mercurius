@@ -15,5 +15,5 @@
     {#if icon??}<span class="empty-state-icon">{#include _kit/icon name=icon /}</span>{/if}
     <p class="empty-state-title">{title}</p>
     {#if message??}<p class="empty-state-text">{message}</p>{/if}
-    {#if actionHref?? && actionLabel??}<a class="button is-small" href="{config:['quarkus.http.root-path']}{actionHref}">{actionLabel}</a>{/if}
+    {#if actionHref?? && actionLabel??}<a class="button is-small" href="{actionHref}">{actionLabel}</a>{/if}
 </div>

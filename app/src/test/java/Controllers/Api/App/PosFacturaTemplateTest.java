@@ -57,7 +57,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @Tag("t37-templates")
 class PosFacturaTemplateTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String PAGE_URL = BASE + "/app/pos";
     private static final String POS = BASE + "/api/app/pos";
     private static final String CSRF_COOKIE = "csrf-token";
@@ -287,13 +287,13 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 .body(containsString("id=\"barcode-input\""))
                 .body(containsString("autofocus"))
                 .body(containsString("name=\"codigoBarra\""))
-                .body(containsString("hx-post=\"/Mercurius/api/app/pos/scan-form\""))
+                .body(containsString("hx-post=\"/api/app/pos/scan-form\""))
                 // live sale panel + actions
                 .body(containsString("id=\"cart-panel\""))
                 .body(containsString("id=\"btn-facturar\""))
                 .body(containsString("id=\"btn-cancelar\""))
-                .body(containsString("hx-post=\"/Mercurius/api/app/pos/cancel-form\""))
-                .body(containsString("hx-get=\"/Mercurius/api/app/pos/checkout-dialog\""))
+                .body(containsString("hx-post=\"/api/app/pos/cancel-form\""))
+                .body(containsString("hx-get=\"/api/app/pos/checkout-dialog\""))
                 // dialogs + tipo-cambio badge + keyboard-first refocus glue
                 .body(containsString("id=\"modal-cobro\""))
                 .body(containsString("id=\"modal-cliente\""))
@@ -495,7 +495,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 .contentType(ContentType.HTML)
                 .body(containsString("id=\"client-picker-fragmento\""))
                 .body(containsString(cliente.getName()))
-                .body(containsString("hx-post=\"/Mercurius/api/app/pos/client-select-form\""))
+                .body(containsString("hx-post=\"/api/app/pos/client-select-form\""))
                 .body(containsString("value=\"" + cliente.getCode() + "\""))
                 .body(containsString("Seleccionar"))
                 .body(not(containsString("<html")));
@@ -902,7 +902,7 @@ authed(session)
                 .body(containsString("name=\"dolares\""))
                 .body(containsString("id=\"cobro-vuelto\""))
                 .body(containsString("id=\"btn-cobro-facturar\""))
-                .body(containsString("hx-post=\"/Mercurius/api/app/pos/facturar-form\""))
+                .body(containsString("hx-post=\"/api/app/pos/facturar-form\""))
                 .body(containsString("hx-include=\"#forma-tipo-documento\""))
                 // a dialog body, never a second copy of the sale panel
                 .body(not(containsString("id=\"cart-panel\"")));
@@ -918,7 +918,7 @@ authed(session)
 
     /** First href value in the fragment (the PDF link is the only anchor). */
     private static String extractHref(String html) {
-        int marker = html.indexOf("href=\"/Mercurius/api/app/pos/facturas/");
+        int marker = html.indexOf("href=\"/api/app/pos/facturas/");
         if (marker < 0) {
             return "";
         }

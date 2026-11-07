@@ -26,7 +26,7 @@ public class AppLauncher {
 
     private static final String LOCK_FILE_PATH = System.getProperty("java.io.tmpdir") + "/mercurius.lock";
     /** Qute/HTMX landing (the JSF-era index.xhtml is only a redirect trap now). */
-    private static final String APP_URL = "http://localhost:8081/Mercurius/app";
+    private static final String APP_URL = "http://localhost:8081/app";
 
     /**
      * Auto-open del navegador al arrancar. Apagado por defecto: abrir pestanas

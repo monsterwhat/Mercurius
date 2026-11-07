@@ -199,7 +199,7 @@ function kitUploadProgress() {
  * Opt-in contract (additive; W5 migrates the two polling pages):
  *
  *   <div id="inventario-badges"
- *        hx-get="/Mercurius/api/app/inventario/badges"
+ *      hx-get="/api/app/inventario/badges"
  *        hx-trigger="every 30s" hx-swap="innerHTML"
  *        data-poll
  *        data-poll-age="#inventario-poll-age">
@@ -291,7 +291,7 @@ function kitPolling() {
  * Opt-in contract (additive; the two attributes are the only markup needed):
  *
  *   <a class="button is-dark"
- *      href="/Mercurius/app/pos/standalone"
+ *      href="/app/pos/standalone"
  *      target="_blank"
  *      rel="noopener"
  *      data-kit-popup="nuevaFactura"

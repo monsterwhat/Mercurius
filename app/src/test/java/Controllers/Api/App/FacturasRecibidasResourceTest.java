@@ -110,7 +110,7 @@ import org.junit.jupiter.api.Test;
 @Tag("facturas-recibidas")
 class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/facturas-recibidas";
     /** Real anonymized v4.4 factura received (FE) that drives every upload scenario. */
     private static final String FACTURA_REAL = "fe-v44-13";

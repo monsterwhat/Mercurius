@@ -24,7 +24,7 @@
                    placeholder="Buscar movimientos procesados..."
                    aria-label="Buscar movimientos procesados por artículo, código o tipo de movimiento"
                    enterkeyhint="search"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -51,11 +51,11 @@
                         <button type="button" class="button is-small" title="Ver detalles"
                                 aria-label="Ver detalles del ajuste {movimiento.codigo}"
                                 aria-haspopup="dialog" data-kit-open="detalles-ajuste"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
+                                hx-get="/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
                                 hx-target="#detalles-ajuste-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         <button type="button" class="button is-small is-danger" title="Deshacer procesamiento"
                                 aria-label="Deshacer el procesamiento del movimiento {movimiento.codigo}"
-                                hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{movimiento.codigo}/reabrir"
+                                hx-post="/api/app/inventario/ajustes/{movimiento.codigo}/reabrir"
                                 hx-confirm="¿Deshacer el procesamiento del movimiento {movimiento.codigo}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="refresh" /}</button>
                     </div>

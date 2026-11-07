@@ -69,7 +69,7 @@
              subtitle="Plantillas reutilizables para el envío automático de reportes" }
             {#actions}
                 <button type="button" class="button is-light"
-                        hx-post="{config:['quarkus.http.root-path']}/api/app/email-templates/predeterminadas"
+                        hx-post="/api/app/email-templates/predeterminadas"
                         hx-confirm="¿Cargar las plantillas predeterminadas? Solo se crean las que falten."
                         hx-disabled-elt="this">Cargar predeterminadas</button>
                 {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-primary"
@@ -100,7 +100,7 @@
                                value="{#if tablaPlantillas.q??}{tablaPlantillas.q}{/if}"
                                autocomplete="off" enterkeyhint="search"
                                placeholder="Nombre, tipo o asunto"
-                               hx-get="{config:['quarkus.http.root-path']}{tablaPlantillas.baseUrl}"
+                               hx-get="{tablaPlantillas.baseUrl}"
                                hx-trigger="keyup changed delay:300ms, search"
                                hx-sync="this:replace"
                                hx-target="#{tablaPlantillas.id}" hx-swap="outerHTML"/>

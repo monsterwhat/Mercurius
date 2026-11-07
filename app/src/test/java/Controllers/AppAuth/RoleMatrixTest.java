@@ -53,7 +53,7 @@ import org.junit.jupiter.api.Test;
 @Tag("auth-matrix")
 class RoleMatrixTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     // ── admin-sees-all expansion proof ──────────────────────────────────
 
@@ -144,6 +144,6 @@ class RoleMatrixTest extends support.ContextPathIsolation {
                 .when().get(BASE + "/api/app/cabys")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 }

@@ -116,9 +116,9 @@ public final class AppRecursoBase {
      * La ruta raíz se antepone aquí. El valor del encabezado
      * HX-Redirect lo resuelve el NAVEGADOR contra el origen, no contra la
      * aplicación: sin el prefijo de {@code quarkus.http.root-path} el navegador
-     * pedía {@code /api/app/...} sobre una aplicación montada en
-     * {@code /Mercurius} y la respuesta era un 404. Todos los call sites
-     * pasan una ruta relativa al despliegue y el helper la vuelve absoluta.
+     * pedía {@code /api/app/...} sobre una aplicación montada en un
+     * subdirectorio y la respuesta era un 404. Con el despliegue actual en la
+     * raíz ({@code /}) el helper devuelve la ruta tal cual.
      */
     private static String rootPath() {
         return org.eclipse.microprofile.config.ConfigProvider.getConfig()

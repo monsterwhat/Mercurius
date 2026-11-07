@@ -48,7 +48,7 @@ import Services.PromocionesService;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ArticuloResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String ARTICULOS = BASE + "/api/app/articulos";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
@@ -186,7 +186,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                 .when().get(ARTICULOS + "?tab=activos")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test

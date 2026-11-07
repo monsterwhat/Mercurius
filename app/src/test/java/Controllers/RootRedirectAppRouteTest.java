@@ -76,6 +76,25 @@ class RootRedirectAppRouteTest extends AppBase {
     // ── scenarios ─────────────────────────────────────────────────────────
 
     @Test
+    void rootRedirectPathIsNotDoubled() {
+        // The container prepends quarkus.http.root-path to absolute Location
+        // values. At "/" that must stay a no-op: a doubled slash would turn
+        // /app/dashboard into //app/dashboard, i.e. a protocol-relative URL
+        // whose "host" is "app".
+        String location = given().redirects().follow(false)
+                .when().get("/")
+                .then()
+                .statusCode(303)
+                .extract().header("Location");
+
+        String path = java.net.URI.create(location).getPath();
+        org.junit.jupiter.api.Assertions.assertEquals("/app/dashboard", path,
+                "GET / must redirect to /app/dashboard, got " + location);
+        org.junit.jupiter.api.Assertions.assertFalse(path.startsWith("//"),
+                "the deployment root must not be applied twice: " + location);
+    }
+
+    @Test
     void anonymousAppRouteNever404s() {
         // Either the permission matcher covers bare /app -> form challenge
         // (302 /login), or the route short-circuits to the dashboard (303).

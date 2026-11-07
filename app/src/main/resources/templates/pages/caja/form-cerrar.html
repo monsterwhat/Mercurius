@@ -42,7 +42,7 @@
 {#include _kit/surface id="panel-cerrar-caja" title="Cerrar Sesión" }
     {#content}
     <form id="forma-cerrar-caja"
-          hx-post="{config:['quarkus.http.root-path']}/api/app/caja/close/form"
+          hx-post="/api/app/caja/close/form"
           hx-target="#caja-estado" hx-swap="innerHTML">
         <div class="columns">
             <div class="column">

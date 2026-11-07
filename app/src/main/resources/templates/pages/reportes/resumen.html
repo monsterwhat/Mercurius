@@ -19,9 +19,9 @@
            cada tablero ignora lo que no lee. Los vacíos equivalen a ausentes. !}
         {#include _kit/view-tabs ariaLabel="Vistas de inventario"}
             {#tabs}
-            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Resumen</a>
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Pronósticos</a>
-            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Alertas</a>
+            <a class="view-tab is-active" aria-current="page" href="/app/reportes/inventario/resumen?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Resumen</a>
+            <a class="view-tab" href="/app/reportes/inventario/pronosticos?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Pronósticos</a>
+            <a class="view-tab" href="/app/reportes/inventario/alertas?familia={filtros.familia ?: ''}&departamento={filtros.departamento ?: ''}&q={filtros.q ?: ''}&dias={filtros.dias ?: ''}">Alertas</a>
             {/tabs}
         {/include}
 
@@ -74,7 +74,7 @@
             </div>
             {#actions}
             <a class="button"
-               href="{config:['quarkus.http.root-path']}{baseUrl}?vista={vista}">Limpiar Filtros</a>
+               href="{baseUrl}?vista={vista}">Limpiar Filtros</a>
             {/actions}
         {/include}
 
@@ -84,7 +84,7 @@
         {/include}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="inventario-resumen"/>
                 <input type="hidden" name="type" value="xlsx"/>

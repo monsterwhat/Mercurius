@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class ProfileEmailValidationTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
 

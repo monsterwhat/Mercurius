@@ -56,7 +56,7 @@ import org.junit.jupiter.api.Test;
 @Tag("auth-static")
 class StaticAssetContractTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
 
     /**
      * The bundle filenames are content-hashed by the web bundler, so they are

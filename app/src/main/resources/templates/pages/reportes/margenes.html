@@ -21,7 +21,7 @@
             <div class="field">
                 <label class="label" for="margenes-inicio">Fecha Inicio</label>
                 <input class="input" type="date" id="margenes-inicio" name="inicio" value="{filtroInicio}"
-                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-get="{baseUrl}"
                        hx-trigger="change"
                        hx-include="closest form"
                        hx-target="#margenes-tabla-container" hx-swap="innerHTML"/>
@@ -29,7 +29,7 @@
             <div class="field">
                 <label class="label" for="margenes-fin">Fecha Fin</label>
                 <input class="input" type="date" id="margenes-fin" name="fin" value="{filtroFin}"
-                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-get="{baseUrl}"
                        hx-trigger="change"
                        hx-include="closest form"
                        hx-target="#margenes-tabla-container" hx-swap="innerHTML"/>
@@ -38,7 +38,7 @@
                 <label class="label" for="margenes-departamento">Departamento</label>
                 <div class="control select">
                     <select class="select" id="margenes-departamento" name="departamento"
-                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                            hx-get="{baseUrl}"
                             hx-trigger="change"
                             hx-include="closest form"
                             hx-target="#margenes-tabla-container" hx-swap="innerHTML">
@@ -53,7 +53,7 @@
                 <label class="label" for="margenes-familia">Familia</label>
                 <div class="control select">
                     <select class="select" id="margenes-familia" name="familia"
-                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                            hx-get="{baseUrl}"
                             hx-trigger="change"
                             hx-include="closest form"
                             hx-target="#margenes-tabla-container" hx-swap="innerHTML">
@@ -71,7 +71,7 @@
         {/include}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="profit-margins"/>
                 <input type="hidden" name="type" value="xlsx"/>

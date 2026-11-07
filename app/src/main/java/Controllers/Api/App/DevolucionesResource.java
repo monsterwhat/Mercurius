@@ -1301,9 +1301,12 @@ public class DevolucionesResource {
     /** Print URL served by the pre-existing PdfFileServlet (/facturas/*). */
     private @Nonnull String printUrl(@Nullable String clave) {
         String nombre = clave == null ? "" : "factura_" + clave + ".pdf";
-        String base = rootPath == null || rootPath.isBlank() || "/".equals(rootPath)
-                ? "" : rootPath;
-        return base + "/facturas/" + nombre;
+        return rootBase() + "/facturas/" + nombre;
+    }
+
+    /** Deployment root normalized to empty at "/" so URLs never start with "//". */
+    private @Nonnull String rootBase() {
+        return rootPath == null || rootPath.isBlank() || "/".equals(rootPath) ? "" : rootPath;
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -1385,7 +1388,7 @@ public class DevolucionesResource {
                     .append("<td>").append(escape(str(fila.get("cliente")))).append("</td>")
                     .append("<td class=\"has-text-right\">").append(escape(str(fila.get("total")))).append("</td>")
                     .append("<td><button type=\"button\" class=\"button is-warning is-small\"")
-                    .append(" hx-get=\"").append(rootPath).append("/api/app/devoluciones/").append(fid).append("/lineas\"")
+                    .append(" hx-get=\"").append(rootBase()).append("/api/app/devoluciones/").append(fid).append("/lineas\"")
                     .append(" hx-target=\"#devolucion-panel\" hx-swap=\"innerHTML\">Seleccionar</button></td>")
                     .append("</tr>");
         }
@@ -1408,7 +1411,7 @@ public class DevolucionesResource {
         sb.append("<h3 class=\"title is-5\">Devolución - Factura ")
                 .append(escape(str(header.get("consecutivo")))).append("</h3>");
         sb.append("<form id=\"devolucion-form\"")
-                .append(" hx-post=\"").append(rootPath).append("/api/app/devoluciones/initiate\"")
+                .append(" hx-post=\"").append(rootBase()).append("/api/app/devoluciones/initiate\"")
                 .append(" hx-trigger=\"change from:#devolucion-form input[name='lineaCantidad']\"")
                 .append(" hx-target=\"#devolucion-total-server\" hx-swap=\"innerHTML\">");
         sb.append("<input type=\"hidden\" name=\"facturaId\" value=\"").append(id).append("\"/>");
@@ -1457,7 +1460,7 @@ public class DevolucionesResource {
      * rendered for a concrete selection.
      */
     private @Nonnull String includeKitModal(long facturaId) {
-        String bodyUrl = rootPath + "/api/app/devoluciones/" + facturaId + "/authform";
+        String bodyUrl = rootBase() + "/api/app/devoluciones/" + facturaId + "/authform";
         return "<div class=\"kit-modal-root\" style=\"display:inline-block\" x-data=\"{ open:false }\">"
                 + "<button type=\"button\" class=\"button is-danger\" aria-haspopup=\"dialog\""
                 + " @click=\"open = true; $nextTick(() => $refs.card.focus())\""
@@ -1482,7 +1485,7 @@ public class DevolucionesResource {
     }
 
     private @Nonnull String authformFragment(long facturaId) {
-        String action = rootPath + "/api/app/devoluciones/" + facturaId + "/authorize";
+        String action = rootBase() + "/api/app/devoluciones/" + facturaId + "/authorize";
         return "<form id=\"auth-devolucion-form\" method=\"post\" action=\"" + escape(action) + "\""
                 + " hx-post=\"" + escape(action) + "\""
                 + " hx-include=\"#devolucion-form, #devolucion-motivo\""

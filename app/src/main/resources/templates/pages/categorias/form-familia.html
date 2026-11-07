@@ -16,10 +16,10 @@
 !}
 <div id="forma-familia">
     {#if modo == 'editar' && familia??}
-    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="/api/app/categorias/familias/{familia.id}"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {#else}
-    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/familias"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="/api/app/categorias/familias"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {/if}
         <div class="field">

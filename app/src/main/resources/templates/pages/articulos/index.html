@@ -99,7 +99,7 @@
                         {#include _kit/modal id="crear-articulo" title="Crear Artículo" triggerLabel="Crear Artículo" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
                         {#if canExport}
-                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                        <form method="post" action="/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
@@ -124,7 +124,7 @@
             {#include _kit/surface title="Artículos Inactivos" }
                 {#actions}
                     {#if canExport}
-                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <form method="post" action="/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -146,7 +146,7 @@
             {#include _kit/surface title="Artículos Procesados" }
                 {#actions}
                     {#if canExport}
-                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <form method="post" action="/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -173,12 +173,12 @@
                             {#trigger}
                                 <button type="button" class="button" aria-haspopup="dialog"
                                         @click="open = true; $nextTick(() => $refs.card.focus())"
-                                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/revision/siguiente"
+                                        hx-get="/api/app/articulos/revision/siguiente"
                                         hx-target="#revision-rapida-body" hx-swap="innerHTML">Procesado Rápido</button>
                             {/trigger}
                         {/include}
                         {#if canExport}
-                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                        <form method="post" action="/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
@@ -206,7 +206,7 @@
                         {#include _kit/modal id="crear-promocion" title="Crear Promoción" triggerLabel="Crear Promoción" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}
                         {#if canExport}
-                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                        <form method="post" action="/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>
@@ -241,7 +241,7 @@
     {#include _kit/surface title="Márgenes de ganancia"
          subtitle="Porcentaje aplicado a los productos según su tipo de refrigeración. Cada cambio queda registrado en el historial."}
         {#content}
-        <form hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
+        <form hx-post="/api/app/settings/margen"
               hx-swap="none"
               hx-disabled-elt="find button[type='submit']"
               hx-on::after-request="if (event.detail.successful) { window.location.reload(); } else { document.getElementById('margen-resultado').textContent = 'No se pudieron guardar los márgenes.'; }">

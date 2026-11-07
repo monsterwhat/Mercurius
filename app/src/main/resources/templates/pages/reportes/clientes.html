@@ -33,7 +33,7 @@
                 <input class="input" type="text" id="clientes-q" name="q"
                        value="{#if filtros.q??}{filtros.q}{/if}"
                        placeholder="Nombre, correo, cédula."
-                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-get="{baseUrl}"
                        hx-trigger="keyup changed delay:300ms"
                        hx-include="closest form"
                        hx-target="#clientes-tabla-container" hx-swap="innerHTML" hx-sync="this:replace"/>
@@ -65,12 +65,12 @@
                             {#if inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('usuario')}
                             <button type="button" class="button is-small" title="Editar cliente" aria-label="Editar cliente {c.name}"
                                     aria-haspopup="dialog" data-kit-open="editar-cliente"
-                                    hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{c.code}"
+                                    hx-get="/api/app/clientes/formularios/{c.code}"
                                     hx-target="#editar-cliente-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                             <button type="button" class="button is-small" title="{#if c.status}Desactivar cliente{#else}Activar cliente{/if}"
                                     aria-label="{#if c.status}Desactivar cliente{#else}Activar cliente{/if}"
                                     data-archivar
-                                    hx-delete="{config:['quarkus.http.root-path']}/api/app/clientes/{c.code}"
+                                    hx-delete="/api/app/clientes/{c.code}"
                                     hx-confirm="{#if c.status}¿Desactivar al cliente {c.name}? Dejará de aparecer como activo.{#else}¿Activar al cliente {c.name}? Volverá a aparecer como activo.{/if}"
                                     hx-target="#clientes-tabla-container" hx-swap="innerHTML">{#include _kit/icon name="power" /}</button>
                             {/if}
@@ -93,7 +93,7 @@
         {/if}
 
         <div class="buttons mt-4">
-            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+            <form method="post" action="/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="clientes"/>
                 <input type="hidden" name="type" value="xlsx"/>

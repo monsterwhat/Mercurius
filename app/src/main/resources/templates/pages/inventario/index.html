@@ -52,7 +52,7 @@
         {! The four counts are a TAB SWITCHER, and they are polled so an
            approval made on another screen shows up here without a reload. !}
         <div id="inventario-badges"
-             hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/badges"
+             hx-get="/api/app/inventario/badges"
              hx-trigger="every 30s" hx-swap="innerHTML"
              data-poll data-poll-age="#inventario-edad">
             {#include pages/inventario/badges badges=badges /}
@@ -68,7 +68,7 @@
                     {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-primary"
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
-                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <form method="post" action="/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>
                         <input type="hidden" name="type" value="pdf"/>
@@ -110,7 +110,7 @@
                     {#trigger}
                         <button type="button" class="button" aria-haspopup="dialog"
                                 @click="open = true; $nextTick(() => $refs.card.focus())"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/rapido"
+                                hx-get="/api/app/inventario/formularios/rapido"
                                 hx-target="#rapido-inventario-body" hx-swap="innerHTML">Procesado Rápido</button>
                     {/trigger}
                 {/include}

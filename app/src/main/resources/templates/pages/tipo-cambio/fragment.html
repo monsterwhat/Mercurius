@@ -59,7 +59,7 @@
             <div class="buttons">
                 <button class="button is-primary" type="button"
                         data-tc-actualizar
-                        hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/actualizar"
+                        hx-post="/app/tipo-cambio/actualizar"
                         hx-target="#tc-contenido"
                         hx-swap="outerHTML"
                         hx-disabled-elt="this">
@@ -94,7 +94,7 @@
 
     {#include _kit/surface title="Tasa manual del dólar" }
         {#content}
-        <form hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/manual"
+        <form hx-post="/app/tipo-cambio/manual"
               hx-target="#tc-contenido" hx-swap="outerHTML"
               hx-disabled-elt="find button[type='submit']">
             <div class="columns is-mobile">
@@ -140,7 +140,7 @@
                             @click="tcHistorialOpen = false"></button>
                 </header>
                 <section class="modal-card-body" id="tc-historial-body"
-                         hx-get="{config:['quarkus.http.root-path']}/app/tipo-cambio/historial"
+                         hx-get="/app/tipo-cambio/historial"
                          hx-trigger="load"
                          hx-swap="innerHTML">
                     <p class="kit-empty" role="status">Cargando historial&hellip;</p>

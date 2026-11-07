@@ -38,7 +38,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CategoriaResourceTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
 
@@ -92,7 +92,7 @@ class CategoriaResourceTest extends support.ContextPathIsolation {
                 .when().get(BASE + "/api/app/categorias/familias")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test
@@ -265,7 +265,7 @@ class CategoriaResourceTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/categorias/familias")
                 .then()
                 .statusCode(302)
-                .header("Location", containsString("/Mercurius/login"));
+                .header("Location", containsString("/login"));
     }
 
     @Test
@@ -324,7 +324,7 @@ class CategoriaResourceTest extends support.ContextPathIsolation {
                 .body(containsString("toast-container"))
                 // D5: the ranking is its own report now; the page links to it
                 // instead of rendering a duplicate leaderboard.
-                .body(containsString("href=\"/Mercurius/app/reportes/proveedores\""))
+                .body(containsString("href=\"/app/reportes/proveedores\""))
                 .body(not(containsString("Ranking de Rendimiento de Proveedores")));
     }
 

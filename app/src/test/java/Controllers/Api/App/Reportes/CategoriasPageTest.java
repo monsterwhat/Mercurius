@@ -22,7 +22,7 @@ class CategoriasPageTest extends support.ContextPathIsolation {
     @TestSecurity(user = "gestor", roles = {"inventario"})
     void tabIsReadFromAndWrittenToTheUrl() {
         given()
-                .when().get("/Mercurius/app/categorias?tab=departamentos")
+                .when().get("/app/categorias?tab=departamentos")
                 .then()
                 .statusCode(200)
                 .body(containsString("new URLSearchParams(location.search).get('tab')"))

@@ -81,7 +81,7 @@
                     {#include _kit/modal id="crear-familia" title="Crear Familia" triggerLabel="Crear Familia" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
-                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <form method="post" action="/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -108,7 +108,7 @@
                     {#include _kit/modal id="crear-departamento" title="Crear Departamento" triggerLabel="Crear Departamento" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro') || inject:securityIdentity.hasRole('admin') || inject:securityIdentity.hasRole('inventario')}
-                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <form method="post" action="/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -132,7 +132,7 @@
            ranking is no longer duplicated here; the button keeps it one click
            away. !}
         <p class="mt-5">
-            <a class="button is-light" href="{config:['quarkus.http.root-path']}/app/reportes/proveedores" title="Ranking de rendimiento de proveedores">
+            <a class="button is-light" href="/app/reportes/proveedores" title="Ranking de rendimiento de proveedores">
                 <span class="icon is-small mr-2">{#include _kit/icon name="chart" size="small" /}</span>
                 <span>Ver ranking de proveedores</span>
             </a>

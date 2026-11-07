@@ -15,8 +15,8 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 /**
  * Auto-404: any unmatched JAX-RS path (no @Path) is mapped here.
  * - /api/* -> JSON 404 (so API clients / tests keep proper 404 envelope)
- * - anonymous -> 303 to /Mercurius/login (so deep-links/logged-out bookmarks land on login)
- * - authenticated -> 303 to /Mercurius/app (dashboard landing)
+ * - anonymous -> 303 to /login (so deep-links/logged-out bookmarks land on login)
+ * - authenticated -> 303 to /app (dashboard landing)
  *
  * <p>Both browser outcomes are redirects rather than a rendered 404 body: a
  * logged-out bookmark belongs on the login page, and a stale link typed by a
@@ -50,8 +50,8 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
                     .build();
         }
         boolean anonymous = identity == null || identity.isAnonymous();
-        // Deployment-relative targets: the container prepends the root path.
-        // A literal /Mercurius here was doubled by the container.
+        // Deployment-relative targets: the container prepends the root path
+        // (a no-op at "/"), so no prefix belongs here.
         if (anonymous) {
             return Response.seeOther(URI.create("/login")).build();
         }

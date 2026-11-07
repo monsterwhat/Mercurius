@@ -18,9 +18,8 @@
                                   StockAlertService.getActiveStockAlerts()
                                   (the REPORT rendering belongs to T19).
 
-  CSRF is inherited from layout.html body hx-headers; root-path prefixing is
-  applied from configuration ({config:['quarkus.http.root-path']}), so this
-  template never hard-codes the deployment root.
+  CSRF is inherited from layout.html body hx-headers; URLs are absolute root
+  paths (/app/...), never a deployment prefix.
 
   WHAT CHANGED IN THE UI PASS
     - The header was a hand-rolled `div.level` with a bare <h1>; it is a
@@ -100,14 +99,14 @@
                                placeholder="Ej: 1024"
                                aria-describedby="input-articulo-ayuda"
                                value="{articuloCodigoInput}"
-                               hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                               hx-get="{baseUrl}"
                                hx-trigger="change, search"
                                hx-sync="this:replace"
                                hx-target="#alerta-config-forma" hx-swap="outerHTML"/>
                     </div>
                     <div class="control">
                         <button class="button" type="button"
-                                hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                                hx-get="{baseUrl}"
                                 hx-include="#input-articulo"
                                 hx-target="#alerta-config-forma" hx-swap="outerHTML">Cargar</button>
                     </div>
@@ -120,7 +119,7 @@
             {#fragment forma}
             <div id="alerta-config-forma">
                 {#if cargado && umbral?? && umbral.articuloCodigo??}
-                <form hx-put="{config:['quarkus.http.root-path']}/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
+                <form hx-put="/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
                       hx-target="#alerta-config-forma" hx-swap="outerHTML">
                     <input type="hidden" name="estadoAlertasPresente" value="1"/>
                     <p class="is-size-7 mercurius-text-muted">

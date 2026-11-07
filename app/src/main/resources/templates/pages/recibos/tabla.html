@@ -31,7 +31,7 @@
                     <input class="input is-small" type="text" id="{modelo.id}-q" name="q"
                            value="{#if q??}{q}{/if}" autocomplete="off"
                            placeholder="Buscar facturas..."
-                           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                           hx-get="{modelo.baseUrl}?bucket={modelo.bucket}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="#{modelo.id}" hx-swap="outerHTML"
                            hx-preserve="true" hx-sync="this:replace"/>
@@ -63,7 +63,7 @@
                             aria-label="Ver el detalle de la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}"
                             aria-haspopup="dialog"
                             data-kit-open="recibo-detalle"
-                            hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
+                            hx-get="/api/app/recibos/{fila.dto.id}"
                             hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">{#include _kit/icon name="eye" /}</button>
                 </td>
             </tr>
@@ -72,8 +72,8 @@
                 <p class="kit-empty">No se encontraron facturas{#if q??}{#if !q.isEmpty()} para &laquo;{q}&raquo;{/if}{/if} en esta vista.</p>
                 {#if q??}{#if !q.isEmpty()}
                 <a class="button is-small mt-2"
-                   href="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                   href="{modelo.baseUrl}?bucket={modelo.bucket}"
+                   hx-get="{modelo.baseUrl}?bucket={modelo.bucket}"
                    hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar b&uacute;squeda</a>
                 {/if}{/if}
             </td></tr>

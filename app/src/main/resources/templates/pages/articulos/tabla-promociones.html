@@ -37,7 +37,7 @@
                    placeholder="Buscar promociones…"
                    aria-label="Buscar promociones por nombre"
                    enterkeyhint="search" spellcheck="false"
-                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                   hx-get="{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-sync="this:replace"
@@ -66,11 +66,11 @@
                         <button type="button" class="button is-small" title="Editar promoción"
                                 aria-label="Editar promoción"
                                 aria-haspopup="dialog" data-kit-open="editar-promocion"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/{promocion.id}"
+                                hx-get="/api/app/articulos/formularios/promociones/{promocion.id}"
                                 hx-target="#editar-promocion-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small" title="Eliminar promoción"
                                 aria-label="Eliminar promoción"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
+                                hx-delete="/api/app/articulos/promociones/{promocion.id}"
                                 hx-confirm="¿Eliminar la promoción {promocion.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                     </div>
@@ -83,7 +83,7 @@
                     <p class="has-text-weight-semibold">Sin resultados para «{q}»</p>
                     <p class="help">Revise el nombre de la promoción o limpie la búsqueda.</p>
                     <button type="button" class="button is-small mt-2"
-                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
+                            hx-get="{modelo.baseUrl}"
                             hx-include="#tab-{modelo.id}"
                             hx-on::before-request="document.getElementById('buscar-{modelo.id}').focus()"
                             hx-target="#{modelo.id}" hx-swap="outerHTML">Limpiar búsqueda</button>

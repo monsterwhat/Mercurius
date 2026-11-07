@@ -69,18 +69,18 @@
                         <button type="button" class="button is-small" title="Editar reporte programado"
                                 aria-label="Editar reporte programado {reporte.perfil}"
                                 aria-haspopup="dialog" data-kit-open="editar-reporte"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/reportes-programados/formularios/{reporte.id}"
+                                hx-get="/api/app/reportes-programados/formularios/{reporte.id}"
                                 hx-target="#editar-reporte-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         <button type="button" class="button is-small"
                                 title="{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} reporte programado"
                                 aria-label="{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} reporte programado {reporte.perfil}"
-                                hx-put="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}/toggle"
+                                hx-put="/api/app/reportes-programados/{reporte.id}/toggle"
                                 hx-confirm="¿{#if reporte.estado}Deshabilitar{#else}Habilitar{/if} el reporte programado {reporte.perfil}?"
                                 hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                         <button type="button" class="button is-small is-danger" title="Eliminar reporte programado"
                                 aria-label="Eliminar reporte programado {reporte.perfil}"
-                                hx-delete="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}"
+                                hx-delete="/api/app/reportes-programados/{reporte.id}"
                                 hx-confirm="¿Eliminar el reporte programado {reporte.perfil}? Esta acción no se puede deshacer."
                                 hx-disabled-elt="this"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
@@ -93,7 +93,7 @@
                 <td colspan="{modelo.columnas.size()}" class="has-text-centered">
                     {#if q}
                     <span class="kit-empty">No hay reportes que coincidan con «{q}».</span>
-                    <a class="button is-small is-text mt-2" href="{config:['quarkus.http.root-path']}{modelo.baseUrl}">Ver todos los reportes</a>
+                    <a class="button is-small is-text mt-2" href="{modelo.baseUrl}">Ver todos los reportes</a>
                     {#else}
                     <span class="kit-empty">Todavía no hay reportes programados.</span>
                     {/if}

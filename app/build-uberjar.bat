@@ -24,7 +24,7 @@ if exist "target\mercurius-quarkus-runner.jar" (
     dir "target\mercurius-quarkus-runner.jar" | find "mercurius-quarkus-runner.jar"
     echo.
     echo 🚀 To run: java -jar target\mercurius-quarkus-runner.jar
-    echo 🌐 Application will be available at: http://localhost:8081/Mercurius
+    echo 🌐 Application will be available at: http://localhost:8081/app
 ) else (
     echo ❌ Build failed! Check the error messages above.
 )

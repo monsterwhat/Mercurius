@@ -25,10 +25,10 @@
 !}
 <div id="forma-cliente">
     {#if modo == 'editar' && cliente??}
-    <form hx-disabled-elt="find button[type='submit']" hx-put="{config:['quarkus.http.root-path']}/api/app/clientes/{cliente.code}"
+    <form hx-disabled-elt="find button[type='submit']" hx-put="/api/app/clientes/{cliente.code}"
           hx-target="#forma-cliente" hx-swap="outerHTML">
     {#else}
-    <form hx-disabled-elt="find button[type='submit']" hx-post="{config:['quarkus.http.root-path']}/api/app/clientes"
+    <form hx-disabled-elt="find button[type='submit']" hx-post="/api/app/clientes"
           hx-target="#forma-cliente" hx-swap="outerHTML">
     {/if}
         {#if modo == 'editar' && cliente??}
@@ -324,7 +324,7 @@
                 if (msg) { msg.textContent = 'Consultando Gometa…'; }
                 buscar.disabled = true;
                 buscar.setAttribute('aria-busy', 'true');
-                fetch('{config:['quarkus.http.root-path']}/api/app/clientes/lookup?cedula=' + encodeURIComponent(cedulaInput.value))
+                fetch('/api/app/clientes/lookup?cedula=' + encodeURIComponent(cedulaInput.value))
                     .then(function (r) { return r.json(); })
                     .then(function (env) {
                         var d = env.data || { };
@@ -385,7 +385,7 @@
         }
         var zonas = document.getElementById('zonas-list');
         if (zonas) {
-            fetch('{config:['quarkus.http.root-path']}/api/app/clientes/zonas')
+            fetch('/api/app/clientes/zonas')
                 .then(function (r) { return r.json(); })
                 .then(function (env) {
                     (env.data || []).forEach(function (z) {

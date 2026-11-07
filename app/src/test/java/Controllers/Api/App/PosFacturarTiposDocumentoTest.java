@@ -60,7 +60,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("POS: creación de cada tipo de comprobante")
 class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String POS = BASE + "/api/app/pos";
 
     private static final String PRECIO = "1000";

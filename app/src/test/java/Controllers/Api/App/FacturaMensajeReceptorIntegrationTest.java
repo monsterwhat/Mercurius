@@ -62,7 +62,7 @@ import support.FacturasReales;
 @Tag("facturas-recibidas")
 class FacturaMensajeReceptorIntegrationTest extends support.ContextPathIsolation {
 
-    private static final String BASE = "/Mercurius";
+    private static final String BASE = "";
     private static final String API = BASE + "/api/app/facturas-recibidas";
     /** Real anonymized v4.4 factura received (FE) behind every happy path. */
     private static final String FACTURA_REAL = "fe-v44-13";

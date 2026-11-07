@@ -51,7 +51,7 @@ import org.junit.jupiter.api.Test;
 @Tag("caja")
 class CierreCajaResourceTest {
 
-    private static final String BASE = "http://localhost:" + System.getProperty("quarkus.http.test-port", "8081") + "/Mercurius";
+    private static final String BASE = "http://localhost:" + System.getProperty("quarkus.http.test-port", "8081");
     private static final String SUMMARY_URL = BASE + "/api/app/caja";
     private static final String OPEN_URL = BASE + "/api/app/caja/open";
     private static final String CLOSE_URL = BASE + "/api/app/caja/close";
