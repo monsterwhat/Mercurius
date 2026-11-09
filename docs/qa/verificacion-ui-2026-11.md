@@ -519,3 +519,21 @@ Los clientes viejos no tienen fecha de nacimiento (238/238), ni tipo/número de 
 - El select de tipo de identificación muestra “Sin definir” solo al editar un cliente cuyo valor es NULL, para que guardar no lo cambie a “Cédula Física” por accidente. Al crear, el valor por defecto sigue siendo Cédula Física.
 - Pruebas nuevas en `ClientesPageTest`: crear solo con nombre; editar con los opcionales en blanco conserva los valores guardados; cliente con tipo NULL renderiza la opción vacía y sigue NULL tras guardar.
 - Suite completa: 1427 tests, 0 fallos.
+
+## 26. Importación de facturas del 31/10 al 2/11 y del 8/11 (2026-11-09)
+
+Se reprocesaron los ZIP de `Z:\Facturas` (copiados y extraídos fuera de Z:): 45.762 XML revisados, **14.903 claves únicas**. Dry-run con rollback y luego aplicación con `scripts/importar_xml_emitidas.sql` (idempotente por clave de Hacienda).
+
+**Servidor .72 (`mercurius`):**
+- **936 comprobantes nuevos** (917 tiquetes + 19 facturas) y **1.682 líneas**.
+  - 31/10–2/11: 714 (hueco: la importación anterior arrancaba el 3/11).
+  - 08/11: 221; 07/11: 1.
+- Verificado que **ningún consecutivo** de los nuevos existía ya: 0 colisiones.
+- Totales: comprobantes **1.151.994 → 1.152.930**; última factura `00100001040000817627` del **08/11/2026 22:07:06**.
+- Sin errores; el importador no toca inventario ni movimientos.
+
+**Base shadow (5433):** misma importación → **1.855 claves nuevas** y 3.322 líneas (la shadow no tenía las 919 importadas antes en .72; ahora queda al día, con la factura de prueba del descuento incluida).
+
+**Pendiente:**
+- Movimientos de inventario: siguen hasta el **1/11**; no hay backup nuevo de `Z:\Sistema` (el último es del 2/11 18:29).
+- Los XML viejos no traen filas en la tabla `descuento` (el importador es anterior a esa tabla); si una factura histórica tenía descuento por línea, se ven los totales pero no el detalle del descuento.
