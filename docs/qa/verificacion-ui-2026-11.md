@@ -476,3 +476,10 @@ La app estaba **apagada desde el 4/11** (servicio `inactive`/`disabled`; el serv
 - Se ejecutó el updater: descargó y verificó v3.0.0 (105.786.811 bytes), reinició y quedó escuchando en 8081.
 - Ahora la instancia interna sirve en la **raíz**: /login 200, /logo 200, / 303; /Mercurius/... redirige. Coincide con producción.
 - Versión: 3.0.0; respaldo del jar anterior en Mercurius-runner.jar.bak (2.33.54); 0 ERROR.
+## 22. Nuevo host 192.168.1.72 y reimportación (2026-11-08)
+
+- El servidor ya **no está en 192.168.100.99**: ahora es **`192.168.1.72`** (hostname `home-dev`), app **v3.0.0 en la raíz**, updater habilitado y backups diarios (7 y 8 de noviembre).
+- Acceso SSH con `F:\Documents\prKey.ppk` (PPK → usar `plink`/`pscp`), host key `SHA256:xtXyQV3R03Anr3WoWOh5bac9H/Us5to5w4bpnPHERTc`.
+- Se reaplicó la zona horaria del sistema: estaba en **UTC**; ahora `America/Costa_Rica` (`CST`). El script de arranque ya lleva `-Duser.timezone=America/Costa_Rica`.
+- **Reimportación en la base de .72:** 919 facturas (929 desde el 3/11; última `00100001040000817405` del 07/11 22:15) + 1.640 líneas, y **+12.878 movimientos** (total 1.490.117). Verificado en la app por búsqueda del consecutivo. 0 ERROR.
+- La importación anterior (sección 20) fue en la base de `.99`, que ya no existe; esta es la buena.
