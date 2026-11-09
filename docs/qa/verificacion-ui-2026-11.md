@@ -534,6 +534,8 @@ Se reprocesaron los ZIP de `Z:\Facturas` (copiados y extraídos fuera de Z:): 45
 
 **Base shadow (5433):** misma importación → **1.855 claves nuevas** y 3.322 líneas (la shadow no tenía las 919 importadas antes en .72; ahora queda al día, con la factura de prueba del descuento incluida).
 
+**Secuencias:** las columnas `id` son IDENTITY y el importador inserta ids explícitos, así que las secuencias reales quedaban atrás (5 tablas, ~1.855 ids) y la siguiente emisión habría colisionado. Se adelantaron con `setval(max(id))` en .72 y en la shadow; además `scripts/importar_xml_emitidas.sql` ahora las avanza dentro de la misma transacción (con rollback en dry-run).
+
 **Pendiente:**
 - Movimientos de inventario: siguen hasta el **1/11**; no hay backup nuevo de `Z:\Sistema` (el último es del 2/11 18:29).
 - Los XML viejos no traen filas en la tabla `descuento` (el importador es anterior a esa tabla); si una factura histórica tenía descuento por línea, se ven los totales pero no el detalle del descuento.

@@ -140,6 +140,18 @@ FROM mapa_x m JOIN x_enc e ON e.clave = m.clave;
 UPDATE detalle_servicio d SET comprobante_emitido_id = m.com_id
 FROM mapa_x m WHERE d.id = m.det_id;
 
+-- Los id son IDENTITY: al insertar ids explícitos hay que avanzar las
+-- secuencias reales o la próxima emisión/edición colisiona con lo importado.
+SELECT setval(pg_get_serial_sequence('identificacion_emisor', 'id'), (SELECT coalesce(max(id), 1) FROM identificacion_emisor));
+SELECT setval(pg_get_serial_sequence('emisor', 'id'), (SELECT coalesce(max(id), 1) FROM emisor));
+SELECT setval(pg_get_serial_sequence('identificacion_receptor', 'id'), (SELECT coalesce(max(id), 1) FROM identificacion_receptor));
+SELECT setval(pg_get_serial_sequence('receptor', 'id'), (SELECT coalesce(max(id), 1) FROM receptor));
+SELECT setval(pg_get_serial_sequence('encabezado', 'id'), (SELECT coalesce(max(id), 1) FROM encabezado));
+SELECT setval(pg_get_serial_sequence('detalle_servicio', 'id'), (SELECT coalesce(max(id), 1) FROM detalle_servicio));
+SELECT setval(pg_get_serial_sequence('resumen_factura', 'id'), (SELECT coalesce(max(id), 1) FROM resumen_factura));
+SELECT setval(pg_get_serial_sequence('comprobantesemitidos', 'id'), (SELECT coalesce(max(id), 1) FROM comprobantesemitidos));
+SELECT setval(pg_get_serial_sequence('linea_detalle', 'id'), (SELECT coalesce(max(id), 1) FROM linea_detalle));
+
 \echo '===== totales'
 SELECT 'encabezado' AS tabla, count(*) AS filas FROM encabezado
 UNION ALL SELECT 'comprobantesemitidos', count(*) FROM comprobantesemitidos
