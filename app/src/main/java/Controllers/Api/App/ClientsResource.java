@@ -508,6 +508,7 @@ public class ClientsResource {
             @FormParam("idNumber") @Nullable String idNumber,
             @FormParam("birthDate") @Nullable String birthDate,
             @FormParam("taxpayer") @Nullable String taxpayer,
+            @FormParam("discount") @Nullable String discount,
             @FormParam("actividad") @Nullable List<String> actividad) {
         String nombre = trimToEmpty(name);
         if (nombre.isEmpty()) {
@@ -521,7 +522,7 @@ public class ClientsResource {
         }
 
         Response result = create(buildDetailDTO(nombre, email, address, phoneNumber,
-                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount), actividad));
         return handleFormMutationResult(result, "crear", null,
                 "/app/clientes");
     }
@@ -547,6 +548,7 @@ public class ClientsResource {
             @FormParam("idNumber") @Nullable String idNumber,
             @FormParam("birthDate") @Nullable String birthDate,
             @FormParam("taxpayer") @Nullable String taxpayer,
+            @FormParam("discount") @Nullable String discount,
             @FormParam("actividad") @Nullable List<String> actividad) {
         String nombre = trimToEmpty(name);
         if (nombre.isEmpty()) {
@@ -562,7 +564,7 @@ public class ClientsResource {
         }
 
         Response result = update(code, buildDetailDTO(nombre, email, address, phoneNumber,
-                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount), actividad));
         return handleFormMutationResult(result, "editar", clientService.find(code),
                 "/app/clientes");
     }
@@ -620,6 +622,9 @@ public class ClientsResource {
         }
         target.setTaxpayer(dto.isTaxpayer()); // primitive: always present
         target.setZoneCode(dto.getZoneCode()); // primitive: always present
+        if (dto.getDiscount() != null) {
+            target.setDiscount(dto.getDiscount());
+        }
         if (dto.getTipoIdentificacion() != null) {
             target.setTipoIdentificacion(dto.getTipoIdentificacion());
         }
@@ -690,7 +695,7 @@ public class ClientsResource {
                         actividad.getId(), actividad.getCodigo(), actividad.getDescripcion()));
             }
         }
-        return new ClientsDetailDTO(client.getCode(), client.getName(), client.getAddress(),
+        ClientsDetailDTO dto = new ClientsDetailDTO(client.getCode(), client.getName(), client.getAddress(),
                 client.getProvincia(), client.getCanton(), client.getDistrito(),
                 client.getEmail(), client.getBirthDate(), client.getIdType(),
                 client.getIdNumber(), client.getPhoneNumber(), client.isTaxpayer(),
@@ -700,6 +705,8 @@ public class ClientsResource {
                 usuario != null ? usuario.getId() : null,
                 usuario != null ? usuario.getUsername() : null,
                 actividades);
+        dto.setDiscount(client.getDiscount());
+        return dto;
     }
 
     // ── W4B template-model helpers (CategoriaResource/T18 conventions) ──────
@@ -722,6 +729,24 @@ public class ClientsResource {
             return Integer.parseInt(raw.trim());
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    /**
+     * Porcentaje de descuento del cliente (0-100). Blank -> null (no toca el
+     * valor guardado); fuera de rango se recorta. Acepta coma decimal.
+     */
+    @Nullable
+    private static Double parseDescuento(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            double value = Double.parseDouble(raw.trim().replace(',', '.'));
+            return Math.min(100d, Math.max(0d, value));
+        } catch (NumberFormatException e) {
+            LOG.warnf("descuento de cliente invalido, se ignora: %s", raw);
+            return null;
         }
     }
 
@@ -748,6 +773,7 @@ public class ClientsResource {
                                                    @Nullable String idNumber,
                                                    @Nullable Date birthDate,
                                                    @Nullable String taxpayer,
+                                                   @Nullable Double discount,
                                                    @Nullable List<String> actividad) {
         ClientsDetailDTO dto = new ClientsDetailDTO();
         dto.setName(nombre);
@@ -759,6 +785,7 @@ public class ClientsResource {
         dto.setIdNumber(emptyToNull(idNumber));
         dto.setBirthDate(birthDate);
         dto.setTaxpayer(taxpayer != null);
+        dto.setDiscount(discount);
         List<ClientsDetailDTO.ActividadInfo> actividades = new ArrayList<>();
         if (actividad != null) {
             for (String codigo : actividad) {

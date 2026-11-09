@@ -498,3 +498,15 @@ Implementado:
 - Datos: importados los 19 descuentos reales del DBF (`CLIENTES.DESCUENTO`) por nombre; 3 clientes al 50% y el resto 5/10%.
 
 **Pendiente menor:** exponer “Descuento (%)” en el formulario de cliente (hoy se edita en BD) y agregar la prueba automática del flujo completo de emisión con descuento.
+
+## 24. Campo “Descuento (%)” en el formulario de cliente (3.0.3)
+
+El descuento estaba solo en la base; ahora se edita desde la UI.
+
+- `GET /api/app/clientes/formularios/{code}` y `POST/PUT` aceptan `discount` (0–100, admite coma decimal; vacío conserva el valor guardado; fuera de rango se recorta a 0/100).
+- El detalle JSON (`GET /api/app/clientes/{code}`) devuelve `data.discount`.
+- Formulario: campo numérico “Descuento (%)” en la sección Contacto, con `min=0 max=100 step=0.01` y texto de ayuda (“Se aplica a cada línea del POS…”).
+- Pruebas: `ClientesPageTest` cubre crear con descuento y editar (12,5 %; un valor en blanco no lo borra).
+- Prueba en local (shadow, zoidberg): cliente 1 con 50 % → formulario muestra 50, se cambia a 25 y guarda; POS con BOHEMIA ₡600 queda en **₡450** (descuento ₡132,74, IVA ₡51,77). Datos de prueba revertidos (descuento 50, fecha y cédula en blanco).
+
+**Nota:** el formulario exige fecha de nacimiento e identificación; clientes viejos que las tienen vacías (p. ej. JR. ALVARO) no se pueden guardar sin llenarlas. Es previo a este cambio, pero conviene relajarlo si se van a editar clientes importados.

@@ -37,6 +37,8 @@ public class ClientsDetailDTO {
     @Nullable private String statusPuntos; //Status of points: 'active', 'inactive', 'expired'
     @Nullable private Long usuarioId; // Flattened: Clientes.usuario.id
     @Nullable private String usuarioNombre; // Flattened: Clientes.usuario.username
+    /** Descuento del cliente en porcentaje (0-100), aplicado POR LINEA en el POS. */
+    @Nullable private Double discount;
     private List<ActividadInfo> actividades = new ArrayList<>(); // Flattened: Códigos de actividad económica CIIU4 del cliente ante Hacienda
 
     public ClientsDetailDTO() {
@@ -148,6 +150,10 @@ public class ClientsDetailDTO {
     @Nullable
     public String getUsuarioNombre() { return usuarioNombre; }
     public void setUsuarioNombre(@Nullable String usuarioNombre) { this.usuarioNombre = usuarioNombre; }
+
+    @Nullable
+    public Double getDiscount() { return discount; }
+    public void setDiscount(@Nullable Double discount) { this.discount = discount; }
 
     public List<ActividadInfo> getActividades() { return actividades; }
     public void setActividades(List<ActividadInfo> actividades) {

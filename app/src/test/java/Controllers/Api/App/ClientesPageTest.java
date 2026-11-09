@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -198,6 +199,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .formParam("idType", "Cédula Física")
                 .formParam("idNumber", "W4B-" + System.nanoTime())
                 .formParam("birthDate", "1992-07-01")
+                .formParam("discount", "25")
                 .formParam("actividad", "561110")
                 .when().post(BASE + "/api/app/clientes")
                 .then()
@@ -218,7 +220,49 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .body("data.name", equalTo(marker))
                 .body("data.actividades.size()", greaterThanOrEqualTo(1));
 
+        // El descuento del formulario se persiste y se devuelve en el detalle.
+        assertEquals(25.0, clientService.find(code).getDiscount());
+        authed(session)
+                .when().get(BASE + "/api/app/clientes/" + code)
+                .then()
+                .statusCode(200)
+                .body("data.discount", equalTo(25.0f));
+
         clientService.delete(clientService.find(code));
+    }
+
+    @Test
+    void formTwinEditPersistsDiscountAndBlankKeepsStoredValue() {
+        Map<String, String> session = adminSession();
+        String marker = "W4B Edit Desc " + System.nanoTime();
+        Clientes cliente = seedCliente(marker);
+        try {
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("name", marker)
+                    .formParam("discount", "12,5")
+                    .when().put(BASE + "/api/app/clientes/" + cliente.getCode())
+                    .then()
+                    .statusCode(200)
+                    .header("HX-Redirect", equalTo("/app/clientes"));
+
+            assertEquals(12.5, clientService.find(cliente.getCode()).getDiscount());
+
+            // Un descuento en blanco no borra el valor guardado (merge-style).
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("name", marker)
+                    .formParam("discount", "")
+                    .when().put(BASE + "/api/app/clientes/" + cliente.getCode())
+                    .then()
+                    .statusCode(200);
+
+            assertEquals(12.5, clientService.find(cliente.getCode()).getDiscount());
+        } finally {
+            clientService.delete(clientService.find(cliente.getCode()));
+        }
     }
 
     @Test

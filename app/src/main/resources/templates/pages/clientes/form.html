@@ -149,6 +149,20 @@
                     </div>
                 </div>
             </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-discount">Descuento (%)</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="100" step="0.01"
+                               id="cliente-discount" name="discount" inputmode="decimal"
+                               aria-describedby="cliente-discount-help"
+                               value="{#if cliente??}{cliente.discount}{/if}"/>
+                    </div>
+                    <p class="help" id="cliente-discount-help">
+                        Se aplica a cada línea del POS. 0 o vacío = sin descuento.
+                    </p>
+                </div>
+            </div>
         </div>
 
         {! ── Dirección y zona ────────────────────────────────────────────── !}
