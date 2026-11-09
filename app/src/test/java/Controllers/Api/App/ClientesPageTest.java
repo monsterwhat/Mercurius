@@ -266,6 +266,108 @@ class ClientesPageTest extends support.ContextPathIsolation {
     }
 
     @Test
+    void formTwinCreateWithOnlyNameSucceeds() {
+        Map<String, String> session = adminSession();
+        String marker = "W4B Minimal " + System.nanoTime();
+        Clientes persisted = null;
+        try {
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("name", marker)
+                    .when().post(BASE + "/api/app/clientes")
+                    .then()
+                    .statusCode(200)
+                    .header("HX-Redirect", equalTo("/app/clientes"));
+
+            Integer code = authed(session)
+                    .queryParam("q", marker)
+                    .when().get(BASE + "/api/app/clientes")
+                    .then()
+                    .statusCode(200)
+                    .extract().jsonPath().getInt("data[0].code");
+
+            persisted = clientService.find(code);
+            assertNotNull(persisted);
+            assertEquals(marker, persisted.getName());
+        } finally {
+            if (persisted != null) {
+                clientService.delete(persisted);
+            }
+        }
+    }
+
+    @Test
+    void formTwinEditBlankOptionalsKeepsStoredValues() {
+        Map<String, String> session = adminSession();
+        String marker = "W4B Edit Blank " + System.nanoTime();
+        Clientes cliente = seedCliente(marker);
+        try {
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("name", marker)
+                    .formParam("birthDate", "")
+                    .formParam("idType", "")
+                    .formParam("idNumber", "")
+                    .formParam("phoneNumber", "")
+                    .formParam("address", "")
+                    .when().put(BASE + "/api/app/clientes/" + cliente.getCode())
+                    .then()
+                    .statusCode(200)
+                    .header("HX-Redirect", equalTo("/app/clientes"));
+
+            Clientes updated = clientService.find(cliente.getCode());
+            assertEquals("Barrio W4B", updated.getAddress());
+            assertEquals("8888-0000", updated.getPhoneNumber());
+            assertEquals("Cedula Fisica", updated.getIdType());
+            assertEquals(cliente.getIdNumber(), updated.getIdNumber());
+            assertEquals(null, updated.getBirthDate());
+        } finally {
+            clientService.delete(clientService.find(cliente.getCode()));
+        }
+    }
+
+    @Test
+    void formTwinEditNullIdTypeKeepsNullAndRendersEmptyOption() {
+        Map<String, String> session = adminSession();
+        String marker = "W4B NullIdType " + System.nanoTime();
+        Clientes cliente = new Clientes();
+        cliente.setName(marker);
+        cliente.setEmail(marker.replace(" ", "") + "@mercurius.local");
+        cliente.setAddress("Barrio W4B");
+        cliente.setPhoneNumber("8888-0000");
+        cliente.setIdType(null);
+        cliente.setIdNumber(null);
+        cliente.setDiscount(0.0);
+        cliente.setTaxpayer(false);
+        cliente.setZoneCode(1);
+        cliente.setStatus(Boolean.TRUE);
+        clientService.create(cliente);
+        try {
+            authed(session)
+                    .when().get(BASE + "/api/app/clientes/formularios/" + cliente.getCode())
+                    .then()
+                    .statusCode(200)
+                    .body(containsString("<option value=\"\" selected>Sin definir</option>"));
+
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("name", marker)
+                    .formParam("idType", "")
+                    .when().put(BASE + "/api/app/clientes/" + cliente.getCode())
+                    .then()
+                    .statusCode(200)
+                    .header("HX-Redirect", equalTo("/app/clientes"));
+
+            assertEquals(null, clientService.find(cliente.getCode()).getIdType());
+        } finally {
+            clientService.delete(clientService.find(cliente.getCode()));
+        }
+    }
+
+    @Test
     void hxDeleteReturnsRefreshedTableFragment() {
         Map<String, String> session = adminSession();
         String marker = "W4B HXDel " + System.nanoTime();

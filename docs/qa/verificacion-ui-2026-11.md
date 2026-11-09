@@ -510,3 +510,12 @@ El descuento estaba solo en la base; ahora se edita desde la UI.
 - Prueba en local (shadow, zoidberg): cliente 1 con 50 % → formulario muestra 50, se cambia a 25 y guarda; POS con BOHEMIA ₡600 queda en **₡450** (descuento ₡132,74, IVA ₡51,77). Datos de prueba revertidos (descuento 50, fecha y cédula en blanco).
 
 **Nota:** el formulario exige fecha de nacimiento e identificación; clientes viejos que las tienen vacías (p. ej. JR. ALVARO) no se pueden guardar sin llenarlas. Es previo a este cambio, pero conviene relajarlo si se van a editar clientes importados.
+
+## 25. Formulario de cliente: campos opcionales para clientes importados (3.0.4)
+
+Los clientes viejos no tienen fecha de nacimiento (238/238), ni tipo/número de identificación (106 y 83), teléfono (92) o dirección (53). El formulario los exigía con `required`, así que el navegador bloqueaba cualquier edición (incluido el descuento).
+
+- Se quitaron `required` y el asterisco de: tipo de identificación, número de identificación, fecha de nacimiento, teléfono y dirección; ahora dicen “(opcional)”. Siguen obligatorios nombre, correo y zona (el backend solo exige nombre).
+- El select de tipo de identificación muestra “Sin definir” solo al editar un cliente cuyo valor es NULL, para que guardar no lo cambie a “Cédula Física” por accidente. Al crear, el valor por defecto sigue siendo Cédula Física.
+- Pruebas nuevas en `ClientesPageTest`: crear solo con nombre; editar con los opcionales en blanco conserva los valores guardados; cliente con tipo NULL renderiza la opción vacía y sigue NULL tras guardar.
+- Suite completa: 1427 tests, 0 fallos.

@@ -57,11 +57,16 @@
         <div class="columns">
             <div class="column">
                 <div class="field">
-                    <label class="label" for="cliente-idType">Tipo de identificación
-                        <span class="has-text-danger" aria-hidden="true">*</span></label>
+                    <label class="label" for="cliente-idType">Tipo de identificación (opcional)</label>
                     <div class="control">
                         <div class="select is-fullwidth">
-                            <select id="cliente-idType" name="idType" required="required">
+                            <select id="cliente-idType" name="idType">
+                                {#if cliente??}
+                                {#if cliente.idType}
+                                {#else}
+                                <option value="" selected>Sin definir</option>
+                                {/if}
+                                {/if}
                                 <option value="Cédula Física" {#if cliente?? && cliente.idType == 'Cédula Física'}selected{/if}>Cédula Física</option>
                                 <option value="Cédula Jurídica" {#if cliente?? && cliente.idType == 'Cédula Jurídica'}selected{/if}>Cédula Jurídica</option>
                                 <option value="DIMEX" {#if cliente?? && cliente.idType == 'DIMEX'}selected{/if}>DIMEX</option>
@@ -73,10 +78,9 @@
             </div>
             <div class="column">
                 <div class="field">
-                    <label class="label" for="cliente-idNumber">Número de identificación
-                        <span class="has-text-danger" aria-hidden="true">*</span></label>
+                    <label class="label" for="cliente-idNumber">Número de identificación (opcional)</label>
                     <div class="control">
-                        <input class="input" id="cliente-idNumber" name="idNumber" required="required"
+                        <input class="input" id="cliente-idNumber" name="idNumber"
                                autocomplete="off" maxlength="255" aria-describedby="cliente-idNumber-help"
                                value="{#if cliente??}{#if cliente.idNumber??}{cliente.idNumber}{/if}{/if}"/>
                     </div>
@@ -101,11 +105,10 @@
         <div class="columns">
             <div class="column">
                 <div class="field">
-                    <label class="label" for="cliente-birthDate">Fecha de nacimiento
-                        <span class="has-text-danger" aria-hidden="true">*</span></label>
+                    <label class="label" for="cliente-birthDate">Fecha de nacimiento (opcional)</label>
                     <div class="control">
                         <input class="input" type="date" id="cliente-birthDate" name="birthDate"
-                               required="required" autocomplete="bday"
+                               autocomplete="bday"
                                value="{#if birthDateIso??}{birthDateIso}{/if}"/>
                     </div>
                 </div>
@@ -140,11 +143,10 @@
             </div>
             <div class="column">
                 <div class="field">
-                    <label class="label" for="cliente-phone">Teléfono
-                        <span class="has-text-danger" aria-hidden="true">*</span></label>
+                    <label class="label" for="cliente-phone">Teléfono (opcional)</label>
                     <div class="control">
                         <input class="input" type="tel" inputmode="tel" id="cliente-phone" name="phoneNumber"
-                               required="required" autocomplete="tel" maxlength="255"
+                               autocomplete="tel" maxlength="255"
                                value="{#if cliente??}{#if cliente.phoneNumber??}{cliente.phoneNumber}{/if}{/if}"/>
                     </div>
                 </div>
@@ -168,10 +170,9 @@
         {! ── Dirección y zona ────────────────────────────────────────────── !}
         <h2 class="is-size-6 has-text-weight-semibold mb-3">Dirección y zona</h2>
         <div class="field">
-            <label class="label" for="cliente-address">Dirección
-                <span class="has-text-danger" aria-hidden="true">*</span></label>
+            <label class="label" for="cliente-address">Dirección (opcional)</label>
             <div class="control">
-                <input class="input" id="cliente-address" name="address" required="required"
+                <input class="input" id="cliente-address" name="address"
                        autocomplete="street-address" maxlength="255" aria-describedby="cliente-address-help"
                        value="{#if cliente??}{#if cliente.address??}{cliente.address}{/if}{/if}"/>
             </div>
