@@ -582,6 +582,8 @@ public class CarritoService implements Serializable {
 
                         // Check for active promotions in the entire cart
                         procesarPromocionesCarrito(ctx);
+                        // Y el descuento del cliente, por linea (no en promos).
+                        aplicarDescuentoCliente(ctx);
 
                         // Limpiamos los campos
                         ctx.setCodigoBarra("");

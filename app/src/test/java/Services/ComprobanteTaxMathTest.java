@@ -345,13 +345,13 @@ class ComprobanteTaxMathTest {
         ResumenFactura resumen = service.resumenComprobante(List.of(promo));
 
         assertThat(resumen).isNotNull();
-        // precioFinal = 100 × (1 − 10/100) × 2 = 180
-        assertThat(resumen.getTotalVenta()).isEqualByComparingTo("180");
+        // TotalVenta = MontoTotal antes del descuento: 100 × 2 = 200.
+        assertThat(resumen.getTotalVenta()).isEqualByComparingTo("200");
         assertThat(resumen.getTotalMercanciasGravadas()).isEqualByComparingTo("180");
         // totalDescuentos = getTotalDescuento() × cantidad = (100 × 10%) × 2 = 20
         assertThat(resumen.getTotalDescuentos()).isEqualByComparingTo("20");
-        assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo("160");
-        // Tax computed on the discounted precioFinal: 180 × 13% = 23.4
+        assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo("180");
+        // Tax computed on the discounted base: 180 × 13% = 23.4
         assertThat(resumen.getTotalImpuesto()).isEqualByComparingTo("23.4");
     }
 

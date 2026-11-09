@@ -1653,6 +1653,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
         ctx.setSelectedClient(cliente);
+        // Descuento del cliente por LINEA (igual que el endpoint JSON).
+        CarritoService.aplicarDescuentoCliente(ctx);
         ctx.setDescuentoPuntos(BigDecimal.ZERO);
         return htmlOk(cartPanelTemplate.data("panel",
                 panelModel(username, message("CLIENTE_SELECCIONADO", "info",

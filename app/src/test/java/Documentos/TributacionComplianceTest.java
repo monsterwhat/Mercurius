@@ -180,9 +180,9 @@ class TributacionComplianceTest {
         assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo(
                 resumen.getTotalVenta().subtract(resumen.getTotalDescuentos()));
         // Ancla numérica: 100 × 0.9 × 2 = 180 venta, 20 descuento, 160 neta
-        assertThat(resumen.getTotalVenta()).isEqualByComparingTo("180");
+        assertThat(resumen.getTotalVenta()).isEqualByComparingTo("200");
         assertThat(resumen.getTotalDescuentos()).isEqualByComparingTo("20");
-        assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo("160");
+        assertThat(resumen.getTotalVentaNeta()).isEqualByComparingTo("180");
     }
 
     @Test
