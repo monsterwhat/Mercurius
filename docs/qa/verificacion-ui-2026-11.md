@@ -469,3 +469,10 @@ La app estaba **apagada desde el 4/11** (servicio `inactive`/`disabled`; el serv
 - Cobertura hasta el 1/11; los movimientos del 2 al 7 necesitan el próximo backup de Sistema (las facturas no mueven inventario al importarse).
 
 **Incidencia detectada:** el script de movimientos **no es idempotente para 35 filas ENTRADA** (las reinserta en cada pasada). Se borraron las 70 copias de las dos pasadas extra. Además la tabla ya tenía **30.459 grupos de movimientos duplicados** por clave natural de importaciones viejas; conviene una deduplicación aparte (no se tocó).
+
+## 21. Auto-updater y 3.0.0 (2026-11-08)
+
+- mercurius-updater.timer estaba **deshabilitado**; se habilitó (enable --now, cada 30 min y al arranque).
+- Se ejecutó el updater: descargó y verificó v3.0.0 (105.786.811 bytes), reinició y quedó escuchando en 8081.
+- Ahora la instancia interna sirve en la **raíz**: /login 200, /logo 200, / 303; /Mercurius/... redirige. Coincide con producción.
+- Versión: 3.0.0; respaldo del jar anterior en Mercurius-runner.jar.bak (2.33.54); 0 ERROR.
