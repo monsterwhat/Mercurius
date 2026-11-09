@@ -1136,38 +1136,36 @@ public class ComprobanteService implements Serializable {
                 }
                 var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
 
-                BigDecimal precioFinal;
+                // Base sin IVA ANTES del descuento, descuento de la linea y
+                // base neta. TotalVenta suma la base antes; TotalDescuentos el
+                // descuento; TotalVentaNeta = TotalVenta - TotalDescuentos.
+                BigDecimal precioBase;
+                BigDecimal descuentoLinea;
+                BigDecimal baseNeta;
                 BigDecimal totalImpuestoArticulo;
-                if (articuloCarrito.isPromo()) {
-                    BigDecimal precioUnit = articuloCarrito.getPrecioEfectivo();
-                    BigDecimal desc = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
-                    if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
-                    precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
-                            .multiply(articuloCarrito.getCantidad())
-                            // Escala Hacienda: sin esto una promo con % fraccionario
-                            // estira la escala a 7 (p.ej. 99.99 × 0.92500 × 3) y el
-                            // XSD (fractionDigits <= 5) rechaza el documento.
-                            .setScale(5, RoundingMode.HALF_UP);
-                    totalImpuestoArticulo = precioFinal.multiply(impuesto)
-                            .setScale(5, RoundingMode.HALF_UP);
-                } else if (articuloCarrito.hasPrecioAjustado()) {
-                    // El cajero digito un precio FINAL (IVA incluido). La base
-                    // imponible y el impuesto se extraen de ese mismo monto:
-                    // base + IVA = final. Nunca se suma IVA sobre el final.
-                    var cantidad = articuloCarrito.getCantidad();
-                    var totalLinea = articuloCarrito.getPrecioAjustadoFinal()
+                var cantidad = articuloCarrito.getCantidad();
+                if (articuloCarrito.hasPrecioAjustado() && !articuloCarrito.isPromo()) {
+                    // El cajero digito un precio FINAL (IVA incluido): base +
+                    // IVA = final, exacto al centavo.
+                    BigDecimal totalLineaFinal = articuloCarrito.getPrecioAjustadoFinal()
                             .multiply(cantidad)
                             .setScale(5, RoundingMode.HALF_UP);
-                    precioFinal = articuloCarrito.getPrecioEfectivo()
+                    precioBase = articuloCarrito.getPrecioEfectivo()
                             .multiply(cantidad)
                             .setScale(5, RoundingMode.HALF_UP);
-                    totalImpuestoArticulo = totalLinea.subtract(precioFinal);
+                    descuentoLinea = BigDecimal.ZERO;
+                    baseNeta = precioBase;
+                    totalImpuestoArticulo = totalLineaFinal.subtract(precioBase)
+                            .setScale(5, RoundingMode.HALF_UP);
                 } else {
-                    precioFinal = articuloCarrito.getTotalArticulos();
-                    // Misma escala Hacienda que en detallesComprobante: ambas caras
-                    // redondean el impuesto de la línea a 5, así el cruce
-                    // Σ líneas == TotalImpuesto se mantiene exacto.
-                    totalImpuestoArticulo = precioFinal.multiply(impuesto)
+                    precioBase = articuloCarrito.getPrecioEfectivo()
+                            .multiply(cantidad)
+                            .setScale(5, RoundingMode.HALF_UP);
+                    descuentoLinea = articuloCarrito.getTotalDescuento()
+                            .multiply(cantidad)
+                            .setScale(5, RoundingMode.HALF_UP);
+                    baseNeta = precioBase.subtract(descuentoLinea);
+                    totalImpuestoArticulo = baseNeta.multiply(impuesto)
                             .setScale(5, RoundingMode.HALF_UP);
                 }
 
@@ -1177,35 +1175,30 @@ public class ComprobanteService implements Serializable {
                 boolean isExonerado = exoneracion != null;
                 if (impuestoPct.compareTo(BigDecimal.ZERO) != 0) {
                     if (esServicio) {
-                        totalServGravados = totalServGravados.add(precioFinal);
+                        totalServGravados = totalServGravados.add(baseNeta);
                     }
                     if (!esServicio) {
-                        totalMercanciasGravadas = totalMercanciasGravadas.add(precioFinal);
+                        totalMercanciasGravadas = totalMercanciasGravadas.add(baseNeta);
                     }
                     totalImpuesto = totalImpuesto.add(totalImpuestoArticulo);
                 } else if (!isExonerado) {
                     if (esServicio) {
-                        totalServExentos = totalServExentos.add(precioFinal);
+                        totalServExentos = totalServExentos.add(baseNeta);
                     }
                     if (!esServicio) {
-                        totalMercanciasExentas = totalMercanciasExentas.add(precioFinal);
+                        totalMercanciasExentas = totalMercanciasExentas.add(baseNeta);
                     }
                 }
                 if (isExonerado) {
                     if (esServicio) {
-                        totalServExonerado = totalServExonerado.add(precioFinal);
+                        totalServExonerado = totalServExonerado.add(baseNeta);
                     }
                     if (!esServicio) {
-                        totalMercExonerada = totalMercExonerada.add(precioFinal);
+                        totalMercExonerada = totalMercExonerada.add(baseNeta);
                     }
                 }
-                totalVenta = totalVenta.add(precioFinal);
-                // Escala Hacienda también aquí: el descuento unitario por promo
-                // (precio × %/100) puede traer escala 7; se redondea igual que
-                // el Descuento por línea del detalle para que ambos cuadren.
-                totalDescuentos = totalDescuentos.add(
-                    articuloCarrito.getTotalDescuento().multiply(articuloCarrito.getCantidad())
-                            .setScale(5, RoundingMode.HALF_UP));
+                totalVenta = totalVenta.add(precioBase);
+                totalDescuentos = totalDescuentos.add(descuentoLinea);
             }
             totalVentaNeta = totalVenta.subtract(totalDescuentos);
             ResumenFactura resumen = new ResumenFactura();
@@ -1463,6 +1456,28 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                         }
                     }
                 }
+                // Descuento del cliente (o manual): va por linea, no al total.
+                // El total del descuento se expresa sobre la base sin IVA.
+                BigDecimal descuentoPctCliente = articulo.getDescuento() == null
+                        ? BigDecimal.ZERO : articulo.getDescuento();
+                if (descuentoPctCliente.compareTo(BigDecimal.ZERO) < 0) {
+                    descuentoPctCliente = BigDecimal.ZERO;
+                }
+                if (descuentoPctCliente.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    descuentoPctCliente = BigDecimal.valueOf(100);
+                }
+                if (!isRep && !articulo.isPromo() && descuentoPctCliente.signum() > 0) {
+                    Descuento descuento = new Descuento();
+                    BigDecimal monto = precioUnitario
+                            .multiply(descuentoPctCliente.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP))
+                            .multiply(Cantidad)
+                            .setScale(5, RoundingMode.HALF_UP);
+                    descuento.setMontoDescuento(monto);
+                    descuento.setCodigoDescuento(Tipo_Codigo_Descuento.DESCUENTO_COMERCIAL.getCodigo());
+                    descuento.setNaturalezaDescuento("Descuento cliente");
+                    descuento.setLineaDetalle(linea);
+                    descuentos.add(descuento);
+                }
                 if (!isRep) {
                     linea.setDescuentos(descuentos);
                 }
@@ -1513,6 +1528,9 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 descuentoLinea = descuentoLinea.setScale(5, RoundingMode.HALF_UP);
                 BigDecimal baseLinea = montoTotal.subtract(descuentoLinea)
                         .setScale(5, RoundingMode.HALF_UP);
+                // SubTotal es el monto DESPUES de descuentos (el legacy y el
+                // XSD lo muestran asi); MontoTotal queda antes del descuento.
+                linea.setSubTotal(baseLinea);
                 // Convencion de la app (fijada por TributacionComplianceTest):
                 // MontoTotalLinea y BaseImponible se expresan sin IVA; el IVA
                 // viaja en ImpuestoNeto.

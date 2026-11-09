@@ -397,6 +397,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
         ctx.setSelectedClient(cliente);
+        // Descuento del cliente: se aplica por LINEA (no al total). Si es 0,
+        // limpia el descuento de las lineas no promocionales.
+        CarritoService.aplicarDescuentoCliente(ctx);
         // selectCliente(): changing client resets any staged points discount.
         ctx.setDescuentoPuntos(BigDecimal.ZERO);
 

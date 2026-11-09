@@ -61,6 +61,33 @@ public class CarritoService implements Serializable {
      */
     private final CartSessionContext legacyShimContext = new CartSessionContext();
 
+    /**
+     * Descuento del cliente seleccionado (porcentaje 0-100). En el sistema
+     * viejo el descuento del cliente se aplica a CADA ARTICULO, no al total de
+     * la factura; por eso vive en la linea del carrito.
+     */
+    @Nonnull
+    public static BigDecimal descuentoCliente(@Nullable CartSessionContext ctx) {
+        if (ctx == null || ctx.getSelectedClient() == null) {
+            return BigDecimal.ZERO;
+        }
+        double d = ctx.getSelectedClient().getDiscount();
+        if (d <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(Math.min(d, 100.0));
+    }
+
+    /** Reaplica el descuento del cliente a todas las lineas no promocionales. */
+    public static void aplicarDescuentoCliente(@Nonnull CartSessionContext ctx) {
+        BigDecimal descuento = descuentoCliente(ctx);
+        for (ArticuloCarrito item : ctx.getCarrito()) {
+            if (!item.isPromo()) {
+                item.setDescuento(descuento);
+            }
+        }
+    }
+
     public void addArticulo(@Nonnull CartSessionContext ctx, @Nonnull Articulos articulo, @Nonnull BigDecimal cantidad) {
         try {
             boolean found = false;
@@ -75,6 +102,8 @@ public class CarritoService implements Serializable {
                 ArticuloCarrito ac = new ArticuloCarrito();
                 ac.setArticulo(articulo);
                 ac.setCantidad(cantidad);
+                // Descuento del cliente: se aplica por LINEA desde que nace.
+                ac.setDescuento(descuentoCliente(ctx));
                 ctx.getCarrito().add(ac);
             }
         } catch (RuntimeException e) {

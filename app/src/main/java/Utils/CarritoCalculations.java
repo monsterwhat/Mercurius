@@ -53,19 +53,18 @@ public class CarritoCalculations {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
-        if (articuloCarrito.isPromo()) {
-            var discount = capDiscount(articuloCarrito.getDescuento());
+        // El descuento (promocion o cliente) se aplica a la base de CUALQUIER
+        // linea, no solo a las promociones.
+        var discount = capDiscount(articuloCarrito.getDescuento());
+        if (discount.signum() > 0) {
             var tax = getImpuestoRate(articuloCarrito);
             var precioArticulo = articuloCarrito.getPrecioEfectivo();
             var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100), MC), MC);
             var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
             var cantidadImpuesto = precioConDescuento.multiply(tax.divide(BigDecimal.valueOf(100), MC), MC);
-            var precioFinal = precioConDescuento.add(cantidadImpuesto);
-            return precioFinal;
-        } else {
-            var precioArticulo = articuloCarrito.getPrecioEfectivo();
-            return precioArticulo;
+            return precioConDescuento.add(cantidadImpuesto);
         }
+        return articuloCarrito.getPrecioEfectivo();
     }
 
     /**
@@ -79,10 +78,10 @@ public class CarritoCalculations {
             return BigDecimal.ZERO;
         }
         BigDecimal base = item.getPrecioEfectivo();
-        if (item.isPromo()) {
-            BigDecimal discount = capDiscount(item.getDescuento())
-                    .divide(BigDecimal.valueOf(100), MC);
-            base = base.subtract(base.multiply(discount, MC), MC);
+        BigDecimal descuento = capDiscount(item.getDescuento());
+        if (descuento.signum() > 0) {
+            base = base.subtract(base.multiply(
+                    descuento.divide(BigDecimal.valueOf(100), MC), MC), MC);
         }
         return getPrecioFinalDesdeBase(item, base);
     }
@@ -144,14 +143,13 @@ public class CarritoCalculations {
         var precioArticulo = articuloCarrito.getPrecioEfectivo();
         BigDecimal total;
 
-        if (articuloCarrito.isPromo()) {
-            BigDecimal discount = capDiscount(articuloCarrito.getDescuento());
+        BigDecimal discount = capDiscount(articuloCarrito.getDescuento());
+        if (discount.signum() > 0) {
             BigDecimal tax = getImpuestoRate(articuloCarrito);
             BigDecimal cantidadDescuento = precioArticulo.multiply(discount, MC).divide(BigDecimal.valueOf(100), MC);
             BigDecimal precioConDescuento = precioArticulo.subtract(cantidadDescuento);
             BigDecimal cantidadImpuesto = precioConDescuento.multiply(tax, MC).divide(BigDecimal.valueOf(100), MC);
-            BigDecimal precioFinal = precioConDescuento.add(cantidadImpuesto);
-            total = precioFinal.multiply(articuloCarrito.getCantidad(), MC);
+            total = precioConDescuento.add(cantidadImpuesto).multiply(articuloCarrito.getCantidad(), MC);
         } else {
             total = precioArticulo.multiply(articuloCarrito.getCantidad(), MC);
         }
@@ -248,9 +246,8 @@ public class CarritoCalculations {
 
                 BigDecimal precioFinal;
                 BigDecimal precioUnidad = item != null ? item.getPrecioEfectivo() : BigDecimal.ZERO;
-                BigDecimal cantidadDecimal = cantidad;
 
-                if (isPromo) {
+                if (capDiscount(item.getDescuento()).signum() > 0) {
                     precioFinal = getArticuloConDescuento(item);
                 } else {
                     precioFinal = precioUnidad;
@@ -258,7 +255,7 @@ public class CarritoCalculations {
                     precioFinal = precioFinal.add(totalImpuestos);
                 }
 
-                BigDecimal subtotal = precioFinal.multiply(cantidadDecimal, MC);
+                BigDecimal subtotal = precioFinal.multiply(cantidad, MC);
                 total = total.add(subtotal);
             }
         }
