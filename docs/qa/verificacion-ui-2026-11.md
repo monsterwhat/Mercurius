@@ -455,3 +455,17 @@ El botón "Enviar muestras (plantillas y reportes)" ahora manda **10 correos** c
 - La alerta de stock usa artículos reales con stock bajo (sin negativos) y el pie enlaza el repositorio.
 
 **Iteraciones hasta dejarlo bien (todas desplegadas y verificadas por IMAP):** columnas equivocadas (`clients.nombre`, `resumen_factura.totalcomprobante`), fechas ISO (`LocalDateTime`), stock negativo en las muestras, y un `String` casteado a `Object[]` que dejaba "Cliente de ejemplo".
+
+## 20. Importación de producción (2026-11-08)
+
+La app estaba **apagada desde el 4/11** (servicio `inactive`/`disabled`; el servidor reinició el 7 y no arrancó). Se levantó y se dejó **enabled**.
+
+**Facturas nuevas (Z:\Facturas):** ZIP incrementales del 3 al 7 de noviembre → copiados y extraídos **fuera de Z:**, parseados con `scripts/extraer_xml_emitidas.py` (919 claves únicas) e importados con `scripts/importar_xml_emitidas.sql` comparando por **clave de Hacienda**:
+- 919 comprobantes emitidos + 1.640 líneas (COMMIT).
+- Última factura importada: `00100001040000817405` del **07/11/2026 22:15**.
+
+**Movimientos (Z:\Sistema, backup del 2/11):** extraído a temporal, `generar_csv_reconciliacion.py` (KARDEX 152.807 / ENTRADAS 14.330) e `importar_movimientos_stock.sql`:
+- **+12.878 movimientos** nuevos (stock: 0 filas nuevas).
+- Cobertura hasta el 1/11; los movimientos del 2 al 7 necesitan el próximo backup de Sistema (las facturas no mueven inventario al importarse).
+
+**Incidencia detectada:** el script de movimientos **no es idempotente para 35 filas ENTRADA** (las reinserta en cada pasada). Se borraron las 70 copias de las dos pasadas extra. Además la tabla ya tenía **30.459 grupos de movimientos duplicados** por clave natural de importaciones viejas; conviene una deduplicación aparte (no se tocó).
