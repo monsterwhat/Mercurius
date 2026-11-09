@@ -340,7 +340,7 @@ class PosResourceTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .contentType(ContentType.JSON)
                 .body("data.items", hasSize(0))
-                .body("data.totalCarrito", equalTo(0))
+                .body("data.totalCarrito", equalTo(0F))
                 .body("data.hasOverrides", is(false))
                 .body("data.authorizedBy", nullValue());
     }
@@ -1041,7 +1041,7 @@ class PosResourceTest extends support.ContextPathIsolation {
                     .then()
                     .statusCode(200)
                     .body("data.hasOverrides", is(true))
-                    .body("data.totalCarrito", equalTo(1000))
+                    .body("data.totalCarrito", equalTo(1000F))
                     .body("data.items[0].precioFinal", equalTo(1000))
                     .extract().jsonPath();
             assertThat(new BigDecimal(cartJson.getString("data.items[0].precioEfectivo")))

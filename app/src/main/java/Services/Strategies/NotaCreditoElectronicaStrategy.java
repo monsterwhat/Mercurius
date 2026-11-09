@@ -9,6 +9,7 @@ import Models.Enums.Tipo_CondicionVenta;
 import Services.Facturas.EmisorService;
 import Services.Facturas.ReceptorService;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Set;
 import jakarta.inject.Inject;
@@ -105,6 +106,11 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public Encabezado buildEncabezado(ConfiguracionAplicacion appSettings, Clientes selectedClient) {
+        return buildEncabezado(appSettings, selectedClient, null);
+    }
+
+    public Encabezado buildEncabezado(ConfiguracionAplicacion appSettings, Clientes selectedClient,
+                                     @Nullable Receptor receptorOriginal) {
         if (Objects.equals(appSettings.getEstatus(), Boolean.FALSE)) return null;
 
         try {
@@ -123,17 +129,28 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
             Emisor emisor = EncabezadoBuilder.buildEmisor(appSettings, emisorService);
             encabezado.setEmisor(emisor);
 
-            // NC requires a receptor with valid ID
-            if (selectedClient == null || selectedClient.getName() == null) {
-                throw new IllegalArgumentException("Nota de Crédito Electrónica requiere un cliente/receptor");
-            }
-            Receptor receptor = EncabezadoBuilder.buildReceptor(selectedClient);
-            encabezado.setReceptor(receptor);
-            receptorService.createIfNotExist(receptor);
+            if (receptorOriginal != null) {
+                // Preserve the original receptor verbatim; it is already persisted.
+                encabezado.setReceptor(receptorOriginal);
+                if (selectedClient != null) {
+                    String codigoAct = selectedClient.getPrimaryActividadCode();
+                    if (codigoAct != null && !codigoAct.isBlank()) {
+                        encabezado.setCodigoActividadReceptor(codigoAct);
+                    }
+                }
+            } else {
+                // NC requires a receptor with valid ID
+                if (selectedClient == null || selectedClient.getName() == null) {
+                    throw new IllegalArgumentException("Nota de Crédito Electrónica requiere un cliente/receptor");
+                }
+                Receptor receptor = EncabezadoBuilder.buildReceptor(selectedClient);
+                encabezado.setReceptor(receptor);
+                receptorService.createIfNotExist(receptor);
 
-        String codigoAct = selectedClient.getPrimaryActividadCode();
-        if (codigoAct != null && !codigoAct.isBlank()) {
-            encabezado.setCodigoActividadReceptor(codigoAct);
+                String codigoAct = selectedClient.getPrimaryActividadCode();
+                if (codigoAct != null && !codigoAct.isBlank()) {
+                    encabezado.setCodigoActividadReceptor(codigoAct);
+                }
             }
 
             return encabezado;

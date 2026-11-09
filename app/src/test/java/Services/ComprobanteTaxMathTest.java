@@ -386,15 +386,16 @@ class ComprobanteTaxMathTest {
         assertThat(linea.getMontoTotal()).isEqualByComparingTo("31.50");
         // subTotal mirrors montoTotal (discounts are separate Descuento entities)
         assertThat(linea.getSubTotal()).isEqualByComparingTo("31.50");
-        // montoTotalLinea mirrors montoTotal (sin IVA; el IVA va en ImpuestoNeto)
-        assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("31.50");
+        // montoTotalLinea = SubTotal + ImpuestoNeto (IVA incluido, XSD v4.4)
+        assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("35.61");
         assertThat(linea.getBaseImponible()).isEqualByComparingTo("31.50");
         assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("10.50");
         assertThat(linea.getCantidad()).isEqualByComparingTo("3");
         assertThat(linea.getNumeroLinea()).isEqualTo(1); // XSD v4.4 exige minInclusive 1
         assertThat(linea.getDetalle()).isEqualTo("Producto 501010114");
-        // Unit tax 10.50 × 13% = 1.365, extended by qty 3 → 4.095
-        assertThat(linea.getImpuestos().get(0).getMonto()).isEqualByComparingTo("4.095");
+        // Unit tax contained in the rounded final price 11.87 - 10.50 = 1.37,
+        // extended by qty 3 → 4.11
+        assertThat(linea.getImpuestos().get(0).getMonto()).isEqualByComparingTo("4.11");
     }
 
     @Test
@@ -506,7 +507,7 @@ class ComprobanteTaxMathTest {
         LineaDetalle detalle = detalles.getLineasDetalle().get(0);
         assertThat(detalle.getPrecioUnitario()).isEqualByComparingTo("884.96");
         assertThat(detalle.getMontoTotal()).isEqualByComparingTo("884.96");
-        assertThat(detalle.getMontoTotalLinea()).isEqualByComparingTo("884.96");
+        assertThat(detalle.getMontoTotalLinea()).isEqualByComparingTo("1000.00");
         assertThat(detalle.getImpuestos()).hasSize(1);
         assertThat(detalle.getImpuestos().get(0).getMonto()).isEqualByComparingTo("115.04");
         assertThat(detalle.getImpuestoNeto()).isEqualByComparingTo("115.04");

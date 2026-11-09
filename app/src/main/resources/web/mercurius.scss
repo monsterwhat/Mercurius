@@ -1815,21 +1815,10 @@ summary:focus-visible,
     transition-duration: var(--mercurius-dur-fast);
 }
 
-// The brand mark is a black silhouette with white highlights. On the dark
-// ground it is a smudge whose one specular highlight does more work than the
-// silhouette — the product's own name is the one thing the operator must be
-// able to read. Inverting it in the dark scheme gives a white bull on black;
-// the light scheme keeps the original ink. Both entries are needed: the media
-// query follows the OS, the class is the operator's explicit choice.
-@media (prefers-color-scheme: dark) {
-    :root:not(.theme-light) .mercurius-mark {
-        filter: invert(1);
-    }
-}
-
-.theme-dark .mercurius-mark {
-    filter: invert(1);
-}
+// The logo is shown exactly as uploaded (or the factory PNG). Do not invert
+// it in dark mode: that flipped colored/custom logos into complementary
+// colors. The factory mark is a black silhouette, but the operator's own
+// brand colors take precedence over the old white-bull workaround.
 
 // The native file input is the one control the OS draws, so it arrives in a
 // dark UI as a white "Choose Files" button - the most jarring element on an

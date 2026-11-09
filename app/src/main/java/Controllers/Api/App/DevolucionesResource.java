@@ -12,6 +12,7 @@ import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
 import Models.DTO.ApiResponse;
 import Models.Encabezado.Encabezado;
+import Models.Encabezado.Receptor;
 import Models.Encabezado.MedioPago;
 import Models.Inventario;
 import Models.NotaCredito;
@@ -850,11 +851,30 @@ public class DevolucionesResource {
         return null;
     }
 
-    /** Legacy recalcularTotal(): Σ precioUnitario × cantidadDevolver. */
+    /**
+     * Total of a devolucion: Σ of the original line total (including discount
+     * and IVA) prorated by {@code factor = cantidadDevolver / original.cantidad}.
+     * Preferred {@code original.montoTotalDeLinea * factor}; fallback
+     * {@code (subTotal + impuestoNeto) * factor}; fallback
+     * {@code precioUnitario * cantidadDevolver} only when both aggregates are
+     * null.
+     */
     private static @Nonnull BigDecimal totalDevolucion(@Nonnull List<LineaSeleccion> seleccion) {
         BigDecimal total = BigDecimal.ZERO;
         for (LineaSeleccion sel : seleccion) {
-            total = total.add(sel.original().getPrecioUnitario().multiply(sel.cantidadDevolver()));
+            LineaDetalle ol = sel.original();
+            BigDecimal factor = sel.cantidadDevolver().divide(ol.getCantidad(), 6, RoundingMode.HALF_UP);
+            BigDecimal lineTotal;
+            if (ol.getMontoTotalLinea() != null) {
+                lineTotal = ol.getMontoTotalLinea().multiply(factor);
+            } else if (ol.getSubTotal() != null || ol.getImpuestoNeto() != null) {
+                BigDecimal sub = ol.getSubTotal() != null ? ol.getSubTotal() : BigDecimal.ZERO;
+                BigDecimal imp = ol.getImpuestoNeto() != null ? ol.getImpuestoNeto() : BigDecimal.ZERO;
+                lineTotal = sub.add(imp).multiply(factor);
+            } else {
+                lineTotal = ol.getPrecioUnitario().multiply(sel.cantidadDevolver());
+            }
+            total = total.add(lineTotal.setScale(5, RoundingMode.HALF_UP));
         }
         return total;
     }
@@ -905,7 +925,8 @@ public class DevolucionesResource {
                            @Nonnull String tipoDocumento,
                            @Nonnull String sucursal,
                            @Nonnull String terminal,
-                           @Nonnull String situacion) {}
+                           @Nonnull String situacion,
+                           long facturaOriginalId) {}
 
     // ════════════════════════════════════════════════════════════════════
     // FASE (b): envío a Hacienda, ya fuera de la transacción
@@ -958,12 +979,16 @@ public class DevolucionesResource {
         ComprobantesEmitidos ncComprobante = envio.comprobante();
         try {
             if (comprobanteService.enviarComprobanteAHacienda(ncComprobante)) {
+                actualizarEstadoNotaCredito(envio.facturaOriginalId(),
+                        ncComprobante.getHaciendaEstado() != null ? ncComprobante.getHaciendaEstado() : "ACEPTADO");
                 return; // ACEPTADO, con sus fechas selladas
             }
             // Rechazo de fondo, fallo de transporte o preflight: el XML firmado
             // se encola igual para que la NC no se pierda ni salga del plazo
             // legal (Art. 21 párr. 3).
             registrarPendienteDeEnvioNc(envio);
+            actualizarEstadoNotaCredito(envio.facturaOriginalId(),
+                    ncComprobante.getHaciendaEstado() != null ? ncComprobante.getHaciendaEstado() : "PENDIENTE");
         } catch (RuntimeException e) {
             // La devolución está confirmada y la NC escrita: no hay nada que
             // deshacer acá. Se deja constancia y el documento sigue PENDIENTE
@@ -972,6 +997,7 @@ public class DevolucionesResource {
                     + " | source=DevolucionesResource.enviarNcAHacienda()"
                     + " | despues=la devolución ya está confirmada; la NC queda pendiente de reintento",
                     e);
+            actualizarEstadoNotaCredito(envio.facturaOriginalId(), "PENDIENTE");
         }
     }
 
@@ -1058,16 +1084,30 @@ public class DevolucionesResource {
                         consecutivoFactura);
             }
             Clientes client = buscarClienteDeFactura(facturaSeleccionada);
+            Receptor receptorOriginal = facturaSeleccionada.getEncabezado() != null
+                    ? facturaSeleccionada.getEncabezado().getReceptor() : null;
 
             DocumentoStrategy ncStrategy = strategyFactory.forCode(CODIGO_NC);
             String sucursal = appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001";
             String terminal = appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001";
             long consecutivo = consecutivoEmitidoService.getNextSequential(sucursal, terminal, ncStrategy.getCodigoDocumento());
-            String numeroConsecutivo = String.format("%s%s%s%010d",
+            String numeroConsecutivo = String.format("%s%s%02d%s%010d",
                     sucursal, terminal,
+                    Integer.parseInt(SITUACION_NC),
                     ncStrategy.getCodigoDocumento(), consecutivo);
 
-            Encabezado ncEncabezado = ncStrategy.buildEncabezado(appSettings, client);
+            Encabezado ncEncabezado;
+            if (ncStrategy instanceof Services.Strategies.NotaCreditoElectronicaStrategy ncStrat) {
+                ncEncabezado = ncStrat.buildEncabezado(appSettings, client, receptorOriginal);
+            } else {
+                ncEncabezado = ncStrategy.buildEncabezado(appSettings, client);
+            }
+            if (ncEncabezado != null && client == null && receptorOriginal != null
+                    && facturaSeleccionada.getEncabezado() != null
+                    && facturaSeleccionada.getEncabezado().getCodigoActividadReceptor() != null) {
+                ncEncabezado.setCodigoActividadReceptor(
+                        facturaSeleccionada.getEncabezado().getCodigoActividadReceptor());
+            }
             ncEncabezado.setNumeroConsecutivo(numeroConsecutivo);
 
             List<MedioPago> medioPagoList = new ArrayList<>();
@@ -1106,13 +1146,46 @@ public class DevolucionesResource {
                 nl.setUnidadMedidaComercial(ol.getUnidadMedidaComercial());
                 nl.setDetalle(ol.getDetalle());
                 nl.setPrecioUnitario(ol.getPrecioUnitario());
-                BigDecimal montoTotal = ol.getPrecioUnitario().multiply(sel.cantidadDevolver());
-                nl.setMontoTotal(montoTotal);
-                nl.setSubTotal(montoTotal);
-                nl.setMontoTotalLinea(montoTotal);
 
                 BigDecimal factor = sel.cantidadDevolver().divide(ol.getCantidad(), 6, RoundingMode.HALF_UP);
-                if (ol.getImpuestos() != null) {
+
+                BigDecimal montoTotal;
+                if (ol.getMontoTotal() != null) {
+                    montoTotal = ol.getMontoTotal().multiply(factor).setScale(5, RoundingMode.HALF_UP);
+                } else {
+                    montoTotal = ol.getPrecioUnitario().multiply(sel.cantidadDevolver()).setScale(5, RoundingMode.HALF_UP);
+                }
+                nl.setMontoTotal(montoTotal);
+
+                BigDecimal subTotal;
+                if (ol.getSubTotal() != null) {
+                    subTotal = ol.getSubTotal().multiply(factor).setScale(5, RoundingMode.HALF_UP);
+                } else {
+                    subTotal = montoTotal;
+                }
+                nl.setSubTotal(subTotal);
+
+                if (ol.getBaseImponible() != null) {
+                    nl.setBaseImponible(ol.getBaseImponible().multiply(factor).setScale(5, RoundingMode.HALF_UP));
+                }
+
+                BigDecimal impuestoNetoVal = null;
+                if (ol.getImpuestoNeto() != null) {
+                    impuestoNetoVal = ol.getImpuestoNeto().multiply(factor).setScale(5, RoundingMode.HALF_UP);
+                }
+                nl.setImpuestoNeto(impuestoNetoVal);
+
+                BigDecimal montoTotalLinea;
+                if (ol.getMontoTotalLinea() != null) {
+                    montoTotalLinea = ol.getMontoTotalLinea().multiply(factor).setScale(5, RoundingMode.HALF_UP);
+                } else {
+                    montoTotalLinea = montoTotal;
+                }
+                nl.setMontoTotalLinea(montoTotalLinea);
+
+                // Collections: copy when present; synthesize when empty but aggregates show discount/tax.
+                boolean hasImpuestos = ol.getImpuestos() != null && !ol.getImpuestos().isEmpty();
+                if (hasImpuestos) {
                     List<Impuesto> imps = new ArrayList<>();
                     for (Impuesto imp : ol.getImpuestos()) {
                         Impuesto ni = new Impuesto();
@@ -1142,8 +1215,39 @@ public class DevolucionesResource {
                         imps.add(ni);
                     }
                     nl.setImpuestos(imps);
+                } else if (impuestoNetoVal != null && impuestoNetoVal.compareTo(BigDecimal.ZERO) > 0) {
+                    // Synthesize tax from aggregates. Rate implied by impuestoNeto/baseImponible.
+                    Impuesto ni = new Impuesto();
+                    ni.setCodigo("01");
+                    ni.setLineaDetalle(nl);
+                    ni.setMonto(impuestoNetoVal);
+                    BigDecimal base = nl.getBaseImponible() != null ? nl.getBaseImponible()
+                            : (subTotal != null ? subTotal : montoTotal);
+                    BigDecimal rate = BigDecimal.ZERO;
+                    if (base != null && base.compareTo(BigDecimal.ZERO) > 0) {
+                        rate = impuestoNetoVal.divide(base, 4, RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100));
+                    }
+                    // map to nearest whole rate supported by Tipo_TarifaIVA
+                    String rateStr = rate.setScale(0, RoundingMode.HALF_UP).toPlainString();
+                    // handle 0.5 etc not needed for sample; default to getTarifa with whole string
+                    try {
+                        Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa(rateStr);
+                        ni.setCodigoTarifaIVA(tarifa.getCodigo());
+                        ni.setTarifa(new BigDecimal(rateStr));
+                    } catch (IllegalArgumentException e) {
+                        // fallback to 13%
+                        Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa("13");
+                        ni.setCodigoTarifaIVA(tarifa.getCodigo());
+                        ni.setTarifa(new BigDecimal("13"));
+                    }
+                    nl.setImpuestos(new ArrayList<>(List.of(ni)));
+                } else {
+                    nl.setImpuestos(new ArrayList<>());
                 }
-                if (ol.getDescuentos() != null) {
+
+                boolean hasDescuentos = ol.getDescuentos() != null && !ol.getDescuentos().isEmpty();
+                if (hasDescuentos) {
                     List<Descuento> descs = new ArrayList<>();
                     for (Descuento d : ol.getDescuentos()) {
                         Descuento nd = new Descuento();
@@ -1154,6 +1258,18 @@ public class DevolucionesResource {
                         descs.add(nd);
                     }
                     nl.setDescuentos(descs);
+                } else {
+                    BigDecimal discountAmt = montoTotal.subtract(subTotal);
+                    if (discountAmt.compareTo(BigDecimal.ZERO) > 0) {
+                        Descuento nd = new Descuento();
+                        nd.setCodigoDescuento("07");
+                        nd.setNaturalezaDescuento("Descuento cliente");
+                        nd.setMontoDescuento(discountAmt.setScale(5, RoundingMode.HALF_UP));
+                        nd.setLineaDetalle(nl);
+                        nl.setDescuentos(new ArrayList<>(List.of(nd)));
+                    } else {
+                        nl.setDescuentos(new ArrayList<>());
+                    }
                 }
                 nl.setDetalleServicio(ncDetalles);
                 ncLineas.add(nl);
@@ -1289,12 +1405,25 @@ public class DevolucionesResource {
             return new NcElectronicaResultado(true, clave, numeroConsecutivo,
                     "Nota de Credito electronica generada", consecutivoFactura,
                     new EnvioNc(ncComprobante, ncStrategy.getCodigoDocumento(),
-                            sucursal, terminal, SITUACION_NC));
+                            sucursal, terminal, SITUACION_NC, facturaSeleccionada.getId()));
         } catch (RuntimeException eNC) {
                         LOG.warn("Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + Utils.LogUsers.nombre(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
             return NcElectronicaResultado.sinDocumento(
                     "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
                     consecutivoFactura);
+        }
+    }
+
+    /** Keeps NotaCredito.haciendaEstado consistent with the electronic comprobante. */
+    private void actualizarEstadoNotaCredito(long facturaOriginalId, @Nonnull String estado) {
+        try {
+            for (NotaCredito nota : orEmpty(notaCreditoService.listPorComprobante(facturaOriginalId))) {
+                nota.setHaciendaEstado(estado);
+                notaCreditoService.update(nota);
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Error actualizando haciendaEstado de la NotaCredito: " + e.getMessage()
+                    + " | source=DevolucionesResource.actualizarEstadoNotaCredito()");
         }
     }
 
@@ -1549,7 +1678,7 @@ public class DevolucionesResource {
      */
     private @Nonnull String historialOobFragment() {
         StringBuilder sb = new StringBuilder();
-        sb.append("<tbody hx-swap-oob=\"true\" id=\"historial-tbody\">");
+        sb.append("<table class=\"is-hidden\" aria-hidden=\"true\"><tbody hx-swap-oob=\"innerHTML:#historial-tbody\">");
         List<NotaCredito> notas = orEmpty(notaCreditoService.listRecent(HISTORIAL_OOB_LIMIT));
         if (notas.isEmpty()) {
             sb.append("<tr><td colspan=\"5\" class=\"has-text-centered has-text-grey\">")
@@ -1568,7 +1697,7 @@ public class DevolucionesResource {
                     .append("<td class=\"has-text-centered\">").append(escape(str(nota.getHaciendaEstado()))).append("</td>")
                     .append("</tr>");
         }
-        sb.append("</tbody>");
+        sb.append("</tbody></table>");
         return sb.toString();
     }
 

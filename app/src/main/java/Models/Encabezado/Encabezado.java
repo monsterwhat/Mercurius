@@ -79,16 +79,16 @@ public class Encabezado {
     @Nullable
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "emisor_id")  
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "emisor_id")
     private Emisor emisor;
     
     @XmlElement(name = "Receptor")
     @Nullable
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "receptor_id") 
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "receptor_id")
     private Receptor receptor;
 
     @XmlElement(name = "CondicionVenta")

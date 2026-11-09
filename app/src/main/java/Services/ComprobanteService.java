@@ -1134,7 +1134,9 @@ public class ComprobanteService implements Serializable {
                                 + " | source=ComprobanteService.detallesComprobante()");
                     }
                 }
-                var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
+                // La tasa se usa para clasificar el bucket (gravado/exento);
+                // el monto del IVA se deriva del precio final redondeado.
+                // (impuestoPct se calcula arriba y se usa mas abajo.)
 
                 // Base sin IVA ANTES del descuento, descuento de la linea y
                 // base neta. TotalVenta suma la base antes; TotalDescuentos el
@@ -1144,30 +1146,18 @@ public class ComprobanteService implements Serializable {
                 BigDecimal baseNeta;
                 BigDecimal totalImpuestoArticulo;
                 var cantidad = articuloCarrito.getCantidad();
-                if (articuloCarrito.hasPrecioAjustado() && !articuloCarrito.isPromo()) {
-                    // El cajero digito un precio FINAL (IVA incluido): base +
-                    // IVA = final, exacto al centavo.
-                    BigDecimal totalLineaFinal = articuloCarrito.getPrecioAjustadoFinal()
-                            .multiply(cantidad)
-                            .setScale(5, RoundingMode.HALF_UP);
-                    precioBase = articuloCarrito.getPrecioEfectivo()
-                            .multiply(cantidad)
-                            .setScale(5, RoundingMode.HALF_UP);
-                    descuentoLinea = BigDecimal.ZERO;
-                    baseNeta = precioBase;
-                    totalImpuestoArticulo = totalLineaFinal.subtract(precioBase)
-                            .setScale(5, RoundingMode.HALF_UP);
-                } else {
-                    precioBase = articuloCarrito.getPrecioEfectivo()
-                            .multiply(cantidad)
-                            .setScale(5, RoundingMode.HALF_UP);
-                    descuentoLinea = articuloCarrito.getTotalDescuento()
-                            .multiply(cantidad)
-                            .setScale(5, RoundingMode.HALF_UP);
-                    baseNeta = precioBase.subtract(descuentoLinea);
-                    totalImpuestoArticulo = baseNeta.multiply(impuesto)
-                            .setScale(5, RoundingMode.HALF_UP);
-                }
+                // El precio final redondeado a colones es la fuente de verdad:
+                // base + IVA = exactamente lo que paga el cliente. Sin esto el
+                // total derivaba diezmilesimas (p. ej. 999.9709 en vez de 1000).
+                BigDecimal baseUnidad = CarritoCalculations.getBaseNetaUnitaria(articuloCarrito);
+                BigDecimal baseSinDescuentoUnidad = CarritoCalculations.getBaseUnitariaSinDescuento(articuloCarrito);
+                BigDecimal finalUnidad = CarritoCalculations.getPrecioFinalCobrado(articuloCarrito);
+                precioBase = baseSinDescuentoUnidad.multiply(cantidad).setScale(5, RoundingMode.HALF_UP);
+                baseNeta = baseUnidad.multiply(cantidad).setScale(5, RoundingMode.HALF_UP);
+                descuentoLinea = precioBase.subtract(baseNeta).setScale(5, RoundingMode.HALF_UP);
+                totalImpuestoArticulo = finalUnidad.subtract(baseUnidad)
+                        .multiply(cantidad)
+                        .setScale(5, RoundingMode.HALF_UP);
 
                 ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
                         articulo.getArticulo().getCodigo().toString());
@@ -1347,8 +1337,8 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
             for (int i = 0; i < carrito.size(); i++) {
                 ArticuloCarrito articulo = carrito.get(i);
                 var Cantidad = articulo.getCantidad();
-                var precioUnitario = articulo.getPrecioEfectivo();
-                var montoTotal = precioUnitario.multiply(Cantidad);
+                var precioUnitario = CarritoCalculations.getBaseUnitariaSinDescuento(articulo);
+                var montoTotal = precioUnitario.multiply(Cantidad).setScale(5, RoundingMode.HALF_UP);
 
                 LineaDetalle linea = new LineaDetalle();
                 linea.setNumeroLinea(i + 1);
@@ -1468,8 +1458,7 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 }
                 if (!isRep && !articulo.isPromo() && descuentoPctCliente.signum() > 0) {
                     Descuento descuento = new Descuento();
-                    BigDecimal monto = precioUnitario
-                            .multiply(descuentoPctCliente.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP))
+                    BigDecimal monto = CarritoCalculations.getTotalDescuento(articulo)
                             .multiply(Cantidad)
                             .setScale(5, RoundingMode.HALF_UP);
                     descuento.setMontoDescuento(monto);
@@ -1531,10 +1520,14 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 // SubTotal es el monto DESPUES de descuentos (el legacy y el
                 // XSD lo muestran asi); MontoTotal queda antes del descuento.
                 linea.setSubTotal(baseLinea);
-                // Convencion de la app (fijada por TributacionComplianceTest):
-                // MontoTotalLinea y BaseImponible se expresan sin IVA; el IVA
-                // viaja en ImpuestoNeto.
-                linea.setMontoTotalLinea(baseLinea);
+                // XSD v4.4: MontoTotalLinea = SubTotal + ImpuestoNeto. Se
+                // expresa con IVA incluido, igual que el XML de Hacienda y las
+                // facturas importadas; BaseImponible sigue siendo la base.
+                // El FEE (05) omite ImpuestoNeto en su XSD, asi que su linea
+                // conserva el subtotal como monto total.
+                linea.setMontoTotalLinea("05".equals(tipoDocumento)
+                        ? baseLinea
+                        : baseLinea.add(impuestoNetoLinea).setScale(5, RoundingMode.HALF_UP));
                 linea.setImpuestos(impuestos);
 
                 // ImpuestoNeto mandatory in all XSDs except FEE (misma escala que Monto)

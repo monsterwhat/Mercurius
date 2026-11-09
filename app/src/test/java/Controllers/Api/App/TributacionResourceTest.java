@@ -709,7 +709,14 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         if (pendientes != null && !pendientes.isEmpty()) {
             // auto-clean leaked pendings for grouped runs
             for (var p : pendientes) {
-                try { emitidosService.delete(p); } catch (Exception ignore) {}
+                try {
+                    emitidosService.delete(p);
+                } catch (Exception e) {
+                    throw new AssertionError(
+                            "No se pudo limpiar el comprobante pendiente "
+                                    + (p.getEncabezado() == null ? "?" : p.getEncabezado().getNumeroConsecutivo()),
+                            e);
+                }
             }
             pendientes = emitidosService.findFacturasPendientes();
         }

@@ -261,8 +261,8 @@ class TributacionComplianceTest {
             }
         }
         assertThat(sumaLineas)
-                .as("Σ MontoTotalLinea debe cuadrar con TotalVenta")
-                .isEqualByComparingTo(resumen.getTotalVenta());
+                .as("Σ MontoTotalLinea (IVA incluido) debe cuadrar con TotalVentaNeta + TotalImpuesto")
+                .isEqualByComparingTo(resumen.getTotalVentaNeta().add(resumen.getTotalImpuesto()));
         assertThat(sumaImpuestos)
                 .as("Σ impuesto por línea debe cuadrar con TotalImpuesto")
                 .isEqualByComparingTo(resumen.getTotalImpuesto());

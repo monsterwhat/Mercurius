@@ -14,12 +14,14 @@
       "situacionEnPosicion41": "1"
     },
     "consecutivo": {
-      "longitud": 18,
+      "longitud": 20,
       "sucursalSlice": [0, 3],
       "terminalSlice": [3, 6],
-      "tipoSlice": [6, 8],
+      "situacionSlice": [6, 8],
+      "tipoSlice": [8, 10],
       "tipoEsperado": "02",
-      "secuencialSlice": [8, 18]
+      "situacionEsperada": "01",
+      "secuencialSlice": [10, 20]
     },
     "medioPago": ["01"],
     "moneda": "CRC",

@@ -48,42 +48,97 @@ public class CarritoCalculations {
         return discount.min(BigDecimal.valueOf(100));
     }
 
+    /**
+     * Base sin IVA ANTES de cualquier descuento, en colones (2 decimales).
+     * Es el precio de catalogo que ve el cajero.
+     */
     @Nonnull
-    public static BigDecimal getTotalArticulo(@Nullable ArticuloCarrito articuloCarrito) {
-        if (articuloCarrito == null) {
+    public static BigDecimal getBaseUnitariaSinDescuento(@Nullable ArticuloCarrito item) {
+        if (item == null) {
             return BigDecimal.ZERO;
         }
-        // El descuento (promocion o cliente) se aplica a la base de CUALQUIER
-        // linea, no solo a las promociones.
-        var discount = capDiscount(articuloCarrito.getDescuento());
-        if (discount.signum() > 0) {
-            var tax = getImpuestoRate(articuloCarrito);
-            var precioArticulo = articuloCarrito.getPrecioEfectivo();
-            var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100), MC), MC);
-            var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
-            var cantidadImpuesto = precioConDescuento.multiply(tax.divide(BigDecimal.valueOf(100), MC), MC);
-            return precioConDescuento.add(cantidadImpuesto);
+        return item.getPrecioEfectivo().setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Base sin IVA que realmente paga el cliente, ya con el descuento aplicado.
+     * Se deriva del precio final redondeado para que base + IVA sea exactamente
+     * el monto cobrado (misma regla que el ajuste manual de precio).
+     */
+    @Nonnull
+    public static BigDecimal getBaseNetaUnitaria(@Nullable ArticuloCarrito item) {
+        if (item == null) {
+            return BigDecimal.ZERO;
         }
-        return articuloCarrito.getPrecioEfectivo();
+        if (item.hasPrecioAjustado() && !item.isPromo()) {
+            return item.getPrecioEfectivo().setScale(2, RoundingMode.HALF_UP);
+        }
+        return getPrecioBaseDesdeFinal(item, getPrecioUnitarioFinal(item));
+    }
+
+    /**
+     * Precio final unitario que paga el cliente (IVA incluido, 2 decimales).
+     * Para una linea ajustada devuelve el monto exacto que fijo el cajero.
+     */
+    @Nonnull
+    public static BigDecimal getPrecioFinalCobrado(@Nullable ArticuloCarrito item) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+        if (item.hasPrecioAjustado() && !item.isPromo()) {
+            return item.getPrecioAjustadoFinal().setScale(2, RoundingMode.HALF_UP);
+        }
+        return getPrecioUnitarioFinal(item);
+    }
+
+    /** IVA contenido en el precio final unitario (2 decimales). */
+    @Nonnull
+    public static BigDecimal getImpuestoUnitario(@Nullable ArticuloCarrito item) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+        return getPrecioFinalCobrado(item).subtract(getBaseNetaUnitaria(item));
+    }
+
+    @Nonnull
+    public static BigDecimal getTotalArticulo(@Nullable ArticuloCarrito articuloCarrito) {
+        return getPrecioFinalCobrado(articuloCarrito);
     }
 
     /**
      * Precio unitario FINAL (IVA incluido) de una linea, aplicando el descuento
-     * de promo cuando corresponda. Es el numero que ve el cajero y el que se
-     * cobra al cliente.
+     * de promo/cliente cuando corresponda. Es el numero que ve el cajero y el
+     * que se cobra al cliente.
+     *
+     * <p>La fuente de verdad es {@code articuloprecio.precioFinal} (el precio
+     * de etiqueta ya redondeado a colones). Recalcularlo desde la base de 2
+     * decimales hacia que 1106.19 x 1.13 = 1249.9947 y el total derivara un
+     * centavo por unidad respecto de la factura original, que usa 1250.00.</p>
      */
     @Nonnull
     public static BigDecimal getPrecioUnitarioFinal(@Nullable ArticuloCarrito item) {
         if (item == null) {
             return BigDecimal.ZERO;
         }
-        BigDecimal base = item.getPrecioEfectivo();
+        if (item.hasPrecioAjustado() && !item.isPromo()) {
+            return item.getPrecioAjustadoFinal().setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal finalSistema = null;
+        if (item.getArticulo() != null) {
+            var last = item.getArticulo().getLastPrecio();
+            if (last != null && last.getPrecioFinal() != null) {
+                finalSistema = last.getPrecioFinal();
+            }
+        }
+        if (finalSistema == null) {
+            finalSistema = getPrecioFinalDesdeBase(item, item.getPrecioEfectivo());
+        }
         BigDecimal descuento = capDiscount(item.getDescuento());
         if (descuento.signum() > 0) {
-            base = base.subtract(base.multiply(
-                    descuento.divide(BigDecimal.valueOf(100), MC), MC), MC);
+            finalSistema = finalSistema.subtract(
+                    finalSistema.multiply(descuento.divide(BigDecimal.valueOf(100), MC), MC), MC);
         }
-        return getPrecioFinalDesdeBase(item, base);
+        return finalSistema.setScale(2, RoundingMode.HALF_UP);
     }
 
     /** Aplica la tarifa de IVA del CABYS a una base sin impuesto. */
@@ -130,166 +185,66 @@ public class CarritoCalculations {
         if (item == null || item.getCantidad() == null) {
             return BigDecimal.ZERO;
         }
-        return item.getPrecioFinalEfectivo()
+        return getPrecioFinalCobrado(item)
                 .multiply(item.getCantidad(), MC)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
     @Nonnull
     public static BigDecimal getTotalArticulos(@Nullable ArticuloCarrito articuloCarrito) {
-        if (articuloCarrito == null) {
-            return BigDecimal.ZERO;
-        }
-        var precioArticulo = articuloCarrito.getPrecioEfectivo();
-        BigDecimal total;
-
-        BigDecimal discount = capDiscount(articuloCarrito.getDescuento());
-        if (discount.signum() > 0) {
-            BigDecimal tax = getImpuestoRate(articuloCarrito);
-            BigDecimal cantidadDescuento = precioArticulo.multiply(discount, MC).divide(BigDecimal.valueOf(100), MC);
-            BigDecimal precioConDescuento = precioArticulo.subtract(cantidadDescuento);
-            BigDecimal cantidadImpuesto = precioConDescuento.multiply(tax, MC).divide(BigDecimal.valueOf(100), MC);
-            total = precioConDescuento.add(cantidadImpuesto).multiply(articuloCarrito.getCantidad(), MC);
-        } else {
-            total = precioArticulo.multiply(articuloCarrito.getCantidad(), MC);
-        }
-
-        return total.setScale(2, RoundingMode.HALF_UP);
+        return getTotalLineaFinal(articuloCarrito);
     }
 
     @Nonnull
     public static BigDecimal getArticuloConDescuento(@Nullable ArticuloCarrito articuloCarrito) {
-        if (articuloCarrito == null) {
-            return BigDecimal.ZERO;
-        }
-        var descuento = capDiscount(articuloCarrito.getDescuento());
-        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
-        BigDecimal tax = getImpuestoRate(articuloCarrito);
-        var taxPercentage = tax.divide(BigDecimal.valueOf(100), MC);
-
-        BigDecimal applicableTax, precioFinal;
-
-        if (descuento.compareTo(BigDecimal.ZERO) > 0) {
-            var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100), MC);
-            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage, MC);
-            var newPrecio = precioConUtilidad.subtract(descuentoTotal);
-            applicableTax = newPrecio.multiply(taxPercentage, MC);
-            precioFinal = newPrecio.add(applicableTax);
-        } else {
-            applicableTax = precioConUtilidad.multiply(taxPercentage, MC);
-            precioFinal = precioConUtilidad.add(applicableTax);
-        }
-
-        return precioFinal;
+        return getPrecioFinalCobrado(articuloCarrito);
     }
 
     @Nonnull
     public static BigDecimal getTotalDescuento(@Nullable ArticuloCarrito articuloCarrito) {
-        if (articuloCarrito == null || articuloCarrito.getDescuento() == null) {
+        if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
-        var descuento = capDiscount(articuloCarrito.getDescuento());
-        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
-        var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100), MC);
-        var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage, MC);
-        return descuentoTotal;
+        return getBaseUnitariaSinDescuento(articuloCarrito)
+                .subtract(getBaseNetaUnitaria(articuloCarrito));
     }
 
     @Nonnull
     public static BigDecimal getTotalImpuesto(@Nullable ArticuloCarrito articuloCarrito) {
-        if (articuloCarrito == null) {
-            return BigDecimal.ZERO;
-        }
-        if (articuloCarrito.hasPrecioAjustado() && !articuloCarrito.isPromo()) {
-            // El cajero digito el precio FINAL (IVA incluido): el impuesto es
-            // la parte YA CONTENIDA en ese monto, no un porcentaje que se sume
-            // encima. base + impuesto = precio digitado, exacto al centavo.
-            return articuloCarrito.getPrecioAjustadoFinal()
-                    .subtract(articuloCarrito.getPrecioEfectivo());
-        }
-        var descuento = articuloCarrito.getDescuento();
-        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
-        BigDecimal tax = getImpuestoRate(articuloCarrito);
-        var taxPercentage = tax.divide(BigDecimal.valueOf(100), MC);
-
-        BigDecimal applicableTax;
-
-        if (descuento != null && descuento.compareTo(BigDecimal.ZERO) > 0) {
-            var cappedDiscount = capDiscount(descuento);
-            var descuentoPercentage = cappedDiscount.divide(BigDecimal.valueOf(100), MC);
-            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage, MC);
-            var totalConDescuento = precioConUtilidad.subtract(descuentoTotal);
-            applicableTax = totalConDescuento.multiply(taxPercentage, MC);
-        } else {
-            applicableTax = precioConUtilidad.multiply(taxPercentage, MC);
-        }
-
-        return applicableTax;
+        return getImpuestoUnitario(articuloCarrito);
     }
 
     @Nonnull
     public static BigDecimal calculateTotalCarrito(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
-
-        if (carrito != null && !carrito.isEmpty()) {
+        if (carrito != null) {
             for (ArticuloCarrito item : carrito) {
-                var cantidad = item.getCantidad();
-                // Precio final fijado por el cajero: se cobra EXACTAMENTE ese
-                // monto, con el IVA ya incluido (no se suma impuesto encima).
-                if (item.hasPrecioAjustado() && !item.isPromo()) {
-                    total = total.add(item.getPrecioAjustadoFinal().multiply(cantidad, MC));
-                    continue;
-                }
-                var isPromo = item.isPromo();
-                var tax = getImpuestoRate(item);
-                var taxDecimal = tax.divide(BigDecimal.valueOf(100), MC);
-
-                BigDecimal precioFinal;
-                BigDecimal precioUnidad = item != null ? item.getPrecioEfectivo() : BigDecimal.ZERO;
-
-                if (capDiscount(item.getDescuento()).signum() > 0) {
-                    precioFinal = getArticuloConDescuento(item);
-                } else {
-                    precioFinal = precioUnidad;
-                    var totalImpuestos = precioFinal.multiply(taxDecimal, MC);
-                    precioFinal = precioFinal.add(totalImpuestos);
-                }
-
-                BigDecimal subtotal = precioFinal.multiply(cantidad, MC);
-                total = total.add(subtotal);
+                total = total.add(getTotalLineaFinal(item));
             }
         }
-        return total;
+        return total.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Nonnull
     public static BigDecimal calculateTotalDescuento(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
-
-        if (carrito != null && !carrito.isEmpty()) {
+        if (carrito != null) {
             for (ArticuloCarrito item : carrito) {
-                var totalItem = getTotalDescuento(item);
-                var cantidad = item.getCantidad();
-                BigDecimal subtotal = totalItem.multiply(cantidad, MC);
-                total = total.add(subtotal);
+                total = total.add(getTotalDescuento(item).multiply(item.getCantidad(), MC));
             }
         }
-        return total;
+        return total.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Nonnull
     public static BigDecimal calculateTotalImpuesto(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
-
-        if (carrito != null && !carrito.isEmpty()) {
+        if (carrito != null) {
             for (ArticuloCarrito item : carrito) {
-                var totalItem = getTotalImpuesto(item);
-                var cantidad = item.getCantidad();
-                BigDecimal subtotal = totalItem.multiply(cantidad, MC);
-                total = total.add(subtotal);
+                total = total.add(getTotalImpuesto(item).multiply(item.getCantidad(), MC));
             }
         }
-        return total;
+        return total.setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
