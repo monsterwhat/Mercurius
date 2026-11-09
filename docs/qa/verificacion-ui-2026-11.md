@@ -483,3 +483,18 @@ La app estaba **apagada desde el 4/11** (servicio `inactive`/`disabled`; el serv
 - Se reaplicó la zona horaria del sistema: estaba en **UTC**; ahora `America/Costa_Rica` (`CST`). El script de arranque ya lleva `-Duser.timezone=America/Costa_Rica`.
 - **Reimportación en la base de .72:** 919 facturas (929 desde el 3/11; última `00100001040000817405` del 07/11 22:15) + 1.640 líneas, y **+12.878 movimientos** (total 1.490.117). Verificado en la app por búsqueda del consecutivo. 0 ERROR.
 - La importación anterior (sección 20) fue en la base de `.99`, que ya no existe; esta es la buena.
+
+## 23. Descuento del cliente por línea (3.0.1/3.0.2)
+
+**Norma del consecutivo:** confirmada (MH-DGT-RES-0027-2024 art. 2 y Decreto 44739-H art. 13.4): la numeración es **por tipo de comprobante** dentro de sucursal/terminal, sin saltos. El sistema viejo usa una secuencia compartida (TE 816487–816491, FE 816492–816493, TE 816494…), lo que genera huecos por tipo; Mercurius ya lo hace bien.
+
+**Descuento por línea:** en el sistema viejo `CLIENTES.DESCUENTO` se aplica **a cada artículo**, no al total. Mercurius lo guardaba pero no lo usaba.
+
+Implementado:
+- Al seleccionar el cliente se aplica su % a todas las líneas no promocionales (y las nuevas nacen con él), tanto en el selector (`/client-select-form`) como en el escaneo (`processCodigoBarra`).
+- La línea reduce base, IVA y total; el XML emite `<Descuento>` (código 07, “Descuento cliente”) y `SubTotal` queda después del descuento.
+- `resumenComprobante`: `TotalVenta` = suma de `MontoTotal` **antes** del descuento; `TotalDescuentos` aparte; `TotalVentaNeta = TotalVenta − TotalDescuentos`; IVA sobre la base neta. Antes el descuento se restaba dos veces (los tests lo afirmaban: 180/20/160; ahora 200/20/180).
+- Prueba local (shadow, zoidberg): BOHEMIA ₡600 con cliente 50% → línea ₡300; 2 unidades = ₡600; comprobante `00100001040001350009` con TotalVenta ₡1.061,94, Descuentos ₡530,97, Neta ₡530,97, IVA ₡69,03, Total ₡600.
+- Datos: importados los 19 descuentos reales del DBF (`CLIENTES.DESCUENTO`) por nombre; 3 clientes al 50% y el resto 5/10%.
+
+**Pendiente menor:** exponer “Descuento (%)” en el formulario de cliente (hoy se edita en BD) y agregar la prueba automática del flujo completo de emisión con descuento.
