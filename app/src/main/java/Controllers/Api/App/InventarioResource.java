@@ -275,12 +275,12 @@ public class InventarioResource {
             @QueryParam("dir") @DefaultValue("asc") @Parameter(description = "Sort direction: asc|desc") String dir,
             @QueryParam("q") @Nullable @Parameter(description = "Global filter text") String q) {
         try {
-            List<Inventario> filtered = filteredOf(tab, q);
-            sortEntities(filtered, sort, dir);
-            long total = filtered.size();
+            String tabNormalizado = normalizeTab(tab);
+            long total = inventarioService.countAjustes(tabNormalizado, q);
             Window w = windowOf(total, page, size);
-            List<InventarioDTO> data = filtered.subList(w.from(), w.to()).stream()
-                    .map(InventarioResource::toDTO).toList();
+            List<InventarioDTO> data = inventarioService
+                    .pageAjustes(tabNormalizado, q, sort, dir, w.from(), w.size())
+                    .stream().map(InventarioResource::toDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
             LOG.warn("Error listing ajustes de inventario", e);
@@ -1114,12 +1114,18 @@ public class InventarioResource {
     private TableModel buildTableModel(@Nonnull String tab, int page, int size,
                                        @Nullable String sort, @Nullable String dir,
                                        @Nullable String q) {
-        List<Inventario> filtered = filteredOf(tab, q);
-        sortEntities(filtered, sort, dir);
-
-        long total = filtered.size();
+        String tabNormalizado = normalizeTab(tab);
+        long total = inventarioService.countAjustes(tabNormalizado, q);
         Window w = windowOf(total, page, size);
-        List<Inventario> filas = new ArrayList<>(filtered.subList(w.from(), w.to()));
+        // LIMIT/OFFSET en PostgreSQL: la tabla ya no hidrata la lista completa
+        // en cada cambio de página (673.326 filas antes).
+        List<Inventario> filas = new ArrayList<>(inventarioService.pageAjustes(
+                tabNormalizado, q, sort, dir, w.from(), w.size()));
+
+        // Sin sort explícito, la pestaña muestra lo más reciente primero.
+        boolean sinOrden = sort == null || sort.isBlank();
+        String sortKey = sinOrden ? "fechaMovimiento" : sort;
+        String sortDir = sinOrden || "desc".equalsIgnoreCase(dir) ? "desc" : "asc";
 
         // Column definitions mirror the legacy per-tab p:column sets; null
         // key ⇒ non-sortable (docs/ui-kit.md §3.1).
@@ -1140,13 +1146,13 @@ public class InventarioResource {
         }
 
         return new TableModel(
-                "tabla-inventario-" + tab,
+                "tabla-inventario-" + tabNormalizado,
                 "/api/app/inventario/table",
-                tab,
+                tabNormalizado,
                 columnas,
                 filas,
-                sort,
-                "desc".equalsIgnoreCase(dir) ? "desc" : "asc",
+                sortKey,
+                sortDir,
                 w.page(),
                 w.size(),
                 total,
@@ -1154,17 +1160,6 @@ public class InventarioResource {
                 pageWindow(w.page(), w.totalPages()),
                 filtros,
                 q);
-    }
-
-    /** Service-query dispatch per tab (Services layer untouched). */
-    private List<Inventario> filteredOf(@Nonnull String tab, @Nullable String q) {
-        List<Inventario> source = switch (normalizeTab(tab)) {
-            case TAB_INACTIVOS -> orEmpty(inventarioService.listAllInactivos());
-            case TAB_PROCESADOS -> orEmpty(inventarioService.listAllActivosYProcesados());
-            case TAB_PENDIENTES -> orEmpty(inventarioService.listAllSinProcesar());
-            default -> orEmpty(inventarioService.ListAllEnabled());
-        };
-        return filterAjustes(source, q);
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
@@ -1179,79 +1174,9 @@ public class InventarioResource {
         return new Window(p, s, from, to, totalPages);
     }
 
-    // ── Filtering/sorting (in-memory; Services layer untouched) ─────────
-
-    /**
-     * Global filter over the legacy {@code globalFilterFunction} field set:
-     * codigo, artículo nombre/código de barra, fecha, notas, tipo movimiento,
-     * cantidad, usuario username. Null-safe where the legacy version wasn't.
-     */
-    private static List<Inventario> filterAjustes(@Nonnull List<Inventario> source, @Nullable String q) {
-        if (q == null || q.trim().isEmpty()) {
-            return new ArrayList<>(source);
-        }
-        String needle = q.trim().toLowerCase(Locale.ROOT);
-        List<Inventario> out = new ArrayList<>();
-        for (Inventario m : source) {
-            Articulos articulo = m.getArticulo();
-            Usuarios usuario = m.getUsuario();
-            if (String.valueOf(m.getCodigo()).contains(needle)
-                    || (articulo != null && matches(articulo.getNombre(), needle))
-                    || (articulo != null && matches(articulo.getCodigoBarra(), needle))
-                    || (m.getFechaMovimiento() != null
-                        && matches(m.getFechaMovimiento().toString(), needle))
-                    || matches(m.getNotas(), needle)
-                    || matches(m.getTipoMovimiento(), needle)
-                    || (m.getCantidad() != null && m.getCantidad().toString().contains(needle))
-                    || (usuario != null && matches(usuario.getUsername(), needle))) {
-                out.add(m);
-            }
-        }
-        return out;
-    }
-
-    private static boolean matches(@Nullable String value, @Nonnull String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
-    }
-
-    /** Typed comparator dispatch over a whitelisted key set. */
-    private static void sortEntities(@Nonnull List<Inventario> entities, @Nullable String sort,
-                                     @Nullable String dir) {
-        if (entities.isEmpty() || sort == null || sort.isBlank()) {
-            return;
-        }
-        Comparator<Inventario> cmp = comparatorFor(sort);
-        if (cmp != null) {
-            entities.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
-        }
-    }
-
-    @Nullable
-    private static Comparator<Inventario> comparatorFor(@Nonnull String sort) {
-        return switch (sort) {
-            case "codigo" -> Comparator.comparingInt(Inventario::getCodigo);
-            case "articulo" -> Comparator.comparing(InventarioResource::nombreArticuloDe,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "cantidad" -> Comparator.comparing(Inventario::getCantidad,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case "tipoMovimiento" -> Comparator.comparing(Inventario::getTipoMovimiento,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "fechaMovimiento" -> Comparator.comparing(Inventario::getFechaMovimiento,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case "usuario" -> Comparator.comparing(InventarioResource::usernameDe,
-                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            default -> null;
-        };
-    }
-
     @Nullable
     private static String nombreArticuloDe(@Nullable Inventario m) {
         return m != null && m.getArticulo() != null ? m.getArticulo().getNombre() : null;
-    }
-
-    @Nullable
-    private static String usernameDe(@Nullable Inventario m) {
-        return m != null && m.getUsuario() != null ? m.getUsuario().getUsername() : null;
     }
 
     // ── DTO mapper (manual, repo convention) ────────────────────────────

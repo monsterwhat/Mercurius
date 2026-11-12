@@ -127,14 +127,9 @@ public class InventariosPagesResource {
      * filtros, q. Service-query dispatch per tab matches the API twin.
      */
     private Map<String, Object> tableModel(@Nonnull String tab, long total) {
-        // Solo la página visible: antes se traían las 673.326 filas de cada
-        // pestaña para quedarse con 20. El LIMIT lo hace PostgreSQL.
-        List<Inventario> filas = orEmpty(switch (tab) {
-            case TAB_INACTIVOS -> inventarioService.listInactivosPage(0, PAGE_SIZE);
-            case TAB_PROCESADOS -> inventarioService.listActivosYProcesadosPage(0, PAGE_SIZE);
-            case TAB_PENDIENTES -> inventarioService.listSinProcesarPage(0, PAGE_SIZE);
-            default -> inventarioService.listEnabledPage(0, PAGE_SIZE);
-        });
+        // Solo la página visible, con el orden por defecto (fecha de
+        // movimiento más reciente primero) resuelto en PostgreSQL.
+        List<Inventario> filas = inventarioService.pageAjustes(tab, null, null, "desc", 0, PAGE_SIZE);
         int totalPages = (int) Math.max(1L, (total + PAGE_SIZE - 1) / PAGE_SIZE);
 
         // Column definitions mirror the legacy per-tab p:column sets; null
@@ -157,8 +152,8 @@ public class InventariosPagesResource {
         model.put("baseUrl", "/api/app/inventario/table");
         model.put("columnas", columnas);
         model.put("filas", filas);
-        model.put("sortKey", null);
-        model.put("sortDir", "asc");
+        model.put("sortKey", "fechaMovimiento");
+        model.put("sortDir", "desc");
         model.put("page", 1);
         model.put("size", PAGE_SIZE);
         model.put("total", total);

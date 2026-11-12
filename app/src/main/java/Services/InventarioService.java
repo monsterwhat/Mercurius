@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List; 
+import java.util.Locale;
 import java.util.Map;
 import org.jboss.logging.Logger;
 
@@ -287,6 +288,105 @@ public class InventarioService extends GService<Inventario> {
             LOG.warn("Error listing page of inventario: " + e.getMessage()
                     + " | source=InventarioService." + origen + "()");
             return null;
+        }
+    }
+
+    /**
+     * Página del listado de ajustes con el filtro global y el orden resueltos
+     * en SQL. La tabla de Gestión de Inventario pedía la lista completa
+     * (673.326 filas) y la recortaba en memoria en cada cambio de página.
+     *
+     * @param tab   activos|inactivos|procesados|pendientes (null = activos)
+     * @param q     filtro global (código, artículo, barra, fecha, notas, tipo,
+     *              cantidad o usuario)
+     * @param sort  columna pedida; null = fechaMovimiento descendente
+     * @param first offset (0-based)
+     * @param max   tamaño de página
+     */
+    @Nonnull
+    public List<Inventario> pageAjustes(@Nullable String tab, @Nullable String q,
+                                        @Nullable String sort, @Nullable String dir,
+                                        int first, int max) {
+        String jpql = "SELECT i FROM Inventario i"
+                + " LEFT JOIN FETCH i.articulo a"
+                + " LEFT JOIN FETCH i.usuario u"
+                + " WHERE " + ajustesWhere(tab, q)
+                + ajustesOrder(sort, dir);
+        try {
+            TypedQuery<Inventario> query = em.createQuery(jpql, Inventario.class);
+            bindFiltro(query, q);
+            return query.setFirstResult(Math.max(0, first))
+                    .setMaxResults(Math.min(Math.max(max, 1), 100))
+                    .getResultList();
+        } catch (PersistenceException | IllegalArgumentException e) {
+            LOG.warn("Error paginando ajustes de inventario: " + e.getMessage()
+                    + " | tab=" + tab + " | q=" + q + " | sort=" + sort
+                    + " | source=InventarioService.pageAjustes()");
+            return List.of();
+        }
+    }
+
+    /** Total de filas del listado para el mismo filtro que {@link #pageAjustes}. */
+    public long countAjustes(@Nullable String tab, @Nullable String q) {
+        String jpql = "SELECT COUNT(i) FROM Inventario i"
+                + " LEFT JOIN i.articulo a"
+                + " LEFT JOIN i.usuario u"
+                + " WHERE " + ajustesWhere(tab, q);
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            bindFiltro(query, q);
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException | IllegalArgumentException e) {
+            LOG.warn("Error contando ajustes de inventario: " + e.getMessage()
+                    + " | tab=" + tab + " | q=" + q
+                    + " | source=InventarioService.countAjustes()");
+            return 0L;
+        }
+    }
+
+    @Nonnull
+    private static String ajustesWhere(@Nullable String tab, @Nullable String q) {
+        String base = switch (tab == null ? "" : tab) {
+            case "inactivos" -> "i.status = false";
+            case "procesados" -> "i.status = true AND i.processed = true";
+            case "pendientes" -> "i.status = true AND i.processed = false";
+            default -> "i.status = true";
+        };
+        if (q == null || q.isBlank()) {
+            return base;
+        }
+        return base + " AND (LOWER(CAST(i.codigo AS string)) LIKE :q"
+                + " OR LOWER(a.nombre) LIKE :q"
+                + " OR LOWER(a.codigoBarra) LIKE :q"
+                + " OR CAST(i.fechaMovimiento AS string) LIKE :q"
+                + " OR LOWER(i.notas) LIKE :q"
+                + " OR LOWER(i.tipoMovimiento) LIKE :q"
+                + " OR LOWER(CAST(i.cantidad AS string)) LIKE :q"
+                + " OR LOWER(u.username) LIKE :q)";
+    }
+
+    @Nonnull
+    private static String ajustesOrder(@Nullable String sort, @Nullable String dir) {
+        boolean sinOrden = sort == null || sort.isBlank();
+        String key = switch (sinOrden ? "" : sort) {
+            case "codigo" -> "i.codigo";
+            case "articulo" -> "LOWER(a.nombre)";
+            case "cantidad" -> "i.cantidad";
+            case "tipoMovimiento" -> "LOWER(i.tipoMovimiento)";
+            case "fechaMovimiento" -> "i.fechaMovimiento";
+            case "usuario" -> "LOWER(u.username)";
+            default -> "i.fechaMovimiento";
+        };
+        // Sin sort explícito: lo más reciente primero (pedido de operación).
+        boolean desc = sinOrden || "desc".equalsIgnoreCase(dir);
+        return " ORDER BY " + key + (desc ? " DESC" : " ASC")
+                + " NULLS LAST, i.codigo DESC";
+    }
+
+    private static void bindFiltro(@Nonnull TypedQuery<?> query, @Nullable String q) {
+        if (q != null && !q.isBlank()) {
+            query.setParameter("q", "%" + q.trim().toLowerCase(Locale.ROOT) + "%");
         }
     }
 
