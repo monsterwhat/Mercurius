@@ -6,7 +6,7 @@
   Model keys mirror the _kit/data-table DATA CONTRACT (see T18's
   tabla-familias for the annotated reference): modelo.id, modelo.baseUrl,
   modelo.columnas, modelo.filas (Models.Inventario rows), modelo.sortKey,
-  modelo.sortDir, modelo.page, modelo.size, modelo.total, modelo.totalPages,
+  modelo.sortDir, modelo.page, modelo.get('size'), modelo.total, modelo.totalPages,
   modelo.paginas, modelo.filtros (tab [+ q]); q = current global filter.
 
   Row actions (legacy parity):
@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.get('size') total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for movimiento in modelo.filas}
             <tr>

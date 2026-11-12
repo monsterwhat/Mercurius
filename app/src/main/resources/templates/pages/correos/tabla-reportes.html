@@ -49,8 +49,9 @@
   - hx-disabled-elt="this" on toggle and delete: a double tap cannot fire the
     same mutation twice.
 !}
-<div id="{modelo.id}" data-resultados="{modelo.total}">
-    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+<div id="{modelo.id}" data-resultados="{modelo.total}"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.get('size') total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for reporte in modelo.filas}
             <tr>

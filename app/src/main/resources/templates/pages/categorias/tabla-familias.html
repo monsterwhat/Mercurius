@@ -12,7 +12,7 @@
     modelo.sortKey     String  - current sort column key (nullable)
     modelo.sortDir     String  - "asc"|"desc"
     modelo.page        Integer - 1-based page
-    modelo.size        Integer - page size
+    modelo.get('size')        Integer - page size
     modelo.total       Long    - total rows after filter
     modelo.totalPages  Integer - ceil(total/size), computed server-side
     modelo.paginas     List    - pager window
@@ -48,7 +48,7 @@
     </div>
 
     <div id="resultados-{modelo.id}">
-    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.get('size') total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for familia in modelo.filas}
             <tr>

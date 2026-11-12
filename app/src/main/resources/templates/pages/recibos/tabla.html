@@ -6,7 +6,7 @@
   Model keys mirror the _kit/data-table DATA CONTRACT: modelo.id
   ("recibos-tabla-{bucket}"), modelo.baseUrl, modelo.columnas, modelo.filas
   (RecibosResource.FilaRecibo rows), modelo.sortKey, modelo.sortDir,
-  modelo.page, modelo.size, modelo.total, modelo.totalPages, modelo.paginas,
+  modelo.page, modelo.get('size'), modelo.total, modelo.totalPages, modelo.paginas,
   modelo.filtros (bucket [+ q]); modelo.bucket = active bucket key; q =
   current global filter of THIS table.
 
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.get('size') total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
         {#rows}
             {#for fila in modelo.filas}
             <tr>

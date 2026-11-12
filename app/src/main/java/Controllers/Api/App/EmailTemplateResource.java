@@ -510,6 +510,12 @@ public class EmailTemplateResource {
         if (template == null) {
             return notFound(id);
         }
+        String negocio = "Mercurius";
+        Models.ConfiguracionAplicacion ajustes = appSettingsService.returnCurrent();
+        if (ajustes != null && ajustes.getNombreNegocio() != null
+                && !ajustes.getNombreNegocio().isBlank()) {
+            negocio = ajustes.getNombreNegocio();
+        }
         Map<String, String> variables = new LinkedHashMap<>();
         variables.put("cliente", "Cliente de ejemplo");
         variables.put("consecutivo", "00100001010000000001");
@@ -522,16 +528,21 @@ public class EmailTemplateResource {
         variables.put("asunto", "Aviso importante");
         variables.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
         variables.put("enlace", "#");
+        // Variables de las plantillas por caso (comprobantes y reportes).
+        variables.put("tipoComprobante", "Factura electrónica");
+        variables.put("estado", "ACEPTADO");
+        variables.put("referencia", "00100001010000000001");
+        variables.put("motivo", "Devolución de mercancía");
+        variables.put("saldo", "₡0,00");
+        variables.put("vencimiento", "30/11/2026");
+        variables.put("moneda", "CRC");
+        variables.put("negocio", negocio);
+        variables.put("resumen", "Resumen de ejemplo del período seleccionado.");
         String html = emailTemplateService.procesarPlantilla(template, variables);
         String asunto = template.getAsunto() == null ? "" : template.getAsunto();
         for (Map.Entry<String, String> entry : variables.entrySet()) {
             asunto = asunto.replace("{{" + entry.getKey() + "}}",
                     entry.getValue() == null ? "" : entry.getValue());
-        }
-        String negocio = null;
-        Models.ConfiguracionAplicacion ajustes = appSettingsService.returnCurrent();
-        if (ajustes != null) {
-            negocio = ajustes.getNombreNegocio();
         }
         return htmlOk(previewPlantilla
                 .data("plantilla", template)
