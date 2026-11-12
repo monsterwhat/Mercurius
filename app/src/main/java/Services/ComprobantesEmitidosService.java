@@ -17,9 +17,12 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDateTime;
 import org.jboss.logging.Logger;
 
@@ -677,6 +680,117 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             LOG.warn("Error listing entities for user with date range: " + e.getMessage() + " | source=ComprobantesEmitidosService.listAllEmitidosBy() | despues=" + e.getMessage());
             return null;
         }
+    }
+
+    // ── Reporte de ventas por cajero (líneas de detalle) ─────────────────
+    // El reporte carga las líneas directamente en SQL. Antes se traían los
+    // comprobantes completos con CINCO colecciones en un solo FETCH, lo que
+    // Hibernate rechaza (MultipleBagFetchException) y dejaba el reporte vacío
+    // incluso sin cajero seleccionado.
+
+    /** Total de líneas vendidas en el rango (y cajero, si se indica). */
+    public long countVentasLineas(@Nullable Usuarios user, @Nonnull Date startDate, @Nonnull Date endDate) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT COUNT(ld) FROM ComprobantesEmitidos f"
+                + " JOIN f.encabezado e JOIN f.detalles d JOIN d.lineasDetalle ld"
+                + " WHERE e.fechaEmision BETWEEN :startDate AND :endDate"
+                + (user != null ? " AND f.user = :user" : "");
+        params.put("startDate", toLocal(startDate));
+        params.put("endDate", toLocal(endDate));
+        if (user != null) {
+            params.put("user", user.getUsername());
+        }
+        try {
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            params.forEach(query::setParameter);
+            Long total = query.getSingleResult();
+            return total == null ? 0L : total;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando ventas por cajero: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countVentasLineas()");
+            return 0L;
+        }
+    }
+
+    /** Suma de las líneas vendidas en el rango (y cajero, si se indica). */
+    public @Nullable BigDecimal sumVentasLineas(@Nullable Usuarios user,
+                                                @Nonnull Date startDate, @Nonnull Date endDate) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT SUM(ld.montoTotalLinea) FROM ComprobantesEmitidos f"
+                + " JOIN f.encabezado e JOIN f.detalles d JOIN d.lineasDetalle ld"
+                + " WHERE e.fechaEmision BETWEEN :startDate AND :endDate"
+                + (user != null ? " AND f.user = :user" : "");
+        params.put("startDate", toLocal(startDate));
+        params.put("endDate", toLocal(endDate));
+        if (user != null) {
+            params.put("user", user.getUsername());
+        }
+        try {
+            TypedQuery<Object> query = em.createQuery(jpql, Object.class);
+            params.forEach(query::setParameter);
+            Object total = query.getSingleResult();
+            if (total == null) {
+                return BigDecimal.ZERO;
+            }
+            return total instanceof BigDecimal bd ? bd : new BigDecimal(total.toString());
+        } catch (PersistenceException e) {
+            LOG.warn("Error sumando ventas por cajero: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.sumVentasLineas()");
+            return null;
+        }
+    }
+
+    /**
+     * Página de líneas vendidas: fecha de emisión, cajero, artículo,
+     * cantidad y monto. Orden y LIMIT/OFFSET en SQL.
+     */
+    public @Nonnull List<Object[]> pageVentasLineas(@Nullable Usuarios user,
+                                                    @Nonnull Date startDate, @Nonnull Date endDate,
+                                                    @Nullable String sort, @Nullable String dir,
+                                                    int offset, int size) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        String jpql = "SELECT e.fechaEmision, f.user, ld.detalle, ld.cantidad, ld.montoTotalLinea"
+                + " FROM ComprobantesEmitidos f"
+                + " JOIN f.encabezado e JOIN f.detalles d JOIN d.lineasDetalle ld"
+                + " WHERE e.fechaEmision BETWEEN :startDate AND :endDate"
+                + (user != null ? " AND f.user = :user" : "")
+                + ventasOrder(sort, dir);
+        params.put("startDate", toLocal(startDate));
+        params.put("endDate", toLocal(endDate));
+        if (user != null) {
+            params.put("user", user.getUsername());
+        }
+        try {
+            TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class);
+            params.forEach(query::setParameter);
+            return query.setFirstResult(Math.max(offset, 0))
+                    .setMaxResults(Math.min(Math.max(size, 1), 100))
+                    .getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error paginando ventas por cajero: " + e.getMessage()
+                    + " | sort=" + sort + " | dir=" + dir
+                    + " | source=ComprobantesEmitidosService.pageVentasLineas()");
+            return java.util.List.of();
+        }
+    }
+
+    @Nonnull
+    private static String ventasOrder(@Nullable String sort, @Nullable String dir) {
+        boolean sinOrden = sort == null || sort.isBlank();
+        String key = switch (sinOrden ? "" : sort) {
+            case "fecha" -> "e.fechaEmision";
+            case "cajero" -> "LOWER(f.user)";
+            case "detalle" -> "LOWER(ld.detalle)";
+            case "cantidad" -> "ld.cantidad";
+            case "montoTotalLinea" -> "ld.montoTotalLinea";
+            default -> "e.fechaEmision";
+        };
+        boolean desc = sinOrden || "desc".equalsIgnoreCase(dir == null ? "" : dir.trim());
+        return " ORDER BY " + key + (desc ? " DESC" : " ASC") + " NULLS LAST, f.id DESC, ld.id ASC";
+    }
+
+    private static LocalDateTime toLocal(@Nonnull Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     public boolean findByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
