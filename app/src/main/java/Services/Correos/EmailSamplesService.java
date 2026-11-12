@@ -189,6 +189,16 @@ public class EmailSamplesService {
         v.put("asunto", "Aviso importante");
         v.put("mensaje", "Este es un texto de ejemplo para ver cómo queda el correo.");
         v.put("enlace", "https://mercurius.tamarindorents.com/");
+        // Variables de las plantillas por caso (comprobantes y reportes).
+        v.put("tipoComprobante", "Factura electrónica");
+        v.put("estado", "ACEPTADO");
+        v.put("referencia", "00100001010000000001");
+        v.put("motivo", "Devolución de mercancía");
+        v.put("saldo", "₡0,00");
+        v.put("vencimiento", "30/11/2026");
+        v.put("moneda", "CRC");
+        v.put("negocio", "Mercurius");
+        v.put("resumen", "Resumen de ejemplo del período seleccionado.");
         try {
             @SuppressWarnings("unchecked")
             List<String> clientes = em.createNativeQuery(

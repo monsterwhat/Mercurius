@@ -12,8 +12,9 @@ import org.junit.jupiter.api.Test;
 import support.AppBase;
 
 /**
- * El botón "Cargar predeterminadas" crea las cuatro plantillas HTML de fábrica
- * y es idempotente (no duplica las que ya existen por nombre).
+ * El botón "Cargar predeterminadas" crea el catálogo HTML de fábrica
+ * (comprobantes, reportes y notificaciones) y es idempotente: no duplica las
+ * que ya existen por nombre.
  */
 @QuarkusTest
 class EmailTemplateDefaultsTest extends AppBase {
@@ -36,7 +37,7 @@ class EmailTemplateDefaultsTest extends AppBase {
                 .when().post(BASE + "/predeterminadas")
                 .then().statusCode(200)
                 .extract().jsonPath().getInt("data.creadas");
-        assertThat(creadas).isBetween(0, 4);
+        assertThat(creadas).isBetween(0, 23);
 
         // Segunda llamada: no crea ninguna más (idempotente).
         given().cookies(jar)

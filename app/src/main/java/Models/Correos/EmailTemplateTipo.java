@@ -5,6 +5,7 @@ package Models.Correos;
  * @author Al
  */
 public enum EmailTemplateTipo {
+    COMPROBANTES("Comprobantes Electrónicos"),
     REPORTES("Reportes Programados"),
     ALERTAS_STOCK("Alertas de Stock"),
     NOTIFICACIONES("Notificaciones"),

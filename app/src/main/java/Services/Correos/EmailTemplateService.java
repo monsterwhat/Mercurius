@@ -212,6 +212,9 @@ public class EmailTemplateService extends GService<EmailTemplate> {
                   </a>
                 </p>
                 """, usuario));
+        // Catálogos extensos por caso: comprobantes electrónicos y reportes.
+        lista.addAll(EmailTemplateDefaultsComprobantes.templates(usuario));
+        lista.addAll(EmailTemplateDefaultsReportes.templates(usuario));
         return lista;
     }
 
