@@ -859,13 +859,33 @@ body {
     }
 
     // Nothing below 12px on a phone.
-    .table th,
-    .table td,
+    .table thead th,
+    .table tbody td,
     .help,
     .label,
     .app-sidebar-meta,
     .app-sidebar-label {
-        font-size: .75rem;
+        font-size: 12px;
+    }
+
+    // The logo block is a 64px figure + file input in a flex row; the input
+    // refuses to shrink and pushed the page 51px past the viewport. Stack it.
+    .settings-logo {
+        flex-direction: column;
+    }
+
+    .settings-logo > div {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .settings-logo .file {
+        width: 100%;
+    }
+
+    .settings-logo .file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
