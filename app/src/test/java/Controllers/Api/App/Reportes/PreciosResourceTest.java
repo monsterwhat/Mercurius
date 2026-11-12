@@ -48,6 +48,9 @@ class PreciosResourceTest {
                 .then()
                 .statusCode(200)
                 .body(containsString("<table"))
-                .body(containsString("data-kit-table"));
+                .body(containsString("data-kit-table"))
+                // El "Precio actual" se marca con el chip, no pintando la fila
+                // entera de azul (Bulma is-selected).
+                .body(org.hamcrest.Matchers.not(containsString("is-selected")));
     }
 }
