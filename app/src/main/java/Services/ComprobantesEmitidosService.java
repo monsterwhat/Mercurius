@@ -1533,7 +1533,13 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
     }
 
     private static String facturasReporteOrder(@Nullable String sort, @Nullable String dir) {
-        String column = switch (sort == null ? "" : sort) {
+        String key = sort == null ? "" : sort.trim();
+        // Sin orden explícito: lo más reciente primero (las facturas de ayer
+        // quedaban en la última página y parecían no importadas).
+        if (key.isEmpty()) {
+            return " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC";
+        }
+        String column = switch (key) {
             case "consecutivo" -> "e.numeroConsecutivo";
             case "fecha" -> "e.fechaEmision";
             case "emisor" -> "f.user";

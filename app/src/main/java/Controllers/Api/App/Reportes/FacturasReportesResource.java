@@ -84,8 +84,9 @@ public class FacturasReportesResource {
                 "pages", ReportePageSupport.pageWindow(current, totalPages),
                 "page", current,
                 "size", pageSize,
-                "sortKey", sort == null ? "" : sort,
-                "sortDir", ReportePageSupport.isDescending(dir) ? "desc" : "asc",
+                "sortKey", sort == null || sort.isBlank() ? "fecha" : sort,
+                "sortDir", sort == null || sort.isBlank() ? "desc"
+                        : (ReportePageSupport.isDescending(dir) ? "desc" : "asc"),
                 "filtros", ReportePageSupport.params("q", q),
                 "baseUrl", BASE_URL);
 

@@ -36,7 +36,9 @@ class FacturasReportesPageTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body(containsString("Facturas Emitidas"))
                 .body(containsString("data-kit-table"))
-                .body(containsString("Numero Consecutivo"));
+                .body(containsString("Numero Consecutivo"))
+                // Sin sort explícito: la fecha más reciente primero.
+                .body(containsString("aria-sort=\"descending\""));
     }
 
     @Test
