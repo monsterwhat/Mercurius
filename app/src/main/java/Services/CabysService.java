@@ -374,7 +374,10 @@ public class CabysService extends GService<Cabys>{
         String expresion = switch (sort) {
             case "descripcion" -> "LOWER(c.descripcion)";
             case "categorias" -> "LOWER(c.categorias)";
-            case "impuesto" -> "LOWER(c.impuesto)";
+            // impuesto es un porcentaje guardado como texto: "4" > "13" en
+            // orden lexicografico. Se castea a numero para que 13% quede
+            // despues de 4% y el orden sea el mismo en todas las paginas.
+            case "impuesto" -> "CAST(NULLIF(TRIM(c.impuesto), '') AS Double)";
             case "estado" -> "LOWER(c.estado)";
             default -> null;
         };

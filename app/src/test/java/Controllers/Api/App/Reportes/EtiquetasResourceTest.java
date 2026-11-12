@@ -27,7 +27,11 @@ class EtiquetasResourceTest {
                 .body(containsString("data-kit-table"))
                 .body(containsString("reporte-etiquetas"))
                 .body(containsString("js-etiqueta-check"))
-                .body(containsString("Generar Etiquetas"));
+                .body(containsString("Generar Etiquetas"))
+                .body(containsString("@media print"))
+                .body(containsString("#vista-previa"))
+                .body(containsString("id=\"limite-previa\""))
+                .body(containsString("Seleccione al menos un artículo para imprimir etiquetas"));
     }
 
     @Test

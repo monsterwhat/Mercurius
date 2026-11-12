@@ -10,6 +10,33 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
+        <style media="print">
+            @page { size: A4; margin: 6mm; }
+            body { background: #fff !important; }
+            /* La pantalla completa (sidebar, opciones, tabla) no se imprime:
+               solo la vista previa de etiquetas. */
+            body * { visibility: hidden !important; }
+            #vista-previa, #vista-previa * { visibility: visible !important; }
+            #vista-previa {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #vista-previa .label-preview {
+                display: inline-block;
+                width: 48%;
+                margin: 1%;
+                padding: 4mm;
+                border: 1px solid #000;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        </style>
+
         {#include _kit/page-header title=titulo subtitle="Seleccione los artículos para generar etiquetas"}
             {#actions}
             {! The screen's one action is printing, so it belongs in the header,
@@ -69,6 +96,10 @@
                         <p><strong>Copias:</strong> <span id="eco-copias">1</span></p>
                     </div>
                     <div id="vista-previa" class="mt-2"></div>
+                    <p class="help has-text-warning" id="limite-previa" style="display:none">
+                        La vista previa muestra las primeras 500 etiquetas.
+                        Use Exportar PDF para imprimir el lote completo.
+                    </p>
                     <p class="mercurius-text-muted" id="sin-seleccion">
                         Seleccione artículos de la tabla para ver la vista previa
                     </p>
@@ -130,22 +161,30 @@
                         String(codigos.length * cantidad * copias);
                 var previa = document.getElementById('vista-previa');
                 previa.innerHTML = '';
+                var repeticiones = cantidad * copias;
+                var maximoPrevia = 500;
+                var restantes = maximoPrevia;
                 codigos.forEach(function (codigo) {
                     var dato = catalogo[codigo] || { nombre: codigo, barra: codigo, precio: '-' };
-                    var tarjeta = document.createElement('div');
-                    tarjeta.className = 'label-preview box is-shadowless';
-                    var barra = document.createElement('div');
-                    barra.className = 'barcode-numbers';
-                    barra.textContent = dato.barra;
-                    var nombre = document.createElement('strong');
-                    nombre.textContent = dato.nombre;
-                    var precio = document.createElement('span');
-                    precio.textContent = dato.precio;
-                    tarjeta.appendChild(barra);
-                    tarjeta.appendChild(nombre);
-                    tarjeta.appendChild(precio);
-                    previa.appendChild(tarjeta);
+                    for (var i = 0; i < repeticiones && restantes > 0; i++) {
+                        var tarjeta = document.createElement('div');
+                        tarjeta.className = 'label-preview box is-shadowless';
+                        var barra = document.createElement('div');
+                        barra.className = 'barcode-numbers';
+                        barra.textContent = dato.barra;
+                        var nombre = document.createElement('strong');
+                        nombre.textContent = dato.nombre;
+                        var precio = document.createElement('span');
+                        precio.textContent = dato.precio;
+                        tarjeta.appendChild(barra);
+                        tarjeta.appendChild(nombre);
+                        tarjeta.appendChild(precio);
+                        previa.appendChild(tarjeta);
+                        restantes--;
+                    }
                 });
+                document.getElementById('limite-previa').style.display =
+                        (codigos.length * repeticiones > maximoPrevia) ? 'block' : 'none';
                 document.getElementById('sin-seleccion').style.display =
                         codigos.length === 0 ? 'block' : 'none';
             }
@@ -166,7 +205,17 @@
                 renderizar();
             });
             document.getElementById('btn-imprimir').addEventListener('click', function () {
-                /* Legacy imprimirEtiquetas parity: print hint, no server call. */
+                var etiquetas = document.querySelectorAll('#vista-previa .label-preview');
+                if (etiquetas.length === 0) {
+                    window.alert('Seleccione al menos un artículo para imprimir etiquetas.');
+                    return;
+                }
+                if (document.getElementById('limite-previa').style.display !== 'none') {
+                    window.alert('La vista previa está limitada a 500 etiquetas. '
+                            + 'Use Exportar PDF para imprimir el lote completo.');
+                    return;
+                }
+                /* El CSS @media print oculta todo excepto #vista-previa. */
                 window.print();
             });
             ['cantidad', 'copias'].forEach(function (id) {
