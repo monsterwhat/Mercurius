@@ -36,9 +36,14 @@
                 <div class="column is-full field" role="group" aria-labelledby="elementos-label">
                     <span class="label" id="elementos-label">Elementos (marque los que desea, vacío = top 8)</span>
                     <div class="control">
-                        <input class="input" type="search" id="busqueda-elementos"
-                               aria-label="Buscar elemento" placeholder="Buscar..."/>
+                        <input class="input" type="search" id="busqueda-elementos" name="buscar"
+                               aria-label="Buscar elemento" placeholder="Buscar y presionar Enter"
+                               aria-describedby="elementos-help"
+                               value="{filtros.buscar ?: ''}"/>
                     </div>
+                    <p class="help" id="elementos-help">
+                        Mostrando {opciones.size()} de {totalOpciones}. Escriba un nombre y presione Enter para filtrar.
+                    </p>
                     <div class="table-container" style="max-height:320px; overflow:auto; margin-top:0.5rem;">
                         <table class="table is-fullwidth">
                             <thead>
@@ -61,20 +66,6 @@
                             </tbody>
                         </table>
                     </div>
-                    <script>
-                    (function () {
-                        var input = document.getElementById('busqueda-elementos');
-                        var filas = document.querySelectorAll('#tabla-elementos tr');
-                        if (input && filas.length) {
-                            input.addEventListener('input', function () {
-                                var q = this.value.toLowerCase();
-                                filas.forEach(function (fila) {
-                                    fila.style.display = fila.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
-                                });
-                            });
-                        }
-                    })();
-                    </script>
                 </div>
                 <div class="control">
                     <button class="button is-primary" type="submit">Cargar</button>

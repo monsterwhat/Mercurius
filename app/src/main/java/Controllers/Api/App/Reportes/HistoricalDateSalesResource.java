@@ -57,7 +57,8 @@ public class HistoricalDateSalesResource {
             @QueryParam("dia") @Nullable Integer dia,
             @QueryParam("anos") @DefaultValue("6") Integer anos,
             @QueryParam("dimension") @Nullable String dimension,
-            @QueryParam("items") @Nullable List<String> items) {
+            @QueryParam("items") @Nullable List<String> items,
+            @QueryParam("buscar") @Nullable String buscar) {
 
         int resolvedMes = mes != null ? mes : java.time.LocalDate.now().getMonthValue();
         int resolvedDia = dia != null ? dia : java.time.LocalDate.now().getDayOfMonth();
@@ -97,12 +98,39 @@ public class HistoricalDateSalesResource {
             opciones = allProductos;
         }
 
+        // La lista de artículos tiene ~22.000 entradas: renderizar un checkbox
+        // por artículo hacía la página móvil inmanejable (22.564 controles).
+        // Se muestran los seleccionados + hasta 200 coincidencias; el buscador
+        // ahora filtra en el servidor (Enter sobre el campo).
+        int totalOpciones = opciones.size();
+        java.util.Set<String> visibles = new java.util.LinkedHashSet<>(selectedItems);
+        String needle = buscar == null || buscar.isBlank()
+                ? null : buscar.trim().toLowerCase(java.util.Locale.ROOT);
+        int agregadas = 0;
+        for (String opcion : opciones) {
+            if (agregadas >= 200) {
+                break;
+            }
+            if (visibles.contains(opcion)) {
+                continue;
+            }
+            if (needle == null || opcion.toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+                visibles.add(opcion);
+                agregadas++;
+            }
+        }
+        opciones = new ArrayList<>(visibles);
+        if (buscar != null && !buscar.isBlank()) {
+            opciones.sort(String.CASE_INSENSITIVE_ORDER);
+        }
+
         Map<String, String> filtros = new LinkedHashMap<>();
         filtros.put("mes", String.valueOf(resolvedMes));
         filtros.put("dia", String.valueOf(resolvedDia));
         filtros.put("anos", String.valueOf(resolvedAnos));
         filtros.put("dimension", resolvedDimension);
         filtros.put("items", String.join("|", selectedItems));
+        filtros.put("buscar", buscar == null ? "" : buscar);
 
         SalesTrendService.SameDateHistory resultado = null;
         try {
@@ -143,6 +171,7 @@ public class HistoricalDateSalesResource {
         model.put("familias", new ArrayList<>(allFamilias));
         model.put("departamentos", new ArrayList<>(allDepartamentos));
         model.put("opciones", opciones);
+        model.put("totalOpciones", totalOpciones);
         model.put("itemsSeleccionados", selectedItems);
         model.put("resultado", resultado);
         model.put("resumenAnual", resumenAnual);

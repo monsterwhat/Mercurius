@@ -782,6 +782,32 @@ body {
     .app-header-comprobantes-icon {
         display: inline-flex;
     }
+
+    // Touch targets: the audit found 32px icon buttons and 13px checkboxes on
+    // phones. Raise the most common ones to 40px (and 20px for checkboxes)
+    // without changing the desktop density.
+    .app-header-menu,
+    .app-header-theme {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .table .button.is-small {
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+    }
+
+    .pagination-link,
+    .pagination-previous,
+    .pagination-next {
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+    }
+
+    input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
 }
 
 .app-header-user-menu {

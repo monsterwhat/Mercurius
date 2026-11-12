@@ -27,6 +27,7 @@ class VentasFechaHistoricaPageTest {
                 .then()
                 .statusCode(200)
                 .body(containsString("filtros-ventas-historicas"))
+                .body(containsString("name=\"buscar\""))
                 .body(containsString("Ventas por Fecha"));
     }
 
