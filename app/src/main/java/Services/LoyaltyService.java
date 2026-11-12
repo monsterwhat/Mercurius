@@ -29,6 +29,9 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
 
     private static final Logger LOG = Logger.getLogger(LoyaltyService.class);
 
+    /** Tope defensivo para multiplicador y porcentajes (evita valores absurdos). */
+    private static final BigDecimal MAX_PERCENTAGE = BigDecimal.valueOf(100);
+
     @Inject @Nonnull
     private EntityManager em;
 
@@ -49,6 +52,56 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     @Nonnull
     public BigDecimal calculatePointsEarned(@Nonnull BigDecimal purchaseAmount, @Nonnull BigDecimal cashbackPercentage) {
         return purchaseAmount.multiply(cashbackPercentage.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+    }
+
+    /**
+     * Puntos ganados aplicando además el multiplicador del cliente.
+     */
+    @Nonnull
+    public BigDecimal calculatePointsEarned(@Nonnull BigDecimal purchaseAmount,
+                                            @Nonnull BigDecimal cashbackPercentage,
+                                            @Nonnull BigDecimal multiplier) {
+        return calculatePointsEarned(purchaseAmount, cashbackPercentage).multiply(multiplier);
+    }
+
+    /**
+     * Cashback que rige para el cliente: su override si es válido (0-100),
+     * o el porcentaje global del programa. Un override fuera de rango se
+     * ignora con WARN para no alterar la contabilidad de puntos.
+     */
+    @Nonnull
+    public BigDecimal effectiveCashbackPercentage(@Nullable Clientes client, @Nonnull BigDecimal globalPercentage) {
+        BigDecimal override = client == null ? null : client.getCashbackOverride();
+        if (override == null) {
+            return globalPercentage;
+        }
+        if (override.signum() < 0 || override.compareTo(MAX_PERCENTAGE) > 0) {
+            LOG.warn("Cashback personalizado fuera de rango, se usa el global"
+                    + " | cliente=" + client.getCode()
+                    + " | valor=" + override
+                    + " | source=LoyaltyService.effectiveCashbackPercentage()");
+            return globalPercentage;
+        }
+        return override;
+    }
+
+    /**
+     * Multiplicador de puntos del cliente (1 cuando no tiene o es inválido).
+     */
+    @Nonnull
+    public BigDecimal effectiveMultiplier(@Nullable Clientes client) {
+        BigDecimal multiplier = client == null ? null : client.getLoyaltyMultiplier();
+        if (multiplier == null) {
+            return BigDecimal.ONE;
+        }
+        if (multiplier.signum() <= 0 || multiplier.compareTo(MAX_PERCENTAGE) > 0) {
+            LOG.warn("Multiplicador de lealtad fuera de rango, se usa 1"
+                    + " | cliente=" + client.getCode()
+                    + " | valor=" + multiplier
+                    + " | source=LoyaltyService.effectiveMultiplier()");
+            return BigDecimal.ONE;
+        }
+        return multiplier;
     }
 
     /**
@@ -85,7 +138,9 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
             return;
         }
 
-        BigDecimal pointsEarned = calculatePointsEarned(purchaseAmount, settings.getCashbackPercentage());
+        BigDecimal pointsEarned = calculatePointsEarned(purchaseAmount,
+                effectiveCashbackPercentage(client, settings.getCashbackPercentage()),
+                effectiveMultiplier(client));
         
         // Update client's total points (null-safe — legacy clients may have NULL puntosAcumulados)
         BigDecimal currentPoints = client.getPuntosAcumulados();

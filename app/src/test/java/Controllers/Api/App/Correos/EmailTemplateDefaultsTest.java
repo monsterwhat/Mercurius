@@ -37,7 +37,12 @@ class EmailTemplateDefaultsTest extends AppBase {
                 .when().post(BASE + "/predeterminadas")
                 .then().statusCode(200)
                 .extract().jsonPath().getInt("data.creadas");
-        assertThat(creadas).isBetween(0, 23);
+        assertThat(creadas).isEqualTo(23);
+
+        // El catálogo completo queda consultable: 4 base + 9 comprobantes + 10 reportes.
+        given().cookies(jar).when().get(BASE)
+                .then().statusCode(200)
+                .body("total", org.hamcrest.Matchers.equalTo(23));
 
         // Segunda llamada: no crea ninguna más (idempotente).
         given().cookies(jar)

@@ -198,6 +198,39 @@
             </p>
         </div>
 
+        {! ── Lealtad ────────────────────────────────────────────────────── !}
+        <h2 class="is-size-6 has-text-weight-semibold mb-3">Lealtad</h2>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-loyaltyMultiplier">Multiplicador de puntos (opcional)</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0.1" max="100" step="0.1"
+                               id="cliente-loyaltyMultiplier" name="loyaltyMultiplier" inputmode="decimal"
+                               aria-describedby="cliente-loyaltyMultiplier-help"
+                               value="{#if cliente??}{#if cliente.loyaltyMultiplier??}{cliente.loyaltyMultiplier}{/if}{/if}"/>
+                    </div>
+                    <p class="help" id="cliente-loyaltyMultiplier-help">
+                        Vacío = 1x. Por ejemplo, 2 duplica los puntos que gana este cliente.
+                    </p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-cashbackOverride">Cashback personalizado (%)</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="100" step="0.01"
+                               id="cliente-cashbackOverride" name="cashbackOverride" inputmode="decimal"
+                               aria-describedby="cliente-cashbackOverride-help"
+                               value="{#if cliente??}{#if cliente.cashbackOverride??}{cliente.cashbackOverride}{/if}{/if}"/>
+                    </div>
+                    <p class="help" id="cliente-cashbackOverride-help">
+                        Vacío = usa el porcentaje general del programa de lealtad.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         {! ── Actividad económica ─────────────────────────────────────────── !}
         <h2 class="is-size-6 has-text-weight-semibold mb-3">Actividad económica</h2>
         <div class="field">

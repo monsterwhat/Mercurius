@@ -39,6 +39,14 @@ public class ClientsDetailDTO {
     @Nullable private String usuarioNombre; // Flattened: Clientes.usuario.username
     /** Descuento del cliente en porcentaje (0-100), aplicado POR LINEA en el POS. */
     @Nullable private Double discount;
+    /** Multiplicador de puntos del cliente (ej. 2 = doble). NULL = 1x. */
+    @Nullable private BigDecimal loyaltyMultiplier;
+    /** Cashback exclusivo del cliente (0-100). NULL = cashback global. */
+    @Nullable private BigDecimal cashbackOverride;
+    /** PUT: true borra el multiplicador almacenado (los campos nulos no se tocan). */
+    @Nullable private Boolean clearLoyaltyMultiplier;
+    /** PUT: true borra el cashback exclusivo almacenado. */
+    @Nullable private Boolean clearCashbackOverride;
     private List<ActividadInfo> actividades = new ArrayList<>(); // Flattened: Códigos de actividad económica CIIU4 del cliente ante Hacienda
 
     public ClientsDetailDTO() {
@@ -154,6 +162,22 @@ public class ClientsDetailDTO {
     @Nullable
     public Double getDiscount() { return discount; }
     public void setDiscount(@Nullable Double discount) { this.discount = discount; }
+
+    @Nullable
+    public BigDecimal getLoyaltyMultiplier() { return loyaltyMultiplier; }
+    public void setLoyaltyMultiplier(@Nullable BigDecimal loyaltyMultiplier) { this.loyaltyMultiplier = loyaltyMultiplier; }
+
+    @Nullable
+    public BigDecimal getCashbackOverride() { return cashbackOverride; }
+    public void setCashbackOverride(@Nullable BigDecimal cashbackOverride) { this.cashbackOverride = cashbackOverride; }
+
+    @Nullable
+    public Boolean getClearLoyaltyMultiplier() { return clearLoyaltyMultiplier; }
+    public void setClearLoyaltyMultiplier(@Nullable Boolean clearLoyaltyMultiplier) { this.clearLoyaltyMultiplier = clearLoyaltyMultiplier; }
+
+    @Nullable
+    public Boolean getClearCashbackOverride() { return clearCashbackOverride; }
+    public void setClearCashbackOverride(@Nullable Boolean clearCashbackOverride) { this.clearCashbackOverride = clearCashbackOverride; }
 
     public List<ActividadInfo> getActividades() { return actividades; }
     public void setActividades(List<ActividadInfo> actividades) {

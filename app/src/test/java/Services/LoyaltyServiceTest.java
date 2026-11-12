@@ -234,6 +234,102 @@ class LoyaltyServiceTest {
         verifyNoInteractions(em);
     }
 
+    // --- modificadores por cliente ---
+
+    @Test
+    void effectiveCashback_clientOverrideWinsOverGlobal() {
+        Clientes client = new Clientes();
+        client.setCode(7);
+        client.setCashbackOverride(new BigDecimal("8"));
+
+        assertThat(service.effectiveCashbackPercentage(client, new BigDecimal("13.5")))
+                .isEqualByComparingTo(new BigDecimal("8"));
+    }
+
+    @Test
+    void effectiveCashback_nullOverrideUsesGlobalPercentage() {
+        Clientes client = new Clientes();
+        client.setCode(7);
+
+        assertThat(service.effectiveCashbackPercentage(client, new BigDecimal("13.5")))
+                .isEqualByComparingTo(new BigDecimal("13.5"));
+        assertThat(service.effectiveCashbackPercentage(null, new BigDecimal("4")))
+                .isEqualByComparingTo(new BigDecimal("4"));
+    }
+
+    @Test
+    void effectiveCashback_outOfRangeFallsBackToGlobal() {
+        Clientes high = new Clientes();
+        high.setCode(7);
+        high.setCashbackOverride(new BigDecimal("150"));
+        Clientes negative = new Clientes();
+        negative.setCode(8);
+        negative.setCashbackOverride(new BigDecimal("-1"));
+
+        assertThat(service.effectiveCashbackPercentage(high, new BigDecimal("10")))
+                .isEqualByComparingTo(new BigDecimal("10"));
+        assertThat(service.effectiveCashbackPercentage(negative, new BigDecimal("10")))
+                .isEqualByComparingTo(new BigDecimal("10"));
+    }
+
+    @Test
+    void effectiveMultiplier_defaultsToOneAndHonorsValidValues() {
+        Clientes client = new Clientes();
+        client.setCode(7);
+
+        assertThat(service.effectiveMultiplier(client)).isEqualByComparingTo(BigDecimal.ONE);
+        client.setLoyaltyMultiplier(new BigDecimal("2"));
+        assertThat(service.effectiveMultiplier(client)).isEqualByComparingTo(new BigDecimal("2"));
+        assertThat(service.effectiveMultiplier(null)).isEqualByComparingTo(BigDecimal.ONE);
+    }
+
+    @Test
+    void effectiveMultiplier_outOfRangeFallsBackToOne() {
+        Clientes zero = new Clientes();
+        zero.setCode(7);
+        zero.setLoyaltyMultiplier(BigDecimal.ZERO);
+        Clientes negative = new Clientes();
+        negative.setCode(8);
+        negative.setLoyaltyMultiplier(new BigDecimal("-2"));
+        Clientes huge = new Clientes();
+        huge.setCode(9);
+        huge.setLoyaltyMultiplier(new BigDecimal("101"));
+
+        assertThat(service.effectiveMultiplier(zero)).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(service.effectiveMultiplier(negative)).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(service.effectiveMultiplier(huge)).isEqualByComparingTo(BigDecimal.ONE);
+    }
+
+    @Test
+    void calculatePointsEarned_multiplierScalesTheBasePoints() {
+        BigDecimal result = service.calculatePointsEarned(
+                new BigDecimal("1000"), new BigDecimal("5"), new BigDecimal("2"));
+
+        assertThat(result).isEqualByComparingTo(new BigDecimal("100"));
+    }
+
+    @Test
+    void earnPoints_appliesClientOverrideAndMultiplier() {
+        ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
+        settings.setCashbackPercentage(new BigDecimal("10"));
+        when(appSettingsService.returnCurrent()).thenReturn(settings);
+
+        Clientes client = new Clientes();
+        client.setCode(1);
+        client.setPuntosAcumulados(new BigDecimal("100"));
+        client.setCashbackOverride(new BigDecimal("5"));
+        client.setLoyaltyMultiplier(new BigDecimal("2"));
+
+        service.earnPoints(client, new BigDecimal("1000"), "F-LOYAL", new Usuarios());
+
+        // 1000 * 5% = 50; x2 = 100; saldo 100 -> 200.
+        assertThat(client.getPuntosAcumulados()).isEqualByComparingTo(new BigDecimal("200"));
+        ArgumentCaptor<PuntosTransaccion> captor = ArgumentCaptor.forClass(PuntosTransaccion.class);
+        verify(em).persist(captor.capture());
+        assertThat(captor.getValue().getPuntos()).isEqualByComparingTo(new BigDecimal("100"));
+        assertThat(captor.getValue().getSaldoPuntos()).isEqualByComparingTo(new BigDecimal("200"));
+    }
+
     // --- getAvailablePoints ---
 
     @Test

@@ -97,6 +97,24 @@ public class Clientes {
     @Column(name = "statusPuntos")
     private String statusPuntos; //Status of points: 'active', 'inactive', 'expired'
 
+    /**
+     * Multiplicador de puntos exclusivo de este cliente (ej. 2 = doble).
+     * NULL o 1 = sin modificador. El multiplicador se aplica DESPUÉS del
+     * cashback vigente (global o {@link #cashbackOverride}).
+     */
+    @Nullable
+    @Column(name = "loyaltyMultiplier")
+    private BigDecimal loyaltyMultiplier;
+
+    /**
+     * Porcentaje de cashback exclusivo de este cliente (0-100). NULL = usar
+     * el cashback global del programa de lealtad.
+     */
+    @Nullable
+    @Column(name = "cashbackOverride")
+    private BigDecimal cashbackOverride;
+
+
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @Nullable

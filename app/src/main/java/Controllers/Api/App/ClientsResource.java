@@ -32,6 +32,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.Duration;
@@ -198,6 +199,10 @@ public class ClientsResource {
             if (validationError != null) {
                 return badRequest(validationError);
             }
+            String loyaltyError = validateLoyalty(payload);
+            if (loyaltyError != null) {
+                return badRequest(loyaltyError);
+            }
 
             // Guard order mirrors ClientsController.createClient(): cédula check
             // first (only when provided), then duplicate-name check.
@@ -263,6 +268,10 @@ public class ClientsResource {
             String validationError = validateActividades(payload);
             if (validationError != null) {
                 return badRequest(validationError);
+            }
+            String loyaltyError = validateLoyalty(payload);
+            if (loyaltyError != null) {
+                return badRequest(loyaltyError);
             }
 
             Clientes client = clientService.find(code);
@@ -509,6 +518,8 @@ public class ClientsResource {
             @FormParam("birthDate") @Nullable String birthDate,
             @FormParam("taxpayer") @Nullable String taxpayer,
             @FormParam("discount") @Nullable String discount,
+            @FormParam("loyaltyMultiplier") @Nullable String loyaltyMultiplier,
+            @FormParam("cashbackOverride") @Nullable String cashbackOverride,
             @FormParam("actividad") @Nullable List<String> actividad) {
         String nombre = trimToEmpty(name);
         if (nombre.isEmpty()) {
@@ -522,7 +533,8 @@ public class ClientsResource {
         }
 
         Response result = create(buildDetailDTO(nombre, email, address, phoneNumber,
-                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount), actividad));
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount),
+                loyaltyMultiplier, cashbackOverride, actividad));
         return handleFormMutationResult(result, "crear", null,
                 "/app/clientes");
     }
@@ -549,6 +561,8 @@ public class ClientsResource {
             @FormParam("birthDate") @Nullable String birthDate,
             @FormParam("taxpayer") @Nullable String taxpayer,
             @FormParam("discount") @Nullable String discount,
+            @FormParam("loyaltyMultiplier") @Nullable String loyaltyMultiplier,
+            @FormParam("cashbackOverride") @Nullable String cashbackOverride,
             @FormParam("actividad") @Nullable List<String> actividad) {
         String nombre = trimToEmpty(name);
         if (nombre.isEmpty()) {
@@ -564,7 +578,8 @@ public class ClientsResource {
         }
 
         Response result = update(code, buildDetailDTO(nombre, email, address, phoneNumber,
-                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount), actividad));
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, parseDescuento(discount),
+                loyaltyMultiplier, cashbackOverride, actividad));
         return handleFormMutationResult(result, "editar", clientService.find(code),
                 "/app/clientes");
     }
@@ -640,6 +655,38 @@ public class ClientsResource {
         if (dto.getStatusPuntos() != null) {
             target.setStatusPuntos(dto.getStatusPuntos());
         }
+        // Modificadores de lealtad: los flags explícitos permiten borrarlos
+        // desde el formulario (campos vacíos) sin perder la semántica sparse
+        // del PUT JSON (null = no tocar).
+        if (Boolean.TRUE.equals(dto.getClearLoyaltyMultiplier())) {
+            target.setLoyaltyMultiplier(null);
+        } else if (dto.getLoyaltyMultiplier() != null) {
+            target.setLoyaltyMultiplier(dto.getLoyaltyMultiplier());
+        }
+        if (Boolean.TRUE.equals(dto.getClearCashbackOverride())) {
+            target.setCashbackOverride(null);
+        } else if (dto.getCashbackOverride() != null) {
+            target.setCashbackOverride(dto.getCashbackOverride());
+        }
+    }
+
+    /**
+     * Valida los modificadores de lealtad. Multiplicador &gt; 0 y &le; 100;
+     * cashback entre 0 y 100. NULL significa "sin override".
+     */
+    @Nullable
+    private static String validateLoyalty(@Nonnull ClientsDetailDTO dto) {
+        BigDecimal multiplier = dto.getLoyaltyMultiplier();
+        if (multiplier != null
+                && (multiplier.signum() <= 0 || multiplier.compareTo(BigDecimal.valueOf(100)) > 0)) {
+            return "El multiplicador de puntos debe ser mayor que 0 y menor o igual a 100.";
+        }
+        BigDecimal cashback = dto.getCashbackOverride();
+        if (cashback != null
+                && (cashback.signum() < 0 || cashback.compareTo(BigDecimal.valueOf(100)) > 0)) {
+            return "El cashback personalizado debe estar entre 0 y 100.";
+        }
+        return null;
     }
 
     /**
@@ -706,6 +753,8 @@ public class ClientsResource {
                 usuario != null ? usuario.getUsername() : null,
                 actividades);
         dto.setDiscount(client.getDiscount());
+        dto.setLoyaltyMultiplier(client.getLoyaltyMultiplier());
+        dto.setCashbackOverride(client.getCashbackOverride());
         return dto;
     }
 
@@ -750,10 +799,27 @@ public class ClientsResource {
         }
     }
 
+    /**
+     * Decimal opcional del formulario (acepta coma). Vacío → null; texto
+     * inválido se registra y se trata como vacío (el navegador ya limita
+     * type=number, así que esto solo cubre clientes manuales).
+     */
+    @Nullable
+    private static BigDecimal parseDecimalOrNull(@Nullable String raw, @Nonnull String etiqueta) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(raw.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            LOG.warnf("%s invalido, se ignora: %s", etiqueta, raw);
+            return null;
+        }
+    }
+
     /** ISO yyyy-MM-dd (native date input) → java.util.Date; null when blank/unparseable. */
     @Nullable
-    private static Date parseIsoDate(@Nullable String raw) {
-        if (raw == null || raw.isBlank()) {
+    private static Date parseIsoDate(@Nullable String raw) {        if (raw == null || raw.isBlank()) {
             return null;
         }
         try {
@@ -774,6 +840,8 @@ public class ClientsResource {
                                                    @Nullable Date birthDate,
                                                    @Nullable String taxpayer,
                                                    @Nullable Double discount,
+                                                   @Nullable String loyaltyMultiplier,
+                                                   @Nullable String cashbackOverride,
                                                    @Nullable List<String> actividad) {
         ClientsDetailDTO dto = new ClientsDetailDTO();
         dto.setName(nombre);
@@ -786,6 +854,11 @@ public class ClientsResource {
         dto.setBirthDate(birthDate);
         dto.setTaxpayer(taxpayer != null);
         dto.setDiscount(discount);
+        dto.setLoyaltyMultiplier(parseDecimalOrNull(loyaltyMultiplier, "multiplicador de lealtad"));
+        dto.setCashbackOverride(parseDecimalOrNull(cashbackOverride, "cashback personalizado"));
+        // El formulario siempre envía ambos campos: vacío = borrar el override.
+        dto.setClearLoyaltyMultiplier(loyaltyMultiplier == null || loyaltyMultiplier.isBlank());
+        dto.setClearCashbackOverride(cashbackOverride == null || cashbackOverride.isBlank());
         List<ClientsDetailDTO.ActividadInfo> actividades = new ArrayList<>();
         if (actividad != null) {
             for (String codigo : actividad) {
