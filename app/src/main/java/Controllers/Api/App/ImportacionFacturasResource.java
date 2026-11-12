@@ -12,6 +12,7 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -135,6 +136,22 @@ public class ImportacionFacturasResource {
         resultado.put("detalleErrores", detalleErrores);
         LOG.info("Importacion de facturas: " + resultado
                 + " | source=ImportacionFacturasResource.importar()");
+        return Response.ok(ApiResponse.ok(resultado)).build();
+    }
+
+    /**
+     * Limpieza puntual: elimina las facturas de compra (08) importadas como
+     * ventas. Es idempotente y solo afecta al usuario indicado.
+     */
+    @POST
+    @Path("/limpiar-compras")
+    public Response limpiarCompras(@QueryParam("usuario") @DefaultValue("importado") String usuario) {
+        int eliminadas = importService.eliminarComprasImportadas(usuario);
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("usuario", usuario);
+        resultado.put("eliminadas", eliminadas);
+        LOG.info("Limpieza de compras importadas: " + resultado
+                + " | source=ImportacionFacturasResource.limpiarCompras()");
         return Response.ok(ApiResponse.ok(resultado)).build();
     }
 }

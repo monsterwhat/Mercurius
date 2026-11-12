@@ -39,6 +39,7 @@ class FacturaImportParseTest {
         assertThat(ce.getHaciendaClave()).isEqualTo(ce.getEncabezado().getClave());
         assertThat(FacturaBackupXml.tipoDocumento(contenido)).isEqualTo("FacturaElectronica");
         assertThat(FacturaBackupXml.esVenta("FacturaElectronica")).isTrue();
+        assertThat(FacturaBackupXml.esVenta("FacturaElectronicaCompra")).isFalse();
         assertThat(FacturaBackupXml.esVenta("NotaCreditoElectronica")).isFalse();
     }
 }

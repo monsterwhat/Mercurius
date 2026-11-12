@@ -70,4 +70,23 @@ public class FacturaImportService {
         }
         return ok;
     }
+
+    /**
+     * Elimina las facturas de compra (código 08) que se hayan importado por
+     * error como ventas. Solo toca documentos del usuario indicado, y borra
+     * el grafo completo (encabezado, detalle, líneas, resumen) por cascada.
+     */
+    @jakarta.transaction.Transactional
+    public int eliminarComprasImportadas(@Nonnull String usuario) {
+        List<ComprobantesEmitidos> filas = em.createQuery(
+                "SELECT c FROM ComprobantesEmitidos c JOIN FETCH c.encabezado e "
+                        + "WHERE c.user = :usuario AND e.codigoDocumento = '08'",
+                ComprobantesEmitidos.class)
+                .setParameter("usuario", usuario)
+                .getResultList();
+        for (ComprobantesEmitidos comprobante : filas) {
+            em.remove(comprobante);
+        }
+        return filas.size();
+    }
 }

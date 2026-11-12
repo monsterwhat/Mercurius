@@ -98,5 +98,13 @@ class ImportacionFacturasResourceTest extends AppBase {
                 .extract().asString();
         assertThat(ventas).doesNotContain("Sin ventas");
         assertThat(ventas).contains("importado");
+
+        // Ruta de limpieza de compras importadas (idempotente, sin FEC en el ZIP de prueba).
+        Response limpia = given().cookies(cookies)
+                .header("X-CSRF-TOKEN", cookies.get("csrf-token"))
+                .when().post(BASE + "/limpiar-compras?usuario=importado")
+                .then().statusCode(200)
+                .extract().response();
+        assertThat(limpia.jsonPath().getInt("data.eliminadas")).isZero();
     }
 }

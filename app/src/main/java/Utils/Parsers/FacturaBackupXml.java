@@ -156,8 +156,7 @@ public final class FacturaBackupXml {
     public static boolean esVenta(@Nonnull String tipo) {
         return "FacturaElectronica".equals(tipo)
                 || "TiqueteElectronico".equals(tipo)
-                || "FacturaExportacionElectronica".equals(tipo)
-                || "FacturaElectronicaCompra".equals(tipo);
+                || "FacturaExportacionElectronica".equals(tipo);
     }
 
     @Nonnull
