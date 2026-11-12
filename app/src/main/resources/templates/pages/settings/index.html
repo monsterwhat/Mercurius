@@ -109,6 +109,7 @@
 
     {! En móvil el formulario mide ~5.600px: un índice de secciones evita
        recorrerlo a ciegas. En escritorio se oculta. !}
+    {#if modo != 'backups'}
     <nav class="settings-index" aria-label="Secciones de ajustes">
         <a href="#ajustes-sucursales">Sucursales</a>
         <a href="#ajustes-correo">Correo</a>
@@ -117,6 +118,7 @@
         <a href="#ajustes-lealtad">Lealtad</a>
         <a href="#ajustes-umbrales">Umbrales</a>
     </nav>
+    {/if}
 
     {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
     {#if modo != 'backups'}
