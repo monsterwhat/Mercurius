@@ -27,12 +27,16 @@ import Models.Cabys;
 import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.ConfiguracionAplicacion;
+import Models.Inventario;
+import Models.NotaCredito;
 import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CabysService;
 import Services.ClientService;
 import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
+import Services.InventarioService;
+import Services.NotaCreditoService;
 import Services.cart.CartSessionStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -78,6 +82,8 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     @Inject CartSessionStore cartSessionStore;
     @Inject ComprobantesEmitidosService emitidosService;
     @Inject DirectoryService dirService;
+    @Inject NotaCreditoService notaCreditoService;
+    @Inject InventarioService inventarioService;
     @Inject jakarta.persistence.EntityManager em;
 
     /** Stock actual del articulo (0 si todavia no tiene fila). */
@@ -212,6 +218,16 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
                 .body("{\"tipoDocumento\":\"" + tipoDocumento + "\","
                         + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":" + PRECIO + "}],"
                         + "\"puntosARedimir\":0}")
+                .when().post(POS + "/facturar");
+    }
+
+    /** POST con los datos extra de los documentos especiales y un pago explícito. */
+    private Response facturarEspecialConPago(Map<String, String> sesion, String tipoDocumento,
+                                             String camposExtraJson, String monto) {
+        return authed(sesion).contentType(ContentType.JSON)
+                .body("{\"tipoDocumento\":\"" + tipoDocumento + "\","
+                        + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":" + monto + "}],"
+                        + "\"puntosARedimir\":0" + camposExtraJson + "}")
                 .when().post(POS + "/facturar");
     }
 
@@ -402,6 +418,377 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
         } finally {
             cartSessionStore.remove("admin");
             limpiarFacturas(idsPrevios);
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0}: precio ajustado 500 -> NC 500")
+    @CsvSource({"04", "05"})
+    @DisplayName("venta con precio ajustado y su NC conservan el precio ajustado")
+    void ventaConPrecioAjustadoYNotaCredito(String tipoDocumento) throws Exception {
+        ensureAppSettings();
+        Map<String, String> sesion = adminSession();
+        Clientes cliente = null;
+        ComprobantesEmitidos factura = null;
+        ComprobantesEmitidos nc = null;
+        try {
+            Articulos articulo = sembrarArticuloExento();
+            cliente = sembrarCliente();
+            prepararVenta(sesion, articulo, cliente);
+
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+
+            Response facturaResponse = authed(sesion).contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"" + tipoDocumento + "\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}],"
+                            + "\"puntosARedimir\":0}")
+                    .when().post(POS + "/facturar");
+            facturaResponse.then().statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+            long facturaId = facturaResponse.jsonPath().getLong("data.comprobanteId");
+
+            factura = emitidosService.find(facturaId);
+            factura.setHaciendaEstado("ACEPTADO");
+            factura.getEncabezado().setEstado("ACEPTADO");
+            emitidosService.update(factura);
+
+            var ncJson = authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("username", "admin")
+                    .formParam("password", "admin123")
+                    .formParam("motivo", "Devolucion precio ajustado")
+                    .formParam("lineaNumero", "0")
+                    .formParam("lineaCantidad", "1")
+                    .when().post("/api/app/devoluciones/" + facturaId + "/authorize")
+                    .then().statusCode(200)
+                    .body("data.ncGenerada", equalTo(true))
+                    .extract().jsonPath();
+
+            assertThat(new BigDecimal(ncJson.getString("data.montoTotal")))
+                    .isEqualByComparingTo("500.00");
+            nc = emitidosService.findByClave(ncJson.getString("data.clave")).get(0);
+            var linea = nc.getDetalles().getLineasDetalle().get(0);
+            assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("500.00");
+            assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("500.00");
+            assertThat(nc.getEncabezado().getCodigoDocumento()).isEqualTo("02");
+            String expectedTipo = "04".equals(tipoDocumento) ? "04" : "19";
+            assertThat(nc.getInformacionReferencia().get(0).getTipoDoc())
+                    .isEqualTo(expectedTipo);
+        } finally {
+            cartSessionStore.remove("admin");
+            if (factura != null) {
+                for (NotaCredito nota : notaCreditoService.listPorComprobante(factura.getId())) {
+                    notaCreditoService.delete(nota);
+                }
+                String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
+                for (Inventario inv : inventarioService.listAll()) {
+                    if (inv.getNotas() != null && inv.getNotas().contains(consecutivo)) {
+                        inventarioService.delete(inv);
+                    }
+                }
+                Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                        "tiqueteElectronico_" + factura.getId() + ".pdf"));
+            }
+            if (nc != null) {
+                if (nc.getHaciendaClave() != null) {
+                    Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                            "factura_" + nc.getHaciendaClave() + ".pdf"));
+                }
+                ComprobantesEmitidos managed = emitidosService.find(nc.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (factura != null) {
+                ComprobantesEmitidos managed = emitidosService.find(factura.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("NC se anula con una ND que la referencia (TipoDocIR 03, codigo 01)")
+    void ndAnulaNotaCredito() throws Exception {
+        ensureAppSettings();
+        Map<String, String> sesion = adminSession();
+        Clientes cliente = null;
+        ComprobantesEmitidos factura = null;
+        ComprobantesEmitidos nc = null;
+        ComprobantesEmitidos nd = null;
+        try {
+            Articulos articulo = sembrarArticuloExento();
+            cliente = sembrarCliente();
+            prepararVenta(sesion, articulo, cliente);
+
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+
+            long facturaId = authed(sesion).contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"01\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}],"
+                            + "\"puntosARedimir\":0}")
+                    .when().post(POS + "/facturar")
+                    .then().statusCode(200)
+                    .body("data.comprobanteId", notNullValue())
+                    .extract().jsonPath().getLong("data.comprobanteId");
+
+            factura = emitidosService.find(facturaId);
+            factura.setHaciendaEstado("ACEPTADO");
+            factura.getEncabezado().setEstado("ACEPTADO");
+            emitidosService.update(factura);
+
+            var ncJson = authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("username", "admin").formParam("password", "admin123")
+                    .formParam("motivo", "Devolucion")
+                    .formParam("lineaNumero", "0").formParam("lineaCantidad", "1")
+                    .when().post("/api/app/devoluciones/" + facturaId + "/authorize")
+                    .then().statusCode(200)
+                    .extract().jsonPath();
+            nc = emitidosService.findByClave(ncJson.getString("data.clave")).get(0);
+
+            cartSessionStore.remove("admin");
+            prepararVenta(sesion, articulo, cliente);
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+            Response ndResponse = authed(sesion).contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"03\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}],"
+                            + "\"puntosARedimir\":0,"
+                            + "\"referenciaTipoDoc\":\"03\","
+                            + "\"referenciaNumero\":\""
+                            + nc.getEncabezado().getNumeroConsecutivo() + "\","
+                            + "\"referenciaFecha\":\"2026-11-12\","
+                            + "\"referenciaCodigo\":\"01\","
+                            + "\"referenciaRazon\":\"Anula la nota de credito\"}")
+                    .when().post(POS + "/facturar");
+            ndResponse.then().statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+            nd = emitidosService.find(ndResponse.jsonPath().getLong("data.comprobanteId"));
+
+            assertThat(nd.getEncabezado().getCodigoDocumento()).isEqualTo("03");
+            var ref = nd.getInformacionReferencia().get(0);
+            assertThat(ref.getTipoDoc()).isEqualTo("03");
+            assertThat(ref.getCodigo()).isEqualTo("01");
+            assertThat(ref.getNumero()).isEqualTo(nc.getEncabezado().getNumeroConsecutivo());
+            assertThat(nd.getResumen().getTotalComprobante())
+                    .isEqualByComparingTo("500.00");
+        } finally {
+            cartSessionStore.remove("admin");
+            if (factura != null) {
+                for (NotaCredito nota : notaCreditoService.listPorComprobante(factura.getId())) {
+                    notaCreditoService.delete(nota);
+                }
+                String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
+                for (Inventario inv : inventarioService.listAll()) {
+                    if (inv.getNotas() != null && inv.getNotas().contains(consecutivo)) {
+                        inventarioService.delete(inv);
+                    }
+                }
+                Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                        "tiqueteElectronico_" + factura.getId() + ".pdf"));
+            }
+            if (nc != null) {
+                if (nc.getHaciendaClave() != null) {
+                    Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                            "factura_" + nc.getHaciendaClave() + ".pdf"));
+                }
+                ComprobantesEmitidos managed = emitidosService.find(nc.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (nd != null) {
+                Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                        "tiqueteElectronico_" + nd.getId() + ".pdf"));
+                ComprobantesEmitidos managed = emitidosService.find(nd.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (factura != null) {
+                ComprobantesEmitidos managed = emitidosService.find(factura.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("ND se anula con una NC que la referencia (TipoDocIR 02, codigo 01)")
+    void ncAnulaNotaDebito() {
+        ensureAppSettings();
+        Set<Long> idsPrevios = marcaDeAgua();
+        Clientes cliente = null;
+        try {
+            Map<String, String> sesion = adminSession();
+            Articulos articulo = sembrarArticuloExento();
+            cliente = sembrarCliente();
+
+            prepararVenta(sesion, articulo, cliente);
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+            var ndJson = facturarEspecialConPago(sesion, "03",
+                    ",\"referenciaTipoDoc\":\"01\""
+                            + ",\"referenciaNumero\":\"00100001010000012345\""
+                            + ",\"referenciaFecha\":\"2026-11-12\""
+                            + ",\"referenciaCodigo\":\"10\""
+                            + ",\"referenciaRazon\":\"Cobro de intereses\"", "500")
+                    .then().statusCode(200)
+                    .extract().jsonPath();
+            String ndConsecutivo = emitidosService.find(
+                    ndJson.getLong("data.comprobanteId"))
+                    .getEncabezado().getNumeroConsecutivo();
+
+            cartSessionStore.remove("admin");
+            prepararVenta(sesion, articulo, cliente);
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+            var ncJson = facturarEspecialConPago(sesion, "02",
+                    ",\"referenciaTipoDoc\":\"02\""
+                            + ",\"referenciaNumero\":\"" + ndConsecutivo + "\""
+                            + ",\"referenciaFecha\":\"2026-11-12\""
+                            + ",\"referenciaCodigo\":\"01\""
+                            + ",\"referenciaRazon\":\"Anula la nota de debito\"", "500")
+                    .then().statusCode(200)
+                    .extract().jsonPath();
+
+            ComprobantesEmitidos nc = emitidosService.find(
+                    ncJson.getLong("data.comprobanteId"));
+            assertThat(nc.getEncabezado().getCodigoDocumento()).isEqualTo("02");
+            var ref = nc.getInformacionReferencia().get(0);
+            assertThat(ref.getTipoDoc()).isEqualTo("02");
+            assertThat(ref.getCodigo()).isEqualTo("01");
+            assertThat(ref.getNumero()).isEqualTo(ndConsecutivo);
+            assertThat(nc.getResumen().getTotalComprobante())
+                    .isEqualByComparingTo("500.00");
+        } finally {
+            cartSessionStore.remove("admin");
+            limpiarFacturas(idsPrevios);
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("FEC con precio ajustado y su NC conservan el precio (TipoDocIR 99)")
+    void fecConPrecioAjustadoYNotaCredito() throws Exception {
+        ensureAppSettings();
+        Map<String, String> sesion = adminSession();
+        Clientes cliente = null;
+        ComprobantesEmitidos factura = null;
+        ComprobantesEmitidos nc = null;
+        try {
+            Articulos articulo = sembrarArticuloExento();
+            cliente = sembrarCliente();
+            prepararVenta(sesion, articulo, cliente);
+
+            authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("codigo", articulo.getCodigo())
+                    .formParam("precio", "500")
+                    .formParam("motivo", "Precio corregido")
+                    .when().post(POS + "/item/price-form")
+                    .then().statusCode(200);
+
+            Response facturaResponse = authed(sesion).contentType(ContentType.JSON)
+                    .body("{\"tipoDocumento\":\"08\","
+                            + "\"pagos\":[{\"metodoPago\":\"01\",\"monto\":500}],"
+                            + "\"puntosARedimir\":0,"
+                            + "\"referenciaTipoDoc\":\"16\","
+                            + "\"referenciaNumero\":\"F-12345\","
+                            + "\"referenciaFecha\":\"2026-11-12\","
+                            + "\"referenciaCodigo\":\"11\","
+                            + "\"referenciaRazon\":\"Compra a proveedor no domiciliado\"}")
+                    .when().post(POS + "/facturar");
+            facturaResponse.then().statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+            long facturaId = facturaResponse.jsonPath().getLong("data.comprobanteId");
+
+            factura = emitidosService.find(facturaId);
+            factura.setHaciendaEstado("ACEPTADO");
+            factura.getEncabezado().setEstado("ACEPTADO");
+            emitidosService.update(factura);
+
+            var ncJson = authed(sesion).contentType(ContentType.URLENC)
+                    .formParam("username", "admin").formParam("password", "admin123")
+                    .formParam("motivo", "Devolucion FEC precio ajustado")
+                    .formParam("lineaNumero", "0").formParam("lineaCantidad", "1")
+                    .when().post("/api/app/devoluciones/" + facturaId + "/authorize")
+                    .then().statusCode(200)
+                    .body("data.ncGenerada", equalTo(true))
+                    .extract().jsonPath();
+
+            assertThat(new BigDecimal(ncJson.getString("data.montoTotal")))
+                    .isEqualByComparingTo("500.00");
+            nc = emitidosService.findByClave(ncJson.getString("data.clave")).get(0);
+            var linea = nc.getDetalles().getLineasDetalle().get(0);
+            assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("500.00");
+            assertThat(linea.getPrecioUnitario()).isEqualByComparingTo("500.00");
+            var ref = nc.getInformacionReferencia().get(0);
+            assertThat(ref.getTipoDoc()).isEqualTo("99");
+            assertThat(ref.getTipoDocRefOTRO()).isEqualTo("Factura Electrónica de Compra");
+        } finally {
+            cartSessionStore.remove("admin");
+            if (factura != null) {
+                for (NotaCredito nota : notaCreditoService.listPorComprobante(factura.getId())) {
+                    notaCreditoService.delete(nota);
+                }
+                String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
+                for (Inventario inv : inventarioService.listAll()) {
+                    if (inv.getNotas() != null && inv.getNotas().contains(consecutivo)) {
+                        inventarioService.delete(inv);
+                    }
+                }
+                Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                        "tiqueteElectronico_" + factura.getId() + ".pdf"));
+            }
+            if (nc != null) {
+                if (nc.getHaciendaClave() != null) {
+                    Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                            "factura_" + nc.getHaciendaClave() + ".pdf"));
+                }
+                ComprobantesEmitidos managed = emitidosService.find(nc.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+            if (factura != null) {
+                ComprobantesEmitidos managed = emitidosService.find(factura.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
             if (cliente != null) {
                 clientService.delete(cliente);
             }

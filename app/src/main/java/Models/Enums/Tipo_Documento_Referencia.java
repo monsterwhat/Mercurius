@@ -23,8 +23,10 @@ import jakarta.annotation.Nullable;
  */
 public enum Tipo_Documento_Referencia {
     FACTURA_ELECTRONICA("01", "Factura electrónica"),
-    NOTA_CREDITO_ELECTRONICA("02", "Nota de crédito electrónica"),
-    NOTA_DEBITO_ELECTRONICA("03", "Nota de débito electrónica"),
+    // Nota 10 oficial: 02 es NOTA DE DEBITO y 03 es NOTA DE CREDITO. No
+    // confundir con el CodigoDocumento del encabezado, donde NC=02 y ND=03.
+    NOTA_DEBITO_ELECTRONICA("02", "Nota de débito electrónica"),
+    NOTA_CREDITO_ELECTRONICA("03", "Nota de crédito electrónica"),
     TIQUETE_ELECTRONICO("04", "Tiquete electrónico"),
     NOTA_DE_DESPACHO("05", "Nota de despacho"),
     CONTRATO("06", "Contrato"),
@@ -89,5 +91,40 @@ public enum Tipo_Documento_Referencia {
             }
         }
         return null;
+    }
+
+    /**
+     * Tipo de documento de referencia (Nota 10) que corresponde al
+     * {@code CodigoDocumento} de un comprobante original.
+     *
+     * <p>No son el mismo catA3logo: el encabezado usa 02=NC y 03=ND, mientras
+     * que la Nota 10 usa 02=ND y 03=NC. AdemA!s, FEE y REP no comparten el
+     * cA3digo del encabezado (05 y 10) sino 19 y 20. La FEC (08) no tiene un
+     * cA3digo propio en la Nota 10, asA- que se referencia con 99 + la
+     * descripciA3n obligatoria de {@code TipoDocRefOTRO}.</p>
+     */
+    public static @Nonnull ReferenciaTipoDoc paraComprobanteOriginal(
+            @Nullable String codigoDocumento) {
+        if (codigoDocumento == null) {
+            return new ReferenciaTipoDoc("99", "Otros");
+        }
+        return switch (codigoDocumento.trim()) {
+            case "01" -> new ReferenciaTipoDoc("01", null);
+            case "02" -> new ReferenciaTipoDoc("03", null); // NC encabezado -> NC Nota 10
+            case "03" -> new ReferenciaTipoDoc("02", null); // ND encabezado -> ND Nota 10
+            case "04" -> new ReferenciaTipoDoc("04", null);
+            case "05" -> new ReferenciaTipoDoc("19", null); // FEE
+            case "08" -> new ReferenciaTipoDoc("99", "Factura Electrónica de Compra");
+            case "10" -> new ReferenciaTipoDoc("20", null); // REP
+            default -> new ReferenciaTipoDoc("99", "Otros");
+        };
+    }
+
+    /**
+     * @param codigo         valor de {@code TipoDocIR}
+     * @param tipoDocRefOtro descripciA3n obligatoria cuando {@code codigo} es 99
+     */
+    public record ReferenciaTipoDoc(@Nonnull String codigo,
+                                    @Nullable String tipoDocRefOtro) {
     }
 }

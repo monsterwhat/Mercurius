@@ -249,6 +249,10 @@ public class DevolucionesResource {
     @Inject
     Services.EnvioFueraLineaService envioFueraLineaService;
 
+    @Nonnull
+    @Inject
+    Utils.PDFGenerator pdfGenerator;
+
     @Inject
     @Nonnull
     SecurityIdentity identity;
@@ -1592,6 +1596,17 @@ public class DevolucionesResource {
 
             comprobantesService.createAndReturn(ncComprobante);
 
+            // PDF propio de la NC. El boton "Imprimir NC" apunta a
+            // /api/app/pos/facturas/factura_<clave>.pdf; sin esto el boton
+            // abria un archivo inexistente.
+            try {
+                pdfGenerator.generarPDFNotaCredito(ncComprobante, appSettings);
+            } catch (RuntimeException e) {
+                LOG.warn("No se pudo generar el PDF de la NC: " + e.getMessage()
+                        + " | clave=" + clave
+                        + " | source=DevolucionesResource.generarNcElectronica()");
+            }
+
             // ── Fin de la fase (a): la NC está escrita. El envío per CR 2176
             //    §5.6 lo pide la fase (b), ya con el commit hecho (ver
             //    enviarNcAHacienda); acá solo se deja capturado lo que esa
@@ -1651,7 +1666,7 @@ public class DevolucionesResource {
     /** Print URL served by the pre-existing PdfFileServlet (/facturas/*). */
     private @Nonnull String printUrl(@Nullable String clave) {
         String nombre = clave == null ? "" : "factura_" + clave + ".pdf";
-        return rootBase() + "/facturas/" + nombre;
+        return rootBase() + "/api/app/pos/facturas/" + nombre;
     }
 
     /** Deployment root normalized to empty at "/" so URLs never start with "//". */

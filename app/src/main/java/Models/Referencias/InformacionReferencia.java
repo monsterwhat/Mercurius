@@ -2,6 +2,7 @@ package Models.Referencias;
 
 import Models.ComprobantesEmitidos;
 import Models.Enums.Tipo_CodigosReferencia;
+import Models.Enums.Tipo_Documento_Referencia;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -85,7 +86,13 @@ public class InformacionReferencia {
         Tipo_CodigosReferencia.validarParaDocumento(codigoDocumento, codigo);
         InformacionReferencia ref = new InformacionReferencia();
         if (original.getEncabezado() != null) {
-            ref.setTipoDoc(original.getEncabezado().getCodigoDocumento());
+            Tipo_Documento_Referencia.ReferenciaTipoDoc tipoRef =
+                    Tipo_Documento_Referencia.paraComprobanteOriginal(
+                            original.getEncabezado().getCodigoDocumento());
+            ref.setTipoDoc(tipoRef.codigo());
+            if (tipoRef.tipoDocRefOtro() != null) {
+                ref.setTipoDocRefOTRO(tipoRef.tipoDocRefOtro());
+            }
             ref.setNumero(original.getEncabezado().getNumeroConsecutivo());
             ref.setFechaEmision(original.getEncabezado().getFechaEmision());
         }

@@ -108,7 +108,8 @@ public class PosResource {
     private static final Logger LOG = Logger.getLogger(PosResource.class);
 
     /** Only these invoice PDFs are servable — blocks path traversal by shape. */
-    private static final String FACTURA_FILE_PATTERN = "tiqueteElectronico_\\d+\\.pdf";
+    private static final String FACTURA_FILE_PATTERN =
+            "(tiqueteElectronico_\\d+|factura_[0-9A-Za-z]{50})\\.pdf";
 
     /** Typeahead/picker result cap (keyboard-first POS pickers never page). */
     private static final int TYPEAHEAD_LIMIT = 10;

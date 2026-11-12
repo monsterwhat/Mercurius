@@ -89,6 +89,193 @@ public class PDFGenerator {
     }
 
     /**
+     * PDF propio de una Nota de Credito. La NC no pasa por el POS: se arma en
+     * {@code DevolucionesResource}, asi que necesita su propia impresion con
+     * el mismo rollo de 72 mm. Se guarda como {@code factura_<clave>.pdf},
+     * que es el nombre que usa el boton Imprimir NC.
+     */
+    public void generarPDFNotaCredito(@Nonnull ComprobantesEmitidos nc,
+                                      @Nonnull ConfiguracionAplicacion settings) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        String clave = nc.getEncabezado() != null ? nc.getEncabezado().getClave() : null;
+        String fileName = "factura_" + (clave == null || clave.isBlank() ? nc.getId() : clave) + ".pdf";
+        try {
+            Document document = buildNotaCreditoDocument(baos, nc, settings);
+            document.close();
+            saveFacturaPdfToFileSystem(baos, fileName);
+        } catch (DocumentException | IOException e) {
+            LOG.warn("No se pudo generar el PDF de la nota de credito: " + e.getMessage()
+                    + " | clave=" + clave
+                    + " | source=PDFGenerator.generarPDFNotaCredito()");
+        }
+    }
+
+    private Document buildNotaCreditoDocument(ByteArrayOutputStream baos,
+                                              ComprobantesEmitidos nc,
+                                              ConfiguracionAplicacion settings) throws DocumentException {
+        List<LineaDetalle> lineas = nc.getDetalles() != null
+                && nc.getDetalles().getLineasDetalle() != null
+                ? nc.getDetalles().getLineasDetalle() : List.of();
+        float altoPagina = 566.93f + Math.max(0, lineas.size() - 3) * 14f;
+        Document document = new Document(new Rectangle(204.09f, altoPagina), 6f, 6f, 6f, 6f);
+        PdfWriter.getInstance(document, baos);
+        document.add(new Meta("charset", "UTF-8"));
+        document.open();
+
+        com.lowagie.text.Font font = new com.lowagie.text.Font();
+        font.setSize(9f);
+        float leading = 10.5f;
+        com.lowagie.text.Font titleFont = new com.lowagie.text.Font(font);
+        titleFont.setSize(11f);
+        titleFont.setStyle(com.lowagie.text.Font.BOLD);
+
+        Paragraph titulo = new Paragraph("NOTA DE CREDITO ELECTRONICA", titleFont);
+        titulo.setAlignment(Element.ALIGN_CENTER);
+        titulo.setLeading(13f);
+        document.add(titulo);
+        document.add(separadorPdf());
+
+        java.util.List<String> headerLines = new java.util.ArrayList<>();
+        addHeaderLine(headerLines, settings.getNombreNegocio());
+        if (settings.getNombre() != null
+                && !settings.getNombre().equalsIgnoreCase(settings.getNombreNegocio())) {
+            addHeaderLine(headerLines, settings.getNombre());
+        }
+        if (settings.getIdentificacion() != null) {
+            addHeaderLine(headerLines, "Identificacion: " + settings.getIdentificacion());
+        }
+        if (settings.getTelefono() != null) {
+            addHeaderLine(headerLines, "Tel. " + settings.getTelefono());
+        }
+        addHeaderLine(headerLines, settings.getCorreoElectronicoTributacion());
+        addHeaderLine(headerLines, settings.getDireccionCompleta());
+        Paragraph header = new Paragraph(String.join("\n", headerLines), font);
+        header.setAlignment(Element.ALIGN_CENTER);
+        header.setLeading(leading);
+        document.add(header);
+        document.add(espacioPdf(leading));
+
+        String fecha = nc.getEncabezado() != null && nc.getEncabezado().getFechaEmision() != null
+                ? nc.getEncabezado().getFechaEmision()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : "";
+        String consecutivo = nc.getEncabezado() != null
+                ? nc.getEncabezado().getNumeroConsecutivo() : "";
+        String clave = nc.getEncabezado() != null ? nc.getEncabezado().getClave() : "";
+        String original = "";
+        String motivo = "";
+        if (nc.getInformacionReferencia() != null && !nc.getInformacionReferencia().isEmpty()) {
+            var ref = nc.getInformacionReferencia().get(0);
+            original = ref.getNumero() == null ? "" : ref.getNumero();
+            motivo = ref.getRazon() == null ? "" : ref.getRazon();
+        }
+        String cliente = nc.getEncabezado() != null && nc.getEncabezado().getReceptor() != null
+                ? nc.getEncabezado().getReceptor().getNombre() : "Cliente contado";
+        String info = String.join("\n",
+                "Fecha: " + fecha,
+                "Consecutivo: " + consecutivo,
+                "Clave: " + clave,
+                "Factura original: " + original,
+                "Cliente: " + (cliente == null ? "Cliente contado" : cliente),
+                "Motivo: " + motivo);
+        Paragraph infoP = new Paragraph(info, font);
+        infoP.setLeading(leading);
+        document.add(infoP);
+        document.add(espacioPdf(leading));
+        document.add(separadorPdf());
+
+        PdfPTable table = new PdfPTable(new float[]{1.1f, 2.5f, 1.4f});
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(4f);
+        for (LineaDetalle linea : lineas) {
+            table.addCell(celdaPdf(linea.getCantidad() == null ? "" : linea.getCantidad().toString(),
+                    font, Element.ALIGN_LEFT));
+            table.addCell(celdaPdf(linea.getDetalle(), font, Element.ALIGN_CENTER));
+            BigDecimal monto = linea.getMontoTotalLinea() != null
+                    ? linea.getMontoTotalLinea()
+                    : (linea.getMontoTotal() != null ? linea.getMontoTotal() : BigDecimal.ZERO);
+            table.addCell(celdaPdf(FormatoVista.moneda(monto) + " " + letraImpuesto(linea),
+                    font, Element.ALIGN_RIGHT));
+        }
+        document.add(table);
+        document.add(separadorPdf());
+
+        BigDecimal descuentos = nc.getResumen() != null && nc.getResumen().getTotalDescuentos() != null
+                ? nc.getResumen().getTotalDescuentos() : BigDecimal.ZERO;
+        BigDecimal iva = nc.getResumen() != null && nc.getResumen().getTotalImpuesto() != null
+                ? nc.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
+        BigDecimal total = nc.getResumen() != null && nc.getResumen().getTotalComprobante() != null
+                ? nc.getResumen().getTotalComprobante() : BigDecimal.ZERO;
+        PdfPTable totales = new PdfPTable(2);
+        totales.setWidthPercentage(100);
+        filaTotalPdf(totales, "Descuentos:", descuentos, font);
+        filaTotalPdf(totales, "IVA:", iva, font);
+        filaTotalPdf(totales, "Total:", total, font);
+        document.add(totales);
+        return document;
+    }
+
+    private static @Nonnull String letraImpuesto(@Nonnull LineaDetalle linea) {
+        if (linea.getImpuestos() == null || linea.getImpuestos().isEmpty()
+                || linea.getImpuestos().get(0).getTarifa() == null) {
+            return "E";
+        }
+        try {
+            return Tipo_CodigoImpuesto.getCodigoLetra(
+                    linea.getImpuestos().get(0).getTarifa().intValue());
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Tasa de impuesto sin codigo de letra en NC, el PDF mostrara E: "
+                    + linea.getImpuestos().get(0).getTarifa()
+                    + " | source=PDFGenerator.letraImpuesto()");
+            return "E";
+        }
+    }
+
+    private static PdfPTable separadorPdf() {
+        PdfPTable separador = new PdfPTable(1);
+        PdfPCell cell = new PdfPCell();
+        cell.setPaddingTop(3f);
+        cell.setPaddingBottom(3f);
+        cell.setBorder(PdfPCell.BOTTOM);
+        cell.setBorderWidthBottom(1f);
+        cell.setFixedHeight(1f);
+        separador.addCell(cell);
+        separador.setWidthPercentage(100);
+        return separador;
+    }
+
+    private static Paragraph espacioPdf(float leading) {
+        Paragraph p = new Paragraph();
+        p.setSpacingBefore(4f);
+        p.setSpacingAfter(4f);
+        p.setLeading(leading);
+        return p;
+    }
+
+    private static PdfPCell celdaPdf(@Nullable String texto,
+                                     com.lowagie.text.Font font,
+                                     int alineacion) {
+        PdfPCell cell = new PdfPCell(new Phrase(texto == null ? "" : texto, font));
+        cell.setBorder(PdfPCell.NO_BORDER);
+        cell.setHorizontalAlignment(alineacion);
+        cell.setPadding(1);
+        return cell;
+    }
+
+    private static void filaTotalPdf(@Nonnull PdfPTable table, @Nonnull String etiqueta,
+                                     @Nonnull BigDecimal valor,
+                                     com.lowagie.text.Font font) {
+        PdfPCell label = new PdfPCell(new Phrase(etiqueta, font));
+        label.setBorder(PdfPCell.NO_BORDER);
+        label.setHorizontalAlignment(Element.ALIGN_LEFT);
+        table.addCell(label);
+        PdfPCell value = new PdfPCell(new Phrase(FormatoVista.moneda(valor), font));
+        value.setBorder(PdfPCell.NO_BORDER);
+        value.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        table.addCell(value);
+    }
+
+    /**
      * Titulo impreso segun el CodigoDocumento. Antes TODO salia como
      * "TIQUETE ELECTRONICO", incluida una factura, una nota de debito o un
      * recibo de pago.
@@ -482,8 +669,10 @@ public class PDFGenerator {
     }
 
     private void savePdfToFileSystem(ByteArrayOutputStream baos, ComprobantesEmitidos tiqueteElectronico) throws IOException {
-        String fileName = "tiqueteElectronico_" + tiqueteElectronico.getId() + ".pdf";
+        saveFacturaPdfToFileSystem(baos, "tiqueteElectronico_" + tiqueteElectronico.getId() + ".pdf");
+    }
 
+    private void saveFacturaPdfToFileSystem(ByteArrayOutputStream baos, String fileName) throws IOException {
         String dirPath = dirService.getFacturasDirPath();
         String filePath = dirPath + File.separator + fileName;
 

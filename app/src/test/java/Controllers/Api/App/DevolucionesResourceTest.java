@@ -13,6 +13,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,6 +25,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +46,7 @@ import Models.Resumen.ResumenFactura;
 import Services.AppSettingsService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
+import Services.DirectoryService;
 import Services.InventarioService;
 import Services.NotaCreditoService;
 import io.quarkus.test.InjectMock;
@@ -98,6 +104,9 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
 
     @Inject
     AppSettingsService appSettingsService;
+
+    @Inject
+    DirectoryService dirService;
 
     @Inject
     EntityManager em;
@@ -256,10 +265,23 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
             assertNotNull(summary.printUrl());
             assertTrue(summary.printUrl().endsWith(summary.clave() + ".pdf"),
                     "print URL follows the factura_{clave}.pdf convention");
+            assertTrue(summary.printUrl().startsWith("/api/app/pos/facturas/"),
+                    "NC print URL must use the served POS endpoint");
+            Path ncPdf = Paths.get(dirService.getFacturasDirPath(),
+                    "factura_" + summary.clave() + ".pdf");
+            assertTrue(Files.exists(ncPdf), "NC PDF must be generated");
+            assertTrue(Files.size(ncPdf) > 0, "NC PDF must not be empty");
+            given().when().get(summary.printUrl())
+                    .then()
+                    .statusCode(200)
+                    .header("Content-Type", containsString("application/octet-stream"));
         } finally {
             for (NotaCredito nota : factura == null ? List.<NotaCredito>of()
                     : listPorComprobante(factura.getId())) {
                 notaCreditoService.delete(nota);
+            }
+            if (ncCreado != null && ncCreado.getHaciendaClave() != null) {
+                deletePdf("factura_" + ncCreado.getHaciendaClave() + ".pdf");
             }
             if (ncCreado != null && ncCreado.getId() != null) {
                 ComprobantesEmitidos managedNc = emitidosService.find(ncCreado.getId());
@@ -309,6 +331,45 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
                     "the catalog price must NOT leak into the NC");
         } finally {
             limpiarDevolucion(factura, nc);
+        }
+    }
+
+    @ParameterizedTest(name = "NC contra original {0} -> TipoDocIR {1}")
+    @CsvSource({
+        "04, 04, ''",
+        "05, 19, ''",
+        "08, 99, 'Factura Electrónica de Compra'",
+        "10, 20, ''",
+        "02, 03, ''",
+        "03, 02, ''"
+    })
+    @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
+    void ncReferenciaOriginalConTipoDocIRCorrecto(String originalCode,
+                                                   String expectedTipoDoc,
+                                                   String expectedOtro) {
+        seedAppSettings();
+        ComprobantesEmitidos original = null;
+        ComprobantesEmitidos nc = null;
+        try {
+            original = seedFactura(originalCode);
+            NcSummary summary = extractSummary(postAuthorize(original.getId(),
+                    "Devolucion " + originalCode, new int[]{0}, new int[]{1})
+                    .then().statusCode(200).extract().response());
+            nc = emitidosService.findByClave(summary.clave()).get(0);
+
+            InformacionReferencia ref = nc.getInformacionReferencia().get(0);
+            assertEquals(expectedTipoDoc, ref.getTipoDoc(),
+                    "TipoDocIR must use the official reference catalog");
+            if (expectedOtro.isEmpty()) {
+                assertTrue(ref.getTipoDocRefOTRO() == null || ref.getTipoDocRefOTRO().isBlank(),
+                        "TipoDocRefOTRO must be absent for a non-99 code");
+            } else {
+                assertEquals(expectedOtro, ref.getTipoDocRefOTRO());
+            }
+            assertEquals(original.getEncabezado().getNumeroConsecutivo(), ref.getNumero());
+            assertEquals("06", ref.getCodigo(), "the return reference code stays 06");
+        } finally {
+            limpiarDevolucion(original, nc);
         }
     }
 
@@ -602,12 +663,16 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
      * after the seeded client so the NC strategy resolves it.
      */
     private ComprobantesEmitidos seedFactura() {
+        return seedFactura("01");
+    }
+
+    private ComprobantesEmitidos seedFactura(String codigoDocumento) {
         Encabezado encabezado = new Encabezado();
         encabezado.setNumeroConsecutivo(consecutivoUnico());
         encabezado.setFechaEmision(LocalDateTime.now().minusHours(2));
         encabezado.setCondicionVenta("01");
         encabezado.setSchemaVersion("4.4");
-        encabezado.setCodigoDocumento("01");
+        encabezado.setCodigoDocumento(codigoDocumento);
         Receptor receptor = new Receptor();
         receptor.setNombre(CLIENTE_CONTADO);
         encabezado.setReceptor(receptor);
@@ -771,7 +836,13 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
         }
         if (ncs != null) {
             for (ComprobantesEmitidos nc : ncs) {
-                if (nc == null || nc.getId() == null) {
+                if (nc == null) {
+                    continue;
+                }
+                if (nc.getHaciendaClave() != null) {
+                    deletePdf("factura_" + nc.getHaciendaClave() + ".pdf");
+                }
+                if (nc.getId() == null) {
                     continue;
                 }
                 ComprobantesEmitidos managed = emitidosService.find(nc.getId());
@@ -951,6 +1022,15 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
         ComprobantesEmitidos managed = emitidosService.find(factura.getId());
         if (managed != null) {
             emitidosService.delete(managed);
+        }
+    }
+
+    private void deletePdf(String fileName) {
+        try {
+            Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(), fileName));
+        } catch (java.io.IOException e) {
+            throw new AssertionError("No se pudo borrar el PDF de prueba "
+                    + fileName + ": " + e.getMessage(), e);
         }
     }
 }

@@ -585,7 +585,10 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setResumen(resumen);
             if (datosEspeciales != null
                     && ("03".equals(tipoDocumento) || "10".equals(tipoDocumento)
-                        || "08".equals(tipoDocumento))) {
+                        || "08".equals(tipoDocumento)
+                        || ("02".equals(tipoDocumento)
+                            && datosEspeciales.referenciaNumero() != null
+                            && !datosEspeciales.referenciaNumero().isBlank()))) {
                 tiqueteElectronico.setInformacionReferencia(
                         List.of(construirReferenciaNd(datosEspeciales)));
             }
@@ -1037,7 +1040,16 @@ public class ComprobanteService implements Serializable {
         boolean esNotaDebito = "03".equals(strategy.getCodigoDocumento());
         boolean esReciboPago = "10".equals(strategy.getCodigoDocumento());
         boolean esFacturaCompra = "08".equals(strategy.getCodigoDocumento());
-        if (!esNotaDebito && !esReciboPago && !esFacturaCompra) {
+        boolean esNotaCredito = "02".equals(strategy.getCodigoDocumento());
+        if (!esNotaDebito && !esReciboPago && !esFacturaCompra && !esNotaCredito) {
+            return;
+        }
+        // Una NC sin referencia sigue el camino legacy (el flujo soportado de
+        // devoluciones es DevolucionesResource). Si el operador SI manda la
+        // referencia, se valida y se estampa: eso habilita la anulación de
+        // una ND/NC desde el POS con el código 01.
+        if (esNotaCredito && (datos.referenciaNumero() == null
+                || datos.referenciaNumero().isBlank())) {
             return;
         }
         // La nota de débito, el recibo de pago y la factura de compra SIN
@@ -1045,6 +1057,7 @@ public class ComprobanteService implements Serializable {
         // InformacionReferencia en los tres).
         String documento = esReciboPago ? "El recibo electrónico de pago"
                 : esFacturaCompra ? "La factura electrónica de compra"
+                : esNotaCredito ? "La nota de crédito"
                 : "La nota de débito";
         if (datos.referenciaNumero() == null || datos.referenciaNumero().isBlank()) {
             throw new IllegalArgumentException(
