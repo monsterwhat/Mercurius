@@ -235,41 +235,47 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
     }
 
     /**
-     * Get top performing articles by profit margin
+     * Ranking de artículos por margen del período, con los MISMOS valores que
+     * muestra la tabla (promedios del historial en el rango). Antes el orden
+     * salía de {@code AVG(margenReal)} pero la fila mostraba el último precio
+     * del artículo: un artículo con costo 0 aparecía como 100% en "bajo
+     * margen". Aquí se excluyen los artículos sin costo (margen no calculable)
+     * y el porcentaje mostrado es el que ordena.
+     *
+     * @param top true = mejores márgenes; false = peores
      */
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<Articulos> getTopProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
-        // ORDER BY dentro de un IN(...) no ordena el resultado externo: LIMIT se
-        // aplicaba a un conjunto arbitrario, así que "top" y "bajo" devolvían
-        // las MISMAS filas. El orden ahora es del query externo, por el margen
-        // promedio del período.
-        String jpql = "SELECT a FROM Articulos a JOIN HistorialMargen h ON h.articulo = a "
+    public @Nonnull List<Map<String, Object>> getArticleMarginRanking(
+            boolean top, int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
+        String jpql = "SELECT a.codigo, a.nombre, AVG(h.precioVenta), AVG(h.precioCosto), "
+                + "AVG(h.margenReal) FROM HistorialMargen h JOIN h.articulo a "
                 + "WHERE h.fecha BETWEEN :startDate AND :endDate "
-                + "GROUP BY a ORDER BY AVG(h.margenReal) DESC";
-        TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
+                + "AND h.precioVenta > 0 AND h.precioCosto > 0 "
+                + "GROUP BY a.codigo, a.nombre "
+                + "ORDER BY AVG(h.margenReal) " + (top ? "DESC" : "ASC");
+        TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate)
-                .setMaxResults(limit);
-        return query.getResultList();
-    }
+                .setMaxResults(Math.max(limit, 1));
 
-    /**
-     * Get worst performing articles by profit margin
-     */
-    @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<Articulos> getWorstProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
-        // Mismo problema que el top: el ORDER BY vivía dentro del IN y el LIMIT
-        // caía sobre un conjunto sin orden. Ahora se ordena por el margen
-        // promedio ascendente. Sin filtro margenReal > 0: vender bajo costo es
-        // justamente "bajo margen" y debe aparecer.
-        String jpql = "SELECT a FROM Articulos a JOIN HistorialMargen h ON h.articulo = a "
-                + "WHERE h.fecha BETWEEN :startDate AND :endDate "
-                + "GROUP BY a ORDER BY AVG(h.margenReal) ASC";
-        TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
-                .setParameter("startDate", startDate)
-                .setParameter("endDate", endDate)
-                .setMaxResults(limit);
-        return query.getResultList();
+        List<Map<String, Object>> filas = new ArrayList<>();
+        for (Object[] fila : query.getResultList()) {
+            BigDecimal venta = aBigDecimal(fila[2]);
+            BigDecimal costo = aBigDecimal(fila[3]);
+            if (venta.signum() <= 0 || costo.signum() <= 0) {
+                continue;
+            }
+            BigDecimal margen = aBigDecimal(fila[4]).setScale(2, RoundingMode.HALF_UP);
+            Map<String, Object> filaTabla = new LinkedHashMap<>();
+            filaTabla.put("codigo", fila[0]);
+            filaTabla.put("nombre", fila[1] == null ? "-" : fila[1].toString());
+            filaTabla.put("precioVenta", venta);
+            filaTabla.put("precioCosto", costo);
+            filaTabla.put("diferencia", venta.subtract(costo));
+            filaTabla.put("diferenciaPct", margen);
+            filas.add(filaTabla);
+        }
+        return filas;
     }
 
     /**

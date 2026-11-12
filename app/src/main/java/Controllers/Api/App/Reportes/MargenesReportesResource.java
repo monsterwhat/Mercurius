@@ -180,8 +180,8 @@ public class MargenesReportesResource {
                 "totalRevenue", totalRevenue,
                 "totalProfit", totalProfit,
                 "registros", filas.size(),
-                "topArticulos", filasArticulo(profitAnalysisService.getTopProfitMarginArticles(10, startDate, endDate)),
-                "peoresArticulos", filasArticulo(profitAnalysisService.getWorstProfitMarginArticles(10, startDate, endDate)),
+                "topArticulos", profitAnalysisService.getArticleMarginRanking(true, 10, startDate, endDate),
+                "peoresArticulos", profitAnalysisService.getArticleMarginRanking(false, 10, startDate, endDate),
                 "comparativoDepartamentos", profitAnalysisService.getDepartmentMarginComparison(startDate, endDate),
                 "departamentos", departamentoService.listAll().stream().map(d -> d.getNombre()).toList(),
                 "familias", familiaService.listAll().stream()
@@ -267,45 +267,6 @@ public class MargenesReportesResource {
     private static Date toDate(@Nullable LocalDate parsed, @Nonnull LocalDate fallback) {
         LocalDate effective = parsed != null ? parsed : fallback;
         return Date.from(effective.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-
-    /**
-     * Filas de articulo con la diferencia de precio calculada (en colones y en
-     * porcentaje).
-     *
-     * <p>La diferencia se calcula en el servidor: en la plantilla solo se
-     * muestra, y asi no depende de que el motor de expresiones sepa restar
-     * BigDecimals.</p>
-     */
-    private static @Nonnull List<Map<String, Object>> filasArticulo(
-            @Nullable List<Models.Articulos.Articulos> articulos) {
-        List<Map<String, Object>> filas = new ArrayList<>();
-        for (Models.Articulos.Articulos articulo : orEmpty(articulos)) {
-            Models.Articulos.ArticuloPrecio precio = articulo.getLastPrecio();
-            // Precio de venta 0.00 = SIN PRECIO: el artículo no se vende, así que
-            // no puede entrar en un ranking de margen (aparecía con -100%).
-            if (precio == null || precio.getPrecioFinal() == null
-                    || precio.getPrecioFinal().signum() <= 0) {
-                continue;
-            }
-            BigDecimal venta = precio.getPrecioFinal();
-            BigDecimal costo = precio.getPrecioCostoSinIVA() == null
-                    ? BigDecimal.ZERO : precio.getPrecioCostoSinIVA();
-            BigDecimal diferencia = venta.subtract(costo);
-            BigDecimal diferenciaPct = venta.signum() == 0
-                    ? BigDecimal.ZERO
-                    : diferencia.multiply(BigDecimal.valueOf(100))
-                            .divide(venta, 2, java.math.RoundingMode.HALF_UP);
-            Map<String, Object> fila = new LinkedHashMap<>();
-            fila.put("codigo", articulo.getCodigo());
-            fila.put("nombre", articulo.getNombre());
-            fila.put("precioVenta", venta);
-            fila.put("precioCosto", costo);
-            fila.put("diferencia", diferencia);
-            fila.put("diferenciaPct", diferenciaPct);
-            filas.add(fila);
-        }
-        return filas;
     }
 
     private static @Nonnull <T> List<T> orEmpty(@Nullable List<T> list) {

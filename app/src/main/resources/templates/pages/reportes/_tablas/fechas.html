@@ -1,6 +1,8 @@
 {!
   _tablas/fechas - table-only fragment for HX-Request swaps of the
-  Reporte de Movimientos de Inventario (T19).
+  Reporte de Movimientos de Inventario (T19). Muestra el registro completo
+  del movimiento: identidad, artículo, cantidades, tipo, usuario, estado,
+  procesado y notas.
 !}
 <div id="reporte-fechas-tabla">
     {#include _kit/data-table id="reporte-fechas" baseUrl=baseUrl
@@ -9,12 +11,17 @@
       {#rows}
         {#for f in filas}
         <tr>
+            <td>{f.codigo}</td>
             <td>{f.fechaMovimiento}</td>
-            <td>{f.codigoBarra}</td>
             <td>{f.articulo}</td>
-            <td>{f.cantidad}</td>
-            <td>{f.usuario}</td>
+            <td>{f.codigoArticulo}</td>
+            <td>{f.codigoBarra}</td>
+            <td class="num">{f.cantidad}</td>
+            <td class="num">{f.unidadesRecomendadas}</td>
             <td>{f.tipoMovimiento}</td>
+            <td>{f.usuario}</td>
+            <td><span class="status-chip {#if f.estadoOk}is-success{#else}is-danger{/if}">{f.estado}</span></td>
+            <td><span class="status-chip {#if f.procesadoOk}is-success{#else}is-warning{/if}">{f.procesado}</span></td>
             <td>{f.notas}</td>
         </tr>
         {/for}

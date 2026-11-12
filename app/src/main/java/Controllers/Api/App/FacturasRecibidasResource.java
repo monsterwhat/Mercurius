@@ -359,8 +359,9 @@ public class FacturasRecibidasResource {
                 "baseUrl", "/api/app/facturas-recibidas/tabla",
                 "columnas", columnas,
                 "filas", payload.getData(),
-                "sortKey", sort == null ? "" : sort,
-                "sortDir", isDescending(dir) ? "desc" : "asc",
+                "sortKey", sort == null || sort.isBlank() ? "fechaEmision" : sort,
+                "sortDir", sort == null || sort.isBlank() ? "desc"
+                        : (isDescending(dir) ? "desc" : "asc"),
                 "page", pagina,
                 "size", payload.getSize(),
                 "total", payload.getTotal(),

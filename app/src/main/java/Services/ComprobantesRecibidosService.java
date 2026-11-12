@@ -754,6 +754,11 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
      */
     private static @Nonnull String orderBy(@Nullable String sort, @Nullable String dir) {
         String key = sort == null ? "" : sort.trim();
+        // Sin sort explícito: la bandeja muestra lo más reciente primero
+        // (fecha de emisión; id descendente desempata el mismo día).
+        if (key.isEmpty()) {
+            return " ORDER BY e.fechaEmision DESC NULLS LAST, f.id DESC";
+        }
         boolean desc = "desc".equalsIgnoreCase(dir == null ? "" : dir.trim());
         String direction = desc ? " DESC" : " ASC";
         String nulls = desc ? " NULLS LAST" : " NULLS FIRST";

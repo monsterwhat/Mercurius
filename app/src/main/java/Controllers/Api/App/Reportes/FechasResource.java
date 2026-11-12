@@ -121,16 +121,27 @@ public class FechasResource {
                     : inventarioService.findByDateRangeAndUserId(inicio, fin, Long.valueOf(usuario.trim()));
             if (movimientos != null) {
                 for (Inventario movimiento : movimientos) {
+                    boolean activo = Boolean.TRUE.equals(movimiento.getStatus());
+                    boolean procesado = Boolean.TRUE.equals(movimiento.getProcessed());
                     filas.add(Tablas.fila(
+                            "codigo", movimiento.getCodigo(),
                             "fechaMovimiento", Tablas.fmtFechaHora(movimiento.getFechaMovimiento()),
-                            "codigoBarra", movimiento.getArticulo() != null
-                                    ? movimiento.getArticulo().getCodigoBarra() : "-",
                             "articulo", movimiento.getArticulo() != null
                                     ? movimiento.getArticulo().getNombre() : "-",
+                            "codigoArticulo", movimiento.getArticulo() != null
+                                    ? movimiento.getArticulo().getCodigo() : "-",
+                            "codigoBarra", movimiento.getArticulo() != null
+                                    ? movimiento.getArticulo().getCodigoBarra() : "-",
                             "cantidad", Tablas.fmtNumero(movimiento.getCantidad()),
+                            "unidadesRecomendadas",
+                                    Tablas.fmtNumero(movimiento.getUnidadesRecomendadasFactura()),
+                            "tipoMovimiento", movimiento.getTipoMovimiento(),
                             "usuario", movimiento.getUsuario() != null
                                     ? movimiento.getUsuario().getUsername() : "-",
-                            "tipoMovimiento", movimiento.getTipoMovimiento(),
+                            "estado", activo ? "Activo" : "Inactivo",
+                            "estadoOk", activo,
+                            "procesado", procesado ? "Procesado" : "Pendiente",
+                            "procesadoOk", procesado,
                             "notas", movimiento.getNotas()));
                 }
             }
@@ -168,13 +179,18 @@ public class FechasResource {
     @Nonnull
     private static List<Map<String, Object>> columnas() {
         return List.of(
+                Map.of("label", "Código", "key", "codigo"),
                 Map.of("label", "Fecha", "key", "fechaMovimiento"),
-                Map.of("label", "Cod.Barra", "key", "codigoBarra"),
-                Map.of("label", "Articulo", "key", "articulo"),
+                Map.of("label", "Artículo", "key", "articulo"),
+                Map.of("label", "Cód. Artículo", "key", "codigoArticulo"),
+                Map.of("label", "Cód. Barra", "key", "codigoBarra"),
                 Map.of("label", "Cantidad", "key", "cantidad"),
-                Map.of("label", "Usuario", "key", "usuario"),
+                Map.of("label", "Unid. Recomendadas", "key", "unidadesRecomendadas"),
                 Map.of("label", "Tipo", "key", "tipoMovimiento"),
-                Map.of("label", "Detalles", "key", "notas"));
+                Map.of("label", "Usuario", "key", "usuario"),
+                Map.of("label", "Estado", "key", "estado"),
+                Map.of("label", "Procesado", "key", "procesado"),
+                Map.of("label", "Notas", "key", "notas"));
     }
 }
 

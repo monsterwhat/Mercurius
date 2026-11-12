@@ -1,0 +1,38 @@
+{!
+  _tabla-articulos-margen - tabla compartida por "Top artículos por margen" y
+  "Artículos con bajo margen". Una sola definición garantiza que ambas
+  pestañas muestren exactamente las mismas columnas y el mismo estado vacío.
+
+  Parámetros: id (DOM id del contenedor), filas (código, nombre, precioVenta,
+  precioCosto, diferencia, diferenciaPct).
+!}
+<div class="table-container" id="{id}">
+    <table class="table is-hoverable is-fullwidth">
+        <thead>
+            <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Nombre</th>
+                <th scope="col" class="num">Precio Venta</th>
+                <th scope="col" class="num">Costo</th>
+                <th scope="col" class="num">Diferencia</th>
+                <th scope="col" class="num">Diferencia %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if filas == null || filas.isEmpty()}
+            <tr><td colspan="6" class="kit-empty-cell">Sin registros</td></tr>
+            {#else}
+            {#for a in filas}
+            <tr data-row-key="{a.codigo}">
+                <td>{a.codigo}</td>
+                <td>{a.nombre}</td>
+                <td class="num">{fmt:moneda(a.precioVenta)}</td>
+                <td class="num">{fmt:moneda(a.precioCosto)}</td>
+                <td class="num">{fmt:moneda(a.diferencia)}</td>
+                <td class="num">{fmt:porcentaje(a.diferenciaPct)}</td>
+            </tr>
+            {/for}
+            {/if}
+        </tbody>
+    </table>
+</div>

@@ -94,49 +94,9 @@
         <div id="margenes-tabla-container">
             {#fragment id=tabla}
                 {#if seccion == 'top'}
-                <div class="table-container" id="margenes-top-tabla">
-                    <table class="table is-hoverable is-fullwidth">
-                        <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" class="num">Precio Venta</th><th scope="col" class="num">Costo</th><th scope="col" class="num">Diferencia</th><th scope="col" class="num">Diferencia %</th></tr></thead>
-                        <tbody>
-                            {#if topArticulos == null || topArticulos.isEmpty()}
-                            <tr><td colspan="6" class="kit-empty-cell">Sin registros</td></tr>
-                            {#else}
-                            {#for a in topArticulos}
-                            <tr data-row-key="{a.codigo}">
-                                <td>{a.codigo}</td>
-                                <td>{a.nombre}</td>
-                                <td class="num">{fmt:moneda(a.precioVenta)}</td>
-                                <td class="num">{fmt:moneda(a.precioCosto)}</td>
-                                <td class="num">{fmt:moneda(a.diferencia)}</td>
-                                <td class="num">{fmt:porcentaje(a.diferenciaPct)}</td>
-                            </tr>
-                            {/for}
-                            {/if}
-                        </tbody>
-                    </table>
-                </div>
+                {#include pages/reportes/_tabla-articulos-margen id="margenes-top-tabla" filas=topArticulos /}
                 {#else if seccion == 'bajo'}
-                <div class="table-container" id="margenes-bajo-tabla">
-                    <table class="table is-hoverable is-fullwidth">
-                        <thead><tr><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col" class="num">Precio Venta</th><th scope="col" class="num">Costo</th><th scope="col" class="num">Diferencia</th><th scope="col" class="num">Diferencia %</th></tr></thead>
-                        <tbody>
-                            {#if peoresArticulos == null || peoresArticulos.isEmpty()}
-                            <tr><td colspan="6" class="kit-empty-cell">Sin registros</td></tr>
-                            {#else}
-                            {#for a in peoresArticulos}
-                            <tr data-row-key="{a.codigo}">
-                                <td>{a.codigo}</td>
-                                <td>{a.nombre}</td>
-                                <td class="num">{fmt:moneda(a.precioVenta)}</td>
-                                <td class="num">{fmt:moneda(a.precioCosto)}</td>
-                                <td class="num">{fmt:moneda(a.diferencia)}</td>
-                                <td class="num">{fmt:porcentaje(a.diferenciaPct)}</td>
-                            </tr>
-                            {/for}
-                            {/if}
-                        </tbody>
-                    </table>
-                </div>
+                {#include pages/reportes/_tabla-articulos-margen id="margenes-bajo-tabla" filas=peoresArticulos /}
                 {#else}
                 {#include _kit/data-table id="margenes-tabla" baseUrl=baseUrl
                      headers=margenesColumnas sortKey=sortKey sortDir=sortDir

@@ -717,6 +717,15 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                     .body("page", equalTo(1))
                     .body("size", equalTo(2));
 
+            Response porDefecto = authed(session)
+                    .queryParam("q", marca)
+                    .queryParam("size", 3)
+                    .when().get(API);
+            porDefecto.then().statusCode(200);
+            // Sin sort explícito: fecha de emisión más reciente primero.
+            assertThat(porDefecto.jsonPath().getList("data.consecutivo"))
+                    .containsExactly(marca + "C", marca + "N", marca + "V");
+
             Response ordenada = authed(session)
                     .queryParam("q", marca)
                     .queryParam("sort", "totalComprobante")

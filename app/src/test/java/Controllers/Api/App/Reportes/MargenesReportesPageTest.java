@@ -65,18 +65,29 @@ class MargenesReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
     void topAndBajoSectionsRender() {
-        given()
+        String top = given()
                 .queryParam("seccion", "top")
                 .when().get(PAGE_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("margenes-top-tabla"));
-        given()
+                .body(containsString("margenes-top-tabla"))
+                .extract().asString();
+        String bajo = given()
                 .queryParam("seccion", "bajo")
                 .when().get(PAGE_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("margenes-bajo-tabla"));
+                .body(containsString("margenes-bajo-tabla"))
+                .extract().asString();
+
+        // Ambas pestañas comparten la MISMA tabla (columnas y estado vacío).
+        for (String html : new String[] {top, bajo}) {
+            org.assertj.core.api.Assertions.assertThat(html)
+                    .contains("Precio Venta")
+                    .contains("Costo")
+                    .contains("Diferencia %")
+                    .contains("<table");
+        }
     }
 
     @Test
