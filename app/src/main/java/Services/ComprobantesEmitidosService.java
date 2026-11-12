@@ -1296,6 +1296,39 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
         }
     }
 
+    /**
+     * Notas de credito electronicas que referencian un comprobante original.
+     *
+     * <p>Se consultan por la {@code InformacionReferencia} (tipo + numero del
+     * documento original) y no por la fila {@code NotaCredito}, porque esa
+     * fila no siempre guarda la clave de la NC. Devuelve {@code null} si la
+     * consulta falla: el llamador debe fallar cerrado para no permitir
+     * devoluciones por encima de lo ya devuelto.</p>
+     */
+    public @Nullable List<ComprobantesEmitidos> findNotasCreditoByReferencia(
+            @Nonnull String numeroOriginal, @Nonnull String tipoOriginal) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesEmitidos f "
+                + "JOIN f.informacionReferencia r "
+                + "LEFT JOIN FETCH f.detalles d "
+                + "LEFT JOIN FETCH d.lineasDetalle "
+                + "WHERE f.encabezado.codigoDocumento = '02' "
+                + "AND r.numero = :numero AND r.tipoDoc = :tipo "
+                + "ORDER BY f.id ASC",
+                ComprobantesEmitidos.class
+            );
+            query.setParameter("numero", numeroOriginal);
+            query.setParameter("tipo", tipoOriginal);
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error finding notas de credito by referencia: " + e.getMessage()
+                + " | source=ComprobantesEmitidosService.findNotasCreditoByReferencia()"
+                + " | numero=" + numeroOriginal + " | tipo=" + tipoOriginal);
+            return null;
+        }
+    }
+
     public @Nonnull List<ComprobantesEmitidos> findFacturasPendientesEnvio() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(

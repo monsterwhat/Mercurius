@@ -73,6 +73,16 @@ public class LineaDetalle {
     @Column(name = "cantidad", precision = 16, scale = 3)
     private BigDecimal cantidad;
 
+    /**
+     * Indice (0-based) de la linea original cuando esta linea pertenece a una
+     * nota de credito. Permite acumular devoluciones parciales por linea sin
+     * depender del numero de linea fiscal (que la NC renumera). Es una nota
+     * interna del sistema, no parte del XML de Hacienda.
+     */
+    @XmlTransient
+    @Column(name = "linea_original_indice")
+    private Integer lineaOriginalIndice;
+
     @XmlElement(name = "UnidadMedida")
     @Column(name = "unidad_medida", length = 15)
     private String unidadMedida;

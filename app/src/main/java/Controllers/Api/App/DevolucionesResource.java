@@ -60,6 +60,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -115,10 +116,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       status codes and Hacienda states (ACEPTADO / RECHAZADO / PENDIENTE) are
  *       unchanged; what changed is that the send no longer runs while the
  *       pessimistic lock on the credit-note consecutive ("02") is held.</li>
- *   <li>Double-devolucion guard: when an active NotaCredito already exists
- *       for the factura the endpoint answers 409 ALREADY_RETURNED (dispatch
- *       requirement; precedent TributacionResource idempotency via
- *       {@link NotaCreditoService#listPorComprobante}).</li>
+ *   <li>Cumulative-return guard: a factura may have several partial NCs
+ *       (Hacienda allows them while the cumulative credit does not exceed the
+ *       original). Each NC line stores the ORIGINAL line index, so the guard
+ *       subtracts what was already returned per line. A prior full annulment
+ *       (reference code 01) still answers 409 ALREADY_RETURNED, and the guard
+ *       fails closed if the previous NCs cannot be read.</li>
  *   <li>DELIBERATE DEVIATION (no existía en el legacy): una factura
  *       RECHAZADA por Hacienda devuelve 409 DOCUMENTO_RECHAZADO y no genera
  *       nada. El Art. 19 del Reglamento de Comprobantes Electrónicos obliga a
@@ -624,12 +627,9 @@ public class DevolucionesResource {
         if (guard != null) {
             return DevolucionProcesada.rechazada(guard);
         }
-        List<NotaCredito> previas = notaCreditoService.listPorComprobante(id);
-        if (previas != null && !previas.isEmpty()) {
-            return DevolucionProcesada.rechazada(Response.status(Response.Status.CONFLICT)
-                    .entity(ApiResponse.error("ALREADY_RETURNED",
-                            "La factura ya tiene una nota de credito registrada"))
-                    .build());
+        Response guardCumulativo = validarDevolucionesPrevias(facturaSeleccionada, seleccion);
+        if (guardCumulativo != null) {
+            return DevolucionProcesada.rechazada(guardCumulativo);
         }
 
         String motivoFinal = motivo.trim();
@@ -673,6 +673,21 @@ public class DevolucionesResource {
         //    the base devolucion still succeeds.
         NcElectronicaResultado nc = generarNcElectronica(
                 facturaSeleccionada, seleccion, motivoFinal, totalDevolucion, authorizedBy);
+
+        // Enlaza la fila NotaCredito con su NC electronica. Con devoluciones
+        // parciales multiples, esta clave es lo que permite actualizar el
+        // estado de Hacienda de la nota correcta y no de todas las de la
+        // factura.
+        if (nc != null && nc.generada() && nc.clave() != null) {
+            try {
+                nota.setHaciendaClave(nc.clave());
+                notaCreditoService.update(nota);
+            } catch (RuntimeException e) {
+                LOG.warn("No se pudo enlazar la clave de la NC con la fila NotaCredito: "
+                        + e.getMessage() + " | clave=" + nc.clave()
+                        + " | source=DevolucionesResource.procesarDevolucion()");
+            }
+        }
 
                 LOG.info("Nota de credito creada por " + totalDevolucion + " - " + motivoFinal + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
@@ -735,17 +750,27 @@ public class DevolucionesResource {
     }
 
     /** One selectable line: position index + display data (legacy LineaDevolucion). */
-    private static @Nonnull List<LineaRow> lineaRows(@Nonnull ComprobantesEmitidos factura) {
+    private @Nonnull List<LineaRow> lineaRows(@Nonnull ComprobantesEmitidos factura) {
         List<LineaRow> rows = new ArrayList<>();
+        Map<Integer, BigDecimal> devueltas = cantidadesDevueltas(factura);
         DetalleServicio detalles = factura.getDetalles();
         if (detalles != null && detalles.getLineasDetalle() != null) {
             List<LineaDetalle> lineas = detalles.getLineasDetalle();
             for (int i = 0; i < lineas.size(); i++) {
                 LineaDetalle linea = lineas.get(i);
+                BigDecimal original = linea.getCantidad() != null
+                        ? linea.getCantidad() : BigDecimal.ZERO;
+                BigDecimal devuelta = devueltas.getOrDefault(i, BigDecimal.ZERO);
+                BigDecimal disponible = original.subtract(devuelta);
+                if (disponible.compareTo(BigDecimal.ZERO) < 0) {
+                    disponible = BigDecimal.ZERO;
+                }
                 rows.add(new LineaRow(i,
                         linea.getNumeroLinea() != null ? linea.getNumeroLinea() : i,
                         linea.getDetalle(),
-                        linea.getCantidad(),
+                        original,
+                        devuelta,
+                        disponible,
                         linea.getPrecioUnitario()));
             }
         }
@@ -849,6 +874,171 @@ public class DevolucionesResource {
             }
         }
         return null;
+    }
+
+    /**
+     * Valida devoluciones parciales acumuladas.
+     *
+     * <p>Hacienda permite varias notas de credito sobre la misma factura
+     * mientras la suma de lo devuelto no supere lo facturado. Una NC de
+     * anulacion total (codigo de referencia 01) sigue bloqueando cualquier
+     * devolucion posterior; las NC de devolucion (codigo 06) se acumulan por
+     * linea original. Si no se pueden leer las NC previas se falla cerrado:
+     * es preferible rechazar que permitir devolver dos veces lo mismo.</p>
+     */
+    private @Nullable Response validarDevolucionesPrevias(
+            @Nonnull ComprobantesEmitidos factura,
+            @Nonnull List<LineaSeleccion> seleccion) {
+        String consecutivo = factura.getEncabezado() != null
+                ? factura.getEncabezado().getNumeroConsecutivo() : null;
+        String tipo = factura.getEncabezado() != null
+                ? factura.getEncabezado().getCodigoDocumento() : null;
+        if (consecutivo == null || tipo == null || seleccion.isEmpty()) {
+            return null;
+        }
+        List<ComprobantesEmitidos> previas =
+                comprobantesService.findNotasCreditoByReferencia(consecutivo, tipo);
+        if (previas == null) {
+            LOG.warn("No se pudieron leer las notas de credito previas; se bloquea la devolucion"
+                    + " | factura=" + consecutivo
+                    + " | source=DevolucionesResource.validarDevolucionesPrevias()");
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(ApiResponse.error("ALREADY_RETURNED",
+                            "No se pudieron verificar las devoluciones previas de la factura. "
+                                    + "Reintente o revise el historial de notas de credito."))
+                    .build();
+        }
+        Map<Integer, BigDecimal> devueltas = new HashMap<>();
+        for (ComprobantesEmitidos nc : previas) {
+            if (Boolean.FALSE.equals(nc.getStatus())) {
+                continue;
+            }
+            String codigo = codigoReferencia(nc);
+            if ("01".equals(codigo)) {
+                return Response.status(Response.Status.CONFLICT)
+                        .entity(ApiResponse.error("ALREADY_RETURNED",
+                                "La factura ya fue anulada con una nota de credito"))
+                        .build();
+            }
+            if (!"06".equals(codigo)) {
+                LOG.warn("Nota de credito con codigo de referencia " + codigo
+                        + " no cuenta para devoluciones parciales"
+                        + " | factura=" + consecutivo
+                        + " | source=DevolucionesResource.validarDevolucionesPrevias()");
+                continue;
+            }
+            acumularCantidadesDevueltas(nc, factura, devueltas);
+        }
+        for (LineaSeleccion sel : seleccion) {
+            BigDecimal original = sel.original().getCantidad() != null
+                    ? sel.original().getCantidad() : BigDecimal.ZERO;
+            BigDecimal ya = devueltas.getOrDefault(sel.indice(), BigDecimal.ZERO);
+            BigDecimal disponible = original.subtract(ya);
+            if (disponible.compareTo(BigDecimal.ZERO) < 0) {
+                disponible = BigDecimal.ZERO;
+            }
+            if (sel.cantidadDevolver().compareTo(disponible) > 0) {
+                return badRequest(String.format(Locale.ROOT,
+                        "La cantidad a devolver (%s) excede lo disponible (%s) para la linea %d; "
+                                + "ya se devolvieron %s de %s",
+                        sel.cantidadDevolver().toPlainString(),
+                        disponible.toPlainString(),
+                        sel.indice() + 1,
+                        ya.toPlainString(),
+                        original.toPlainString()));
+            }
+        }
+        return null;
+    }
+
+    /** Reference code of the NC (06 devolucion, 01 anulacion, ...), or null. */
+    private static @Nullable String codigoReferencia(@Nonnull ComprobantesEmitidos nc) {
+        if (nc.getInformacionReferencia() == null || nc.getInformacionReferencia().isEmpty()) {
+            return null;
+        }
+        return nc.getInformacionReferencia().get(0).getCodigo();
+    }
+
+    /** Accumulates returned quantities keyed by the ORIGINAL line index. */
+    private static void acumularCantidadesDevueltas(@Nonnull ComprobantesEmitidos nc,
+                                                    @Nonnull ComprobantesEmitidos factura,
+                                                    @Nonnull Map<Integer, BigDecimal> devueltas) {
+        if (nc.getDetalles() == null || nc.getDetalles().getLineasDetalle() == null) {
+            return;
+        }
+        List<LineaDetalle> originales = factura.getDetalles() != null
+                && factura.getDetalles().getLineasDetalle() != null
+                ? factura.getDetalles().getLineasDetalle() : List.of();
+        for (LineaDetalle linea : nc.getDetalles().getLineasDetalle()) {
+            Integer indice = linea.getLineaOriginalIndice();
+            if (indice == null) {
+                indice = resolverLineaOriginal(linea, originales);
+            }
+            if (indice == null) {
+                // No se puede saber que linea original se devolvio: no se
+                // acumula y se deja constancia. El guard de authorize seguira
+                // validando contra lo que si se pudo asociar.
+                LOG.warn("No se pudo asociar una linea de la NC con la factura original"
+                        + " | nc=" + (nc.getEncabezado() != null
+                                ? nc.getEncabezado().getNumeroConsecutivo() : null)
+                        + " | detalle=" + linea.getDetalle()
+                        + " | source=DevolucionesResource.acumularCantidadesDevueltas()");
+                continue;
+            }
+            if (linea.getCantidad() == null) {
+                continue;
+            }
+            devueltas.merge(indice, linea.getCantidad(), BigDecimal::add);
+        }
+    }
+
+    /**
+     * Fallback for NCs written before {@code lineaOriginalIndice} existed:
+     * matches the NC line back to the original by detail, price and CABYS.
+     */
+    private static @Nullable Integer resolverLineaOriginal(@Nonnull LineaDetalle ncLinea,
+                                                           @Nonnull List<LineaDetalle> originales) {
+        for (int i = 0; i < originales.size(); i++) {
+            LineaDetalle original = originales.get(i);
+            if (Objects.equals(original.getDetalle(), ncLinea.getDetalle())
+                    && sameAmount(original.getPrecioUnitario(), ncLinea.getPrecioUnitario())
+                    && Objects.equals(original.getCodigoCabys(), ncLinea.getCodigoCabys())) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    private static boolean sameAmount(@Nullable BigDecimal a, @Nullable BigDecimal b) {
+        return a == null ? b == null : b != null && a.compareTo(b) == 0;
+    }
+
+    /** Returned quantities per original line, for the selection UI. */
+    private @Nonnull Map<Integer, BigDecimal> cantidadesDevueltas(
+            @Nonnull ComprobantesEmitidos factura) {
+        String consecutivo = factura.getEncabezado() != null
+                ? factura.getEncabezado().getNumeroConsecutivo() : null;
+        String tipo = factura.getEncabezado() != null
+                ? factura.getEncabezado().getCodigoDocumento() : null;
+        if (consecutivo == null || tipo == null) {
+            return Map.of();
+        }
+        List<ComprobantesEmitidos> previas =
+                comprobantesService.findNotasCreditoByReferencia(consecutivo, tipo);
+        if (previas == null) {
+            LOG.warn("No se pudieron leer las notas de credito previas para calcular disponible"
+                    + " | factura=" + consecutivo
+                    + " | source=DevolucionesResource.cantidadesDevueltas()");
+            return Map.of();
+        }
+        Map<Integer, BigDecimal> devueltas = new HashMap<>();
+        for (ComprobantesEmitidos nc : previas) {
+            if (Boolean.FALSE.equals(nc.getStatus()) || !"06".equals(codigoReferencia(nc))) {
+                continue;
+            }
+            acumularCantidadesDevueltas(nc, factura, devueltas);
+        }
+        return devueltas;
     }
 
     /**
@@ -979,7 +1169,7 @@ public class DevolucionesResource {
         ComprobantesEmitidos ncComprobante = envio.comprobante();
         try {
             if (comprobanteService.enviarComprobanteAHacienda(ncComprobante)) {
-                actualizarEstadoNotaCredito(envio.facturaOriginalId(),
+                actualizarEstadoNotaCredito(envio,
                         ncComprobante.getHaciendaEstado() != null ? ncComprobante.getHaciendaEstado() : "ACEPTADO");
                 return; // ACEPTADO, con sus fechas selladas
             }
@@ -987,7 +1177,7 @@ public class DevolucionesResource {
             // se encola igual para que la NC no se pierda ni salga del plazo
             // legal (Art. 21 párr. 3).
             registrarPendienteDeEnvioNc(envio);
-            actualizarEstadoNotaCredito(envio.facturaOriginalId(),
+            actualizarEstadoNotaCredito(envio,
                     ncComprobante.getHaciendaEstado() != null ? ncComprobante.getHaciendaEstado() : "PENDIENTE");
         } catch (RuntimeException e) {
             // La devolución está confirmada y la NC escrita: no hay nada que
@@ -997,7 +1187,7 @@ public class DevolucionesResource {
                     + " | source=DevolucionesResource.enviarNcAHacienda()"
                     + " | despues=la devolución ya está confirmada; la NC queda pendiente de reintento",
                     e);
-            actualizarEstadoNotaCredito(envio.facturaOriginalId(), "PENDIENTE");
+            actualizarEstadoNotaCredito(envio, "PENDIENTE");
         }
     }
 
@@ -1133,6 +1323,9 @@ public class DevolucionesResource {
                 LineaDetalle ol = sel.original();
                 LineaDetalle nl = new LineaDetalle();
                 nl.setNumeroLinea(lineNum++);
+                // Indice de la linea ORIGINAL (no el numero fiscal, que la NC
+                // renumera). Es lo que permite acumular devoluciones parciales.
+                nl.setLineaOriginalIndice(sel.indice());
                 nl.setCodigoCabys(ol.getCodigoCabys());
                 if (ol.getCodigosComerciales() != null) {
                     List<CodigoComercial> ccs = new ArrayList<>();
@@ -1419,15 +1612,38 @@ public class DevolucionesResource {
         }
     }
 
-    /** Keeps NotaCredito.haciendaEstado consistent with the electronic comprobante. */
-    private void actualizarEstadoNotaCredito(long facturaOriginalId, @Nonnull String estado) {
+    /**
+     * Keeps the {@code NotaCredito} row of THE NC THAT WAS SENT in sync with
+     * its electronic comprobante. With multiple partial returns, updating all
+     * rows of the invoice would overwrite the states of the other notes.
+     */
+    private void actualizarEstadoNotaCredito(@Nonnull EnvioNc envio, @Nonnull String estado) {
+        String clave = envio.comprobante().getHaciendaClave();
         try {
-            for (NotaCredito nota : orEmpty(notaCreditoService.listPorComprobante(facturaOriginalId))) {
-                nota.setHaciendaEstado(estado);
-                notaCreditoService.update(nota);
+            NotaCredito nota = notaCreditoService.findByHaciendaClave(clave);
+            if (nota == null) {
+                // Filas historicas sin clave: la mas reciente es la que se
+                // acaba de generar, y se aprovecha para enlazarla.
+                List<NotaCredito> notas =
+                        orEmpty(notaCreditoService.listPorComprobante(envio.facturaOriginalId()));
+                nota = notas.isEmpty() ? null : notas.get(0);
+                if (nota != null && clave != null && !clave.isBlank()) {
+                    nota.setHaciendaClave(clave);
+                }
             }
+            if (nota == null) {
+                LOG.warn("No se encontro la NotaCredito para actualizar su estado"
+                        + " | factura=" + envio.facturaOriginalId()
+                        + " | clave=" + clave
+                        + " | source=DevolucionesResource.actualizarEstadoNotaCredito()");
+                return;
+            }
+            nota.setHaciendaEstado(estado);
+            notaCreditoService.update(nota);
         } catch (RuntimeException e) {
             LOG.warn("Error actualizando haciendaEstado de la NotaCredito: " + e.getMessage()
+                    + " | factura=" + envio.facturaOriginalId()
+                    + " | clave=" + clave
                     + " | source=DevolucionesResource.actualizarEstadoNotaCredito()");
         }
     }
@@ -1551,20 +1767,26 @@ public class DevolucionesResource {
         sb.append("<input type=\"hidden\" name=\"facturaId\" value=\"").append(id).append("\"/>");
         sb.append("<div class=\"table-container\"><table class=\"table is-striped is-hoverable is-fullwidth\">");
         sb.append("<thead><tr><th>Artículo</th><th>Cantidad Original</th>")
+                .append("<th>Devuelta</th><th>Disponible</th>")
                 .append("<th>Cantidad a Devolver</th><th>Precio Unitario</th></tr></thead><tbody>");
         if (rows.isEmpty()) {
-            sb.append("<tr><td colspan=\"4\" class=\"has-text-centered has-text-grey\">")
+            sb.append("<tr><td colspan=\"6\" class=\"has-text-centered has-text-grey\">")
                     .append("No hay lineas en esta factura</td></tr>");
         }
         for (LineaRow row : rows) {
+            boolean sinDisponible = row.cantidadDisponible() == null
+                    || row.cantidadDisponible().compareTo(BigDecimal.ZERO) <= 0;
             sb.append("<tr>")
                     .append("<td>").append(escape(str(row.detalle()))).append("</td>")
                     .append("<td class=\"has-text-right\">").append(escape(str(row.cantidadOriginal()))).append("</td>")
+                    .append("<td class=\"has-text-right\">").append(escape(str(row.cantidadDevuelta()))).append("</td>")
+                    .append("<td class=\"has-text-right\">").append(escape(str(row.cantidadDisponible()))).append("</td>")
                     .append("<td><input type=\"hidden\" name=\"lineaNumero\" value=\"")
                     .append(row.indice()).append("\"/>")
                     // visible qty input paired with its hidden index half:
                     .append("<input class=\"input is-small\" type=\"number\" min=\"0\" max=\"")
-                    .append(escape(str(row.cantidadOriginal()))).append("\" step=\"any\" value=\"0\"")
+                    .append(escape(str(row.cantidadDisponible()))).append("\" step=\"any\" value=\"0\"")
+                    .append(sinDisponible ? " disabled" : "")
                     .append(" name=\"lineaCantidad\" aria-label=\"Cantidad a devolver\"/></td>")
                     .append("<td class=\"has-text-right\">").append(escape(str(row.precioUnitario()))).append("</td>")
                     .append("</tr>");
@@ -1751,7 +1973,8 @@ public class DevolucionesResource {
 
     /** One selectable line of GET /{id}/lineas. */
     public record LineaRow(int indice, Integer numeroLinea, String detalle,
-                           BigDecimal cantidadOriginal, BigDecimal precioUnitario) {}
+                           BigDecimal cantidadOriginal, BigDecimal cantidadDevuelta,
+                           BigDecimal cantidadDisponible, BigDecimal precioUnitario) {}
 
     /** Payload of GET /{id}/lineas (JSON mode). */
     public record FacturaDetalle(Map<String, Object> factura, List<LineaRow> lineas) {}

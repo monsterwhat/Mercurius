@@ -111,8 +111,12 @@ public final class EncabezadoBuilder {
         if (haciendaCode != null) {
             // Domestic or DIMEX/NITE with known Hacienda code — use IdentificacionReceptor
             IdentificacionReceptor id = new IdentificacionReceptor();
+            // Quita solo separadores (guiones, espacios, puntos). Las letras
+            // se conservan: el Registro Nacional emite cedulas juridicas
+            // alfanumericas (p.ej. 3-101-A00001) y el XSD v4.4 las acepta en
+            // Identificacion/Numero. Recortarlas a digitos cambiaria el ID.
             id.setNumero(selectedClient.getIdNumber() != null
-                    ? selectedClient.getIdNumber().replaceAll("[^0-9]", "") : "");
+                    ? selectedClient.getIdNumber().replaceAll("[^0-9A-Za-z]", "") : "");
             id.setTipo(haciendaCode);
             receptor.setIdentificacion(id);
         } else {

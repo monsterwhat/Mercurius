@@ -298,6 +298,17 @@ class ClientesPageTest extends support.ContextPathIsolation {
     }
 
     @Test
+    void formRendersForeignIdentificationTypes() {
+        Map<String, String> session = adminSession();
+        authed(session)
+                .when().get(BASE + "/api/app/clientes/formularios/nueva")
+                .then()
+                .statusCode(200)
+                .body(containsString("Extranjero No Domiciliado"))
+                .body(containsString("No Contribuyente"));
+    }
+
+    @Test
     void formTwinEditBlankOptionalsKeepsStoredValues() {
         Map<String, String> session = adminSession();
         String marker = "W4B Edit Blank " + System.nanoTime();

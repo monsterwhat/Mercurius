@@ -39,6 +39,31 @@ public class NotaCreditoService extends GService<NotaCredito> {
         }
     }
 
+    /**
+     * Busca la fila {@code NotaCredito} de una NC electronica por su clave.
+     * Necesario cuando una factura tiene varias devoluciones parciales: el
+     * estado de Hacienda debe actualizarse solo en la nota que se envio, no
+     * en todas las notas de la factura.
+     */
+    public @Nullable NotaCredito findByHaciendaClave(@Nullable String clave) {
+        if (clave == null || clave.isBlank()) {
+            return null;
+        }
+        try {
+            TypedQuery<NotaCredito> query = em.createQuery(
+                "SELECT n FROM NotaCredito n WHERE n.haciendaClave = :clave",
+                NotaCredito.class
+            );
+            query.setParameter("clave", clave);
+            List<NotaCredito> encontradas = query.getResultList();
+            return encontradas.isEmpty() ? null : encontradas.get(0);
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("Error finding credit note by clave: " + e.getMessage()
+                    + " | source=NotaCreditoService.findByHaciendaClave() | clave=" + clave);
+            return null;
+        }
+    }
+
     public List<NotaCredito> listAll() {
         try {
             TypedQuery<NotaCredito> query = em.createQuery(

@@ -71,6 +71,8 @@
                                 <option value="Cédula Jurídica" {#if cliente?? && cliente.idType == 'Cédula Jurídica'}selected{/if}>Cédula Jurídica</option>
                                 <option value="DIMEX" {#if cliente?? && cliente.idType == 'DIMEX'}selected{/if}>DIMEX</option>
                                 <option value="NITE" {#if cliente?? && cliente.idType == 'NITE'}selected{/if}>NITE</option>
+                                <option value="Extranjero No Domiciliado" {#if cliente?? && cliente.idType == 'Extranjero No Domiciliado'}selected{/if}>Extranjero No Domiciliado</option>
+                                <option value="No Contribuyente" {#if cliente?? && cliente.idType == 'No Contribuyente'}selected{/if}>No Contribuyente</option>
                             </select>
                         </div>
                     </div>
@@ -326,7 +328,10 @@
                 var nombreInput = document.getElementById('cliente-nombre');
                 var tipoSelect = document.getElementById('cliente-idType');
                 var msg = document.getElementById('buscar-cedula-msg');
-                var tipos = { '01': 'Cédula Física', '02': 'Cédula Jurídica', '03': 'DIMEX', '04': 'NITE' };
+                var tipos = {
+                    '01': 'Cédula Física', '02': 'Cédula Jurídica', '03': 'DIMEX', '04': 'NITE',
+                    '05': 'Extranjero No Domiciliado', '06': 'No Contribuyente'
+                };
                 if (!cedulaInput || !cedulaInput.value.trim()) {
                     if (msg) { msg.textContent = 'Escriba primero el número de identificación.'; }
                     if (cedulaInput) { cedulaInput.focus(); }

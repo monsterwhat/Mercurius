@@ -36,6 +36,8 @@ import Services.DirectoryService;
 import Services.cart.CartSessionStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Creación de cada tipo de comprobante por el POS.
@@ -323,6 +325,86 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             assertThat(row.getEncabezado().getCodigoDocumento()).isEqualTo("01");
         } finally {
             limpiarFacturas(idsPrevios);
+        }
+    }
+
+    @Test
+    @DisplayName("FE con cedula juridica alfanumerica conserva las letras en el XML")
+    void feConCedulaAlfanumericaConservaLetras() {
+        ensureAppSettings();
+        Set<Long> idsPrevios = marcaDeAgua();
+        Clientes cliente = null;
+        try {
+            Map<String, String> sesion = adminSession();
+            cliente = new Clientes();
+            cliente.setName("Cliente alfanumerico " + sufijo());
+            cliente.setIdType("Cédula Jurídica");
+            cliente.setIdNumber("3-101-A00001");
+            cliente.setStatus(true);
+            clientService.create(cliente);
+            assertThat(cliente.getCode()).isGreaterThan(0);
+
+            prepararVenta(sesion, sembrarArticuloExento(), cliente);
+
+            facturar(sesion, "01")
+                    .then()
+                    .statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+
+            ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
+            assertThat(row.getEncabezado().getReceptor().getIdentificacion().getNumero())
+                    .as("la cedula alfanumerica no se puede recortar a digitos")
+                    .isEqualTo("3101A00001");
+        } finally {
+            cartSessionStore.remove("admin");
+            limpiarFacturas(idsPrevios);
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0} -> tipo {2}")
+    @CsvSource({
+        "DIMEX, 155812345678, 03, 155812345678",
+        "NITE, 1234567890, 04, 1234567890",
+        "Extranjero No Domiciliado, P12345678, 05, P12345678",
+        "No Contribuyente, CPF-123456, 06, CPF123456"
+    })
+    @DisplayName("FE emite la identificacion correcta para DIMEX, NITE y extranjeros")
+    void feConTiposDeIdentificacionDelReceptor(String idType, String idNumber,
+                                               String tipo, String numero) {
+        ensureAppSettings();
+        Set<Long> idsPrevios = marcaDeAgua();
+        Clientes cliente = null;
+        try {
+            Map<String, String> sesion = adminSession();
+            cliente = new Clientes();
+            cliente.setName("Cliente " + idType + " " + sufijo());
+            cliente.setIdType(idType);
+            cliente.setIdNumber(idNumber);
+            cliente.setStatus(true);
+            clientService.create(cliente);
+            assertThat(cliente.getCode()).isGreaterThan(0);
+
+            prepararVenta(sesion, sembrarArticuloExento(), cliente);
+
+            facturar(sesion, "01")
+                    .then()
+                    .statusCode(200)
+                    .body("data.comprobanteId", notNullValue());
+
+            ComprobantesEmitidos row = unicaFacturaNueva(idsPrevios);
+            assertThat(row.getEncabezado().getReceptor().getIdentificacion().getTipo())
+                    .isEqualTo(tipo);
+            assertThat(row.getEncabezado().getReceptor().getIdentificacion().getNumero())
+                    .isEqualTo(numero);
+        } finally {
+            cartSessionStore.remove("admin");
+            limpiarFacturas(idsPrevios);
+            if (cliente != null) {
+                clientService.delete(cliente);
+            }
         }
     }
 

@@ -3,6 +3,7 @@ package Controllers.Api.App;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +36,7 @@ import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
 import Models.Inventario;
 import Models.NotaCredito;
+import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
 import Services.AppSettingsService;
 import Services.ComprobanteService;
@@ -62,7 +64,8 @@ import io.restassured.specification.RequestSpecification;
  * <p>Scenarios: authorize-failure blocks with ZERO side effects (401, no NC,
  * no inventory movement, no Hacienda send); authorize-success generates an NC
  * matching the golden STRUCTURAL fixture (clave/consecutivo/lines/resumen —
- * not byte-equality); double-devolucion guard 409; inventory restock side
+ * not byte-equality); cumulative partial-return guard and the price-adjusted
+ * NC case; inventory restock side
  * effect persisted and ArticuloStock provably untouched within the same flow
  * (legacy {@code create()} parity — see .omo/evidence/t32/); validation
  * matrix; search parity; page + fragment rendering; role matrix.</p>
@@ -275,27 +278,122 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
-    void doubleDevolucionGuardReturns409() {
+    void ncFromPriceAdjustedInvoiceUsesAdjustedPrice() {
         seedAppSettings();
         ComprobantesEmitidos factura = null;
+        ComprobantesEmitidos nc = null;
+        try {
+            factura = seedFacturaPrecioAjustado();
+            NcSummary summary = extractSummary(postAuthorize(factura.getId(),
+                    "Precio corregido", new int[]{0}, new int[]{1})
+                    .then().statusCode(200).extract().response());
+
+            assertEquals(0, new BigDecimal("500.00").compareTo(summary.montoTotal()),
+                    "the NC must use the adjusted line total, not the catalog price");
+
+            List<ComprobantesEmitidos> porClave = emitidosService.findByClave(summary.clave());
+            assertNotNull(porClave);
+            assertEquals(1, porClave.size(), "exactly one comprobante for the NC clave");
+            nc = porClave.get(0);
+            LineaDetalle linea = nc.getDetalles().getLineasDetalle().get(0);
+            assertEquals(0, new BigDecimal("442.48").compareTo(linea.getPrecioUnitario()),
+                    "precio unitario is the adjusted base, not 550");
+            assertEquals(0, new BigDecimal("442.48").compareTo(linea.getMontoTotal()));
+            assertEquals(0, new BigDecimal("442.48").compareTo(linea.getSubTotal()));
+            assertEquals(0, new BigDecimal("57.52").compareTo(linea.getImpuestoNeto()));
+            assertEquals(0, new BigDecimal("500.00").compareTo(linea.getMontoTotalLinea()));
+            assertEquals(0, new BigDecimal("500.00").compareTo(nc.getResumen().getTotalComprobante()));
+            assertEquals(0, new BigDecimal("442.48").compareTo(nc.getResumen().getTotalVentaNeta()));
+            assertEquals(0, new BigDecimal("57.52").compareTo(nc.getResumen().getTotalImpuesto()));
+            assertTrue(linea.getPrecioUnitario().compareTo(new BigDecimal("550.00")) != 0,
+                    "the catalog price must NOT leak into the NC");
+        } finally {
+            limpiarDevolucion(factura, nc);
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
+    void partialReturnsAccumulateAndBlockOnlyWhenExhausted() {
+        seedAppSettings();
+        ComprobantesEmitidos factura = null;
+        List<ComprobantesEmitidos> ncs = new ArrayList<>();
         try {
             factura = seedFactura();
 
-            postAuthorize(factura.getId(), "Primera devolucion", new int[]{0}, new int[]{1})
-                    .then().statusCode(200);
+            // Primera devolucion parcial: 1 de la linea 0 y 1 de la linea 1.
+            NcSummary first = extractSummary(postAuthorize(factura.getId(),
+                    "Primera parcial", new int[]{0, 1}, new int[]{1, 1})
+                    .then().statusCode(200).extract().response());
+            ComprobantesEmitidos primeraNc = emitidosService.findByClave(first.clave()).get(0);
+            ncs.add(primeraNc);
+            assertEquals(Integer.valueOf(0),
+                    primeraNc.getDetalles().getLineasDetalle().get(0).getLineaOriginalIndice(),
+                    "the NC line must remember which original line it came from");
 
-            postAuthorize(factura.getId(), "Segunda devolucion", new int[]{0}, new int[]{1})
+            // La linea 0 conserva 1 disponible; la linea 1 quedo agotada.
+            given().when().get(API + "/" + factura.getId() + "/lineas")
+                    .then().statusCode(200)
+                    .body("data.lineas[0].cantidadDisponible",
+                            org.hamcrest.Matchers.equalTo(1.0f))
+                    .body("data.lineas[0].cantidadDevuelta",
+                            org.hamcrest.Matchers.equalTo(1.0f))
+                    .body("data.lineas[1].cantidadDisponible",
+                            org.hamcrest.Matchers.equalTo(0.0f));
+
+            // Segunda devolucion parcial: la unidad restante de la linea 0.
+            NcSummary second = extractSummary(postAuthorize(factura.getId(),
+                    "Segunda parcial", new int[]{0}, new int[]{1})
+                    .then().statusCode(200).extract().response());
+            ncs.add(emitidosService.findByClave(second.clave()).get(0));
+            assertNotEquals(first.consecutivo(), second.consecutivo(),
+                    "each partial NC gets its own fiscal consecutive");
+
+            // La linea 0 tambien quedo agotada: la tercera se rechaza.
+            postAuthorize(factura.getId(), "Tercera parcial", new int[]{0}, new int[]{1})
+                    .then()
+                    .statusCode(400)
+                    .body("error.message", containsString("excede lo disponible"));
+
+            assertEquals(2, listPorComprobante(factura.getId()).size(),
+                    "two partial NCs must be recorded");
+            assertEquals(2, ncs.size());
+            String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
+            long movimientos = inventarioService.listAll().stream()
+                    .filter(inv -> inv.getNotas() != null
+                            && inv.getNotas().contains(consecutivo))
+                    .count();
+            assertEquals(3, movimientos,
+                    "each returned line still creates its own inventory movement");
+            verify(comprobanteService, times(2)).enviarComprobanteAHacienda(any());
+        } finally {
+            limpiarDevolucion(factura, ncs.toArray(new ComprobantesEmitidos[0]));
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
+    void fullAnnulmentNoteBlocksFurtherReturns() {
+        seedAppSettings();
+        ComprobantesEmitidos factura = null;
+        ComprobantesEmitidos anulacion = null;
+        try {
+            factura = seedFactura();
+            anulacion = seedNcAnulacion(factura);
+
+            postAuthorize(factura.getId(), "Despues de anular", new int[]{0}, new int[]{1})
                     .then()
                     .statusCode(409)
                     .body("error.code", org.hamcrest.Matchers.equalTo("ALREADY_RETURNED"));
 
-            assertEquals(1, listPorComprobante(factura.getId()).size(),
-                    "the second attempt must NOT create another credit note");
-            verify(comprobanteService, times(1)).enviarComprobanteAHacienda(any());
+            assertTrue(listPorComprobante(factura.getId()).isEmpty(),
+                    "the blocked attempt must not create a credit note row");
         } finally {
-            for (NotaCredito nota : factura == null ? List.<NotaCredito>of()
-                    : listPorComprobante(factura.getId())) {
-                notaCreditoService.delete(nota);
+            if (anulacion != null && anulacion.getId() != null) {
+                ComprobantesEmitidos managed = emitidosService.find(anulacion.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
             }
             deleteFacturaQuietly(factura);
         }
@@ -456,6 +554,7 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
                     .body(containsString("name=\"lineaNumero\""))
                     .body(containsString("name=\"lineaCantidad\""))
                     .body(containsString("Motivo de la Devolucion"))
+                    .body(containsString("Disponible"))
                     .body(containsString("auth-devolucion-modal"));
 
             given()
@@ -557,6 +656,131 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
         comprobante.setUser("t32-" + UUID.randomUUID().toString().substring(0, 8));
         comprobante.setHaciendaEstado("ACEPTADO");
         return emitidosService.createAndReturn(comprobante);
+    }
+
+    /**
+     * Factura de una linea con precio manual: catalogo 550, ajustado 500.
+     * Base 442.48 e IVA 57.52, como la factura real 00100001010000815152.
+     */
+    private ComprobantesEmitidos seedFacturaPrecioAjustado() {
+        Encabezado encabezado = new Encabezado();
+        encabezado.setNumeroConsecutivo(consecutivoUnico());
+        encabezado.setFechaEmision(LocalDateTime.now().minusHours(2));
+        encabezado.setCondicionVenta("01");
+        encabezado.setSchemaVersion("4.4");
+        encabezado.setCodigoDocumento("01");
+        Receptor receptor = new Receptor();
+        receptor.setNombre(CLIENTE_CONTADO);
+        encabezado.setReceptor(receptor);
+
+        DetalleServicio detalles = new DetalleServicio();
+        detalles.setStatus(true);
+
+        LineaDetalle linea = new LineaDetalle();
+        linea.setDetalleServicio(detalles);
+        linea.setNumeroLinea(0);
+        linea.setCantidad(new BigDecimal("1"));
+        linea.setPrecioUnitario(new BigDecimal("442.48"));
+        linea.setDetalle("Producto Precio Ajustado T32");
+        linea.setMontoTotal(new BigDecimal("442.48"));
+        linea.setSubTotal(new BigDecimal("442.48"));
+        linea.setBaseImponible(new BigDecimal("442.48"));
+        linea.setImpuestoNeto(new BigDecimal("57.52"));
+        linea.setMontoTotalLinea(new BigDecimal("500.00"));
+        linea.setPrecioOriginal(new BigDecimal("550.00"));
+        linea.setPrecioAjustado(new BigDecimal("500.00"));
+        linea.setMotivoAjustePrecio("Precio corregido hotel");
+        Impuesto impuesto = new Impuesto();
+        impuesto.setLineaDetalle(linea);
+        impuesto.setCodigo("01");
+        impuesto.setCodigoTarifaIVA("01");
+        impuesto.setTarifa(new BigDecimal("13"));
+        impuesto.setMonto(new BigDecimal("57.52000"));
+        linea.setImpuestos(new ArrayList<>(List.of(impuesto)));
+
+        detalles.setLineasDetalle(new ArrayList<>(List.of(linea)));
+
+        ResumenFactura resumen = new ResumenFactura();
+        resumen.setTotalVenta(new BigDecimal("442.48"));
+        resumen.setTotalVentaNeta(new BigDecimal("442.48"));
+        resumen.setTotalGravado(new BigDecimal("442.48"));
+        resumen.setTotalMercanciasGravadas(new BigDecimal("442.48"));
+        resumen.setTotalImpuesto(new BigDecimal("57.52000"));
+        resumen.setTotalComprobante(new BigDecimal("500.00"));
+
+        ComprobantesEmitidos comprobante = new ComprobantesEmitidos();
+        comprobante.setSchemaVersion("4.4");
+        comprobante.setEncabezado(encabezado);
+        comprobante.setDetalles(detalles);
+        comprobante.setResumen(resumen);
+        comprobante.setStatus(true);
+        comprobante.setUser("t32-precio-" + UUID.randomUUID().toString().substring(0, 8));
+        comprobante.setHaciendaEstado("ACEPTADO");
+        return emitidosService.createAndReturn(comprobante);
+    }
+
+    /** Minimal NC comprobante referencing the original with code 01 (annulment). */
+    private ComprobantesEmitidos seedNcAnulacion(ComprobantesEmitidos factura) {
+        Encabezado encabezado = new Encabezado();
+        encabezado.setNumeroConsecutivo(consecutivoUnico());
+        encabezado.setFechaEmision(LocalDateTime.now());
+        encabezado.setCodigoDocumento("02");
+        encabezado.setSchemaVersion("4.4");
+
+        InformacionReferencia ref = new InformacionReferencia();
+        ref.setCodigo("01");
+        ref.setTipoDoc(factura.getEncabezado().getCodigoDocumento());
+        ref.setNumero(factura.getEncabezado().getNumeroConsecutivo());
+        ref.setFechaEmision(factura.getEncabezado().getFechaEmision());
+
+        DetalleServicio detalles = new DetalleServicio();
+        detalles.setStatus(true);
+        detalles.setLineasDetalle(new ArrayList<>());
+        ResumenFactura resumen = new ResumenFactura();
+        resumen.setTotalComprobante(BigDecimal.ZERO);
+
+        ComprobantesEmitidos nc = new ComprobantesEmitidos();
+        nc.setSchemaVersion("4.4");
+        nc.setEncabezado(encabezado);
+        nc.setDetalles(detalles);
+        nc.setResumen(resumen);
+        nc.setInformacionReferencia(new ArrayList<>(List.of(ref)));
+        nc.setStatus(true);
+        nc.setHaciendaEstado("PENDIENTE");
+        return emitidosService.createAndReturn(nc);
+    }
+
+    /**
+     * Limpia una factura de prueba con sus notas, comprobantes NC y los
+     * movimientos de inventario generados por las devoluciones.
+     */
+    private void limpiarDevolucion(ComprobantesEmitidos factura, ComprobantesEmitidos... ncs) {
+        if (factura != null) {
+            for (NotaCredito nota : listPorComprobante(factura.getId())) {
+                notaCreditoService.delete(nota);
+            }
+            String consecutivo = factura.getEncabezado() != null
+                    ? factura.getEncabezado().getNumeroConsecutivo() : null;
+            if (consecutivo != null) {
+                for (Inventario inv : inventarioService.listAll()) {
+                    if (inv.getNotas() != null && inv.getNotas().contains(consecutivo)) {
+                        inventarioService.delete(inv);
+                    }
+                }
+            }
+        }
+        if (ncs != null) {
+            for (ComprobantesEmitidos nc : ncs) {
+                if (nc == null || nc.getId() == null) {
+                    continue;
+                }
+                ComprobantesEmitidos managed = emitidosService.find(nc.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
+            }
+        }
+        deleteFacturaQuietly(factura);
     }
 
     /** Ensures ONE active ConfiguracionAplicacion row so the NC pipeline can run. */

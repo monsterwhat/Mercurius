@@ -613,8 +613,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     "Para emitir una Factura Electrónica debe seleccionar un cliente.");
         }
         if (strategy.requiresReceptor() && clienteValido) {
+            // Solo separadores: las cedulas juridicas alfanumericas
+            // (p.ej. 3-101-A00001) deben conservar sus letras.
             String idNumber = cliente.getIdNumber() == null
-                    ? "" : cliente.getIdNumber().replaceAll("[^0-9]", "");
+                    ? "" : cliente.getIdNumber().replaceAll("[^0-9A-Za-z]", "");
             boolean identificado = !idNumber.isEmpty() && cliente.getHaciendaIdTypeCode() != null;
             if (!identificado) {
                 LOG.warn("Facturacion bloqueada: cliente sin cedula/tipo de identificacion"
