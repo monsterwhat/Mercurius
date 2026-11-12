@@ -117,14 +117,15 @@ public class PDFGenerator {
 
     private Document addContentToDocument(ByteArrayOutputStream baos, ConfiguracionAplicacion settings, ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<EntradaPago> pagos) throws DocumentException {
         // Todo se imprime en el rollo térmico de 80 mm (3nStar POS). El ancho
-        // de página es 80 mm y el contenido respeta los 72 mm imprimibles;
-        // el alto crece con las líneas en vez de usar una página fija de
-        // 600 pt que desperdiciaba papel en ventas de uno o dos artículos.
+        // de página se ajusta a los 72 mm imprimibles (no a los 80 mm del
+        // papel) para que el driver no encoja el texto; el alto base es
+        // 200 mm y crece con las líneas. El driver debe usar una forma de
+        // papel de 72 x 200 mm (o continua) y escala 100%.
         String codigoDocumento = tiqueteElectronico.getEncabezado().getCodigoDocumento();
         int lineas = carrito == null ? 0 : carrito.size();
-        float altoPagina = 580f + Math.max(0, lineas - 3) * 14f;
-        Rectangle pageSize = new Rectangle(226.77f, altoPagina); // 80 mm
-        Document document = new Document(pageSize, 12f, 12f, 6f, 6f);
+        float altoPagina = 566.93f + Math.max(0, lineas - 3) * 14f; // 200 mm base
+        Rectangle pageSize = new Rectangle(204.09f, altoPagina); // 72 mm
+        Document document = new Document(pageSize, 6f, 6f, 6f, 6f);
         PdfWriter.getInstance(document, baos);
         document.add(new Meta("charset", "UTF-8"));
         document.open();
