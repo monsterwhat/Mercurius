@@ -68,12 +68,12 @@
             <div class="control has-text-centered">
                 <div class="select is-small pos-tipo-documento">
                     <select id="select-tipo-documento" name="tipoDocumento">
-                        <option value="04" selected>Tiquete electrónico</option>
-                        <option value="01">Factura electrónica</option>
-                        <option value="03">Nota de débito</option>
-                        <option value="08">Factura electrónica de compra</option>
-                        <option value="05">Factura electrónica de exportación</option>
-                        <option value="10">Recibo electrónico de pago</option>
+                        <option value="04" {#if tipoDocumentoInicial == '04'}selected{/if}>Tiquete electrónico</option>
+                        <option value="01" {#if tipoDocumentoInicial == '01'}selected{/if}>Factura electrónica</option>
+                        <option value="03" {#if tipoDocumentoInicial == '03'}selected{/if}>Nota de débito</option>
+                        <option value="08" {#if tipoDocumentoInicial == '08'}selected{/if}>Factura electrónica de compra</option>
+                        <option value="05" {#if tipoDocumentoInicial == '05'}selected{/if}>Factura electrónica de exportación</option>
+                        <option value="10" {#if tipoDocumentoInicial == '10'}selected{/if}>Recibo electrónico de pago</option>
                     </select>
                 </div>
             </div>

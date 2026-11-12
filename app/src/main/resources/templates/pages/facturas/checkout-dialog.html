@@ -108,16 +108,27 @@
                     <div class="control">
                         <div class="select is-fullwidth">
                             <select id="referencia-tipo" name="referenciaTipoDoc" required>
-                                <option value="01">01 — Factura electrónica</option>
-                                <option value="02">02 — Nota de crédito electrónica</option>
-                                <option value="03">03 — Nota de débito electrónica</option>
+                                <option value="01" {#if cobro.tipoDocumento == '03' || cobro.tipoDocumento == '10'}selected{/if}>01 — Factura electrónica</option>
+                                <option value="02">02 — Nota de débito electrónica</option>
+                                <option value="03">03 — Nota de crédito electrónica</option>
                                 <option value="04">04 — Tiquete electrónico</option>
-                                <option value="05">05 — Factura de exportación</option>
-                                <option value="08">08 — Factura de compra</option>
-                                <option value="10">10 — Recibo electrónico de pago</option>
-                                <option value="16" {#if cobro.tipoDocumento == '08'}selected{/if}>16 — Comprobante de proveedor no domiciliado</option>
-                                <option value="19">19 — Factura electrónica de exportación</option>
-                                <option value="20">20 — Recibo electrónico de pago (REP)</option>
+                                <option value="05">05 — Nota de despacho</option>
+                                <option value="06">06 — Contrato</option>
+                                <option value="07">07 — Procedimiento</option>
+                                <option value="08">08 — Comprobante emitido en contingencia</option>
+                                <option value="09">09 — Devolución mercadería</option>
+                                <option value="10">10 — Comprobante electrónico rechazado</option>
+                                <option value="11">11 — Sustituye factura rechazada por el Receptor</option>
+                                <option value="12">12 — Sustituye Factura de exportación</option>
+                                <option value="13">13 — Facturación mes vencido</option>
+                                <option value="14">14 — Comprobante de Régimen Especial</option>
+                                <option value="15">15 — Sustituye una Factura electrónica de Compra</option>
+                                <option value="16" {#if cobro.tipoDocumento == '08'}selected{/if}>16 — Comprobante de Proveedor No Domiciliado</option>
+                                <option value="17">17 — Nota de Crédito a Factura Electrónica de Compra</option>
+                                <option value="18">18 — Nota de Débito a Factura Electrónica de Compra</option>
+                                <option value="19">19 — Factura Electrónica de Exportación</option>
+                                <option value="20">20 — Recibo Electrónico de Pago</option>
+                                <option value="99">99 — Otros</option>
                             </select>
                         </div>
                     </div>

@@ -10,10 +10,12 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -60,8 +62,8 @@ public class PosPageResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Operation(summary = "Render the POS (factura) page")
-    public Response page() {
-        return html(facturaPage);
+    public Response page(@QueryParam("tipoDocumento") @Nullable String tipoDocumento) {
+        return html(facturaPage, tipoDocumento);
     }
 
     /**
@@ -73,22 +75,31 @@ public class PosPageResource {
     @Path("/standalone")
     @Produces(MediaType.TEXT_HTML)
     @Operation(summary = "Render the POS (factura) page standalone, without the app layout")
-    public Response standalone() {
-        return html(facturaStandalonePage);
+    public Response standalone(@QueryParam("tipoDocumento") @Nullable String tipoDocumento) {
+        return html(facturaStandalonePage, tipoDocumento);
     }
 
     /** Shared view model + render for the two POS templates. */
-    private Response html(@Nonnull Template template) {
+    private Response html(@Nonnull Template template, @Nullable String tipoDocumento) {
         String username = currentUsername();
 
         Map<String, Object> page = new LinkedHashMap<>();
         page.put("panel", posResource.panelModel(username, null));
         page.put("badge", posResource.tipoCambioBadge());
         page.put("usuario", username);
+        page.put("tipoDocumentoInicial", tipoInicial(tipoDocumento));
         String html = template.data(page).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
+    }
+
+    private static @Nonnull String tipoInicial(@Nullable String tipoDocumento) {
+        if (tipoDocumento == null) {
+            return "04";
+        }
+        String tipo = tipoDocumento.trim();
+        return Set.of("01", "03", "04", "05", "08", "10").contains(tipo) ? tipo : "04";
     }
 
     private @Nullable String currentUsername() {

@@ -1,0 +1,62 @@
+{! 
+  pages/comprobantes/index - entry screen for the four "special" comprobantes
+  that are not a regular sale: ND (03), FEE (05), FEC (08) and REP (10).
+  Each card opens the POS with tipoDocumento preselected; the checkout dialog
+  carries the reference/condition fields required by each XSD.
+!}
+{#include layout}
+    {#title}Comprobantes especiales | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        {#include _kit/page-header title="Comprobantes especiales"
+             subtitle="Nota de débito, factura de exportación, factura de compra y recibo de pago" /}
+
+        <p class="help mb-4">
+            Estas emisiones usan el mismo carrito del POS. Al abrir una tarjeta, el
+            tipo de comprobante queda preseleccionado; agregue las líneas, asigne el
+            cliente y complete la referencia en el diálogo de cobro.
+        </p>
+
+        <div class="columns is-multiline">
+            <div class="column is-half">
+                <div class="box">
+                    <h2 class="title is-5">Nota de débito (03)</h2>
+                    <p>Cargo adicional o anulación de una factura, tiquete, nota de crédito o comprobante de referencia.</p>
+                    <p class="help mb-3">Requiere cliente y referencia (tipo, número, fecha, código y motivo). No mueve inventario.</p>
+                    <a class="button is-primary" href="/app/pos?tipoDocumento=03">Emitir nota de débito</a>
+                </div>
+            </div>
+            <div class="column is-half">
+                <div class="box">
+                    <h2 class="title is-5">Factura de exportación (05)</h2>
+                    <p>Venta al exterior con receptor extranjero.</p>
+                    <p class="help mb-3">Requiere cliente (receptor extranjero) y las líneas del carrito. Descuenta inventario como una venta.</p>
+                    <a class="button is-primary" href="/app/pos?tipoDocumento=05">Emitir factura de exportación</a>
+                </div>
+            </div>
+            <div class="column is-half">
+                <div class="box">
+                    <h2 class="title is-5">Factura de compra (08)</h2>
+                    <p>El comprador documenta una compra a un proveedor no domiciliado.</p>
+                    <p class="help mb-3">Requiere cliente (proveedor), referencia 16 (proveedor no domiciliado) y código 11. Suma inventario.</p>
+                    <a class="button is-primary" href="/app/pos?tipoDocumento=08">Emitir factura de compra</a>
+                </div>
+            </div>
+            <div class="column is-half">
+                <div class="box">
+                    <h2 class="title is-5">Recibo de pago (10)</h2>
+                    <p>Documenta el pago de una venta a crédito.</p>
+                    <p class="help mb-3">Requiere cliente, referencia 17 (pago a comprobante) y condición de venta 09 u 11. No mueve inventario.</p>
+                    <a class="button is-primary" href="/app/pos?tipoDocumento=10">Emitir recibo de pago</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="notification is-light">
+            Al facturar, el PDF se genera para impresión y el comprobante se puede
+            reenviar por correo desde <strong>Facturas emitidas → detalle</strong>.
+        </div>
+    </section>
+    {/body}
+{/include}
