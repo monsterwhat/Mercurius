@@ -131,6 +131,9 @@ public class ComprobanteService implements Serializable {
     private @Nonnull PDFGenerator pdfGenerator;
 
     @Inject
+    private @Nonnull DirectoryService dirService;
+
+    @Inject
     private @Nonnull AppSettingsService appSettingsService;
 
     @Inject
@@ -1655,90 +1658,156 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                    .replace("'", "&apos;");
     }
 
-    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, BigDecimal pago, BigDecimal vuelto, List<EntradaPago> pagos) {
+    /** Backwards-compatible entry point used by the POS sale flow. */
+    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clientes cliente,
+                                      Usuarios user, BigDecimal pago, BigDecimal vuelto,
+                                      List<EntradaPago> pagos) {
+        enviarComprobanteACliente(tiqueteElectronico, cliente, user, pago, vuelto, pagos);
+    }
+
+    /**
+     * Envia por correo CUALQUIER comprobante emitido (FE, TE, NC, ND, FEE, FEC,
+     * REP) con su PDF y su XML. Reutiliza el PDF que ya escribio el POS o el
+     * flujo de NC; solo lo regenera si falta. Antes se intentaba abrir
+     * {@code new URL(pdfUrl)} con una ruta relativa, lo que fallaba siempre y
+     * dejaba el correo sin enviar.
+     */
+    public void enviarComprobanteACliente(@Nullable ComprobantesEmitidos comprobante,
+                                          @Nullable Clientes cliente,
+                                          @Nullable Usuarios user,
+                                          @Nullable BigDecimal pago,
+                                          @Nullable BigDecimal vuelto,
+                                          @Nullable List<EntradaPago> pagos) {
         try {
-            if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isEmpty()) {
-                LOG.info("Cliente sin email, no se envia factura: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo() + " | source=ComprobanteService.enviarFacturaACliente()");
+            if (comprobante == null || comprobante.getEncabezado() == null) {
+                LOG.warn("No se puede enviar por correo un comprobante nulo"
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
+                return;
+            }
+            String consecutivo = comprobante.getEncabezado().getNumeroConsecutivo();
+            if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isBlank()) {
+                LOG.info("Cliente sin email, no se envia comprobante: " + consecutivo
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
                 return;
             }
 
             ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
             if (settings == null) {
-                LOG.warn("No hay configuracion de Hacienda para enviar factura | source=ComprobanteService.enviarFacturaACliente()");
+                LOG.warn("No hay configuracion de Hacienda para enviar comprobante"
+                        + " | consecutivo=" + consecutivo
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
                 return;
             }
 
-            // Generate PDF
-            pdfGenerator.generarPDFTiqueteElectronico(tiqueteElectronico, settings, 
-                new ArrayList<>(), cliente, user, pago, vuelto, pagos);
-            String pdfUrl = pdfGenerator.getPdfUrl();
-            if (pdfUrl == null || pdfUrl.isEmpty()) {
-                LOG.warn("No se pudo generar PDF para envio | source=ComprobanteService.enviarFacturaACliente()");
+            File pdfFile = resolverPdfComprobante(comprobante, settings, cliente, user,
+                    pago, vuelto, pagos);
+            if (pdfFile == null) {
+                LOG.warn("No se pudo generar el PDF para enviar el comprobante"
+                        + " | consecutivo=" + consecutivo
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
                 return;
             }
 
-            // Generate XML via type-specific strategy (proper root element, namespace, OtrosCargos)
-            String docCode = tiqueteElectronico.getEncabezado() != null
-                ? tiqueteElectronico.getEncabezado().getCodigoDocumento() : null;
+            String docCode = comprobante.getEncabezado().getCodigoDocumento();
             DocumentoStrategy strategy = strategyFactory.forCode(docCode);
             String xmlContent;
             try {
-                xmlContent = strategy.buildXml(tiqueteElectronico);
+                xmlContent = strategy.buildXml(comprobante);
             } catch (jakarta.xml.bind.JAXBException e) {
-                LOG.warn("Error generating XML for invoice: " + e.getMessage()
-                    + " | source=ComprobanteService.enviarFacturaACliente()"
-                    + " | despues=" + e.getMessage());
+                LOG.warn("Error generando XML para el correo: " + e.getMessage()
+                        + " | consecutivo=" + consecutivo
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
                 return;
             }
             if (xmlContent == null) {
-                LOG.warn("No se pudo generar XML para envio | source=ComprobanteService.enviarFacturaACliente()");
+                LOG.warn("No se pudo generar el XML para el correo"
+                        + " | consecutivo=" + consecutivo
+                        + " | source=ComprobanteService.enviarComprobanteACliente()");
                 return;
             }
 
-            // Save XML to temporary file
-            File xmlFile = File.createTempFile("factura_" + tiqueteElectronico.getHaciendaClave(), ".xml");
+            String clave = comprobante.getHaciendaClave();
+            File xmlFile = File.createTempFile(
+                    "comprobante_" + (clave == null ? comprobante.getId() : clave), ".xml");
             try (java.io.FileWriter writer = new java.io.FileWriter(xmlFile)) {
                 writer.write(xmlContent);
             }
 
-            // Download PDF to temporary file
-            File pdfFile = File.createTempFile("factura_" + tiqueteElectronico.getHaciendaClave(), ".pdf");
-            try (java.io.InputStream in = new java.net.URL(pdfUrl).openStream();
-                 java.io.FileOutputStream out = new java.io.FileOutputStream(pdfFile)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
-                }
-            }
-
-            // Send email with both attachments
-            String subject = "Factura Electronica " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo() + " - " + settings.getNombreNegocio();
+            String tipo = nombreDocumento(docCode);
+            String subject = tipo + " " + consecutivo + " - " + settings.getNombreNegocio();
             String body = "Estimado/a " + cliente.getName() + ",\n\n"
-                + "Adjuntamos su factura electronica " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo() 
-                + " aceptada por Hacienda.\n\n"
-                + "Total: " + (tiqueteElectronico.getResumen() != null ? tiqueteElectronico.getResumen().getTotalVentaNeta() : "N/A") + "\n\n"
-                + "Saludos cordiales,\n" + settings.getNombreNegocio();
-
-            List<String> recipients = new ArrayList<>();
-            recipients.add(cliente.getEmail());
+                    + "Adjuntamos su " + tipo + " " + consecutivo
+                    + " aceptado por Hacienda.\n\n"
+                    + "Total: " + (comprobante.getResumen() != null
+                            ? comprobante.getResumen().getTotalComprobante() : "N/A")
+                    + "\n\nSaludos cordiales,\n" + settings.getNombreNegocio();
 
             List<File> attachments = new ArrayList<>();
             attachments.add(pdfFile);
             attachments.add(xmlFile);
 
-            emailService.sendEmailsWithAttachments(recipients, subject, body, 
-                settings.getCorreoElectronico(), settings.getContrasenaCorreo(), 
-                attachments, result -> {
-                    LOG.info("Resultado envio factura a cliente: " + result + " | source=ComprobanteService.enviarFacturaACliente()");
-                    // Clean up temp files
-                    pdfFile.delete();
-                    xmlFile.delete();
-                });
+            emailService.sendEmailsWithAttachments(List.of(cliente.getEmail()), subject, body,
+                    settings.getCorreoElectronico(), settings.getContrasenaCorreo(),
+                    attachments, result -> {
+                        LOG.info("Resultado envio comprobante a cliente: " + result
+                                + " | consecutivo=" + consecutivo
+                                + " | source=ComprobanteService.enviarComprobanteACliente()");
+                        xmlFile.delete();
+                    });
 
         } catch (IOException | RuntimeException e) {
-            LOG.warn("Error enviando factura a cliente: " + e.getMessage() + " | source=ComprobanteService.enviarFacturaACliente() | despues=" + e.getMessage());
+            LOG.warn("Error enviando comprobante a cliente: " + e.getMessage()
+                    + " | source=ComprobanteService.enviarComprobanteACliente()");
         }
+    }
+
+    /**
+     * Reutiliza el PDF ya generado por el POS/NC. Solo si no existe lo
+     * regenera, para que un comprobante historico o reemitido tambien se
+     * pueda enviar por correo.
+     */
+    private @Nullable File resolverPdfComprobante(@Nonnull ComprobantesEmitidos comprobante,
+                                                  @Nonnull ConfiguracionAplicacion settings,
+                                                  @Nonnull Clientes cliente,
+                                                  @Nullable Usuarios user,
+                                                  @Nullable BigDecimal pago,
+                                                  @Nullable BigDecimal vuelto,
+                                                  @Nullable List<EntradaPago> pagos) {
+        String docCode = comprobante.getEncabezado() != null
+                ? comprobante.getEncabezado().getCodigoDocumento() : null;
+        String clave = comprobante.getHaciendaClave();
+        String fileName = "02".equals(docCode)
+                ? "factura_" + (clave == null ? comprobante.getId() : clave) + ".pdf"
+                : "tiqueteElectronico_" + comprobante.getId() + ".pdf";
+        File pdf = new File(dirService.getFacturasDirPath(), fileName);
+        if (pdf.isFile()) {
+            return pdf;
+        }
+        try {
+            // Genera desde las lineas persistidas: sirve para FE/TE/NC/ND/FEE/
+            // FEC/REP y conserva el detalle, a diferencia del PDF vacio que
+            // antes se generaba solo para el correo.
+            pdfGenerator.generarPDFComprobante(comprobante, settings);
+        } catch (RuntimeException e) {
+            LOG.warn("No se pudo generar el PDF para el correo: " + e.getMessage()
+                    + " | consecutivo=" + (comprobante.getEncabezado() != null
+                            ? comprobante.getEncabezado().getNumeroConsecutivo() : null)
+                    + " | source=ComprobanteService.resolverPdfComprobante()");
+        }
+        return pdf.isFile() ? pdf : null;
+    }
+
+    private static @Nonnull String nombreDocumento(@Nullable String codigoDocumento) {
+        return switch (codigoDocumento == null ? "" : codigoDocumento) {
+            case "01" -> "Factura Electronica";
+            case "02" -> "Nota de Credito Electronica";
+            case "03" -> "Nota de Debito Electronica";
+            case "04" -> "Tiquete Electronico";
+            case "05" -> "Factura Electronica de Exportacion";
+            case "08" -> "Factura Electronica de Compra";
+            case "10" -> "Recibo Electronico de Pago";
+            default -> "Comprobante Electronico";
+        };
     }
 
     private void validarTotalMedioPago(ResumenFactura resumen, String numeroConsecutivo) {

@@ -96,23 +96,43 @@ public class PDFGenerator {
      */
     public void generarPDFNotaCredito(@Nonnull ComprobantesEmitidos nc,
                                       @Nonnull ConfiguracionAplicacion settings) {
+        generarPDFComprobante(nc, settings);
+    }
+
+    /**
+     * PDF imprimible de CUALQUIER comprobante emitido, armado desde las lineas
+     * y totales persistidos. La NC se guarda como factura_<clave>.pdf (el
+     * nombre que usa Imprimir NC); el resto como tiqueteElectronico_<id>.pdf
+     * (el nombre que ya sirve el POS). Tambien es el fallback del correo y del
+     * boton Imprimir del historial.
+     */
+    public void generarPDFComprobante(@Nonnull ComprobantesEmitidos comprobante,
+                                      @Nonnull ConfiguracionAplicacion settings) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String clave = nc.getEncabezado() != null ? nc.getEncabezado().getClave() : null;
-        String fileName = "factura_" + (clave == null || clave.isBlank() ? nc.getId() : clave) + ".pdf";
+        String codigo = comprobante.getEncabezado() != null
+                ? comprobante.getEncabezado().getCodigoDocumento() : null;
+        String clave = comprobante.getEncabezado() != null
+                ? comprobante.getEncabezado().getClave() : null;
+        boolean esNc = "02".equals(codigo);
+        String fileName = esNc
+                ? "factura_" + (clave == null || clave.isBlank() ? comprobante.getId() : clave) + ".pdf"
+                : "tiqueteElectronico_" + comprobante.getId() + ".pdf";
+        String titulo = esNc ? "NOTA DE CREDITO ELECTRONICA" : tituloDocumento(codigo);
         try {
-            Document document = buildNotaCreditoDocument(baos, nc, settings);
+            Document document = buildComprobanteDocument(baos, comprobante, settings, titulo);
             document.close();
             saveFacturaPdfToFileSystem(baos, fileName);
         } catch (DocumentException | IOException e) {
-            LOG.warn("No se pudo generar el PDF de la nota de credito: " + e.getMessage()
-                    + " | clave=" + clave
-                    + " | source=PDFGenerator.generarPDFNotaCredito()");
+            LOG.warn("No se pudo generar el PDF del comprobante: " + e.getMessage()
+                    + " | codigo=" + codigo + " | clave=" + clave
+                    + " | source=PDFGenerator.generarPDFComprobante()");
         }
     }
 
-    private Document buildNotaCreditoDocument(ByteArrayOutputStream baos,
-                                              ComprobantesEmitidos nc,
-                                              ConfiguracionAplicacion settings) throws DocumentException {
+    private Document buildComprobanteDocument(ByteArrayOutputStream baos,
+                                             ComprobantesEmitidos nc,
+                                             ConfiguracionAplicacion settings,
+                                             String titulo) throws DocumentException {
         List<LineaDetalle> lineas = nc.getDetalles() != null
                 && nc.getDetalles().getLineasDetalle() != null
                 ? nc.getDetalles().getLineasDetalle() : List.of();
@@ -129,10 +149,10 @@ public class PDFGenerator {
         titleFont.setSize(11f);
         titleFont.setStyle(com.lowagie.text.Font.BOLD);
 
-        Paragraph titulo = new Paragraph("NOTA DE CREDITO ELECTRONICA", titleFont);
-        titulo.setAlignment(Element.ALIGN_CENTER);
-        titulo.setLeading(13f);
-        document.add(titulo);
+        Paragraph tituloPdf = new Paragraph(titulo, titleFont);
+        tituloPdf.setAlignment(Element.ALIGN_CENTER);
+        tituloPdf.setLeading(13f);
+        document.add(tituloPdf);
         document.add(separadorPdf());
 
         java.util.List<String> headerLines = new java.util.ArrayList<>();
@@ -171,13 +191,22 @@ public class PDFGenerator {
         }
         String cliente = nc.getEncabezado() != null && nc.getEncabezado().getReceptor() != null
                 ? nc.getEncabezado().getReceptor().getNombre() : "Cliente contado";
-        String info = String.join("\n",
-                "Fecha: " + fecha,
-                "Consecutivo: " + consecutivo,
-                "Clave: " + clave,
-                "Factura original: " + original,
-                "Cliente: " + (cliente == null ? "Cliente contado" : cliente),
-                "Motivo: " + motivo);
+        java.util.List<String> infoLines = new java.util.ArrayList<>();
+        infoLines.add("Fecha: " + fecha);
+        infoLines.add("Consecutivo: " + consecutivo);
+        infoLines.add("Clave: " + clave);
+        infoLines.add("Cliente: " + (cliente == null ? "Cliente contado" : cliente));
+        if ("02".equals(nc.getEncabezado() != null ? nc.getEncabezado().getCodigoDocumento() : null)) {
+            infoLines.add("Factura original: " + original);
+            infoLines.add("Motivo: " + motivo);
+        } else {
+            infoLines.add("Estado Hacienda: " + (nc.getHaciendaEstado() == null
+                    ? "" : nc.getHaciendaEstado()));
+            infoLines.add("Condicion de venta: " + (nc.getEncabezado() != null
+                    && nc.getEncabezado().getCondicionVenta() != null
+                    ? nc.getEncabezado().getCondicionVenta() : ""));
+        }
+        String info = String.join("\n", infoLines);
         Paragraph infoP = new Paragraph(info, font);
         infoP.setLeading(leading);
         document.add(infoP);

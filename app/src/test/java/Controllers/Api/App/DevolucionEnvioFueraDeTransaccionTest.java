@@ -4,9 +4,12 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,6 +44,7 @@ import Models.NotaCredito;
 import Models.Resumen.ResumenFactura;
 import Services.AppSettingsService;
 import Services.ComprobantesEmitidosService;
+import Services.EmailService;
 import Services.HaciendaServiceFacade;
 import Services.InventarioService;
 import Services.NotaCreditoService;
@@ -159,6 +163,9 @@ class DevolucionEnvioFueraDeTransaccionTest extends support.ContextPathIsolation
     /** La costura exacta que toca enviarComprobanteAHacienda: la de la red. */
     @InjectMock
     HaciendaServiceFacade haciendaServiceFacade;
+
+    @InjectMock
+    EmailService emailService;
 
     @BeforeEach
     void resetting() {
@@ -463,6 +470,22 @@ class DevolucionEnvioFueraDeTransaccionTest extends support.ContextPathIsolation
             assertThat(devolucionA.get(TIMEOUT_ENVIO_SEGUNDOS, TimeUnit.SECONDS))
                     .as("la devolucion lenta también termina bien")
                     .isEqualTo(200);
+
+            org.mockito.ArgumentCaptor<String> subjects =
+                    org.mockito.ArgumentCaptor.forClass(String.class);
+            @SuppressWarnings("unchecked")
+            org.mockito.ArgumentCaptor<List<File>> attachments =
+                    org.mockito.ArgumentCaptor.forClass(List.class);
+            verify(emailService, atLeastOnce()).sendEmailsWithAttachments(any(),
+                    subjects.capture(), any(), any(), any(), attachments.capture(), any());
+            assertThat(subjects.getAllValues())
+                    .anyMatch(s -> s.contains("Nota de Credito Electronica"));
+            assertThat(attachments.getAllValues().stream()
+                    .flatMap(List::stream)
+                    .anyMatch(f -> f.getName().startsWith("factura_")
+                            && f.getName().endsWith(".pdf")))
+                    .as("la NC se envia por correo con su PDF adjunto")
+                    .isTrue();
 
             // Y ACEPTADO: el estado de Hacienda lo sigue escribiendo el envío
             // (fuera de la transacción de la devolución), sin cambiar de valor.

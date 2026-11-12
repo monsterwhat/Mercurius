@@ -13,7 +13,9 @@ import java.util.Objects;
 
 import org.jboss.logging.Logger;
 
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
+import Models.ConfiguracionAplicacion;
 import Models.DTO.ApiResponse;
 import Models.DTO.ComprobantesEmitidosDetailDTO;
 import Models.DTO.ComprobantesEmitidosListDTO;
@@ -23,9 +25,12 @@ import Models.Encabezado.CorreoElectronicoReceptor;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
+import Services.AppSettingsService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
+import Services.DirectoryService;
 import Services.LoginService;
+import Utils.PDFGenerator;
 import Controllers.Api.App.Reportes.ReportePageSupport;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -50,6 +55,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.OutputStream;
+import java.nio.file.Files;
 
 /**
  * T27 — Recibos module API ({@code /api/app/recibos}): the four-bucket
@@ -141,6 +150,18 @@ public class RecibosResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    @Nonnull
+    @Inject
+    DirectoryService dirService;
+
+    @Nonnull
+    @Inject
+    PDFGenerator pdfGenerator;
+
+    @Nonnull
+    @Inject
+    AppSettingsService appSettingsService;
 
     @Inject
     @Nonnull
@@ -322,6 +343,98 @@ public class RecibosResource {
             LOG.warn("Error obteniendo el detalle del recibo " + id, e);
             return serverError("Error obteniendo el detalle del recibo");
         }
+    }
+
+    /**
+     * Printable PDF of ANY emitted comprobante (FE, TE, NC, ND, FEE, FEC,
+     * REP). Reuses the file generated at issuance; if it is missing (historic
+     * or re-emitted document) it is generated on demand from the persisted
+     * lines. This is the "Imprimir" action of the detail drawer.
+     */
+    @GET
+    @Path("/{id}/pdf")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response pdf(@PathParam("id") long id) {
+        try {
+            ComprobantesEmitidos f = comprobantesEmitidosService.find(id);
+            if (f == null) {
+                return notFound("No se encontró el recibo solicitado");
+            }
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
+            if (settings == null) {
+                return serverError("No hay configuración de emisión");
+            }
+            String codigo = f.getEncabezado() != null
+                    ? f.getEncabezado().getCodigoDocumento() : null;
+            String clave = f.getHaciendaClave();
+            String fileName = "02".equals(codigo)
+                    ? "factura_" + (clave == null || clave.isBlank() ? f.getId() : clave) + ".pdf"
+                    : "tiqueteElectronico_" + f.getId() + ".pdf";
+            File pdf = new File(dirService.getFacturasDirPath(), fileName);
+            if (!pdf.isFile()) {
+                pdfGenerator.generarPDFComprobante(f, settings);
+            }
+            if (!pdf.isFile()) {
+                return serverError("No se pudo generar el PDF del comprobante");
+            }
+            final byte[] bytes = Files.readAllBytes(pdf.toPath());
+            StreamingOutput stream = (OutputStream out) -> out.write(bytes);
+            return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + fileName + "\"")
+                    .build();
+        } catch (RuntimeException | java.io.IOException e) {
+            LOG.warn("Error generando el PDF del recibo " + id + ": " + e.getMessage()
+                    + " | source=RecibosResource.pdf()");
+            return serverError("Error generando el PDF del comprobante");
+        }
+    }
+
+    /**
+     * Emails the comprobante (PDF + XML) to the receiver. Manual resend from
+     * the detail drawer; the POS/NC flows already send automatically when
+     * Hacienda accepts.
+     */
+    @POST
+    @Path("/{id}/email")
+    public Response email(@PathParam("id") long id) {
+        try {
+            ComprobantesEmitidos f = comprobantesEmitidosService.find(id);
+            if (f == null) {
+                return notFound("No se encontró el recibo solicitado");
+            }
+            Clientes cliente = clienteParaCorreo(f);
+            if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isBlank()) {
+                return guardFailure("El comprobante no tiene correo de receptor registrado");
+            }
+            comprobanteService.enviarComprobanteACliente(f, cliente, currentUser(),
+                    null, null, null);
+            return accionOk(id, "Comprobante enviado a " + cliente.getEmail());
+        } catch (RuntimeException e) {
+            LOG.warn("Error enviando el recibo " + id + " por correo: " + e.getMessage()
+                    + " | source=RecibosResource.email()");
+            return serverError("Error enviando el comprobante por correo");
+        }
+    }
+
+    private static @Nullable Clientes clienteParaCorreo(@Nonnull ComprobantesEmitidos f) {
+        Receptor receptor = f.getEncabezado() != null ? f.getEncabezado().getReceptor() : null;
+        if (receptor == null) {
+            return null;
+        }
+        String email = null;
+        if (receptor.getCorreosElectronicos() != null
+                && !receptor.getCorreosElectronicos().isEmpty()) {
+            CorreoElectronicoReceptor correo = receptor.getCorreosElectronicos().get(0);
+            email = correo == null ? null : correo.getCorreo();
+        }
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        Clientes cliente = new Clientes();
+        cliente.setName(receptor.getNombre());
+        cliente.setEmail(email);
+        return cliente;
     }
 
     // ════════════════════════════════════════════════════════════════════

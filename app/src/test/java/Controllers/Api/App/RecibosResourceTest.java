@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -23,11 +26,13 @@ import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
 import Models.ComprobantesEmitidos;
+import Models.ConfiguracionAplicacion;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Resumen.ResumenFactura;
 import Services.AppSettingsService;
 import Services.ComprobantesEmitidosService;
+import Services.DirectoryService;
 import Services.HaciendaServiceFacade;
 
 import org.junit.jupiter.api.Tag;
@@ -76,6 +81,9 @@ class RecibosResourceTest extends support.ContextPathIsolation {
 
     @Inject
     AppSettingsService appSettingsService;
+
+    @Inject
+    DirectoryService dirService;
 
     /** Hacienda boundary stub for the process-success scenario only. */
     @InjectMock
@@ -169,6 +177,62 @@ class RecibosResourceTest extends support.ContextPathIsolation {
         return seedRecibo("T27" + uniqueSuffix() + sufijo, LocalDateTime.now().minusDays(1),
                 "02", "30", "01", "PENDIENTE", "PENDIENTE",
                 new BigDecimal("10000"), new BigDecimal("1300"));
+    }
+
+    @Test
+    void pdfEndpointGeneratesPrintableComprobante() throws Exception {
+        ensureRecibosSettings();
+        Map<String, String> session = adminSession();
+        ComprobantesEmitidos fila = null;
+        try {
+            fila = seedPendiente("PDF");
+            byte[] pdf = authed(session)
+                    .when().get(API + "/" + fila.getId() + "/pdf")
+                    .then().statusCode(200)
+                    .header("Content-Type", containsString("application/octet-stream"))
+                    .extract().asByteArray();
+            assertThat(pdf.length).isGreaterThan(100);
+            assertThat(new String(pdf, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        } finally {
+            if (fila != null) {
+                Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                        "tiqueteElectronico_" + fila.getId() + ".pdf"));
+            }
+            deleteQuietly(fila);
+        }
+    }
+
+    @Test
+    void emailEndpointRejectsComprobanteWithoutReceptorEmail() {
+        Map<String, String> session = adminSession();
+        ComprobantesEmitidos fila = seedPendiente("MAIL");
+        try {
+            authed(session)
+                    .when().post(API + "/" + fila.getId() + "/email")
+                    .then().statusCode(409)
+                    .body("error.code", equalTo("BUSINESS_RULE"));
+        } finally {
+            deleteQuietly(fila);
+        }
+    }
+
+    private void ensureRecibosSettings() {
+        if (appSettingsService.returnCurrent() != null) {
+            return;
+        }
+        ConfiguracionAplicacion s = new ConfiguracionAplicacion();
+        s.setEstatus(true);
+        s.setNombre("Recibos Test");
+        s.setNombreNegocio("Recibos Test SA");
+        s.setTipoIdentificacion("02");
+        s.setIdentificacion("310123456789");
+        s.setTelefono("88888888");
+        s.setCorreoElectronicoTributacion("recibos@mercurius.local");
+        s.setProvedor("Mercurius");
+        s.setCodigoActividad("620101");
+        s.setCodigoSucursal("001");
+        s.setCodigoTerminal("00001");
+        appSettingsService.create(s);
     }
 
     private void deleteQuietly(ComprobantesEmitidos... filas) {

@@ -6,11 +6,16 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -33,8 +38,10 @@ import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CabysService;
 import Services.ClientService;
+import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
+import Services.EmailService;
 import Services.InventarioService;
 import Services.NotaCreditoService;
 import Services.cart.CartSessionStore;
@@ -42,6 +49,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 
 /**
  * Creación de cada tipo de comprobante por el POS.
@@ -84,7 +92,10 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     @Inject DirectoryService dirService;
     @Inject NotaCreditoService notaCreditoService;
     @Inject InventarioService inventarioService;
+    @Inject ComprobanteService comprobanteService;
     @Inject jakarta.persistence.EntityManager em;
+
+    @InjectMock EmailService emailService;
 
     /** Stock actual del articulo (0 si todavia no tiene fila). */
     private java.math.BigDecimal stockDe(String codigoBarra) {
@@ -480,6 +491,23 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
             String expectedTipo = "04".equals(tipoDocumento) ? "04" : "19";
             assertThat(nc.getInformacionReferencia().get(0).getTipoDoc())
                     .isEqualTo(expectedTipo);
+
+            comprobanteService.enviarComprobanteACliente(factura, cliente, null, null, null, null);
+            ArgumentCaptor<String> subjects = ArgumentCaptor.forClass(String.class);
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<List<File>> attachments = ArgumentCaptor.forClass(List.class);
+            verify(emailService, atLeastOnce()).sendEmailsWithAttachments(any(),
+                    subjects.capture(), any(), any(), any(), attachments.capture(), any());
+            String expectedAsunto = "04".equals(tipoDocumento)
+                    ? "Tiquete Electronico" : "Factura Electronica de Exportacion";
+            assertThat(subjects.getAllValues())
+                    .anyMatch(s -> s.contains(expectedAsunto));
+            assertThat(attachments.getAllValues().stream()
+                    .flatMap(List::stream)
+                    .anyMatch(f -> f.getName().startsWith("tiqueteElectronico_")
+                            && f.getName().endsWith(".pdf")))
+                    .as("la venta se envia por correo con su PDF adjunto")
+                    .isTrue();
         } finally {
             cartSessionStore.remove("admin");
             if (factura != null) {

@@ -18,6 +18,17 @@
         </div>
         <div class="level-right">
             <button type="button" class="button is-small"
+                    onclick="printPDF('/api/app/recibos/{vista.detalle.id}/pdf')">
+                {#include _kit/icon name="print" /}
+                <span>Imprimir</span>
+            </button>
+            <button type="button" class="button is-small"
+                    hx-post="/api/app/recibos/{vista.detalle.id}/email"
+                    hx-target="#recibos-tablero" hx-swap="outerHTML"
+                    hx-confirm="¿Enviar este comprobante por correo al receptor?">
+                <span>Enviar por correo</span>
+            </button>
+            <button type="button" class="button is-small"
                     hx-get="/api/app/recibos/{vista.detalle.id}"
                     hx-target="#recibo-detalle-cuerpo" hx-swap="outerHTML">
                 {#include _kit/icon name="refresh" /}

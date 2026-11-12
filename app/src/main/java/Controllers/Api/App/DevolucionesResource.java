@@ -1175,6 +1175,18 @@ public class DevolucionesResource {
             if (comprobanteService.enviarComprobanteAHacienda(ncComprobante)) {
                 actualizarEstadoNotaCredito(envio,
                         ncComprobante.getHaciendaEstado() != null ? ncComprobante.getHaciendaEstado() : "ACEPTADO");
+                // La NC tambien se entrega al receptor (PDF + XML), igual que
+                // la factura. Antes solo la venta del POS disparaba el correo.
+                try {
+                    ComprobantesEmitidos original = comprobantesService.find(envio.facturaOriginalId());
+                    Clientes clienteNc = original == null ? null : buscarClienteDeFactura(original);
+                    comprobanteService.enviarComprobanteACliente(ncComprobante, clienteNc,
+                            currentUser(), null, null, null);
+                } catch (RuntimeException e) {
+                    LOG.warn("No se pudo enviar la NC por correo: " + e.getMessage()
+                            + " | clave=" + ncComprobante.getHaciendaClave()
+                            + " | source=DevolucionesResource.enviarNcAHacienda()");
+                }
                 return; // ACEPTADO, con sus fechas selladas
             }
             // Rechazo de fondo, fallo de transporte o preflight: el XML firmado
