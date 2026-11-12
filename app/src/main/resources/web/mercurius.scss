@@ -3047,3 +3047,10 @@ button,
     }
 }
 
+
+// Final mobile override: the .table thead th rule above wins on source order.
+@media (max-width: 640px) {
+    .table thead th {
+        font-size: 12px;
+    }
+}
