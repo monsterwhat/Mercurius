@@ -84,9 +84,23 @@
                 console.warn('POS: window.printPDF no está disponible; se oculta Imprimir');
                 return;
             }
+            var pdfUrl = boton.getAttribute('data-pdf-url');
             boton.addEventListener('click', function () {
-                window.printPDF(boton.getAttribute('data-pdf-url'));
+                window.printPDF(pdfUrl);
             });
+            // Auto-print por estación: solo si el cajero activó el toggle y
+            // esta factura no se envió ya a la impresora en esta pestaña.
+            try {
+                if (window.localStorage.getItem('mercurius.autoPrint') === '1' && pdfUrl) {
+                    var key = 'mercurius.printed.' + pdfUrl;
+                    if (!window.sessionStorage.getItem(key)) {
+                        window.sessionStorage.setItem(key, '1');
+                        window.printPDF(pdfUrl);
+                    }
+                }
+            } catch (e) {
+                console.warn('POS: no se pudo leer la preferencia de impresión automática', e);
+            }
         })();
     </script>
 </div>

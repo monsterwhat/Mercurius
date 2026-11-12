@@ -290,6 +290,35 @@
                 hx-get="/api/app/pos/checkout-dialog"
                 hx-target="#modal-cobro-body" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>
     </div>
+
+    {! Preferencia por estación (localStorage): al facturar, abrir el PDF y
+       mandarlo a la impresora sin que el cajero tenga que pulsar Imprimir. !}
+    <div class="field" style="margin-top:0.35rem; margin-bottom:0">
+        <label class="checkbox is-size-7" for="auto-print-toggle"
+               title="Imprime el PDF automáticamente al terminar la factura. Permita ventanas emergentes para este sitio.">
+            <input type="checkbox" id="auto-print-toggle"> Imprimir automáticamente al facturar
+        </label>
+    </div>
+    <script>
+        (function () {
+            var toggle = document.getElementById('auto-print-toggle');
+            if (!toggle) {
+                return;
+            }
+            try {
+                toggle.checked = localStorage.getItem('mercurius.autoPrint') === '1';
+            } catch (e) {
+                console.warn('POS: no se pudo leer la preferencia de impresión automática', e);
+            }
+            toggle.addEventListener('change', function () {
+                try {
+                    localStorage.setItem('mercurius.autoPrint', toggle.checked ? '1' : '0');
+                } catch (e) {
+                    console.warn('POS: no se pudo guardar la preferencia de impresión automática', e);
+                }
+            });
+        })();
+    </script>
     </div>
 
     {! Precio ajustado: modal inline (mismo esqueleto que _kit/modal) porque el

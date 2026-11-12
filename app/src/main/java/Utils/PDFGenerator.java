@@ -110,29 +110,45 @@ public class PDFGenerator {
     }
 
     private Document addContentToDocument(ByteArrayOutputStream baos, ConfiguracionAplicacion settings, ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<EntradaPago> pagos) throws DocumentException {
-        Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+        // Facturas, notas y comprobantes de compra/exportación se imprimen en
+        // hoja completa (Letter/A4) con texto legible. El tiquete de caja
+        // conserva el formato de recibo térmico de 80 mm.
+        String codigoDocumento = tiqueteElectronico.getEncabezado().getCodigoDocumento();
+        boolean hojaCompleta = !"04".equals(codigoDocumento);
+        Rectangle pageSize = hojaCompleta
+                ? com.lowagie.text.PageSize.LETTER
+                : new Rectangle(200f, 600f);
+        float margin = hojaCompleta ? 36f : 5f;
+        Document document = new Document(pageSize, margin, margin, margin, margin);
         PdfWriter.getInstance(document, baos);
         document.add(new Meta("charset", "UTF-8"));
         document.open();
 
-        // Establecer el tamaño de la fuente
+        // Texto: 10 pt en hoja completa, 9 pt en el recibo térmico.
         com.lowagie.text.Font font = new com.lowagie.text.Font();
-        font.setSize(8); // Establecer tamaño de fuente a 8 puntos
+        font.setSize(hojaCompleta ? 10f : 9f);
+        float leading = hojaCompleta ? 12f : 10.5f;
+
+        com.lowagie.text.Font titleFont = new com.lowagie.text.Font(font);
+        titleFont.setSize(hojaCompleta ? 14f : 10f);
+        titleFont.setStyle(com.lowagie.text.Font.BOLD);
 
         Paragraph tiqueteTitulo = new Paragraph(
-                tituloDocumento(tiqueteElectronico.getEncabezado().getCodigoDocumento()), font);
+                tituloDocumento(codigoDocumento), titleFont);
         tiqueteTitulo.setAlignment(Element.ALIGN_CENTER);
-        tiqueteTitulo.setLeading(10f);
+        tiqueteTitulo.setLeading(hojaCompleta ? 17f : 12f);
         document.add(tiqueteTitulo);
 
         PdfPTable separator = new PdfPTable(1);
 
         PdfPCell cell = new PdfPCell();
-        cell.setPaddingTop(20f);
-        cell.setPaddingBottom(20f);
+        // Antes eran 20+20+3 = 43 pt por separador; seis separadores dejaban
+        // un blanco enorme en la hoja. Ahora la línea es compacta.
+        cell.setPaddingTop(3f);
+        cell.setPaddingBottom(3f);
         cell.setBorder(PdfPCell.BOTTOM); // Only draw the bottom border
         cell.setBorderWidthBottom(1f); // Set the thickness of the line
-        cell.setFixedHeight(3f); // Set the height of the cell to a thin line
+        cell.setFixedHeight(1f); // Set the height of the cell to a thin line
 
         separator.addCell(cell);
         separator.setWidthPercentage(100);
@@ -149,7 +165,7 @@ public class PDFGenerator {
 
         Paragraph paragraph = new Paragraph(combinedTextHeader, font);
         paragraph.setAlignment(Element.ALIGN_CENTER);
-        paragraph.setLeading(10f);
+        paragraph.setLeading(leading);
         document.add(paragraph);
 
         //BLANK SEPARATOR
@@ -157,7 +173,7 @@ public class PDFGenerator {
         Paragraph blankSpace = new Paragraph();
         blankSpace.setSpacingBefore(4f); // Space before (if needed)
         blankSpace.setSpacingAfter(4f); // Space after (if needed)
-        blankSpace.setLeading(10f);
+        blankSpace.setLeading(leading);
         document.add(blankSpace);
 
         // Format the date
@@ -177,14 +193,17 @@ public class PDFGenerator {
         // Create a single paragraph for the combined text
         Paragraph combinedParagraph = new Paragraph(combinedText, font);
         combinedParagraph.setAlignment(Element.ALIGN_LEFT); // Align left
-        combinedParagraph.setLeading(10f); // Set the line spacing
+        combinedParagraph.setLeading(leading); // Set the line spacing
         document.add(combinedParagraph); // Add the paragraph to the document
 
         document.add(blankSpace);
 
         document.add(separator);
 
-        PdfPTable descripcionTable = new PdfPTable(new float[]{1, 1, 1});
+        float[] columnasArticulos = hojaCompleta
+                ? new float[]{1f, 3f, 1f}
+                : new float[]{1.2f, 2.4f, 1.4f};
+        PdfPTable descripcionTable = new PdfPTable(columnasArticulos);
         descripcionTable.setWidthPercentage(100);
 
         // Create and configure the cell for Cantidad
@@ -210,9 +229,9 @@ public class PDFGenerator {
 
         document.add(separator); // Fancy separator
 
-        PdfPTable articulosTable = new PdfPTable(new float[]{1, 3, 1});
+        PdfPTable articulosTable = new PdfPTable(columnasArticulos);
         articulosTable.setWidthPercentage(100);
-        articulosTable.setSpacingBefore(10f);
+        articulosTable.setSpacingBefore(hojaCompleta ? 6f : 4f);
 
         // Agregar filas a la tabla
         for (ArticuloCarrito articulo : carrito) {
@@ -428,7 +447,8 @@ public class PDFGenerator {
                 byte[] qrBytes = QRCodeGenerator.generateQRCodeBytes(clave);
                 Image qrImage = Image.getInstance(qrBytes);
                 qrImage.setAlignment(Element.ALIGN_CENTER);
-                qrImage.scaleToFit(120f, 120f);
+                float qrSize = hojaCompleta ? 110f : 120f;
+                qrImage.scaleToFit(qrSize, qrSize);
                 document.add(qrImage);
 
                 Paragraph claveLabel = new Paragraph("Clave: " + clave, font);
@@ -445,7 +465,7 @@ public class PDFGenerator {
         }
 
         Paragraph gracias = new Paragraph("***GRACIAS POR SU PREFERENCIA!***", font);
-        gracias.setAlignment(Element.ALIGN_JUSTIFIED_ALL);
+        gracias.setAlignment(Element.ALIGN_CENTER);
         document.add(gracias);
 
         return document;
