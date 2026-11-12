@@ -2,6 +2,7 @@ package Controllers.Api.App;
 
 import Models.ComprobantesEmitidos;
 import Models.DTO.ApiResponse;
+import Services.AppSettingsService;
 import Services.FacturaImportService;
 import Utils.Parsers.FacturaBackupXml;
 import jakarta.annotation.Nullable;
@@ -49,6 +50,9 @@ public class ImportacionFacturasResource {
 
     @Inject
     FacturaImportService importService;
+
+    @Inject
+    AppSettingsService appSettingsService;
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -152,6 +156,32 @@ public class ImportacionFacturasResource {
         resultado.put("eliminadas", eliminadas);
         LOG.info("Limpieza de compras importadas: " + resultado
                 + " | source=ImportacionFacturasResource.limpiarCompras()");
+        return Response.ok(ApiResponse.ok(resultado)).build();
+    }
+
+    /**
+     * Limpieza de compras que entraron con raíz de factura normal: se borran
+     * las importadas cuyo receptor es la propia empresa (cédula configurada).
+     */
+    @POST
+    @Path("/limpiar-receptor-propio")
+    public Response limpiarReceptorPropio(
+            @QueryParam("usuario") @DefaultValue("importado") String usuario) {
+        Models.ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
+        String cedula = settings == null ? null : settings.getIdentificacion();
+        if (cedula == null || cedula.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR",
+                            "Falta la identificación del emisor en la configuración."))
+                    .build();
+        }
+        int eliminadas = importService.eliminarImportadasConReceptorPropio(usuario, cedula.trim());
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("usuario", usuario);
+        resultado.put("identificacion", cedula);
+        resultado.put("eliminadas", eliminadas);
+        LOG.info("Limpieza de importadas con receptor propio: " + resultado
+                + " | source=ImportacionFacturasResource.limpiarReceptorPropio()");
         return Response.ok(ApiResponse.ok(resultado)).build();
     }
 }

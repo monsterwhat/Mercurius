@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.mercurius</groupId>
   <artifactId>mercurius-quarkus</artifactId>
-  <version>3.12.0</version>
+  <version>3.12.1</version>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>3.36.2</quarkus.version>
@@ -93,8 +93,8 @@
       el subsistema de correo en produccion: jakarta.mail-api 2.1.x busca un
       proveedor de jakarta.mail.util.StreamProvider via ServiceLoader, y
       com.sun.mail 2.0.2 es anterior a esa clase, asi que no registra ninguna.
-      Cada Session.getInstance()/getDefaultInstance() —los seis puntos de
-      EmailService, mas el barrido de la bandeja— moria con
+      Cada Session.getInstance()/getDefaultInstance() â€”los seis puntos de
+      EmailService, mas el barrido de la bandejaâ€” moria con
 
         IllegalStateException: No provider of jakarta.mail.util.StreamProvider was found
 
@@ -417,3 +417,4 @@
     </profile>
   </profiles>
 </project>
+

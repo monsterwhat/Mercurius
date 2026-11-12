@@ -89,4 +89,28 @@ public class FacturaImportService {
         }
         return filas.size();
     }
+
+    /**
+     * Elimina las facturas importadas que en realidad son compras: su
+     * receptor es la propia empresa (cédula de la configuración), no un
+     * cliente. Las ventas importadas tienen como receptor al cliente.
+     */
+    @jakarta.transaction.Transactional
+    public int eliminarImportadasConReceptorPropio(@Nonnull String usuario,
+                                                   @Nonnull String identificacion) {
+        List<ComprobantesEmitidos> filas = em.createQuery(
+                "SELECT c FROM ComprobantesEmitidos c "
+                        + "JOIN FETCH c.encabezado e "
+                        + "JOIN FETCH e.receptor r "
+                        + "JOIN FETCH r.identificacion i "
+                        + "WHERE c.user = :usuario AND i.numero = :identificacion",
+                ComprobantesEmitidos.class)
+                .setParameter("usuario", usuario)
+                .setParameter("identificacion", identificacion)
+                .getResultList();
+        for (ComprobantesEmitidos comprobante : filas) {
+            em.remove(comprobante);
+        }
+        return filas.size();
+    }
 }
