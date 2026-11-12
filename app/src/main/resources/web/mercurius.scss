@@ -810,6 +810,63 @@ body {
         width: 1.25rem;
         height: 1.25rem;
     }
+
+    // Report tables: hide the columns that only add horizontal scroll on a
+    // phone. The data stays available in the export; the priority columns
+    // remain visible and the table still scrolls if needed.
+    // Clientes: Estado, Nombre, Teléfono, Acciones.
+    #clientes-tabla table th:nth-child(3), #clientes-tabla table td:nth-child(3),
+    #clientes-tabla table th:nth-child(4), #clientes-tabla table td:nth-child(4),
+    #clientes-tabla table th:nth-child(5), #clientes-tabla table td:nth-child(5),
+    #clientes-tabla table th:nth-child(7), #clientes-tabla table td:nth-child(7),
+    #clientes-tabla table th:nth-child(8), #clientes-tabla table td:nth-child(8),
+    #clientes-tabla table th:nth-child(9), #clientes-tabla table td:nth-child(9) {
+        display: none;
+    }
+
+    // Movimientos: Fecha, Artículo, Cantidad, Tipo, Estado, Procesado.
+    #reporte-fechas table th:nth-child(1), #reporte-fechas table td:nth-child(1),
+    #reporte-fechas table th:nth-child(4), #reporte-fechas table td:nth-child(4),
+    #reporte-fechas table th:nth-child(5), #reporte-fechas table td:nth-child(5),
+    #reporte-fechas table th:nth-child(7), #reporte-fechas table td:nth-child(7),
+    #reporte-fechas table th:nth-child(9), #reporte-fechas table td:nth-child(9),
+    #reporte-fechas table th:nth-child(12), #reporte-fechas table td:nth-child(12) {
+        display: none;
+    }
+
+    // Pronósticos: Artículo, Stock, Demanda, Días, Recomendación.
+    #reporte-pronosticos table th:nth-child(2), #reporte-pronosticos table td:nth-child(2),
+    #reporte-pronosticos table th:nth-child(3), #reporte-pronosticos table td:nth-child(3),
+    #reporte-pronosticos table th:nth-child(8), #reporte-pronosticos table td:nth-child(8),
+    #reporte-pronosticos table th:nth-child(9), #reporte-pronosticos table td:nth-child(9),
+    #reporte-pronosticos table th:nth-child(10), #reporte-pronosticos table td:nth-child(10) {
+        display: none;
+    }
+
+    // Márgenes: Departamento, Total Ventas, Utilidad, Margen, Desempeño.
+    #margenes-tabla table th:nth-child(2), #margenes-tabla table td:nth-child(2),
+    #margenes-tabla table th:nth-child(5), #margenes-tabla table td:nth-child(5),
+    #margenes-tabla table th:nth-child(6), #margenes-tabla table td:nth-child(6),
+    #margenes-tabla table th:nth-child(7), #margenes-tabla table td:nth-child(7),
+    #margenes-tabla table th:nth-child(8), #margenes-tabla table td:nth-child(8) {
+        display: none;
+    }
+
+    // Recibidas/recibos: Consecutivo, Fecha, Emisor, Total, Procesado.
+    #facturas-recibidas-tabla table th:nth-child(4), #facturas-recibidas-tabla table td:nth-child(4),
+    #facturas-recibidas-tabla table th:nth-child(6), #facturas-recibidas-tabla table td:nth-child(6) {
+        display: none;
+    }
+
+    // Nothing below 12px on a phone.
+    .table th,
+    .table td,
+    .help,
+    .label,
+    .app-sidebar-meta,
+    .app-sidebar-label {
+        font-size: .75rem;
+    }
 }
 
 .app-header-user-menu {
@@ -2944,3 +3001,29 @@ button,
 #modal-cobro .modal-card {
     box-shadow: 0 12px 40px rgba(23, 41, 75, .28);
 }
+
+// -----------------------------------------------------------------------------
+// Settings: mobile section index (the form is ~5.600px tall on a phone)
+// -----------------------------------------------------------------------------
+.settings-index {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .settings-index {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-bottom: 1rem;
+    }
+
+    .settings-index a {
+        padding: .35rem .625rem;
+        border: 1px solid var(--merc-border);
+        border-radius: 999px;
+        color: var(--merc-text);
+        font-size: .75rem;
+        text-decoration: none;
+    }
+}
+

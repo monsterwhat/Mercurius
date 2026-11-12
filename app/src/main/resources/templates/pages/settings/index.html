@@ -107,6 +107,17 @@
          subtitle="Perfil, notificaciones, lealtad, umbrales de stock y respaldos" /}
     {/if}
 
+    {! En móvil el formulario mide ~5.600px: un índice de secciones evita
+       recorrerlo a ciegas. En escritorio se oculta. !}
+    <nav class="settings-index" aria-label="Secciones de ajustes">
+        <a href="#ajustes-sucursales">Sucursales</a>
+        <a href="#ajustes-correo">Correo</a>
+        <a href="#ajustes-respaldos">Respaldos</a>
+        <a href="#ajustes-perfil">Perfil</a>
+        <a href="#ajustes-lealtad">Lealtad</a>
+        <a href="#ajustes-umbrales">Umbrales</a>
+    </nav>
+
     {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
     {#if modo != 'backups'}
         {! El asistente de 5 pasos se retiró: 4 de sus pasos eran solo lectura y
@@ -120,7 +131,7 @@
          queda sin elemento al que colgar el hx-post). ── !}
     {#if modo != 'backups'}
     <div class="box mb-5" data-group="sucursales">
-        <h2 class="title is-5">Sucursales y terminales</h2>
+        <h2 class="title is-5" id="ajustes-sucursales">Sucursales y terminales</h2>
         <p class="subtitle is-6 mercurius-text-muted">
             Registro de puntos de venta. El código de sucursal usa 3 dígitos y el
             de terminal 5, el mismo formato con el que se imprime el consecutivo
@@ -252,7 +263,7 @@
         {! ── Grupo: correo (legacy wizard Correo step + rejection notifications) ── !}
         {#if modo != 'backups'}
         <div class="box mb-5" data-group="correo">
-            <h2 class="title is-5">Correo y notificaciones</h2>
+            <h2 class="title is-5" id="ajustes-correo">Correo y notificaciones</h2>
             <div class="columns is-multiline">
                 <div class="column is-full">
                     <div class="field">
@@ -433,7 +444,7 @@
         {#if modo != 'aplicacion'}
         {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
         <div id="backup-status-card" class="box mb-5">
-            <h2 class="title is-4">Estado de los respaldos</h2>
+            <h2 class="title is-4" id="ajustes-respaldos">Estado de los respaldos</h2>
             <p class="subtitle is-6">Copias de seguridad programadas y bajo demanda</p>
             <div class="columns is-multiline has-text-centered">
                 <div class="column">
@@ -592,7 +603,7 @@
         {#if modo != 'backups'}
         {! ── Grupo: general / negocio (read-only parity) ── !}
                 <div class="box mb-5" data-group="general-negocio">
-            <h2 class="title is-5">Perfil y tributación</h2>
+            <h2 class="title is-5" id="ajustes-perfil">Perfil y tributación</h2>
             <p class="subtitle is-6 mercurius-text-muted">
                 Datos del emisor: son los que viajan en el encabezado de cada
                 comprobante. Se guardan con «Guardar ajustes», al final de la
@@ -837,7 +848,7 @@
 
 {! ── Grupo: loyalty (read-only; writes belong to the Loyalty module) ── !}
         <div class="box mb-5" data-group="loyalty">
-            <h2 class="title is-5">Lealtad</h2>
+            <h2 class="title is-5" id="ajustes-lealtad">Lealtad</h2>
             <div class="columns is-multiline">
                 <div class="column is-half">
                     <p class="is-size-7 mercurius-text-muted">Porcentaje de cashback</p>
@@ -856,7 +867,7 @@
 
         {! ── Grupo: umbrales de stock (snapshot informativo del motor T33) ── !}
         <div class="box mb-5" data-group="stock-umbrales">
-            <h2 class="title is-5">Umbrales de stock</h2>
+            <h2 class="title is-5" id="ajustes-umbrales">Umbrales de stock</h2>
             <p class="subtitle is-6 mercurius-text-muted">
                 Constantes del motor de alertas (solo lectura); la configuración
                 por artículo vive en su propia pantalla.
