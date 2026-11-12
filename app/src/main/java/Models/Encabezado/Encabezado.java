@@ -19,6 +19,8 @@ import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlSchemaType;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import Models.Jaxb.LocalDateTimeAdapter;
 import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,6 +73,7 @@ public class Encabezado {
 
     @XmlElement(name = "FechaEmision")
     @XmlSchemaType(name = "dateTime")
+    @XmlJavaTypeAdapter(LocalDateTimeAdapter.class)
     @Nullable
     @Column(name = "fecha_emision")
     private LocalDateTime fechaEmision;

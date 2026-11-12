@@ -1,6 +1,9 @@
 package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.jboss.logging.Logger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -54,6 +57,8 @@ import jakarta.ws.rs.core.Response;
 public class VentasResource {
 
     private static final String BASE_URL = "/app/reportes/articulos/ventas";
+
+    private static final Logger LOG = Logger.getLogger(VentasResource.class);
 
     @Inject
     @Nonnull
@@ -117,57 +122,57 @@ public class VentasResource {
         }
 
         List<Map<String, Object>> filas = new ArrayList<>();
-        BigDecimal total = null;
-        // Sin usuario = todos los cajeros. Antes la consulta solo corría con un
-        // usuario elegido y el reporte salía vacío por omisión.
+        // Sin usuario = todos los cajeros. La consulta trae SOLO las líneas
+        // (fecha, cajero, artículo, cantidad y monto) con LIMIT/OFFSET en SQL;
+        // antes hidrataba los comprobantes completos con cinco colecciones y
+        // Hibernate abortaba el reporte.
         boolean consultaCompleta = inicio != null && fin != null;
-
-        if (consultaCompleta) {
-            boolean todos = usuario == null || usuario.isBlank();
-            Usuarios cajero = todos ? null : userService.find(Long.valueOf(usuario.trim()));
-            if (todos || cajero != null) {
-                total = BigDecimal.ZERO;
-                List<ComprobantesEmitidos> comprobantes = todos
-                        ? comprobanteService.listAllEmitidosBy(inicio, fin)
-                        : comprobanteService.listAllEmitidosBy(cajero, inicio, fin);
-                if (comprobantes != null) {
-                    for (ComprobantesEmitidos comprobante : comprobantes) {
-                        if (comprobante.getDetalles() == null
-                                || comprobante.getDetalles().getLineasDetalle() == null) {
-                            continue;
-                        }
-                        for (LineaDetalle linea : comprobante.getDetalles().getLineasDetalle()) {
-                            BigDecimal monto = linea.getMontoTotalLinea();
-                            if (monto != null) {
-                                total = total.add(monto);
-                            }
-                            filas.add(Tablas.fila(
-                                    "detalle", linea.getDetalle(),
-                                    "cantidad", Tablas.fmtNumero(linea.getCantidad()),
-                                    "montoTotalLinea", Tablas.fmtColones(monto)));
-                        }
-                    }
-                }
+        boolean todos = usuario == null || usuario.isBlank();
+        Usuarios cajero = null;
+        if (!todos) {
+            try {
+                cajero = userService.find(Long.valueOf(usuario.trim()));
+            } catch (NumberFormatException e) {
+                LOG.warn("Cajero invalido en ventas por cajero, se listan todos: " + usuario
+                        + " | source=VentasResource.get()");
             }
         }
 
-        Tablas.ordenar(filas, sort, dir);
-        long totalFilas = filas.size();
-        int totalPages = Tablas.totalPaginas(totalFilas, size);
-        List<Map<String, Object>> visibles = Tablas.paginaDe(filas, page, size);
+        BigDecimal total = BigDecimal.ZERO;
+        long totalFilas = 0;
+        int pageSize = Math.min(Math.max(size, 1), 100);
+        int totalPages = 1;
+        int current = 1;
+        if (consultaCompleta) {
+            totalFilas = comprobanteService.countVentasLineas(cajero, inicio, fin);
+            BigDecimal suma = comprobanteService.sumVentasLineas(cajero, inicio, fin);
+            total = suma == null ? BigDecimal.ZERO : suma;
+            totalPages = Tablas.totalPaginas(totalFilas, pageSize);
+            current = Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+            for (Object[] fila : comprobanteService.pageVentasLineas(
+                    cajero, inicio, fin, sort, dir, (current - 1) * pageSize, pageSize)) {
+                filas.add(Tablas.fila(
+                        "fecha", fmtFecha((LocalDateTime) fila[0]),
+                        "cajero", fila[1] == null ? "-" : fila[1].toString(),
+                        "detalle", fila[2],
+                        "cantidad", Tablas.fmtNumero((BigDecimal) fila[3]),
+                        "montoTotalLinea", Tablas.fmtColones((BigDecimal) fila[4])));
+            }
+        }
 
+        boolean sinOrden = sort == null || sort.isBlank();
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Reporte de Ventas por Cajero");
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas());
-        model.put("filas", visibles);
-        model.put("sortKey", sort);
-        model.put("sortDir", dir);
-        model.put("page", Math.max(page, 1));
-        model.put("size", size);
+        model.put("filas", filas);
+        model.put("sortKey", sinOrden ? "fecha" : sort);
+        model.put("sortDir", sinOrden ? "desc" : dir);
+        model.put("page", current);
+        model.put("size", pageSize);
         model.put("total", totalFilas);
         model.put("totalPages", totalPages);
-        model.put("pages", Tablas.ventanaPaginas(page, totalPages));
+        model.put("pages", Tablas.ventanaPaginas(current, totalPages));
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("usuarios", usuarios);
@@ -185,9 +190,16 @@ public class VentasResource {
     @Nonnull
     private static List<Map<String, Object>> columnas() {
         return List.of(
-                Map.of("label", "Nombre", "key", "detalle"),
+                Map.of("label", "Fecha", "key", "fecha"),
+                Map.of("label", "Cajero", "key", "cajero"),
+                Map.of("label", "Artículo", "key", "detalle"),
                 Map.of("label", "Cantidad", "key", "cantidad"),
                 Map.of("label", "Precio", "key", "montoTotalLinea"));
+    }
+
+    @Nonnull
+    private static String fmtFecha(@Nullable LocalDateTime fecha) {
+        return fecha == null ? "-" : fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 }
 

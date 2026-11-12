@@ -9,7 +9,12 @@ public class LocalDateTimeAdapter extends XmlAdapter<String, LocalDateTime> {
 
     @Override
     public LocalDateTime unmarshal(String v) {
-        return v != null ? LocalDateTime.parse(v, FMT) : null;
+        if (v == null) {
+            return null;
+        }
+        // Hacienda emite FechaEmision con offset (-06:00); ISO_LOCAL_DATE_TIME
+        // no lo acepta. ISO_DATE_TIME sí, y devuelve el componente local.
+        return LocalDateTime.parse(v, DateTimeFormatter.ISO_DATE_TIME);
     }
 
     @Override
