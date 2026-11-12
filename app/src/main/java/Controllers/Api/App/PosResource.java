@@ -231,6 +231,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     Template articulosPickerTemplate;
 
     @Nonnull
+    @Location("pages/facturas/articulos-sugerencias")
+    @Inject
+    Template articulosSugerenciasTemplate;
+
+    @Nonnull
     @Location("pages/facturas/facturar-resultado")
     @Inject
     Template facturarResultadoTemplate;
@@ -300,6 +305,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     .entity(ApiResponse.error("ARTICULO_NO_ENCONTRADO",
                             "No existe un artículo con ese código"))
                     .build();
+        }
+        if (!esFacturable(articulo)) {
+            return badRequest("ARTICULO_NO_FACTURABLE",
+                    "El artículo «" + articulo.getNombre() + "» no está procesado "
+                            + "o no tiene código CAByS asignado; no se puede facturar.");
         }
 
         CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
@@ -883,6 +893,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         out.puntosMensaje = result.puntosMensaje;
         out.totalPagado = totalPagado;
         out.vuelto = vueltoFinal;
+        out.clienteConEmail = cliente != null && cliente.getEmail() != null
+                && !cliente.getEmail().isBlank();
+        out.autoPrintObligatorio = autoPrintObligatorio(cliente, result.haciendaEnviado);
         return Response.ok(ApiResponse.ok(out)).build();
     }
 
@@ -995,6 +1008,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
         out.totalPagado = totalPagado;
         out.vuelto = ctx.getVuelto();
+        out.clienteConEmail = cliente != null && cliente.getEmail() != null
+                && !cliente.getEmail().isBlank();
+        boolean yaAceptado = comprobante.getHaciendaEstado() != null
+                && "ACEPTADO".equalsIgnoreCase(comprobante.getHaciendaEstado());
+        out.autoPrintObligatorio = autoPrintObligatorio(cliente, yaAceptado);
         return Response.ok(ApiResponse.ok(out)).build();
     }
 
@@ -1729,6 +1747,13 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     panelModel(username, message("ARTICULO_NO_ENCONTRADO", "error",
                             "No existe un artículo con ese código", null))).render());
         }
+        if (!esFacturable(articulo)) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("ARTICULO_NO_FACTURABLE", "error",
+                            "El artículo «" + articulo.getNombre() + "» no está procesado "
+                                    + "o no tiene código CAByS asignado; no se puede facturar.",
+                            null))).render());
+        }
         BigDecimal qty = parsePositiveOrDefault(cantidad);
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
         carritoService.addArticulo(ctx, articulo, qty);
@@ -2284,6 +2309,31 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         return hits;
     }
 
+    @GET
+    @Path("/articulos-sugerencias")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Barcode-input dropdown suggestions (name, department, family or barcode)")
+    public Response articulosSugerencias(@QueryParam("q") @Nullable String q,
+                                         @QueryParam("codigoBarra") @Nullable String codigoBarra) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        String texto = q != null && !q.isBlank() ? q : codigoBarra;
+        boolean mostrar = texto != null && !texto.isBlank();
+        Map<String, Object> picker = new LinkedHashMap<>();
+        picker.put("q", texto == null ? "" : texto.trim());
+        picker.put("mostrar", mostrar);
+        picker.put("resultados", mostrar ? articuloPickerHits(texto) : List.of());
+        return htmlOk(articulosSugerenciasTemplate.data("picker", picker).render());
+    }
+
+    /** Un artículo sólo es facturable si está activo, procesado y tiene CAByS. */
+    private static boolean esFacturable(@Nullable Articulos articulo) {
+        return articulo != null && articulo.isStatus() && articulo.isProcessed()
+                && articulo.getCodigoCabys() != null;
+    }
+
     /** Article picker hits for the POS search-as-you-type fragment. */
     @Nonnull
     private List<Map<String, Object>> articuloPickerHits(@Nullable String q) {
@@ -2293,6 +2343,12 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return hits;
         }
         for (Articulos articulo : source) {
+            // El POS solo puede facturar artículos activos, procesados y con
+            // CAByS. Mostrar uno sin CAByS dejaba al cajero llegar hasta el
+            // error ARTICULO_SIN_CABYS después de armar toda la venta.
+            if (!esFacturable(articulo)) {
+                continue;
+            }
             if (!matchesArticulo(articulo, q)) {
                 continue;
             }
@@ -2675,6 +2731,21 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         public @Nullable String puntosMensaje;
         public @Nullable BigDecimal totalPagado;
         public @Nullable BigDecimal vuelto;
+        /** true cuando el cliente no tiene correo o el comprobante no se envió:
+         *  la impresión no puede quedar opcional. */
+        public boolean autoPrintObligatorio;
+        public boolean clienteConEmail;
+    }
+
+    /**
+     * Impresión automática obligatoria salvo que el comprobante se haya enviado
+     * por correo al cliente: sin correo (o sin envío) el papel es la única
+     * entrega, así que no se puede desactivar.
+     */
+    static boolean autoPrintObligatorio(@Nullable Clientes cliente, boolean enviado) {
+        boolean email = cliente != null && cliente.getEmail() != null
+                && !cliente.getEmail().isBlank();
+        return !email || !enviado;
     }
 
     /** GET /cart debug payload. */

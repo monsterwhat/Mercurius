@@ -17,21 +17,22 @@
 <div id="articulos-picker-fragmento">
     <div class="field">
         <div class="control has-icons-left">
-            <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
-                   id="articulos-picker-q" hx-preserve="true"
+                        <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
+                   id="articulos-picker-q"
                    aria-label="Buscar artículo por nombre, código o código de barras"
                    spellcheck="false" autocapitalize="off"
                    placeholder="Buscar por nombre, código o código de barras..."
                    hx-get="/api/app/pos/articulos-picker"
-                   hx-trigger="keyup changed delay:250ms"
+                   hx-trigger="input changed delay:250ms"
                    hx-sync="this:replace"
-                   hx-target="#articulos-picker-fragmento" hx-swap="outerHTML"
+                   hx-target="#articulos-picker-resultados" hx-swap="innerHTML"
+                   hx-select="#articulos-picker-resultados"
                    hx-include="this"/>
             <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
         </div>
     </div>
 
-    <div class="table-container">
+    <div id="articulos-picker-resultados" class="table-container">
     <table class="table is-hoverable is-narrow is-fullwidth" aria-label="Artículos encontrados">
         <thead>
         <tr>
@@ -99,17 +100,28 @@
                 .forEach(function (evento) {
                     campo.addEventListener(evento, quitarCarga);
                 });
-            // The whole fragment is replaced on every keystroke, so the search
-            // field has to take the caret back or typing stops after 250ms.
+            // Solo se reemplaza #articulos-picker-resultados: el input queda
+            // intacto y el caret no salta a mitad de escritura.
             campo.focus();
-            campo.setSelectionRange(campo.value.length, campo.value.length);
-            var anuncio = document.getElementById('pos-anuncio');
-            if (anuncio) {
+            function anunciar() {
+                var anuncio = document.getElementById('pos-anuncio');
+                if (!anuncio) {
+                    return;
+                }
                 var total = document.querySelectorAll('#articulos-picker-fragmento tbody tr[data-articulo-code]').length;
                 anuncio.textContent = total === 0
                     ? 'Sin artículos que coincidan'
                     : total + (total === 1 ? ' artículo encontrado' : ' artículos encontrados');
             }
+            var fragmento = document.getElementById('articulos-picker-fragmento');
+            if (fragmento) {
+                fragmento.addEventListener('htmx:afterSwap', function (evt) {
+                    if (evt.target && evt.target.id === 'articulos-picker-resultados') {
+                        anunciar();
+                    }
+                });
+            }
+            anunciar();
         })();
     </script>
 </div>

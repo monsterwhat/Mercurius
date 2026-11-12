@@ -134,7 +134,11 @@
                        name="codigoBarra" value="" autocomplete="off" autofocus
                        enterkeyhint="go"
                        autocapitalize="off" spellcheck="false"
-                       placeholder="Escanee el código o escríbalo y presione Enter"/>
+                       placeholder="Escanee el código o escriba nombre, familia, departamento o código"
+                       hx-get="/api/app/pos/articulos-sugerencias"
+                       hx-trigger="input changed delay:250ms"
+                       hx-target="#barcode-sugerencias" hx-swap="innerHTML"
+                       hx-include="this"/>
             </div>
             <div class="column is-3">
                 <button type="button" class="button is-medium is-fullwidth" aria-haspopup="dialog"
@@ -146,6 +150,34 @@
         </div>
         <button type="submit" id="btn-agregar-scan" class="is-hidden" tabindex="-1" aria-hidden="true">Agregar</button>
     </form>
+        <div id="barcode-sugerencias" aria-live="polite"></div>
+        <script>
+            (function () {
+                var input = document.getElementById('barcode-input');
+                if (!input) {
+                    return;
+                }
+                input.addEventListener('keydown', function (evt) {
+                    if (evt.key === 'Escape') {
+                        var caja = document.getElementById('barcode-sugerencias');
+                        if (caja) {
+                            caja.innerHTML = '';
+                        }
+                    }
+                });
+                document.body.addEventListener('htmx:afterRequest', function (evt) {
+                    var target = evt.detail && evt.detail.target;
+                    if (target && target.id === 'cart-panel') {
+                        input.value = '';
+                        var caja = document.getElementById('barcode-sugerencias');
+                        if (caja) {
+                            caja.innerHTML = '';
+                        }
+                    }
+                });
+            })();
+        </script>
+
 
     </div>
 

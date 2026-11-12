@@ -40,6 +40,8 @@ public class CartOperationResult {
         CANTIDAD_INVALIDA,
         /** processCodigoBarra: código de barra sin artículo válido. */
         ARTICULO_NO_ENCONTRADO,
+        /** El articulo existe pero no se puede facturar (sin CAByS o sin procesar). */
+        ARTICULO_NO_FACTURABLE,
         /** processCodigoBarra: código de barra nulo o en blanco. */
         CODIGO_VACIO,
         /** cancel: carrito reiniciado y ventana lista para cerrarse. */

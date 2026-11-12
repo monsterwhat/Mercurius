@@ -559,6 +559,15 @@ public class CarritoService implements Serializable {
             if (codigo != null && !codigo.isBlank()) {
                 Articulos articulo = articulosService.findByBarCode(codigo);
 
+                if (articulo != null && !esFacturable(articulo)) {
+                    return CartOperationResult.message(
+                            CartOperationResult.Status.ARTICULO_NO_FACTURABLE,
+                            CartOperationResult.Severity.ERROR,
+                            "Artículo no facturable",
+                            "El artículo «" + articulo.getNombre() + "» no está procesado "
+                                    + "o no tiene código CAByS asignado; no se puede facturar.");
+                }
+
                 if (articulo != null) {
                     if (cantidad.compareTo(BigDecimal.ZERO) == 1) {
                         ArticuloCarrito articuloCarrito = new ArticuloCarrito();
@@ -612,5 +621,11 @@ public class CarritoService implements Serializable {
                         LOG.warn("Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
+    }
+
+    /** Un artículo sólo puede entrar al carrito si está activo, procesado y con CAByS. */
+    private static boolean esFacturable(Articulos articulo) {
+        return articulo != null && articulo.isStatus() && articulo.isProcessed()
+                && articulo.getCodigoCabys() != null;
     }
 }

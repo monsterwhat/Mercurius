@@ -184,6 +184,20 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
         return articulo;
     }
 
+    /** Activo pero sin procesar y sin CAByS: no debe aparecer ni poder facturarse. */
+    private Articulos seedNoFacturableArticulo(String token) {
+        Articulos articulo = new Articulos();
+        articulo.setNombre("T37NOCABYS " + token);
+        articulo.setCodigoBarra("NOCAB" + token);
+        articulo.setUnidadMedida("Unidad");
+        articulo.setUnidadMedidaComercial("Unidad");
+        articulo.setStatus(true);
+        articulo.setProcessed(false);
+        articulosService.create(articulo);
+        assertThat(articulo.getCodigo()).isNotNull();
+        return articulo;
+    }
+
     private Clientes seedCliente(BigDecimal puntosAcumulados) {
         return seedNamedClient(puntosAcumulados, uniqueSuffix());
     }
@@ -499,6 +513,81 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
                 .body(containsString("value=\"" + cliente.getCode() + "\""))
                 .body(containsString("Seleccionar"))
                 .body(not(containsString("<html")));
+    }
+
+    @Test
+    void clientPickerSwapsOnlyResultsAndKeepsInputStable() {
+        Map<String, String> session = adminSession();
+        authed(session)
+                .when().get(POS + "/client-picker?q=x")
+                .then()
+                .statusCode(200)
+                .body(containsString("id=\"client-picker-resultados\""))
+                .body(containsString("hx-target=\"#client-picker-resultados\""))
+                .body(containsString("hx-select=\"#client-picker-resultados\""))
+                .body(containsString("hx-trigger=\"input changed delay:250ms\""));
+    }
+
+    @Test
+    void articlePickerSwapsOnlyResultsAndKeepsInputStable() {
+        Map<String, String> session = adminSession();
+        authed(session)
+                .when().get(POS + "/articulos-picker?q=x")
+                .then()
+                .statusCode(200)
+                .body(containsString("id=\"articulos-picker-resultados\""))
+                .body(containsString("hx-target=\"#articulos-picker-resultados\""))
+                .body(containsString("hx-select=\"#articulos-picker-resultados\""))
+                .body(containsString("hx-trigger=\"input changed delay:250ms\""));
+    }
+
+    @Test
+    void articlesWithoutCabysAreHiddenFromPickerAndSuggestions() {
+        Map<String, String> session = adminSession();
+        String token = uniqueSuffix();
+        Articulos malo = seedNoFacturableArticulo(token);
+
+        authed(session)
+                .when().get(POS + "/articulos-picker?q=" + token)
+                .then()
+                .statusCode(200)
+                .body(not(containsString(malo.getNombre())))
+                .body(not(containsString(malo.getCodigoBarra())));
+
+        authed(session)
+                .when().get(POS + "/articulos-sugerencias?q=" + token)
+                .then()
+                .statusCode(200)
+                .body(not(containsString(malo.getNombre())))
+                .body(not(containsString(malo.getCodigoBarra())));
+
+        authed(session)
+                .when().get(POS + "/articulos-sugerencias?codigoBarra=" + malo.getCodigoBarra())
+                .then()
+                .statusCode(200)
+                .body(not(containsString(malo.getNombre())));
+    }
+
+    @Test
+    void barcodeScanOfNoFacturableArticleIsRejected() {
+        Map<String, String> session = adminSession();
+        cartSessionStore.remove("admin");
+        Articulos malo = seedNoFacturableArticulo(uniqueSuffix());
+
+        authed(session)
+                .contentType(ContentType.URLENC)
+                .formParam("codigoBarra", malo.getCodigoBarra())
+                .formParam("cantidad", "1")
+                .when().post(POS + "/scan-form")
+                .then()
+                .statusCode(200)
+                .body(containsString("Artículo no facturable"));
+
+        authed(session)
+                .when().get(POS + "/cart")
+                .then()
+                .statusCode(200)
+                .body("data.items", hasSize(0));
     }
 
     @Test

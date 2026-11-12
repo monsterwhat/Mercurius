@@ -47,7 +47,9 @@
             <a id="pdf-link" class="button is-dark" href="{resultado.pdfUrl}">{#include _kit/icon name="download" /} Descargar PDF</a>
             {! Legacy parity: the old page auto-printed; the operator asks for it
                now, through the shared window.printPDF helper (web/print.js). !}
-            <button type="button" class="button" data-pos-imprimir data-pdf-url="{resultado.pdfUrl}">
+            <button type="button" class="button" data-pos-imprimir
+                    data-pdf-url="{resultado.pdfUrl}"
+                    data-auto-print-obligatorio="{resultado.autoPrintObligatorio}">
                 {#include _kit/icon name="print" /} Imprimir</button>
         </div>
         {/if}
@@ -90,8 +92,10 @@
             });
             // Auto-print por estación: solo si el cajero activó el toggle y
             // esta factura no se envió ya a la impresora en esta pestaña.
+            var obligatorio = boton.getAttribute('data-auto-print-obligatorio') === 'true';
             try {
-                if (window.localStorage.getItem('mercurius.autoPrint') === '1' && pdfUrl) {
+                if (pdfUrl && (obligatorio
+                        || window.localStorage.getItem('mercurius.autoPrint') === '1')) {
                     var key = 'mercurius.printed.' + pdfUrl;
                     if (!window.sessionStorage.getItem(key)) {
                         window.sessionStorage.setItem(key, '1');

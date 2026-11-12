@@ -8,6 +8,7 @@ import Models.Articulos.Carrito.CartOperationResult.Severity;
 import Models.Articulos.Carrito.CartOperationResult.Status;
 import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Promocion;
+import Models.Cabys;
 import Models.Clientes;
 import Models.EntradaPago;
 import Models.Usuarios;
@@ -100,13 +101,20 @@ class CarritoServiceParityTest {
 
     // ------------------------------------------------------------------
     // Helpers de fixtures (sin BD: precioPersonalizado evita getLastPrecio,
-    // codigoCabys null implica tasa de impuesto 0 en CarritoCalculations).
+    // CAByS con tarifa 0 mantiene el cálculo de impuesto en cero).
     // ------------------------------------------------------------------
 
     private static Articulos articulo(long codigo, String nombre) {
         Articulos articulo = new Articulos();
         articulo.setCodigo(codigo);
         articulo.setNombre(nombre);
+        // El POS solo agrega artículos activos, procesados y con CAByS.
+        articulo.setStatus(true);
+        articulo.setProcessed(true);
+        Cabys cabys = new Cabys();
+        cabys.setCodigo("T0");
+        cabys.setImpuesto("0");
+        articulo.setCodigoCabys(cabys);
         return articulo;
     }
 
