@@ -73,6 +73,13 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      */
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void earnPoints(@Nonnull Clientes client, @Nonnull BigDecimal purchaseAmount, @Nullable String facturaId, @Nonnull Usuarios currentUser) {
+        // Cliente contado (code=0) no es una fila persistida de Clientes: crear
+        // un PuntosTransaccion con esa referencia transitoria rompe el flush
+        // (TransientPropertyValueException) y deja el error en la bitacora.
+        if (client == null || client.getCode() == 0) {
+            LOG.debug("Puntos omitidos: venta a cliente contado (code=0) | factura=" + facturaId);
+            return;
+        }
         ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings == null || settings.getCashbackPercentage() == null) {
             return;
@@ -109,6 +116,11 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     @Transactional
     @Nonnull
     public BigDecimal redeemPoints(@Nonnull Clientes client, @Nonnull BigDecimal pointsToRedeem) {
+        // Mismo guard que earnPoints: el cliente contado no existe como fila.
+        if (client == null || client.getCode() == 0 || pointsToRedeem == null) {
+            LOG.debug("Canje de puntos omitido: cliente contado (code=0) o monto nulo");
+            return BigDecimal.ZERO;
+        }
         if (pointsToRedeem.compareTo(client.getPuntosAcumulados()) > 0) {
             return BigDecimal.ZERO; // Cannot redeem more than available
         }

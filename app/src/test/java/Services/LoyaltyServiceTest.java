@@ -94,6 +94,7 @@ class LoyaltyServiceTest {
     @Test
     void redeemPoints_successDeductsBalanceAndReturnsRedeemedAmount() {
         Clientes client = new Clientes();
+        client.setCode(1);
         client.setPuntosAcumulados(new BigDecimal("100"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("40"));
@@ -114,6 +115,7 @@ class LoyaltyServiceTest {
     @Test
     void redeemPoints_insufficientBalanceGuardReturnsZeroWithoutSideEffects() {
         Clientes client = new Clientes();
+        client.setCode(1);
         client.setPuntosAcumulados(new BigDecimal("10"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("50"));
@@ -126,6 +128,7 @@ class LoyaltyServiceTest {
     @Test
     void redeemPoints_exactBalanceBoundaryRedeemsEverything() {
         Clientes client = new Clientes();
+        client.setCode(1);
         client.setPuntosAcumulados(new BigDecimal("25.50"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("25.50"));
@@ -140,6 +143,7 @@ class LoyaltyServiceTest {
     void earnPoints_nullSettingsReturnsEarlyWithoutPersistence() {
         when(appSettingsService.returnCurrent()).thenReturn(null);
         Clientes client = new Clientes();
+        client.setCode(1);
 
         service.earnPoints(client, new BigDecimal("1000"), "F-001", new Usuarios());
 
@@ -154,6 +158,7 @@ class LoyaltyServiceTest {
         settings.setCashbackPercentage(null);
         when(appSettingsService.returnCurrent()).thenReturn(settings);
         Clientes client = new Clientes();
+        client.setCode(1);
 
         service.earnPoints(client, new BigDecimal("1000"), null, new Usuarios());
 
@@ -169,6 +174,7 @@ class LoyaltyServiceTest {
         when(appSettingsService.returnCurrent()).thenReturn(settings);
 
         Clientes client = new Clientes();
+        client.setCode(1);
         client.setPuntosAcumulados(new BigDecimal("100"));
 
         service.earnPoints(client, new BigDecimal("1000"), "F-123", new Usuarios());
@@ -194,7 +200,9 @@ class LoyaltyServiceTest {
         settings.setCashbackPercentage(new BigDecimal("100"));
         when(appSettingsService.returnCurrent()).thenReturn(settings);
 
-        Clientes client = new Clientes(); // puntosAcumulados left NULL (legacy row)
+        Clientes client = new Clientes();
+        client.setCode(1); // puntosAcumulados left NULL (legacy row)
+        client.setCode(1);
 
         service.earnPoints(client, new BigDecimal("250"), null, new Usuarios());
 
@@ -204,11 +212,34 @@ class LoyaltyServiceTest {
         assertThat(captor.getValue().getSaldoPuntos()).isEqualByComparingTo(new BigDecimal("250"));
     }
 
+    @Test
+    void earnPoints_contadoClientIsIgnored() {
+        Clientes client = new Clientes(); // code 0 = Cliente contado (no persistido)
+        service.earnPoints(client, new BigDecimal("1000"), "F-CONTADO", new Usuarios());
+
+        assertThat(client.getPuntosAcumulados()).isNull();
+        verifyNoInteractions(em);
+        verifyNoInteractions(appSettingsService);
+    }
+
+    @Test
+    void redeemPoints_contadoClientIsIgnored() {
+        Clientes client = new Clientes(); // code 0 = Cliente contado (no persistido)
+        client.setPuntosAcumulados(new BigDecimal("100"));
+
+        BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("10"));
+
+        assertThat(redeemed).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(client.getPuntosAcumulados()).isEqualByComparingTo(new BigDecimal("100"));
+        verifyNoInteractions(em);
+    }
+
     // --- getAvailablePoints ---
 
     @Test
     void getAvailablePoints_nullBalanceIsSafeAndReturnsZero() {
-        Clientes client = new Clientes(); // legacy clients may have NULL puntosAcumulados
+        Clientes client = new Clientes();
+        client.setCode(1); // legacy clients may have NULL puntosAcumulados
 
         assertThat(service.getAvailablePoints(client)).isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -216,6 +247,7 @@ class LoyaltyServiceTest {
     @Test
     void getAvailablePoints_positiveBalanceReturnedAsIs() {
         Clientes client = new Clientes();
+        client.setCode(1);
         client.setPuntosAcumulados(new BigDecimal("75.25"));
 
         assertThat(service.getAvailablePoints(client)).isEqualByComparingTo(new BigDecimal("75.25"));
