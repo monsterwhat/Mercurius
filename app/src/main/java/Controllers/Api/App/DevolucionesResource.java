@@ -1088,13 +1088,17 @@ public class DevolucionesResource {
                     ? facturaSeleccionada.getEncabezado().getReceptor() : null;
 
             DocumentoStrategy ncStrategy = strategyFactory.forCode(CODIGO_NC);
-            String sucursal = appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001";
-            String terminal = appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001";
-            long consecutivo = consecutivoEmitidoService.getNextSequential(sucursal, terminal, ncStrategy.getCodigoDocumento());
-            String numeroConsecutivo = String.format("%s%s%02d%s%010d",
-                    sucursal, terminal,
-                    Integer.parseInt(SITUACION_NC),
-                    ncStrategy.getCodigoDocumento(), consecutivo);
+            String sucursal = String.format("%03d", Integer.parseInt(
+                    appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001"));
+            String terminal = String.format("%05d", Integer.parseInt(
+                    appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "1"));
+            long consecutivo = consecutivoEmitidoService.getNextSequential(sucursal, terminal,
+                    ncStrategy.getCodigoDocumento());
+            // Estructura oficial del NumeroConsecutivo (20 dígitos):
+            // sucursal(3) + terminal(5) + tipo(2) + secuencia(10). La
+            // situación (1/3) va en la clave (posición 42), no aquí.
+            String numeroConsecutivo = String.format("%s%s%s%010d",
+                    sucursal, terminal, ncStrategy.getCodigoDocumento(), consecutivo);
 
             Encabezado ncEncabezado;
             if (ncStrategy instanceof Services.Strategies.NotaCreditoElectronicaStrategy ncStrat) {
@@ -1369,13 +1373,14 @@ public class DevolucionesResource {
                 ncResumen.setTotalDesgloseImpuestos(desgloseList);
             }
 
-            // Devolución real sobre comprobante aceptado: el código 01 "Anula
-            // documento de referencia" de la nota 9 es el correcto aquí. Para un
-            // rechazo de Hacienda la vía es la re-emisión con código 16
-            // (Art. 19), y el guard de validarGuardias impide llegar hasta aquí
-            // con un documento rechazado.
+            // Devolución real sobre comprobante aceptado: el código 06
+            // "Devolución de mercancía" describe correctamente una devolución
+            // total o parcial. El 01 "Anula documento de referencia" se
+            // reserva para anular el documento completo, no para devolver
+            // productos sueltos. Para un rechazo de Hacienda la vía es la
+            // re-emisión con código 16 (Art. 19).
             InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada,
-                    Models.Enums.Tipo_CodigosReferencia.ANULA_DOCUMENTO_REFERENCIA,
+                    Models.Enums.Tipo_CodigosReferencia.DEVOLUCION_MERCANCIA,
                     motivo, ncStrategy.getCodigoDocumento());
             List<InformacionReferencia> referencias = new ArrayList<>();
             referencias.add(ref);

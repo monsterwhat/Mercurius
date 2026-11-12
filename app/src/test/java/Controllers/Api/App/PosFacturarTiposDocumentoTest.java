@@ -278,6 +278,34 @@ class PosFacturarTiposDocumentoTest extends support.ContextPathIsolation {
     }
 
     @Test
+    @DisplayName("FE con cliente sin cédula/tipo se rechaza antes del XML")
+    void feConClienteSinIdentificacionSeRechaza() {
+        ensureAppSettings();
+        Map<String, String> sesion = adminSession();
+        Clientes sinId = new Clientes();
+        sinId.setName("Cliente sin cedula " + UUID.randomUUID().toString().substring(0, 8));
+        sinId.setStatus(true);
+        clientService.create(sinId);
+        assertThat(sinId.getCode()).isGreaterThan(0);
+        try {
+            prepararVenta(sesion, sembrarArticuloExento(), sinId);
+
+            facturar(sesion, "01")
+                    .then()
+                    .statusCode(400)
+                    .body("error.code", equalTo("CLIENTE_SIN_IDENTIFICACION"));
+
+            // La venta queda intacta para completar el cliente y reintentar.
+            authed(sesion).when().get(POS + "/cart")
+                    .then()
+                    .body("data.items", hasSize(1));
+        } finally {
+            cartSessionStore.remove("admin");
+            clientService.delete(sinId);
+        }
+    }
+
+    @Test
     @DisplayName("FE con cliente crea factura 01 por el JSON")
     void feConClienteCreaFactura01() {
         ensureAppSettings();

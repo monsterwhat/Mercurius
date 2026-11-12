@@ -193,7 +193,7 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
                     summary.consecutivo().substring(
                             consSpec.get("tipoSlice").get(0).asInt(),
                             consSpec.get("tipoSlice").get(1).asInt()),
-                    "consecutivo must carry the NC document code at [6..8]");
+                    "consecutivo must carry the NC document code at [8..10]");
             assertEquals(0, golden.get("totalDevolucion").decimalValue()
                             .compareTo(summary.montoTotal()),
                     "totalDevolucion must match the fixture");

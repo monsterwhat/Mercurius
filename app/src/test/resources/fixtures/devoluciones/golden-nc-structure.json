@@ -16,18 +16,16 @@
     "consecutivo": {
       "longitud": 20,
       "sucursalSlice": [0, 3],
-      "terminalSlice": [3, 6],
-      "situacionSlice": [6, 8],
+      "terminalSlice": [3, 8],
       "tipoSlice": [8, 10],
       "tipoEsperado": "02",
-      "situacionEsperada": "01",
       "secuencialSlice": [10, 20]
     },
     "medioPago": ["01"],
     "moneda": "CRC",
     "estadoHacienda": "PENDIENTE",
     "encabezadoEstado": "PENDIENTE",
-    "referenciaCodigo": "01"
+    "referenciaCodigo": "06"
   },
   "lineasNC": [
     {

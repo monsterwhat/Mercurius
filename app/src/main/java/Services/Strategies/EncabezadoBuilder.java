@@ -111,7 +111,8 @@ public final class EncabezadoBuilder {
         if (haciendaCode != null) {
             // Domestic or DIMEX/NITE with known Hacienda code — use IdentificacionReceptor
             IdentificacionReceptor id = new IdentificacionReceptor();
-            id.setNumero(selectedClient.getIdNumber() != null ? selectedClient.getIdNumber() : "");
+            id.setNumero(selectedClient.getIdNumber() != null
+                    ? selectedClient.getIdNumber().replaceAll("[^0-9]", "") : "");
             id.setTipo(haciendaCode);
             receptor.setIdentificacion(id);
         } else {

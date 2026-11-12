@@ -612,6 +612,20 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return badRequest("CLIENTE_REQUERIDO",
                     "Para emitir una Factura Electrónica debe seleccionar un cliente.");
         }
+        if (strategy.requiresReceptor() && clienteValido) {
+            String idNumber = cliente.getIdNumber() == null
+                    ? "" : cliente.getIdNumber().replaceAll("[^0-9]", "");
+            boolean identificado = !idNumber.isEmpty() && cliente.getHaciendaIdTypeCode() != null;
+            if (!identificado) {
+                LOG.warn("Facturacion bloqueada: cliente sin cedula/tipo de identificacion"
+                        + " | code=" + cliente.getCode() + " | nombre=" + cliente.getName()
+                        + " | source=PosResource.doFacturar()"
+                        + " | despues=sin facturar; el carrito se conserva");
+                return badRequest("CLIENTE_SIN_IDENTIFICACION",
+                        "El cliente seleccionado no tiene cédula y tipo de identificación. "
+                                + "Complete los datos del cliente antes de emitir una factura electrónica.");
+            }
+        }
 
         // Un artículo sin CAByS no se puede facturar: el XML exige el código por
         // línea y sin él la emisión revienta con un error genérico. Se avisa con
