@@ -109,34 +109,38 @@ public class PDFGenerator {
         };
     }
 
+    private static void addHeaderLine(@Nonnull java.util.List<String> lines, @Nullable String value) {
+        if (value != null && !value.isBlank()) {
+            lines.add(value);
+        }
+    }
+
     private Document addContentToDocument(ByteArrayOutputStream baos, ConfiguracionAplicacion settings, ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<EntradaPago> pagos) throws DocumentException {
-        // Facturas, notas y comprobantes de compra/exportación se imprimen en
-        // hoja completa (Letter/A4) con texto legible. El tiquete de caja
-        // conserva el formato de recibo térmico de 80 mm.
+        // Todo se imprime en el rollo térmico de 80 mm (3nStar POS). El ancho
+        // de página es 80 mm y el contenido respeta los 72 mm imprimibles;
+        // el alto crece con las líneas en vez de usar una página fija de
+        // 600 pt que desperdiciaba papel en ventas de uno o dos artículos.
         String codigoDocumento = tiqueteElectronico.getEncabezado().getCodigoDocumento();
-        boolean hojaCompleta = !"04".equals(codigoDocumento);
-        Rectangle pageSize = hojaCompleta
-                ? com.lowagie.text.PageSize.LETTER
-                : new Rectangle(200f, 600f);
-        float margin = hojaCompleta ? 36f : 5f;
-        Document document = new Document(pageSize, margin, margin, margin, margin);
+        int lineas = carrito == null ? 0 : carrito.size();
+        float altoPagina = 580f + Math.max(0, lineas - 3) * 14f;
+        Rectangle pageSize = new Rectangle(226.77f, altoPagina); // 80 mm
+        Document document = new Document(pageSize, 12f, 12f, 6f, 6f);
         PdfWriter.getInstance(document, baos);
         document.add(new Meta("charset", "UTF-8"));
         document.open();
 
-        // Texto: 10 pt en hoja completa, 9 pt en el recibo térmico.
         com.lowagie.text.Font font = new com.lowagie.text.Font();
-        font.setSize(hojaCompleta ? 10f : 9f);
-        float leading = hojaCompleta ? 12f : 10.5f;
+        font.setSize(9f);
+        float leading = 10.5f;
 
         com.lowagie.text.Font titleFont = new com.lowagie.text.Font(font);
-        titleFont.setSize(hojaCompleta ? 14f : 10f);
+        titleFont.setSize(11f);
         titleFont.setStyle(com.lowagie.text.Font.BOLD);
 
         Paragraph tiqueteTitulo = new Paragraph(
                 tituloDocumento(codigoDocumento), titleFont);
         tiqueteTitulo.setAlignment(Element.ALIGN_CENTER);
-        tiqueteTitulo.setLeading(hojaCompleta ? 17f : 12f);
+        tiqueteTitulo.setLeading(13f);
         document.add(tiqueteTitulo);
 
         PdfPTable separator = new PdfPTable(1);
@@ -154,14 +158,21 @@ public class PDFGenerator {
         separator.setWidthPercentage(100);
         document.add(separator);
 
-        String combinedTextHeader = String.join("\n",
-                settings.getNombreNegocio(),
-                settings.getNombre(),
-                "Identificación: " + settings.getIdentificacion(),
-                "Tel. " + settings.getTelefono(),
-                settings.getCorreoElectronicoTributacion(),
-                settings.getDireccionCompleta()
-        );
+        java.util.List<String> headerLines = new java.util.ArrayList<>();
+        addHeaderLine(headerLines, settings.getNombreNegocio());
+        if (settings.getNombre() != null
+                && !settings.getNombre().equalsIgnoreCase(settings.getNombreNegocio())) {
+            addHeaderLine(headerLines, settings.getNombre());
+        }
+        if (settings.getIdentificacion() != null) {
+            addHeaderLine(headerLines, "Identificación: " + settings.getIdentificacion());
+        }
+        if (settings.getTelefono() != null) {
+            addHeaderLine(headerLines, "Tel. " + settings.getTelefono());
+        }
+        addHeaderLine(headerLines, settings.getCorreoElectronicoTributacion());
+        addHeaderLine(headerLines, settings.getDireccionCompleta());
+        String combinedTextHeader = String.join("\n", headerLines);
 
         Paragraph paragraph = new Paragraph(combinedTextHeader, font);
         paragraph.setAlignment(Element.ALIGN_CENTER);
@@ -200,9 +211,7 @@ public class PDFGenerator {
 
         document.add(separator);
 
-        float[] columnasArticulos = hojaCompleta
-                ? new float[]{1f, 3f, 1f}
-                : new float[]{1.2f, 2.4f, 1.4f};
+        float[] columnasArticulos = new float[]{1.1f, 2.5f, 1.4f};
         PdfPTable descripcionTable = new PdfPTable(columnasArticulos);
         descripcionTable.setWidthPercentage(100);
 
@@ -231,7 +240,7 @@ public class PDFGenerator {
 
         PdfPTable articulosTable = new PdfPTable(columnasArticulos);
         articulosTable.setWidthPercentage(100);
-        articulosTable.setSpacingBefore(hojaCompleta ? 6f : 4f);
+        articulosTable.setSpacingBefore(4f);
 
         // Agregar filas a la tabla
         for (ArticuloCarrito articulo : carrito) {
@@ -447,7 +456,7 @@ public class PDFGenerator {
                 byte[] qrBytes = QRCodeGenerator.generateQRCodeBytes(clave);
                 Image qrImage = Image.getInstance(qrBytes);
                 qrImage.setAlignment(Element.ALIGN_CENTER);
-                float qrSize = hojaCompleta ? 110f : 120f;
+                float qrSize = 90f;
                 qrImage.scaleToFit(qrSize, qrSize);
                 document.add(qrImage);
 
