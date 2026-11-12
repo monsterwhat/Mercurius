@@ -743,6 +743,47 @@ body {
     white-space: nowrap;
 }
 
+// -----------------------------------------------------------------------------
+// 3.9.3.1 Header on phones
+// "Nueva Factura" + "Comprobantes" + username do not fit in 390px and pushed
+// the actions 44px past the right edge on EVERY page. On phones the secondary
+// action becomes icon-only and the username is hidden (the avatar opens the
+// same menu), so the primary button and the menu stay reachable.
+// -----------------------------------------------------------------------------
+.app-header-comprobantes-icon {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .app-header-actions {
+        gap: .25rem;
+    }
+
+    .app-header-actions .button {
+        padding-left: .55rem;
+        padding-right: .55rem;
+    }
+
+    .app-header-user-name {
+        display: none;
+    }
+
+    .app-header-comprobantes {
+        width: 2rem;
+        min-width: 2rem;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .app-header-comprobantes-text {
+        display: none;
+    }
+
+    .app-header-comprobantes-icon {
+        display: inline-flex;
+    }
+}
+
 .app-header-user-menu {
     position: absolute;
     top: calc(100% + .25rem);
