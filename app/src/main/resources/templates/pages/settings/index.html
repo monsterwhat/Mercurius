@@ -260,7 +260,7 @@
           hx-target="#ajustes-forma" hx-swap="outerHTML"
           hx-disabled-elt="find button[type='submit']"
           hx-on::before-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.add('is-loading'); }"
-          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); }">
+          hx-on::after-request="var b = this.querySelector('button[type=submit]'); if (b) { b.classList.remove('is-loading'); } if (event.detail.successful) { setTimeout(function () { window.location.reload(); }, 800); }">
 
         {! ── Grupo: correo (legacy wizard Correo step + rejection notifications) ── !}
         {#if modo != 'backups'}
@@ -851,6 +851,27 @@
                             comprobante igual que siempre, pero no hace la llamada a
                             Tributación. <strong>Real</strong> transmite al ambiente
                             configurado (sandbox o producción).
+                        </p>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label is-small" for="ambiente-hacienda">Ambiente de Hacienda</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select id="ambiente-hacienda" name="haciendaEnvironment"
+                                        aria-describedby="ambiente-hacienda-help">
+                                    <option value="sandbox"
+                                            {#if settings.haciendaEnvironment != 'production'}selected{/if}>Sandbox (pruebas)</option>
+                                    <option value="production"
+                                            {#if settings.haciendaEnvironment == 'production'}selected{/if}>Producción</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help mercurius-text-muted" id="ambiente-hacienda-help">
+                            Sandbox usa el ambiente de pruebas de Hacienda. En un servidor
+                            de desarrollo siempre se fuerza sandbox, aunque aquí diga
+                            producción.
                         </p>
                     </div>
                 </div>

@@ -233,7 +233,8 @@ public class SettingsResource {
             @FormParam("distrito") @Nullable String distrito,
             @FormParam("barrio") @Nullable String barrio,
             @FormParam("direccionCompleta") @Nullable String direccionCompleta,
-            @FormParam("modoHacienda") @Nullable String modoHacienda) {
+            @FormParam("modoHacienda") @Nullable String modoHacienda,
+            @FormParam("haciendaEnvironment") @Nullable String haciendaEnvironment) {
 
         OperationalSettingsRequest request = new OperationalSettingsRequest();
         request.notificarRechazos = casilla(notificarRechazos, notificarRechazosPresente);
@@ -270,6 +271,7 @@ public class SettingsResource {
         request.barrio = barrio;
         request.direccionCompleta = direccionCompleta;
         request.modoHacienda = modoHacienda;
+        request.haciendaEnvironment = haciendaEnvironment;
         return aplicarCambios(request);
     }
 
@@ -442,6 +444,17 @@ public class SettingsResource {
                             .build();
                 }
                 settings.setModoHacienda(modo.isEmpty() ? null : modo);
+            }
+            if (request.haciendaEnvironment != null) {
+                String ambiente = request.haciendaEnvironment.trim().toLowerCase();
+                if (!ambiente.isEmpty() && !"sandbox".equals(ambiente)
+                        && !"production".equals(ambiente)) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El ambiente de Hacienda debe ser 'sandbox' o 'production'."))
+                            .build();
+                }
+                settings.setHaciendaEnvironment(ambiente.isEmpty() ? null : ambiente);
             }
             if (request.telefono != null) {
                 settings.setTelefono(textoLimitado(request.telefono, 20, "El teléfono"));
@@ -1275,6 +1288,9 @@ private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionad
 
         /** simulada | real; null = no cambiar. */
         @Nullable public String modoHacienda;
+
+        /** sandbox | production; null = no cambiar. */
+        @Nullable public String haciendaEnvironment;
 
         /**
          * Proveedor de buzone: GMAIL | OUTLOOK | YAHOO | PERSONALIZADO. Un valor
