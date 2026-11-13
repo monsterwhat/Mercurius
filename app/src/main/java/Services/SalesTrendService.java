@@ -541,7 +541,7 @@ public class SalesTrendService {
             }
             @SuppressWarnings("unchecked")
             List<Object[]> rows = entityManager.createQuery(
-                "SELECT " + groupExpression + ", COALESCE(SUM(ld.montoTotalLinea), 0) " +
+                "SELECT " + groupExpression + ", COALESCE(SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)), 0) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.detalles d " +
                 "JOIN d.lineasDetalle ld " +

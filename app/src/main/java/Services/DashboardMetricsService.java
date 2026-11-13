@@ -236,7 +236,7 @@ public class DashboardMetricsService {
         LocalDateTime endOfPeriod = today.atTime(23, 59, 59);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea) " +
+            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +

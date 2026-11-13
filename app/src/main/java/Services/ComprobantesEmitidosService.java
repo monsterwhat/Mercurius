@@ -716,7 +716,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public @Nullable BigDecimal sumVentasLineas(@Nullable Usuarios user,
                                                 @Nonnull Date startDate, @Nonnull Date endDate) {
         Map<String, Object> params = new LinkedHashMap<>();
-        String jpql = "SELECT SUM(ld.montoTotalLinea) FROM ComprobantesEmitidos f"
+        String jpql = "SELECT SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) FROM ComprobantesEmitidos f"
                 + " JOIN f.encabezado e JOIN f.detalles d JOIN d.lineasDetalle ld"
                 + " WHERE e.fechaEmision BETWEEN :startDate AND :endDate"
                 + (user != null ? " AND f.user = :user" : "");
@@ -749,7 +749,8 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                                                     @Nullable String sort, @Nullable String dir,
                                                     int offset, int size) {
         Map<String, Object> params = new LinkedHashMap<>();
-        String jpql = "SELECT e.fechaEmision, f.user, ld.detalle, ld.cantidad, ld.montoTotalLinea"
+        String jpql = "SELECT e.fechaEmision, f.user, ld.detalle, ld.cantidad, "
+                + "ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)"
                 + " FROM ComprobantesEmitidos f"
                 + " JOIN f.encabezado e JOIN f.detalles d JOIN d.lineasDetalle ld"
                 + " WHERE e.fechaEmision BETWEEN :startDate AND :endDate"
@@ -782,7 +783,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             case "cajero" -> "LOWER(f.user)";
             case "detalle" -> "LOWER(ld.detalle)";
             case "cantidad" -> "ld.cantidad";
-            case "montoTotalLinea" -> "ld.montoTotalLinea";
+            case "montoTotalLinea" -> "ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)";
             default -> "e.fechaEmision";
         };
         boolean desc = sinOrden || "desc".equalsIgnoreCase(dir == null ? "" : dir.trim());
