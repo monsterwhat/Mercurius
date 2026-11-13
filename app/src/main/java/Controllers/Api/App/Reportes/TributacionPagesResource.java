@@ -6,6 +6,7 @@ import Controllers.Api.App.TributacionResource;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.Encabezado.Encabezado;
+import Models.Resumen.ResumenFactura;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
 import Models.Correos.ReporteProgramado;
@@ -458,6 +459,22 @@ public class TributacionPagesResource {
     }
 
     /** Declaración model — sums mirror DeclaracionIVAController.calcular(). */
+    /** Convierte un monto del comprobante a colones con la tasa guardada. */
+    private static @Nonnull BigDecimal aColones(@Nullable BigDecimal monto,
+                                                @Nullable ResumenFactura resumen) {
+        if (monto == null) {
+            return BigDecimal.ZERO;
+        }
+        if (resumen == null || resumen.getCodigoMoneda() == null) {
+            return monto;
+        }
+        BigDecimal tasa = resumen.getCodigoMoneda().getTipoCambioMoneda();
+        if (tasa == null || tasa.compareTo(BigDecimal.ZERO) <= 0) {
+            return monto;
+        }
+        return monto.multiply(tasa);
+    }
+
     private Map<String, Object> declaracionModel(int mes, int anio) {
         LocalDate inicio = LocalDate.of(anio, mes, 1);
         LocalDate finMes = inicio.plusMonths(1).minusDays(1);
@@ -473,10 +490,12 @@ public class TributacionPagesResource {
         for (ComprobantesEmitidos f : emitidas) {
             if (f.getResumen() != null) {
                 if (f.getResumen().getTotalVentaNeta() != null) {
-                    totalVentas = totalVentas.add(f.getResumen().getTotalVentaNeta());
+                    totalVentas = totalVentas.add(aColones(
+                            f.getResumen().getTotalVentaNeta(), f.getResumen()));
                 }
                 if (f.getResumen().getTotalImpuesto() != null) {
-                    ivaDebito = ivaDebito.add(f.getResumen().getTotalImpuesto());
+                    ivaDebito = ivaDebito.add(aColones(
+                            f.getResumen().getTotalImpuesto(), f.getResumen()));
                 }
             }
         }
@@ -485,10 +504,12 @@ public class TributacionPagesResource {
         for (ComprobantesRecibidos f : recibidas) {
             if (f.getResumen() != null) {
                 if (f.getResumen().getTotalVentaNeta() != null) {
-                    totalCompras = totalCompras.add(f.getResumen().getTotalVentaNeta());
+                    totalCompras = totalCompras.add(aColones(
+                            f.getResumen().getTotalVentaNeta(), f.getResumen()));
                 }
                 if (f.getResumen().getTotalImpuesto() != null) {
-                    ivaCredito = ivaCredito.add(f.getResumen().getTotalImpuesto());
+                    ivaCredito = ivaCredito.add(aColones(
+                            f.getResumen().getTotalImpuesto(), f.getResumen()));
                 }
             }
         }
@@ -519,10 +540,12 @@ public class TributacionPagesResource {
             }
             int idx = f.getEncabezado().getFechaEmision().getMonthValue() - 1;
             if (f.getResumen().getTotalVentaNeta() != null) {
-                ventasMes[idx] = ventasMes[idx].add(f.getResumen().getTotalVentaNeta());
+                ventasMes[idx] = ventasMes[idx].add(aColones(
+                        f.getResumen().getTotalVentaNeta(), f.getResumen()));
             }
             if (f.getResumen().getTotalImpuesto() != null) {
-                impuestoMes[idx] = impuestoMes[idx].add(f.getResumen().getTotalImpuesto());
+                impuestoMes[idx] = impuestoMes[idx].add(aColones(
+                        f.getResumen().getTotalImpuesto(), f.getResumen()));
             }
         }
         for (int i = 0; i < 12; i++) {
