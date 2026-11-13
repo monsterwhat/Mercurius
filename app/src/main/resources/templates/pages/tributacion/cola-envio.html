@@ -38,7 +38,7 @@
                 <span class="status-chip {conexionChipClass}">{conexionTexto}</span>
             {/actions}
             {#content}
-                <div id="cola-conexion-detalle">
+                <div id="cola-conexion-detalle"{#if verificando} hx-get="{baseUrl}/conexion" hx-trigger="every 2s" hx-target="#cola-conexion" hx-swap="outerHTML"{/if}>
                     <p class="help">{conexionDetalle}</p>
                     <button type="button" class="button is-small"
                             hx-get="{baseUrl}/conexion"
@@ -71,7 +71,7 @@
 
             <div class="metric-strip">
                 {#include _kit/metric label="Pendientes" value=totalPendientes /}
-                {#include _kit/metric label="Vencidos" value=totalVencidos /}
+                {#include _kit/metric label="Vencidos" value=totalVencidos detail="no transmisibles" /}
                 {#include _kit/metric label="Rechazados en cola" value=totalRechazados /}
                 {#include _kit/metric label="Enviados hoy" value=enviadosHoy /}
                 {#include _kit/metric label="Tope de intentos" value=maxIntentos /}
@@ -158,7 +158,7 @@
             {/include}
 
             {#include _kit/surface title="Vencidos"
-                 subtitle="Incumplieron el plazo de dos días hábiles; requieren envío manual"}
+                 subtitle="Plazo vencido: no transmisibles; quedan como rechazados"}
                 {#content}
                 {#if filasVencidos}
                 <div class="table-container">

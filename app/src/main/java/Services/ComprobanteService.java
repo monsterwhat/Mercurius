@@ -420,7 +420,7 @@ public class ComprobanteService implements Serializable {
             // sondeo de conectividad va aquí y no después del envío.
             // El sondeo falla abierto (devuelve true ante cualquier error), de modo
             // que un falso negativo no degrada la ruta normal a situacion 3.
-            boolean hayConectividad = envioFueraLineaService.hayConectividadConHacienda();
+            boolean hayConectividad = envioFueraLineaService.conectividadParaVenta();
             String situacion = hayConectividad
                 ? EnvioFueraLineaService.SITUACION_NORMAL
                 : EnvioFueraLineaService.SITUACION_FUERA_LINEA;

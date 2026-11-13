@@ -143,19 +143,30 @@ public class ColaEnvioPagesResource {
 
         Boolean alcanzable = null;
         boolean verificada = false;
+        boolean verificando = false;
         if (verificarConexion) {
-            alcanzable = service.hayConectividadConHacienda();
-            verificada = true;
+            alcanzable = service.conectividadCacheada();
+            if (alcanzable == null) {
+                service.refrescarConectividadAsync();
+                verificando = true;
+            } else {
+                verificada = true;
+            }
         }
 
         String conexionTexto;
         String conexionChip;
         String conexionDetalle;
-        if (!verificada) {
+        if (verificando) {
+            conexionTexto = "Verificando…";
+            conexionChip = "is-info";
+            conexionDetalle = "Comprobando la conexión TCP en segundo plano. "
+                    + "Puede seguir vendiendo; la venta no espera este sondeo.";
+        } else if (!verificada) {
             conexionTexto = "Sin verificar";
             conexionChip = "is-info";
-            conexionDetalle = "La verificación hace una conexión TCP a Hacienda (hasta 2,5 s). "
-                    + "No se ejecuta automáticamente para no bloquear ventas.";
+            conexionDetalle = "La verificación corre en segundo plano (hasta 2,5 s). "
+                    + "No bloquea ventas.";
         } else if (Boolean.TRUE.equals(alcanzable)) {
             conexionTexto = "TCP alcanzable";
             conexionChip = "is-success";
@@ -188,6 +199,7 @@ public class ColaEnvioPagesResource {
         model.put("contingencia", contingenciaFilas > 0);
         model.put("contingenciaFilas", contingenciaFilas);
         model.put("conexionVerificada", verificada);
+        model.put("verificando", verificando);
         model.put("haciendaAlcanzable", alcanzable);
         model.put("conexionTexto", conexionTexto);
         model.put("conexionChipClass", conexionChip);
@@ -279,7 +291,7 @@ public class ColaEnvioPagesResource {
             return "Estado " + e.estado();
         }
         if (fueraDePlazo) {
-            return "Plazo vencido: requiere envío manual";
+            return "Plazo vencido: no transmisible (rechazado)";
         }
         if (e.proximoIntento() != null && ahora.isBefore(e.proximoIntento())) {
             return "Programado para " + e.proximoIntento().format(FECHA_HORA);

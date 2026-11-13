@@ -145,8 +145,8 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
     @Inject
     private @Nonnull EmailService emailService;
 
-    private long sondeoVenceEnMillis;
-    private boolean sondeoConectivo;
+    private volatile long sondeoVenceEnMillis;
+    private volatile boolean sondeoConectivo;
 
     @Override
     protected @Nonnull Class<EnvioFueraLinea> getEntityClass() {
@@ -273,6 +273,30 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
         this.sondeoConectivo = resultado;
         this.sondeoVenceEnMillis = ahora + TTL_SONDEO.toMillis();
         return resultado;
+    }
+
+    /** Resultado cacheado del sondeo, o null si no hay uno fresco. No toca la red. */
+    public @Nullable Boolean conectividadCacheada() {
+        return System.currentTimeMillis() < sondeoVenceEnMillis ? sondeoConectivo : null;
+    }
+
+    /** Lanza el sondeo en segundo plano; no bloquea al llamador. */
+    public void refrescarConectividadAsync() {
+        java.util.concurrent.CompletableFuture.runAsync(this::hayConectividadConHacienda);
+    }
+
+    /**
+     * Decisión de la venta: usa el cache si está fresco; si no, asume alcanzable
+     * y refresca en segundo plano. La transacción de venta nunca espera el TCP;
+     * si el envío inmediato falla, el comprobante se encola igual.
+     */
+    public boolean conectividadParaVenta() {
+        Boolean cacheada = conectividadCacheada();
+        if (cacheada != null) {
+            return cacheada;
+        }
+        refrescarConectividadAsync();
+        return true;
     }
 
     /**
