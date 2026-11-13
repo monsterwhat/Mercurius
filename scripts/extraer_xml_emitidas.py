@@ -7,12 +7,17 @@ Salida en build/dbf_reconciliacion/:
 El SQL de importación filtra por clave: lo que ya está en `encabezado` se ignora.
 """
 import csv
+import os
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-RAIZ = Path.home() / "AppData" / "Local" / "Temp" / "opencode" / "facturas_xml" / "extraido"
-OUT = Path(r"F:\Documents\GitHub\Mercurius-clean\build\dbf_reconciliacion")
+RAIZ = Path(os.environ.get(
+    "MERCURIUS_XML_DIR",
+    str(Path.home() / "AppData" / "Local" / "Temp" / "opencode" / "facturas_xml" / "extraido")))
+OUT = Path(os.environ.get(
+    "MERCURIUS_CSV_DIR",
+    r"F:\Documents\GitHub\Mercurius-clean\build\dbf_reconciliacion"))
 OUT.mkdir(parents=True, exist_ok=True)
 
 TIPOS = {

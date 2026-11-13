@@ -541,3 +541,7 @@ sessions/
 .opencode/package-lock.json
 scripts/seed/out/
 scripts/seed/invoices-out/
+
+# Estado y log del importador diario de facturas (local a cada maquina)
+scripts/state/
+logs/
