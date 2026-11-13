@@ -128,6 +128,17 @@
         {! ── Panel de seleccion (llenado por /api/app/devoluciones/{id}/lineas) ── !}
         <div id="devolucion-panel" role="region" aria-label="Detalle de la devolución seleccionada"></div>
 
+        {! Precarga desde el drawer de Consultas: /app/devoluciones?facturaId=N
+           trae la factura ya seleccionada y dispara la carga de sus lineas. !}
+        {#if facturaIdPrecargada??}
+        <div hx-get="/api/app/devoluciones/{facturaIdPrecargada}/lineas"
+             hx-trigger="load"
+             hx-target="#devolucion-panel" hx-swap="innerHTML"></div>
+        <p class="help mercurius-text-muted">
+            Factura precargada desde Consultas. Revise las líneas y confirme la nota de crédito.
+        </p>
+        {/if}
+
         {! ── Historial de Notas de Credito ── !}
         {#include _kit/surface title="Historial de Notas de Crédito" }
             {#content}

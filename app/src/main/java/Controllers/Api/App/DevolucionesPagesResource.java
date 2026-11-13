@@ -95,14 +95,15 @@ public class DevolucionesPagesResource {
     public Response index(
             @QueryParam("tipo") @DefaultValue("consecutivo") String tipo,
             @QueryParam("q") @Nullable String q,
-            @QueryParam("page") @DefaultValue("1") int page) {
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("facturaId") @Nullable Long facturaId) {
         try {
             // Qute 3.36: getFragment returns Template.Fragment (extends
             // Template), so .instance() yields the renderable TemplateInstance.
             TemplateInstance instance = isHxRequest()
                     ? devolucionesPage.getFragment("resultados").instance()
                     : devolucionesPage.instance();
-            model(tipo, q, page).forEach(instance::data);
+            model(tipo, q, page, facturaId).forEach(instance::data);
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
@@ -118,14 +119,29 @@ public class DevolucionesPagesResource {
     // Page model
     // ════════════════════════════════════════════════════════════════════
 
-    private Map<String, Object> model(@Nonnull String tipo, @Nullable String q, int page) {
+    private Map<String, Object> model(@Nonnull String tipo, @Nullable String q, int page,
+                                      @Nullable Long facturaId) {
         List<Map<String, Object>> filas = new ArrayList<>();
         long total = 0;
         int totalPages = 1;
         int safePage = Math.max(page, 1);
         boolean busquedaActiva = q != null && !q.trim().isEmpty();
 
-        if (busquedaActiva) {
+        if (facturaId != null) {
+            // Precarga desde el drawer de Consultas: la fila de la factura
+            // original ya viene seleccionada y el panel de lineas se carga
+            // solo (hx-trigger="load" en la plantilla).
+            ComprobantesEmitidos original = emitidosService.find(facturaId);
+            if (original != null) {
+                filas.add(filaMap(original));
+                total = 1;
+                busquedaActiva = true;
+            } else {
+                LOG.warn("No se encontro la factura " + facturaId
+                        + " para precargar la nota de credito"
+                        + " | source=DevolucionesPagesResource.model()");
+            }
+        } else if (busquedaActiva) {
             // Same filter semantics as the JSON twin (legacy buscarFactura),
             // now counted and paged in SQL. The legacy path materialized the
             // whole emitted-invoice history (211k rows) and paginated it in
@@ -152,6 +168,7 @@ public class DevolucionesPagesResource {
         model.put("tipo", tipo);
         model.put("q", q == null ? "" : q);
         model.put("busquedaActiva", busquedaActiva);
+        model.put("facturaIdPrecargada", facturaId);
         model.put("baseUrl", "/app/devoluciones");
         model.put("resultados", filas);
         model.put("total", total);

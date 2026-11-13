@@ -982,6 +982,12 @@ body {
 .kit-drawer-sm { width: 420px; } /* §18.8 */
 .kit-drawer-lg { width: 540px; } /* §18.8 */
 
+/* Un modal abierto DESDE un drawer (el confirm de "Anular", por ejemplo)
+   tiene que quedar por encima del overlay (60) y del panel (61). Bulma deja
+   .modal en 40, así que sin esto el boton "Confirmar" queda detras del
+   overlay del drawer y no se puede pulsar. */
+.modal { z-index: 70; }
+
 .kit-drawer-header {
     display: flex;
     align-items: center;

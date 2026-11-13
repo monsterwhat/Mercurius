@@ -80,6 +80,11 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
     public static final String ESTADO_ENVIADO = "ENVIADO";
     public static final String ESTADO_RECHAZADO = "RECHAZADO";
     public static final String ESTADO_VENCIDO = "VENCIDO";
+    /**
+     * El comprobante se anulo localmente antes de firmarse/enviarse. Terminal:
+     * la fila deja de reintentarse y no cuenta como pendiente.
+     */
+    public static final String ESTADO_ANULADO = "ANULADO";
 
     // ── Row origins ────────────────────────────────────────────────────────
 
@@ -742,6 +747,65 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
     // ═════════════════════════════════════════════════════════════════════
     //  Queries
     // ═════════════════════════════════════════════════════════════════════
+
+    /** The row for a comprobante, or {@code null} when there is none. */
+    public @Nullable EnvioFueraLinea buscarPorComprobanteId(long comprobanteId) {
+        try {
+            return em.createQuery(
+                            "SELECT e FROM EnvioFueraLinea e WHERE e.comprobanteId = :id "
+                                    + "ORDER BY e.id DESC",
+                            EnvioFueraLinea.class)
+                    .setParameter("id", comprobanteId)
+                    .setMaxResults(1)
+                    .getSingleResultOrNull();
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando el documento encolado del comprobante " + comprobanteId
+                    + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.buscarPorComprobanteId()");
+            return null;
+        }
+    }
+
+    /**
+     * Cancela la fila del outbox de un comprobante anulado localmente.
+     *
+     * <p>No borra la fila: la deja en {@link #ESTADO_ANULADO} para auditoria,
+     * limpia el proximo intento y registra el motivo en {@code ultimoError}.
+     * Una fila ya {@code ENVIADO} no se toca: ese documento existe en
+     * Hacienda y solo se revierte con nota de credito.</p>
+     *
+     * @return {@code true} si la fila quedo anulada
+     */
+    @Transactional
+    public boolean cancelarPorComprobante(long comprobanteId, @Nonnull String motivo) {
+        EnvioFueraLinea registro = buscarPorComprobanteId(comprobanteId);
+        if (registro == null) {
+            return false;
+        }
+        if (ESTADO_ENVIADO.equals(registro.getEstado())) {
+            LOG.warn("No se anula la fila de envio del comprobante " + comprobanteId
+                    + ": ya fue enviada a Hacienda"
+                    + " | source=EnvioFueraLineaService.cancelarPorComprobante()"
+                    + " | despues=el documento solo se revierte con nota de credito");
+            return false;
+        }
+        registro.setEstado(ESTADO_ANULADO);
+        registro.setProximoIntento(null);
+        registro.setUltimoError(recortar(motivo));
+        try {
+            em.merge(registro);
+            em.flush();
+        } catch (PersistenceException e) {
+            LOG.error("No se pudo cancelar la fila de envio del comprobante " + comprobanteId
+                    + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.cancelarPorComprobante()", e);
+            return false;
+        }
+        LOG.info("Fila de envio cancelada por anulacion local del comprobante " + comprobanteId
+                + " | source=EnvioFueraLineaService.cancelarPorComprobante()"
+                + " | despues=estado=" + ESTADO_ANULADO);
+        return true;
+    }
 
     /** The row for a clave, or {@code null} when there is none. */
     public @Nullable EnvioFueraLinea buscarPorClave(@Nonnull String clave) {

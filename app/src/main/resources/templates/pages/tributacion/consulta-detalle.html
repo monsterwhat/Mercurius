@@ -1,0 +1,203 @@
+{!
+  pages/tributacion/consulta-detalle - cuerpo del drawer de una factura emitida.
+
+  Lo llena GET /app/tributacion/consulta/{id} (ConsultaDetalleResource) y lo
+  vuelve a pintar POST .../{id}/anular (ConsultaAnulacionResource) para que el
+  drawer refleje el estado nuevo sin cerrarse.
+
+  MODELO (ConsultaDetalleModel):
+    id, consecutivo, clave, fecha, cliente, estado, moneda,
+    total, totalImpuesto, totalDescuentos,
+    lineas[]      { cantidad, detalle, servicio, precio, total }
+    timeline[]    { evento, fecha, detalle }
+    referencias[] { tipo, numero, fecha, codigo, razon }
+    aceptado, rechazado, anulado, pendienteLocal, enCola,
+    outboxId, outboxEstado, ncUrl, colaUrl, avisoOk, avisoError
+
+  ACCIONES POR ESTADO (nunca "revertir" una factura aceptada):
+    ACEPTADO      -> Nota de credito (precarga la factura) + Imprimir
+    EN COLA       -> Enviar ahora + Ver cola (firmada: no se anula)
+    RECHAZADO     -> Reemitir (Art. 19)
+    PENDIENTE     -> Anular (revierte inventario, ANULADO, cancela outbox)
+!}
+<div id="consulta-detalle-cuerpo">
+    <div class="level mb-2">
+        <div class="level-left">
+            <h3 class="title is-5 mb-0 kit-code">
+                {#if consecutivo??}{consecutivo}{#else}Factura #{id}{/if}
+            </h3>
+        </div>
+        <div class="level-right">
+            {#if aceptado}
+            <span class="status-chip is-success">Aceptada</span>
+            {#else if anulado}
+            <span class="status-chip is-neutral">Anulada</span>
+            {#else if rechazado}
+            <span class="status-chip is-danger">Rechazada</span>
+            {#else if enCola}
+            <span class="status-chip is-warning">En cola</span>
+            {#else}
+            <span class="status-chip is-warning">Pendiente</span>
+            {/if}
+        </div>
+    </div>
+
+    {#if avisoOk??}
+    <div class="notification is-success is-light">{avisoOk}</div>
+    {/if}
+    {#if avisoError??}
+    <div class="notification is-danger is-light">{avisoError}</div>
+    {/if}
+
+    <div class="columns is-multiline is-variable is-2 mb-1">
+        <div class="column is-half">
+            <p class="help mb-0">Cliente</p>
+            <p class="has-text-weight-semibold">{cliente}</p>
+        </div>
+        <div class="column is-half">
+            <p class="help mb-0">Fecha de emisión</p>
+            <p>{#if fecha??}{fecha}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column is-half">
+            <p class="help mb-0">Moneda</p>
+            <p class="kit-code">{moneda}</p>
+        </div>
+        <div class="column is-half">
+            <p class="help mb-0">Total</p>
+            <p class="has-text-weight-semibold">{#if total??}{total}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column is-full">
+            <p class="help mb-0">Clave numérica</p>
+            <p class="kit-code" style="word-break:break-all">{#if clave??}{clave}{#else}&mdash;{/if}</p>
+        </div>
+    </div>
+
+    <div class="table-container mb-3">
+        <table class="table is-fullwidth is-narrow">
+            <thead>
+                <tr>
+                    <th>Cant.</th>
+                    <th>Detalle</th>
+                    <th class="has-text-right">Precio</th>
+                    <th class="has-text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#for l in lineas}
+                <tr>
+                    <td class="num">{l.cantidad}</td>
+                    <td>
+                        {l.detalle}
+                        {#if l.servicio}<span class="status-chip is-info">Servicio</span>{/if}
+                    </td>
+                    <td class="num">{l.precio}</td>
+                    <td class="num">{l.total}</td>
+                </tr>
+                {#else}
+                <tr><td colspan="4" class="has-text-centered">
+                    <p class="kit-empty">La factura no tiene líneas registradas.</p>
+                </td></tr>
+                {/for}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="columns is-variable is-2">
+        <div class="column">
+            <p class="help">Impuesto</p>
+            <p>{#if totalImpuesto??}{totalImpuesto}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column">
+            <p class="help">Descuentos</p>
+            <p>{#if totalDescuentos??}{totalDescuentos}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column">
+            <p class="help">Total</p>
+            <p class="has-text-weight-semibold">{#if total??}{total}{#else}&mdash;{/if}</p>
+        </div>
+    </div>
+
+    {#if timeline.size() > 0}
+    <h4 class="title is-6 mt-4 mb-2">Historial de Hacienda</h4>
+    <ul class="consulta-timeline">
+        {#for e in timeline}
+        <li>
+            <span class="has-text-weight-semibold">{e.evento}</span>
+            {#if e.fecha??}<span class="kit-code is-size-7"> · {e.fecha}</span>{/if}
+            {#if e.detalle??}<span class="mercurius-text-muted"> — {e.detalle}</span>{/if}
+        </li>
+        {/for}
+    </ul>
+    {/if}
+
+    {#if referencias.size() > 0}
+    <h4 class="title is-6 mt-4 mb-2">Referencias (NC / ND)</h4>
+    <div class="table-container">
+        <table class="table is-fullwidth is-narrow">
+            <thead>
+                <tr><th>Tipo</th><th>Número</th><th>Fecha</th><th>Código</th><th>Razón</th></tr>
+            </thead>
+            <tbody>
+                {#for r in referencias}
+                <tr>
+                    <td>{#if r.tipo??}{r.tipo}{#else}&mdash;{/if}</td>
+                    <td class="kit-code">{#if r.numero??}{r.numero}{#else}&mdash;{/if}</td>
+                    <td>{#if r.fecha??}{r.fecha}{#else}&mdash;{/if}</td>
+                    <td>{#if r.codigo??}{r.codigo}{#else}&mdash;{/if}</td>
+                    <td>{#if r.razon??}{r.razon}{#else}&mdash;{/if}</td>
+                </tr>
+                {/for}
+            </tbody>
+        </table>
+    </div>
+    {/if}
+
+    <div class="buttons mt-4" style="gap:0.5rem;flex-wrap:wrap">
+        {#if aceptado}
+        <a class="button is-primary" href="{ncUrl}">
+            {#include _kit/icon name="refresh" /}
+            <span>Nota de crédito</span>
+        </a>
+        <button type="button" class="button"
+                onclick="(window.printHTML ? printHTML('/api/app/recibos/{id}/tiquete', { fallbackPdfUrl: '/api/app/recibos/{id}/pdf' }) : printPDF('/api/app/recibos/{id}/pdf'))">
+            Imprimir
+        </button>
+        {/if}
+
+        {#if enCola}
+        <button type="button" class="button is-primary"
+                hx-post="/app/tributacion/consulta/{id}/enviar-ahora"
+                hx-target="#consulta-detalle-cuerpo" hx-swap="outerHTML"
+                hx-disabled-elt="this"
+                hx-confirm="¿Enviar ahora este documento a Hacienda?">
+            Enviar ahora
+        </button>
+        <a class="button" href="{colaUrl}">Ver cola</a>
+        {/if}
+
+        {#if pendienteLocal}
+        <button type="button" class="button is-danger is-light"
+                hx-post="/app/tributacion/consulta/{id}/anular"
+                hx-target="#consulta-detalle-cuerpo" hx-swap="outerHTML"
+                hx-disabled-elt="this"
+                hx-confirm="¿Anular esta factura? Se revierte el inventario y el consecutivo no se reutiliza. Esta acción no se puede deshacer.">
+            Anular
+        </button>
+        {/if}
+
+        {#if rechazado}
+        <button type="button" class="button is-primary"
+                hx-post="/api/app/tributacion/consultas/{id}/corregir"
+                hx-disabled-elt="this"
+                hx-confirm="¿Reemitir esta factura? El comprobante rechazado no tiene validez fiscal (Art. 19): se emitirá uno nuevo que lo referencia con el código 16, sin nota de crédito.">
+            Reemitir
+        </button>
+        {/if}
+    </div>
+
+    <p class="help mercurius-text-muted mt-3">
+        Una factura aceptada es inmutable: los cambios se hacen con nota de crédito
+        y una factura nueva. Un documento firmado en cola no se borra; se transmite
+        dentro del plazo legal.
+    </p>
+</div>

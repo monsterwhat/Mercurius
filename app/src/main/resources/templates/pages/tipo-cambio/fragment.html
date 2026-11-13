@@ -54,6 +54,13 @@
              detail="El banco vende dólares (₡ por dólar)" /}
     </div>
 
+    <div class="metric-strip">
+        {#include _kit/metric label="EUR compra" value=(eurCompra ?: "-")
+             detail="CRC por 1 EUR" /}
+        {#include _kit/metric label="EUR venta" value=(eurVenta ?: "-")
+             detail="CRC por 1 EUR" /}
+    </div>
+
     {#include _kit/surface title="Tipo de cambio vigente" }
         {#actions}
             <div class="buttons">
@@ -80,6 +87,11 @@
                 {#if manual} <span class="status-chip is-warning">Manual</span>
                 {#else if disponible} <span class="status-chip is-info">BCCR</span>{/if}
             </p>
+            <p class="is-size-6 has-text-weight-semibold mb-1">
+                EUR: {#if eurDisponible}vigente desde {eurFecha}{#else}sin tasa{/if}
+                {#if eurManual} <span class="status-chip is-warning">Manual</span>
+                {#else if eurDisponible} <span class="status-chip is-info">BCCR</span>{/if}
+            </p>
             <p class="help mercurius-text-muted">
                 {#if disponible}
                 La actualización consulta la API de Hacienda/BCCR. El sistema
@@ -92,11 +104,20 @@
         {/content}
     {/include}
 
-    {#include _kit/surface title="Tasa manual del dólar" }
+    {#include _kit/surface title="Tasa manual" }
         {#content}
         <form hx-post="/app/tipo-cambio/manual"
               hx-target="#tc-contenido" hx-swap="outerHTML"
               hx-disabled-elt="find button[type='submit']">
+            <div class="field">
+                <label class="label is-small" for="tc-manual-moneda">Moneda</label>
+                <div class="select is-fullwidth">
+                    <select id="tc-manual-moneda" name="moneda" required="required">
+                        <option value="USD">USD &mdash; dólar</option>
+                        <option value="EUR">EUR &mdash; euro</option>
+                    </select>
+                </div>
+            </div>
             <div class="columns is-mobile">
                 <div class="column">
                     <label class="label is-small" for="tc-manual-compra">Compra ₡</label>
@@ -114,10 +135,10 @@
                 </div>
             </div>
             <p id="tc-manual-ayuda" class="help mercurius-text-muted">
-                Valores en colones por dólar, mayores que cero. Registra la tasa del
-                día con sus propios valores en lugar de la API de Hacienda/BCCR.
-                La tasa manual se mantiene hasta que se cambie; Actualizar vuelve a la
-                tasa BCCR.
+                Valores en colones por unidad de la moneda elegida, mayores que cero.
+                Registra la tasa del día con sus propios valores en lugar de la API de
+                Hacienda/BCCR. La tasa manual se mantiene hasta que se cambie; Actualizar
+                vuelve a la tasa BCCR de esa moneda.
             </p>
             <button class="button is-fullwidth" type="submit">Guardar tasa manual</button>
         </form>

@@ -103,7 +103,9 @@
                      headers=headersConsulta}
                   {#rows}
                     {#for f in filasPendientes}
-                    <tr data-row-key="{f.id}">
+                    <tr data-row-key="{f.id}" data-consulta-id="{f.id}" tabindex="0"
+                        style="cursor:pointer"
+                        aria-label="Ver el detalle de la factura {f.id}">
                         <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
@@ -126,7 +128,9 @@
                      headers=headersConsulta}
                   {#rows}
                     {#for f in filasAceptadas}
-                    <tr data-row-key="{f.id}">
+                    <tr data-row-key="{f.id}" data-consulta-id="{f.id}" tabindex="0"
+                        style="cursor:pointer"
+                        aria-label="Ver el detalle de la factura {f.id}">
                         <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
@@ -149,7 +153,9 @@
                      headers=headersRechazadas}
                   {#rows}
                     {#for f in filasRechazadas}
-                    <tr data-row-key="{f.id}">
+                    <tr data-row-key="{f.id}" data-consulta-id="{f.id}" tabindex="0"
+                        style="cursor:pointer"
+                        aria-label="Ver el detalle de la factura {f.id}">
                         <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
@@ -209,5 +215,67 @@
                 {/content}
             {/include}
         </div>
+
+        {! Detalle en drawer: la fila abre el cuerpo sin salir de Consultas. !}
+        {#include _kit/drawer id="consulta-detalle" title="Detalle de la factura" size="lg"}
+            {#content}
+            <div aria-live="polite">
+                <div id="consulta-detalle-cuerpo">
+                    <p class="kit-empty">Seleccione una fila para ver el detalle aquí.</p>
+                </div>
+            </div>
+            {/content}
+        {/include}
+
+        {! HTMX descarta por defecto las respuestas 4xx. La anulación y el
+           envío responden 409 con el cuerpo del drawer ya pintado (el motivo
+           del rechazo), así que se permite el swap. !}
+        <script>
+            document.body.addEventListener('htmx:beforeSwap', function (evt) {
+                if (evt.detail.xhr.status === 409) {
+                    evt.detail.shouldSwap = true;
+                    evt.detail.isError = false;
+                }
+            });
+
+            function abrirConsulta(row) {
+                var id = row.getAttribute('data-consulta-id');
+                if (!id) {
+                    return;
+                }
+                var drawer = document.getElementById('consulta-detalle');
+                if (drawer && window.Alpine) {
+                    Alpine.$data(drawer).open = true;
+                }
+                if (window.htmx) {
+                    htmx.ajax('GET', '/app/tributacion/consulta/' + id, {
+                        target: '#consulta-detalle-cuerpo',
+                        swap: 'outerHTML'
+                    });
+                }
+            }
+
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('button, a, input, select, textarea, label')) {
+                    return;
+                }
+                var row = e.target.closest('tr[data-consulta-id]');
+                if (row) {
+                    abrirConsulta(row);
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Enter' && e.key !== ' ') {
+                    return;
+                }
+                var row = e.target.closest && e.target.closest('tr[data-consulta-id]');
+                if (!row) {
+                    return;
+                }
+                e.preventDefault();
+                abrirConsulta(row);
+            });
+        </script>
     {/body}
 {/include}

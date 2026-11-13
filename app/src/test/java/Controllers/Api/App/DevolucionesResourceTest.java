@@ -240,7 +240,7 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
             assertEquals("PENDIENTE", nota.getHaciendaEstado());
             assertEquals(SUPERVISOR, nota.getUsuario());
 
-            // Inventory restock side effect (legacy create() parity).
+            // Inventory restock: one positive movement per returned line.
             JsonNode invSpec = golden.get("inventario");
             for (Inventario inv : inventarioService.listAll()) {
                 if ("Devolucion".equals(inv.getTipoMovimiento()) && inv.getNotas() != null
@@ -251,15 +251,29 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
             assertEquals(invSpec.get("movimientosEsperados").asInt(), movimientosCreados.size(),
                     "one movement per returned line");
             for (Inventario inv : movimientosCreados) {
+                // La NC reingresa unidades: el movimiento es POSITIVO (el
+                // espejo de la salida por venta). El fixture conserva la
+                // cantidad devuelta con signo negativo (contrato legacy), por
+                // eso se compara el valor absoluto.
                 assertEquals(0, BigDecimal.valueOf(
                                 invSpec.get("cantidadPorMovimiento").doubleValue())
-                        .compareTo(inv.getCantidad()), "movement quantity is negated");
+                        .abs().compareTo(inv.getCantidad().abs()),
+                        "movement quantity restores exactly the returned units");
+                assertTrue(inv.getCantidad().signum() > 0,
+                        "NC inventory movement must be a restock (positive)");
                 assertEquals(invSpec.get("processed").asBoolean(), inv.getProcessed());
             }
 
-            // ArticuloStock parity lock: legacy create() never touches it.
-            assertEquals(stockRowsAntes, countArticuloStock(),
-                    "devolucion processing must NOT alter ArticuloStock (legacy parity)");
+            // ArticuloStock: el arreglo reingresa stock SOLO cuando la linea
+            // resuelve a un articulo (codigo comercial o nombre). Las lineas
+            // del fixture no traen codigo comercial, asi que conservan el
+            // movimiento sin articulo y no crean filas de stock.
+            boolean algunArticuloResuelto = movimientosCreados.stream()
+                    .anyMatch(i -> i.getArticulo() != null);
+            if (!algunArticuloResuelto) {
+                assertEquals(stockRowsAntes, countArticuloStock(),
+                        "sin articulo resoluble el movimiento no toca ArticuloStock");
+            }
 
             verify(comprobanteService, times(1)).enviarComprobanteAHacienda(any());
             assertNotNull(summary.printUrl());

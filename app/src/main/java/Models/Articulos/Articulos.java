@@ -92,7 +92,8 @@ public class Articulos implements Serializable {
      * del resumen en TotalServ* y TotalMercancias*; antes el resumen declaraba
      * todo como mercancía. Es una propiedad del artículo, no de la línea.
      */
-    @Column(name = "es_servicio", nullable = false)
+    @Column(name = "es_servicio", nullable = false,
+            columnDefinition = "boolean default false")
     private boolean esServicio;
 
     /**

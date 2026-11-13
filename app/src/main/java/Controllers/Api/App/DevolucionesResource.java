@@ -26,6 +26,7 @@ import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
 import Services.ConsecutivoEmitidoService;
 import Services.InventarioService;
+import Services.ReversionInventarioService;
 import Services.LoginService;
 import Services.NotaCreditoService;
 import Services.Strategies.DocumentoStrategy;
@@ -206,6 +207,9 @@ public class DevolucionesResource {
     @Nonnull
     @Inject
     InventarioService inventarioService;
+
+    @Inject
+    ReversionInventarioService reversionInventarioService;
 
     @Nonnull
     @Inject
@@ -653,24 +657,27 @@ public class DevolucionesResource {
         nota.setHaciendaEstado("PENDIENTE");
         notaCreditoService.create(nota);
 
-        // ── Inventory movements (legacy verbatim: articulo=null,
-        //    cantidad negated, plain create() — see evidence notes for
-        //    why createWithStock would change behavior).
+        // ── Inventory movements: reingreso real a articulostock.
+        //    El motor legacy escribia el movimiento con articulo=null y
+        //    create(), que NUNCA tocaba articulostock: la NC quedaba
+        //    registrada pero la mercancia no volvia. Ahora se resuelve el
+        //    articulo por el codigo comercial de la linea y se usa update(),
+        //    el espejo exacto de la salida por venta.
         String consecutivoOriginal = facturaSeleccionada.getEncabezado() != null
                 ? facturaSeleccionada.getEncabezado().getNumeroConsecutivo() : null;
+        List<ReversionInventarioService.LineaACreditar> aReingresar = new ArrayList<>();
         for (LineaSeleccion sel : seleccion) {
-            Inventario inv = new Inventario();
-            inv.setArticulo(null);
-            inv.setCantidad(sel.cantidadDevolver().negate());
-            inv.setTipoMovimiento("Devolucion");
-            inv.setUsuario(currentUser);
-            inv.setFechaMovimiento(new Date());
-            inv.setNotas("Devolucion factura: "
-                    + consecutivoOriginal + " - " + motivoFinal);
-            inv.setStatus(true);
-            inv.setProcessed(true);
-            inventarioService.create(inv);
+            aReingresar.add(new ReversionInventarioService.LineaACreditar(
+                    sel.original(), sel.cantidadDevolver()));
         }
+        int lineasReingresadas = reversionInventarioService.reingresar(
+                aReingresar,
+                ReversionInventarioService.TIPO_DEVOLUCION,
+                "Devolucion factura: " + consecutivoOriginal + " - " + motivoFinal,
+                currentUser);
+        LOG.info("Nota de credito de la factura " + consecutivoOriginal
+                + ": " + lineasReingresadas + " linea(s) reingresadas a inventario"
+                + " | source=DevolucionesResource.procesarDevolucion()");
 
         // ── Hacienda Nota de Credito Electronica (strategy UNCHANGED).
         //    Legacy swallows failures here with an "Error NC" alerta and

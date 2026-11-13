@@ -18,6 +18,7 @@
         <thead>
                 <tr>
                     <th scope="col">Fecha</th>
+                    <th scope="col">Moneda</th>
                     <th scope="col">Origen</th>
                     <th scope="col" class="num">Compra</th>
                     <th scope="col" class="num">Venta</th>
@@ -27,6 +28,7 @@
             {#for fila in filas}
                 <tr>
                     <td>{fila.fecha}</td>
+                    <td><span class="status-chip is-neutral">{#if fila.moneda??}{fila.moneda}{#else}USD{/if}</span></td>
                     <td>{#if fila.origen == 'Manual'}<span class="status-chip is-warning">Manual</span>{#else}<span class="status-chip is-info">BCCR</span>{/if}</td>
                     <td class="num">{#if fila.compra??}{fmt:moneda(fila.compra)}{#else}&mdash;{/if}</td>
                     <td class="num">{#if fila.venta??}{fmt:moneda(fila.venta)}{#else}&mdash;{/if}</td>
@@ -35,7 +37,7 @@
         </tbody>
     </table>
 </div>
-<p class="help mercurius-text-muted">Se muestran los 20 registros más recientes. Los montos están en colones por dólar.</p>
+<p class="help mercurius-text-muted">Se muestran los 20 registros más recientes. Los montos están en colones por unidad de la moneda indicada.</p>
 {#else}
 <div class="notification is-light">
     <p class="kit-empty">No hay registros de tipo de cambio todavía. Use Actualizar o registre una tasa manual.</p>

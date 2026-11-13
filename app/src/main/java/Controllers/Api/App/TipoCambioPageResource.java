@@ -121,6 +121,7 @@ public class TipoCambioPageResource {
         Map<String, Object> model = new LinkedHashMap<>();
         try {
             tipoCambioService.forceRefreshFromApi();
+            tipoCambioService.getTipoCambioEurFromApi();
         } catch (RuntimeException e) {
             LOG.warn("actualizar tipo-cambio failed", e);
             model.put("errorMensaje", "No se pudo actualizar desde BCCR; se muestra la tasa vigente.");
@@ -138,18 +139,24 @@ public class TipoCambioPageResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Operation(summary = "Save a custom dollar rate and return the updated fragment")
     public Response manual(@FormParam("compra") String compraRaw,
-                           @FormParam("venta") String ventaRaw) {
+                           @FormParam("venta") String ventaRaw,
+                           @FormParam("moneda") @Nullable String monedaRaw) {
         Map<String, Object> model = new LinkedHashMap<>();
         try {
+            String moneda = monedaRaw == null || monedaRaw.isBlank()
+                    ? "USD" : monedaRaw.trim().toUpperCase();
+            if (!"USD".equals(moneda) && !"EUR".equals(moneda)) {
+                throw new IllegalArgumentException("moneda no soportada: " + moneda);
+            }
             java.math.BigDecimal compra = new java.math.BigDecimal(compraRaw.trim());
             java.math.BigDecimal venta = new java.math.BigDecimal(ventaRaw.trim());
             if (compra.signum() <= 0 || venta.signum() <= 0) {
                 throw new NumberFormatException("non-positive");
             }
-            tipoCambioService.saveManualRate(compra, venta);
+            tipoCambioService.saveManualRate(compra, venta, moneda);
         } catch (RuntimeException e) {
             LOG.warn("manual tipo-cambio rejected", e);
-            model.put("errorMensaje", "Tasa inválida: ingrese valores numéricos mayores que cero.");
+            model.put("errorMensaje", "Tasa inválida: moneda USD/EUR y valores numéricos mayores que cero.");
         }
         model.putAll(tipoCambioModel());
         return renderFragment(model);
@@ -166,6 +173,7 @@ public class TipoCambioPageResource {
         for (TipoCambio tc : tipoCambioService.listUltimos(HISTORIAL_LIMIT)) {
             Map<String, Object> fila = new LinkedHashMap<>();
             fila.put("fecha", fmtFecha(tc.getFecha()));
+            fila.put("moneda", tc.getMoneda());
             fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
             fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
             fila.put("origen", Boolean.TRUE.equals(tc.getManual()) ? "Manual" : "BCCR");
@@ -194,18 +202,26 @@ public class TipoCambioPageResource {
      */
     @Nonnull
     private Map<String, Object> tipoCambioModel() {
-        TipoCambio tc = null;
+        TipoCambio usd = null;
+        TipoCambio eur = null;
         try {
-            tc = tipoCambioService.getNewestTipoCambio();
+            usd = tipoCambioService.getNewestTipoCambio();
+            eur = tipoCambioService.getNewestTipoCambioFromDb("EUR");
         } catch (RuntimeException e) {
             LOG.warn("tipo-cambio page unavailable", e);
         }
         Map<String, Object> model = new LinkedHashMap<>();
-        model.put("disponible", tc != null);
-        model.put("venta", tc != null ? TipoCambioService.displayRate(tc.getValorVenta()) : null);
-        model.put("compra", tc != null ? TipoCambioService.displayRate(tc.getValorCompra()) : null);
-        model.put("fecha", tc != null ? fmtFecha(tc.getFecha()) : null);
-        model.put("manual", tc != null && Boolean.TRUE.equals(tc.getManual()));
+        model.put("disponible", usd != null);
+        model.put("venta", usd != null ? TipoCambioService.displayRate(usd.getValorVenta()) : null);
+        model.put("compra", usd != null ? TipoCambioService.displayRate(usd.getValorCompra()) : null);
+        model.put("fecha", usd != null ? fmtFecha(usd.getFecha()) : null);
+        model.put("manual", usd != null && Boolean.TRUE.equals(usd.getManual()));
+
+        model.put("eurDisponible", eur != null);
+        model.put("eurVenta", eur != null ? TipoCambioService.displayRate(eur.getValorVenta()) : null);
+        model.put("eurCompra", eur != null ? TipoCambioService.displayRate(eur.getValorCompra()) : null);
+        model.put("eurFecha", eur != null ? fmtFecha(eur.getFecha()) : null);
+        model.put("eurManual", eur != null && Boolean.TRUE.equals(eur.getManual()));
         return model;
     }
 

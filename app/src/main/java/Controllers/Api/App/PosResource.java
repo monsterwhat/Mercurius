@@ -2281,6 +2281,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             resultado.put("vuelto", data.vuelto);
             resultado.put("puntosOtorgados", data.puntosOtorgados);
             resultado.put("puntosMensaje", data.puntosMensaje);
+            resultado.put("autoPrintObligatorio", data.autoPrintObligatorio);
         } else if (entity instanceof ApiResponse<?> envelope && envelope.getError() != null) {
             resultado.put("errorCode", envelope.getError().getCode());
             resultado.put("errorMessage", envelope.getError().getMessage());
