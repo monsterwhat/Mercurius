@@ -122,10 +122,14 @@ public class FidesApiService {
 
         public static class ItemData {
             public String code;
+            public String cabysCode;
             public String description;
             public String quantity;
             public String unitPrice;
+            public String unitMeasure;
             public String taxRate;
+            public String taxRateCode;
+            public Boolean esServicio;
             /** Line discount amount (same currency). Absent = no discount. */
             public String discount;
         }
@@ -332,8 +336,20 @@ public class FidesApiService {
                     itemNode.put("description", item.description != null ? item.description : "");
                     itemNode.put("quantity", item.quantity != null ? item.quantity : "1");
                     itemNode.put("unit_price", item.unitPrice != null ? item.unitPrice : "0");
+                    if (item.cabysCode != null && !item.cabysCode.isEmpty()) {
+                        itemNode.put("cabys_code", item.cabysCode);
+                    }
+                    if (item.unitMeasure != null && !item.unitMeasure.isEmpty()) {
+                        itemNode.put("unit_measure", item.unitMeasure);
+                    }
                     if (item.taxRate != null && !item.taxRate.isEmpty()) {
                         itemNode.put("tax_rate", item.taxRate);
+                    }
+                    if (item.taxRateCode != null && !item.taxRateCode.isEmpty()) {
+                        itemNode.put("tax_rate_code", item.taxRateCode);
+                    }
+                    if (item.esServicio != null) {
+                        itemNode.put("es_servicio", item.esServicio);
                     }
                     if (item.discount != null && !item.discount.isEmpty()) {
                         itemNode.put("discount", item.discount);
@@ -344,9 +360,12 @@ public class FidesApiService {
             payload.set("items", items);
             payload.put("total", data.total != null ? data.total : "0");
             if (data.accessKey != null && !data.accessKey.isEmpty()) {
+                payload.put("access_key", data.accessKey);
+                // Compatibilidad con versiones previas de Fides.
                 payload.put("clave", data.accessKey);
             }
             if (data.consecutivo != null && !data.consecutivo.isEmpty()) {
+                payload.put("consecutivo", data.consecutivo);
                 payload.put("numero_consecutivo", data.consecutivo);
             }
             if (data.condicionVenta != null && !data.condicionVenta.isEmpty()) {

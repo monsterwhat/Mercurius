@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
+import jakarta.annotation.Nullable;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -98,6 +99,16 @@ public class LineaDetalle {
     @XmlElement(name = "Detalle")
     @Column(name = "detalle", length = 200)
     private String detalle;
+
+    /**
+     * Servicio (true) vs mercancía (false), copiado del artículo al emitir.
+     * No viaja en el XML de la línea (Hacienda lo usa solo en el resumen),
+     * pero sí en el DTO de Fides y en los reportes.
+     */
+    @XmlTransient
+    @Nullable
+    @Column(name = "es_servicio")
+    private Boolean esServicio;
     
     @XmlElement(name = "NumeroVINoSerie")
     @EqualsAndHashCode.Exclude

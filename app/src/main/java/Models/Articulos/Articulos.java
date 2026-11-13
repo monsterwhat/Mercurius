@@ -88,6 +88,14 @@ public class Articulos implements Serializable {
     private boolean exento; // Whether the product is tax-exempt (exonerado)
 
     /**
+     * Servicio (true) vs mercancía (false). Hacienda v4.4 separa los totales
+     * del resumen en TotalServ* y TotalMercancias*; antes el resumen declaraba
+     * todo como mercancía. Es una propiedad del artículo, no de la línea.
+     */
+    @Column(name = "es_servicio", nullable = false)
+    private boolean esServicio;
+
+    /**
      * Tipo de refrigeración del producto. Determina el ajuste de margen
      * de utilidad global aplicado (NINGUNA / REFRIGERADO / CONGELADO).
      */

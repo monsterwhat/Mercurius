@@ -325,6 +325,19 @@ class ComprobanteTaxMathTest {
     }
 
     @Test
+    void esServicioTrueRoutesLineToServiciosBuckets() {
+        ArticuloCarrito servicio = item(81L, "501010113", "13", "100", "1");
+        servicio.getArticulo().setEsServicio(true);
+        ArticuloCarrito mercancia = item(82L, "501010114", "13", "200", "1");
+
+        ResumenFactura resumen = service.resumenComprobante(List.of(servicio, mercancia));
+
+        assertThat(resumen).isNotNull();
+        assertThat(resumen.getTotalServGravados()).isEqualByComparingTo("100");
+        assertThat(resumen.getTotalMercanciasGravadas()).isEqualByComparingTo("200");
+    }
+
+    @Test
     void noSujetoBucketsAreNeverPopulatedByResumenComprobante() {
         ResumenFactura resumen = service.resumenComprobante(
                 List.of(item(81L, "501010112", "13", "50", "1")));

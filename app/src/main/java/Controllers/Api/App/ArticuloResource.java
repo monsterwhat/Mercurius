@@ -460,6 +460,7 @@ public class ArticuloResource {
             @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
             @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
+            @FormParam("esServicio") @Nullable String esServicio,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
             @FormParam("diasStockSeguridad") @Nullable String diasStockSeguridad) {
         ArticuloForm form = new ArticuloForm();
@@ -475,6 +476,7 @@ public class ArticuloResource {
         form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
         form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
+        form.esServicio = "on".equalsIgnoreCase(esServicio) || "true".equalsIgnoreCase(esServicio);
         form.stockOptimo = parseIntOrNull(stockOptimo);
         form.diasStockSeguridad = parseIntOrNull(diasStockSeguridad);
         return doCreate(form);
@@ -515,6 +517,7 @@ public class ArticuloResource {
             nuevo.setDiasStockSeguridad(form.diasStockSeguridad);
             nuevo.setEstadoAlertas(Boolean.TRUE);
             nuevo.setExento(form.exento);
+            nuevo.setEsServicio(form.esServicio);
             nuevo.setTipoRefrigeracion(form.tipoRefrigeracion);
             if (form.cabysCodigo != null) {
                 nuevo.setCodigoCabys(findCabys(form.cabysCodigo));
@@ -594,6 +597,7 @@ public class ArticuloResource {
             @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
             @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
+            @FormParam("esServicio") @Nullable String esServicio,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
             @FormParam("diasStockSeguridad") @Nullable String diasStockSeguridad) {
         ArticuloForm form = new ArticuloForm();
@@ -609,6 +613,7 @@ public class ArticuloResource {
         form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
         form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
+        form.esServicio = "on".equalsIgnoreCase(esServicio) || "true".equalsIgnoreCase(esServicio);
         form.stockOptimo = parseIntOrNull(stockOptimo);
         form.diasStockSeguridad = parseIntOrNull(diasStockSeguridad);
         return doUpdate((int) codigo, form);
@@ -656,6 +661,7 @@ public class ArticuloResource {
                 articulo.setDiasStockSeguridad(form.diasStockSeguridad);
             }
             articulo.setExento(form.exento);
+            articulo.setEsServicio(form.esServicio);
             articulo.setTipoRefrigeracion(form.tipoRefrigeracion);
 
             // Precio del artículo: si el operador CAMBIÓ el costo o el margen,
@@ -2048,6 +2054,7 @@ public class ArticuloResource {
         @Nullable public BigDecimal porcentajeUtilidad;
         @Nullable public TipoRefrigeracion tipoRefrigeracion;
         public boolean exento;
+        public boolean esServicio;
         @Nullable public Integer stockOptimo;
         @Nullable public Integer diasStockSeguridad;
     }

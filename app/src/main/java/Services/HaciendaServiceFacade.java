@@ -262,7 +262,15 @@ public class HaciendaServiceFacade {
             for (Models.Detalles.LineaDetalle linea : comprobante.getDetalles().getLineasDetalle()) {
                 FidesApiService.InvoiceData.ItemData item =
                         new FidesApiService.InvoiceData.ItemData();
-                item.code = linea.getCodigoCabys();
+                item.cabysCode = linea.getCodigoCabys();
+                String sku = linea.getCodigosComerciales() != null
+                        && !linea.getCodigosComerciales().isEmpty()
+                        && linea.getCodigosComerciales().get(0) != null
+                        ? linea.getCodigosComerciales().get(0).getCodigo() : null;
+                item.code = sku != null && !sku.isBlank()
+                        ? sku : linea.getCodigoCabys();
+                item.unitMeasure = linea.getUnidadMedida();
+                item.esServicio = linea.getEsServicio();
                 item.description = linea.getDetalle();
                 item.quantity = linea.getCantidad() != null
                         ? linea.getCantidad().toPlainString() : "1";

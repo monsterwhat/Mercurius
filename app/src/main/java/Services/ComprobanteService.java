@@ -1132,9 +1132,12 @@ public class ComprobanteService implements Serializable {
             BigDecimal totalDescuentos = BigDecimal.ZERO;
             BigDecimal totalVentaNeta = BigDecimal.ZERO;
             BigDecimal totalImpuesto = BigDecimal.ZERO;
-            boolean esServicio = false;
             for (ArticuloCarrito articuloCarrito : carrito) {
                 var articulo = articuloCarrito;
+                // El bucket servicio/mercancía es una propiedad del artículo,
+                // no una constante del comprobante. Antes se declaraba una vez
+                // fuera del bucle y todo caía en mercancías.
+                boolean esServicio = articulo.getArticulo().isEsServicio();
 
                 String impuestoStr = articulo.getArticulo().getCodigoCabys().getImpuesto();
                 BigDecimal impuestoPct = BigDecimal.ZERO;
@@ -1389,6 +1392,7 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 // DetallesSurtidos, OtrosCargos are NOT in REP LineaDetalle.
                 if (!isRep) {
                     linea.setCodigoCabys(articulo.getArticulo().getCodigoCabys().getCodigo());
+                    linea.setEsServicio(articulo.getArticulo().isEsServicio());
                     List<CodigoComercial> codigosComerciales = new ArrayList<>();
                     CodigoComercial codigoComercial = new CodigoComercial();
                     codigoComercial.setTipo("04");

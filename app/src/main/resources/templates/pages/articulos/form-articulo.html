@@ -93,6 +93,16 @@
             <p class="help">Opcional. Máximo 500 caracteres.</p>
         </div>
 
+        <div class="field">
+            <label class="checkbox">
+                <input type="checkbox" name="esServicio" value="true"
+                       {#if modo == 'editar' && articulo?? && articulo.esServicio}checked{/if}/>
+                Es un servicio (no mercancía)
+            </label>
+            <p class="help">Hacienda separa los totales de servicios y mercancías en el
+                resumen. Marque esta casilla para consultoría, mano de obra y demás servicios.</p>
+        </div>
+
         {! Precio: costo y margen. El margen escrito aquí MANDA sobre el global
            (es la única forma de tener un artículo al 50% cuando el global es
            25%). Al guardar se agrega una fila al historial de precios; el
