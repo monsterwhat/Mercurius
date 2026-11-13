@@ -84,3 +84,122 @@ export function printPDF(url) {
 // page event handlers; registering it here also keeps it out of tree-shaking
 // until modules import it explicitly.
 window.printPDF = printPDF;
+
+/**
+ * Imprime un tiquete HTML (no PDF) en un iframe oculto.
+ *
+ * El servidor sirve el documento con un `@page` de alto estimado; aquí se mide
+ * la altura real del contenido y se reescribe el `@page` antes de imprimir.
+ * Esto evita la página en blanco que deja un alto fijo demasiado grande y la
+ * segunda página que produce uno demasiado corto.
+ *
+ * @param {string} url           HTML del tiquete (GET /api/app/recibos/{id}/tiquete)
+ * @param {object} [options]
+ * @param {string} [options.fallbackPdfUrl] PDF a imprimir si el HTML falla
+ * @param {number} [options.anchoMm=72]     ancho útil del rollo
+ */
+export function printHTML(url, options) {
+    options = options || {};
+    var anchoMm = options.anchoMm || 72;
+    var fallbackPdfUrl = options.fallbackPdfUrl || null;
+
+    var frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.setAttribute('tabindex', '-1');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = anchoMm + 'mm';
+    frame.style.height = '200mm';
+    frame.style.border = '0';
+
+    var terminado = false;
+    var timeoutId = null;
+
+    function limpiar() {
+        if (terminado) {
+            return;
+        }
+        terminado = true;
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+        if (frame.parentNode) {
+            frame.parentNode.removeChild(frame);
+        }
+    }
+
+    function fallar(mensaje, error) {
+        limpiar();
+        if (fallbackPdfUrl && typeof window.printPDF === 'function') {
+            console.warn('[mercurius] printHTML:', mensaje, '→ fallback PDF');
+            window.printPDF(fallbackPdfUrl);
+            return;
+        }
+        reportPrintFailure(mensaje, error);
+    }
+
+    frame.onload = function () {
+        try {
+            var doc = frame.contentDocument;
+            if (!doc) {
+                fallar('No se pudo acceder al tiquete para imprimir.');
+                return;
+            }
+            var imprimir = function () {
+                try {
+                    var tiquete = doc.getElementById('tiquete');
+                    var pageSize = doc.getElementById('page-size');
+                    if (tiquete && pageSize) {
+                        // getBoundingClientRect mide en px CSS (96 dpi) porque el
+                        // iframe tiene el ancho real del rollo.
+                        var altoPx = tiquete.getBoundingClientRect().height;
+                        var altoMm = Math.ceil(altoPx * 25.4 / 96) + 2;
+                        pageSize.textContent =
+                            '@page { size: ' + anchoMm + 'mm ' + altoMm + 'mm; margin: 0; }';
+                    }
+                    window.requestAnimationFrame(function () {
+                        try {
+                            frame.contentWindow.focus();
+                            frame.contentWindow.print();
+                            // afterprint no es fiable en todos los navegadores;
+                            // se limpia también por temporizador.
+                            try {
+                                frame.contentWindow.addEventListener('afterprint', limpiar);
+                            } catch (e) {
+                                console.debug('[mercurius] printHTML: afterprint no disponible', e);
+                            }
+                        } catch (e) {
+                            fallar('El navegador no permitió imprimir el tiquete.', e);
+                        }
+                    });
+                } catch (e) {
+                    fallar('No se pudo preparar el tiquete para imprimir.', e);
+                }
+            };
+            if (doc.fonts && doc.fonts.ready && typeof doc.fonts.ready.then === 'function') {
+                doc.fonts.ready.then(imprimir).catch(imprimir);
+            } else {
+                imprimir();
+            }
+        } catch (e) {
+            fallar('No se pudo preparar el tiquete para imprimir.', e);
+        }
+    };
+
+    frame.onerror = function () {
+        fallar('No se pudo cargar el tiquete para imprimir.');
+    };
+
+    timeoutId = setTimeout(function () {
+        fallar('La impresión del tiquete tardó demasiado.');
+    }, 8000);
+
+    frame.src = url;
+    document.body.appendChild(frame);
+}
+
+// Mismo contrato global que printPDF: los onclick heredados y los fragments
+// HTMX no importan módulos.
+window.printHTML = printHTML;

@@ -31,6 +31,7 @@ import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
 import Services.LoginService;
 import Utils.PDFGenerator;
+import Utils.FormatoVista;
 import Controllers.Api.App.Reportes.ReportePageSupport;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -59,6 +60,13 @@ import jakarta.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import Models.Detalles.LineaDetalle;
+import Models.Enums.Tipo_MedioPago;
+import Models.Resumen.MedioPagoR;
+import Models.Resumen.ResumenFactura;
+import Utils.QRCodeGenerator;
 
 /**
  * T27 — Recibos module API ({@code /api/app/recibos}): the four-bucket
@@ -186,6 +194,11 @@ public class RecibosResource {
     @Location("pages/recibos/detalle")
     @Inject
     Template detalle;
+
+    @Nonnull
+    @Location("pages/facturas/tiquete-print")
+    @Inject
+    Template tiquetePrint;
 
     // ════════════════════════════════════════════════════════════════════
     // Bucket predicates (package-visible: shared with RecibosPagesResource)
@@ -387,6 +400,169 @@ public class RecibosResource {
             LOG.warn("Error generando el PDF del recibo " + id + ": " + e.getMessage()
                     + " | source=RecibosResource.pdf()");
             return serverError("Error generando el PDF del comprobante");
+        }
+    }
+
+    /**
+     * Tiquete imprimible en HTML para la impresora térmica.
+     *
+     * <p>El POS y el historial lo abren en un iframe oculto y lo imprimen con
+     * {@code printHTML()} (web/print.js). El PDF sigue siendo el documento
+     * archivado y el fallback. El ancho es el útil de 80 mm (72 mm); el alto
+     * inicial es una estimación y el cliente lo reemplaza con la altura real
+     * antes de imprimir.</p>
+     */
+    @GET
+    @Path("/{id}/tiquete")
+    @Produces(MediaType.TEXT_HTML)
+    public Response tiquete(@PathParam("id") long id) {
+        try {
+            ComprobantesEmitidos f = comprobantesEmitidosService.find(id);
+            if (f == null) {
+                return notFound("No se encontró el recibo solicitado");
+            }
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
+            if (settings == null) {
+                return serverError("No hay configuración de emisión");
+            }
+            TemplateInstance instance = tiquetePrint.instance();
+            tiqueteModel(f, settings).forEach(instance::data);
+            return Response.ok(instance.render())
+                    .type("text/html; charset=UTF-8")
+                    .header("Cache-Control", "no-store")
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error generando el tiquete HTML del recibo " + id + ": " + e.getMessage()
+                    + " | source=RecibosResource.tiquete()");
+            return serverError("Error generando el tiquete del comprobante");
+        }
+    }
+
+    /** Modelo del tiquete imprimible; formatea en Java para que HTML y PDF coincidan. */
+    private Map<String, Object> tiqueteModel(@Nonnull ComprobantesEmitidos f,
+                                             @Nonnull ConfiguracionAplicacion settings) {
+        Encabezado enc = f.getEncabezado();
+        String codigo = enc != null ? enc.getCodigoDocumento() : null;
+        String clave = f.getHaciendaClave() != null && !f.getHaciendaClave().isBlank()
+                ? f.getHaciendaClave() : (enc != null ? enc.getClave() : null);
+        String consecutivo = enc != null ? enc.getNumeroConsecutivo() : null;
+        String fecha = enc != null && enc.getFechaEmision() != null
+                ? enc.getFechaEmision().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : "";
+        String cliente = enc != null && enc.getReceptor() != null
+                && enc.getReceptor().getNombre() != null
+                && !enc.getReceptor().getNombre().isBlank()
+                ? enc.getReceptor().getNombre() : "Cliente contado";
+
+        List<Map<String, Object>> lineas = new ArrayList<>();
+        if (f.getDetalles() != null && f.getDetalles().getLineasDetalle() != null) {
+            for (LineaDetalle l : f.getDetalles().getLineasDetalle()) {
+                Map<String, Object> fila = new LinkedHashMap<>();
+                fila.put("cantidad", l.getCantidad() == null ? "" : FormatoVista.numero(l.getCantidad()));
+                fila.put("detalle", l.getDetalle() == null ? "" : l.getDetalle());
+                BigDecimal monto = l.getMontoTotalLinea() != null
+                        ? l.getMontoTotalLinea() : l.getMontoTotal();
+                fila.put("monto", FormatoVista.moneda(monto == null ? BigDecimal.ZERO : monto));
+                BigDecimal impuesto = l.getImpuestoNeto();
+                fila.put("impuesto", impuesto != null && impuesto.compareTo(BigDecimal.ZERO) > 0
+                        ? "IVA " + FormatoVista.moneda(impuesto) : null);
+                lineas.add(fila);
+            }
+        }
+
+        ResumenFactura resumen = f.getResumen();
+        List<Map<String, Object>> pagos = new ArrayList<>();
+        if (resumen != null && resumen.getMediosPago() != null) {
+            for (MedioPagoR p : resumen.getMediosPago()) {
+                Map<String, Object> fila = new LinkedHashMap<>();
+                fila.put("metodo", metodoPagoLabel(p.getTipoMedioPago(), p.getMedioPagoOtros()));
+                fila.put("monto", FormatoVista.moneda(p.getTotalMedioPago() == null
+                        ? BigDecimal.ZERO : p.getTotalMedioPago()));
+                pagos.add(fila);
+            }
+        }
+
+        BigDecimal descuentos = resumen != null && resumen.getTotalDescuentos() != null
+                ? resumen.getTotalDescuentos() : BigDecimal.ZERO;
+        BigDecimal iva = resumen != null && resumen.getTotalImpuesto() != null
+                ? resumen.getTotalImpuesto() : BigDecimal.ZERO;
+        BigDecimal otros = resumen != null && resumen.getTotalOtrosCargos() != null
+                ? resumen.getTotalOtrosCargos() : BigDecimal.ZERO;
+        BigDecimal total = resumen != null && resumen.getTotalComprobante() != null
+                ? resumen.getTotalComprobante() : BigDecimal.ZERO;
+
+        String qrDataUri = null;
+        if (clave != null && !clave.isBlank()) {
+            try {
+                byte[] png = QRCodeGenerator.generateQRCodeBytes(clave);
+                qrDataUri = "data:image/png;base64," + Base64.getEncoder().encodeToString(png);
+            } catch (Exception e) {
+                LOG.warn("No se pudo generar el QR del tiquete " + f.getId() + ": " + e.getMessage()
+                        + " | source=RecibosResource.tiqueteModel()");
+            }
+        }
+
+        int altoMm = Math.min(400, Math.max(80, 92 + 4 * lineas.size()));
+
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("titulo", tituloDocumento(codigo));
+        model.put("nombreNegocio", nvl(settings.getNombreNegocio()));
+        model.put("identificacion", nvl(settings.getIdentificacion()));
+        model.put("telefono", nvl(settings.getTelefono()));
+        model.put("correo", nvl(settings.getCorreoElectronicoTributacion()));
+        model.put("direccion", nvl(settings.getDireccionCompleta()));
+        model.put("fecha", fecha);
+        model.put("consecutivo", nvl(consecutivo));
+        model.put("clave", nvl(clave));
+        model.put("cliente", cliente);
+        model.put("cajero", nvl(f.getUser()));
+        model.put("lineas", lineas);
+        model.put("pagos", pagos);
+        model.put("tienePagos", !pagos.isEmpty());
+        model.put("descuentos", FormatoVista.moneda(descuentos));
+        model.put("tieneDescuentos", descuentos.compareTo(BigDecimal.ZERO) > 0);
+        model.put("iva", FormatoVista.moneda(iva));
+        model.put("otrosCargos", FormatoVista.moneda(otros));
+        model.put("tieneOtrosCargos", otros.compareTo(BigDecimal.ZERO) > 0);
+        model.put("total", FormatoVista.moneda(total));
+        model.put("qrDataUri", qrDataUri);
+        model.put("altoMm", altoMm);
+        model.put("anchoMm", 72);
+        return model;
+    }
+
+    private static String nvl(@Nullable String valor) {
+        return valor == null ? "" : valor;
+    }
+
+    private static String tituloDocumento(@Nullable String codigo) {
+        if (codigo == null) {
+            return "TIQUETE ELECTRONICO";
+        }
+        return switch (codigo) {
+            case "01" -> "FACTURA ELECTRONICA";
+            case "02" -> "NOTA DE CREDITO ELECTRONICA";
+            case "03" -> "NOTA DE DEBITO ELECTRONICA";
+            case "05" -> "FACTURA ELECTRONICA DE EXPORTACION";
+            case "08" -> "FACTURA ELECTRONICA DE COMPRA";
+            case "10" -> "RECIBO ELECTRONICO DE PAGO";
+            default -> "TIQUETE ELECTRONICO";
+        };
+    }
+
+    private static String metodoPagoLabel(@Nullable String codigo, @Nullable String otros) {
+        if (codigo == null || codigo.isBlank()) {
+            return "Pago";
+        }
+        try {
+            if ("99".equals(codigo) && otros != null && !otros.isBlank()) {
+                return otros;
+            }
+            return Tipo_MedioPago.fromCodigo(codigo).getDescripcion();
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Código de medio de pago desconocido en tiquete: " + codigo
+                    + " | source=RecibosResource.metodoPagoLabel()");
+            return codigo;
         }
     }
 

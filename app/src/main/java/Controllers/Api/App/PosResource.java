@@ -883,6 +883,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
         FacturarResult out = new FacturarResult();
         out.pdfUrl = uriBasePath() + "api/app/pos/facturas/" + fileName;
+        out.tiqueteUrl = uriBasePath() + "api/app/recibos/" + comprobante.getId() + "/tiquete";
         out.comprobanteId = comprobante.getId();
         out.consecutivo = comprobante.getEncabezado() != null
                 ? comprobante.getEncabezado().getNumeroConsecutivo() : null;
@@ -976,6 +977,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
         FacturarResult out = new FacturarResult();
         out.pdfUrl = uriBasePath() + "api/app/pos/facturas/" + fileName;
+        out.tiqueteUrl = uriBasePath() + "api/app/recibos/" + comprobante.getId() + "/tiquete";
         out.comprobanteId = comprobante.getId();
         out.consecutivo = comprobante.getEncabezado() != null
                 ? comprobante.getEncabezado().getNumeroConsecutivo() : null;
@@ -2244,6 +2246,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (exito) {
             FacturarResult data = (FacturarResult) ((ApiResponse<?>) entity).getData();
             resultado.put("pdfUrl", data.pdfUrl);
+            resultado.put("tiqueteUrl", data.tiqueteUrl);
             resultado.put("consecutivo", data.consecutivo);
             resultado.put("comprobanteId", data.comprobanteId);
             resultado.put("haciendaEstado", data.haciendaEstado);
@@ -2714,6 +2717,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     /** POST /facturar result. */
     public static class FacturarResult {
         public @Nullable String pdfUrl;
+        /** HTML imprimible (ticket térmico); null si no se pudo resolver. */
+        public @Nullable String tiqueteUrl;
         public @Nullable Long comprobanteId;
         public @Nullable String consecutivo;
         public @Nullable String haciendaEstado;

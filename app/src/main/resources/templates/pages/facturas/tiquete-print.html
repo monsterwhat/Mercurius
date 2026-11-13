@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Tiquete {consecutivo}</title>
+    {! El alto lo recalcula printHTML() con la altura real del contenido.
+       No usar `size: 80mm auto`: la gramática de `size` no admite mezclar
+       longitud con `auto` y el navegador descarta la declaración. !}
+    <style id="page-size">@page { size: {anchoMm}mm {altoMm}mm; margin: 0; }</style>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+        }
+        .tiquete {
+            width: {anchoMm}mm;
+            box-sizing: border-box;
+            padding: 2mm 1.5mm 3mm;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 9pt;
+            line-height: 1.15;
+            font-variant-ligatures: none;
+            overflow-wrap: anywhere;
+        }
+        .tiquete .titulo {
+            font-size: 11pt;
+            font-weight: 700;
+            text-align: center;
+            margin: 0 0 1.5mm;
+            break-after: avoid;
+        }
+        .tiquete .centro { text-align: center; margin: 0.3mm 0; }
+        .tiquete .der { text-align: right; }
+        .tiquete .sep {
+            border: 0;
+            border-top: 0.3mm dashed #000;
+            margin: 1.5mm 0;
+            break-inside: avoid;
+        }
+        .tiquete .datos div { margin: 0.2mm 0; }
+        .tiquete table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 9pt;
+        }
+        .tiquete th, .tiquete td {
+            padding: 0.4mm 0;
+            vertical-align: top;
+            font-weight: 400;
+        }
+        .tiquete th { border-bottom: 0.3mm solid #000; }
+        .tiquete col.c-cant { width: 9mm; }
+        .tiquete col.c-desc { width: 42mm; }
+        .tiquete col.c-monto { width: 21mm; }
+        .tiquete .imp { font-size: 7.5pt; }
+        .tiquete .fila {
+            display: flex;
+            justify-content: space-between;
+            gap: 2mm;
+            margin: 0.3mm 0;
+        }
+        .tiquete .fila .valor { white-space: nowrap; }
+        .tiquete .total {
+            font-weight: 700;
+            font-size: 10pt;
+            border-top: 0.3mm solid #000;
+            padding-top: 1mm;
+            margin-top: 1mm;
+        }
+        .tiquete .qr {
+            display: block;
+            width: 20mm;
+            height: 20mm;
+            margin: 2mm auto 1mm;
+            image-rendering: pixelated;
+        }
+        .tiquete .clave {
+            font-size: 7.5pt;
+            text-align: center;
+            letter-spacing: 0.02em;
+            overflow-wrap: anywhere;
+            margin: 0.5mm 0;
+        }
+        .tiquete .pie { margin-top: 2mm; font-size: 8pt; }
+        /* Solo para revisar en pantalla; no afecta la impresión. */
+        @media screen {
+            body { background: #e9e9e9; }
+            .tiquete { background: #fff; margin: 6mm auto; box-shadow: 0 0 4px rgba(0,0,0,.35); }
+        }
+    </style>
+</head>
+<body>
+<div class="tiquete" id="tiquete">
+    <p class="titulo">{titulo}</p>
+    <p class="centro">{nombreNegocio}</p>
+    {#if identificacion}<p class="centro">C&eacute;dula: {identificacion}</p>{/if}
+    {#if telefono}<p class="centro">Tel. {telefono}</p>{/if}
+    {#if correo}<p class="centro">{correo}</p>{/if}
+    {#if direccion}<p class="centro">{direccion}</p>{/if}
+
+    <hr class="sep"/>
+
+    <div class="datos">
+        <div>Fecha: {fecha}</div>
+        <div>Consecutivo: {consecutivo}</div>
+        <div>Clave: {clave}</div>
+        <div>Cliente: {cliente}</div>
+        <div>Cajero: {cajero}</div>
+    </div>
+
+    <hr class="sep"/>
+
+    <table>
+        <colgroup>
+            <col class="c-cant"/>
+            <col class="c-desc"/>
+            <col class="c-monto"/>
+        </colgroup>
+        <thead>
+        <tr><th>Cant</th><th>Descripci&oacute;n</th><th class="der">Total</th></tr>
+        </thead>
+        <tbody>
+        {#for l in lineas}
+        <tr>
+            <td>{l.cantidad}</td>
+            <td>{l.detalle}{#if l.impuesto??}<br/><span class="imp">{l.impuesto}</span>{/if}</td>
+            <td class="der">{l.monto}</td>
+        </tr>
+        {/for}
+        </tbody>
+    </table>
+
+    <hr class="sep"/>
+
+    {#if tieneDescuentos}
+    <div class="fila"><span>Descuentos</span><span class="valor">{descuentos}</span></div>
+    {/if}
+    <div class="fila"><span>IVA</span><span class="valor">{iva}</span></div>
+    {#if tieneOtrosCargos}
+    <div class="fila"><span>Otros cargos</span><span class="valor">{otrosCargos}</span></div>
+    {/if}
+    <div class="fila total"><span>TOTAL</span><span class="valor">{total}</span></div>
+
+    {#if tienePagos}
+    <hr class="sep"/>
+    {#for p in pagos}
+    <div class="fila"><span>{p.metodo}</span><span class="valor">{p.monto}</span></div>
+    {/for}
+    {/if}
+
+    {#if qrDataUri}
+    <img class="qr" src="{qrDataUri}" alt="C&oacute;digo QR de la clave"/>
+    {/if}
+    <p class="clave">{clave}</p>
+    <p class="centro pie">*** GRACIAS POR SU PREFERENCIA ***</p>
+</div>
+</body>
+</html>

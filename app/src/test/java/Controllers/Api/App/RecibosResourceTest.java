@@ -203,6 +203,28 @@ class RecibosResourceTest extends support.ContextPathIsolation {
     }
 
     @Test
+    void tiqueteEndpointRendersPrintableHtml() {
+        ensureRecibosSettings();
+        Map<String, String> session = adminSession();
+        ComprobantesEmitidos fila = null;
+        try {
+            fila = seedPendiente("TIQ");
+            String html = authed(session)
+                    .when().get(API + "/" + fila.getId() + "/tiquete")
+                    .then().statusCode(200)
+                    .header("Content-Type", containsString("text/html"))
+                    .extract().asString();
+            assertThat(html).contains("FACTURA ELECTRONICA");
+            assertThat(html).contains(fila.getEncabezado().getNumeroConsecutivo());
+            assertThat(html).contains("TOTAL");
+            assertThat(html).contains("@page { size: 72mm");
+            assertThat(html).doesNotContain("80mm auto");
+        } finally {
+            deleteQuietly(fila);
+        }
+    }
+
+    @Test
     void emailEndpointRejectsComprobanteWithoutReceptorEmail() {
         Map<String, String> session = adminSession();
         ComprobantesEmitidos fila = seedPendiente("MAIL");
