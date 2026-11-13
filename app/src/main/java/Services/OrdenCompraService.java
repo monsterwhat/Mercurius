@@ -157,7 +157,14 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     }
 
     /**
-     * Marca una orden como recibida
+     * Marca una orden como recibida.
+     *
+     * <p><b>No mueve stock a propósito.</b> En este producto la entrada de
+     * inventario la produce la <em>factura recibida</em> del proveedor
+     * ({@code FacturasRecibidasResource}: movimiento "Ingreso Automatico por
+     * factura", pendiente de aprobación). Si la orden también ingresara,
+     * la misma compra se contaría dos veces. La orden es un compromiso
+     * interno; el documento fiscal es la fuente de verdad.</p>
      */
     @Transactional
     public void recibirOrden(@Nonnull OrdenCompra orden) {

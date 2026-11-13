@@ -264,13 +264,18 @@ public class PublicInvoiceService {
     public Map<String, Object> getInventoryValuation() {
         Map<String, Object> result = new HashMap<>();
         try {
-            // Join ArticuloStock with Articulos via codigoBarra to get pricing
+            // Join ArticuloStock with Articulos via codigoBarra y toma la fila
+            // de precio más reciente (MAX(id) del histórico). El JPQL anterior
+            // usaba `a.lastPrecio` (no es una propiedad mapeada) y
+            // `JOIN Articulos a ON ...` (JPQL no permite JOIN con condición),
+            // así que la consulta fallaba y el catch devolvía una lista vacía.
             TypedQuery<Object[]> query = em.createQuery(
                 "SELECT s.codigoBarra, s.stock, a.nombre, " +
-                "a.lastPrecio.precioFinal, a.lastPrecio.precioCostoSinIVA " +
-                "FROM ArticuloStock s " +
-                "JOIN Articulos a ON a.codigoBarra = s.codigoBarra " +
-                "WHERE s.stock > 0",
+                "p.precioFinal, p.precioCostoSinIVA " +
+                "FROM ArticuloStock s, Articulos a JOIN a.precios p " +
+                "WHERE a.codigoBarra = s.codigoBarra " +
+                "AND p.id = (SELECT MAX(p2.id) FROM ArticuloPrecio p2 WHERE p2.articulo = a) " +
+                "AND s.stock > 0",
                 Object[].class
             );
             List<Object[]> rows = query.getResultList();

@@ -202,14 +202,46 @@ public class ArticulosService extends GService<Articulos> {
 
     public @Nullable Articulos findByBarCode(@Nonnull String barcode) {
         try {
-            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.codigoBarra = :barcode", Articulos.class);
+            // ORDER BY + tope 2: con códigos duplicados (dato legado) el
+            // resultado no puede depender del orden que devuelva la base.
+            TypedQuery<Articulos> query = em.createQuery(
+                    "SELECT a FROM Articulos a WHERE a.codigoBarra = :barcode "
+                            + "ORDER BY a.codigo ASC", Articulos.class);
             query.setParameter("barcode", barcode);
+            query.setMaxResults(2);
             List<Articulos> resultList = query.getResultList();
+            if (resultList.size() > 1) {
+                LOG.warn("Codigo de barra duplicado '" + barcode
+                        + "': se usa el articulo de menor codigo"
+                        + " | source=ArticulosService.findByBarCode()");
+            }
             return resultList.isEmpty() ? null : resultList.get(0);
         } catch (PersistenceException e) {
-            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticulosService.findByBarCode() | despues=" + e.getMessage());
             return null;
         }    
+    }
+
+    /**
+     * ¿Otro artículo ya usa este código de barras? La comprobación va al
+     * servidor y dentro de la transacción del alta/edición; el cliente no es
+     * la autoridad. {@code excluirCodigo} permite editar el mismo artículo.
+     */
+    public boolean existeCodigoBarra(@Nonnull String codigoBarra, @Nullable Long excluirCodigo) {
+        try {
+            String jpql = "SELECT COUNT(a) FROM Articulos a WHERE a.codigoBarra = :barcode"
+                    + (excluirCodigo != null ? " AND a.codigo <> :excluir" : "");
+            TypedQuery<Long> query = em.createQuery(jpql, Long.class);
+            query.setParameter("barcode", codigoBarra);
+            if (excluirCodigo != null) {
+                query.setParameter("excluir", excluirCodigo);
+            }
+            return query.getSingleResult() > 0;
+        } catch (PersistenceException e) {
+            LOG.warn("Error verificando codigo de barra '" + codigoBarra + "': "
+                    + e.getMessage() + " | source=ArticulosService.existeCodigoBarra()");
+            return false;
+        }
     }
 
     public @Nullable List<Articulos> listAllSinProcesar() {

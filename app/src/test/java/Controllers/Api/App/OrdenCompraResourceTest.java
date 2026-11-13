@@ -69,6 +69,9 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
     @Inject
     DepartamentoService departamentoService;
 
+    @Inject
+    Services.InventarioService inventarioService;
+
     // ── Auth helpers (CategoriaResourceTest conventions) ────────────────
 
     /** Full browser-equivalent session: GET /login → POST j_security_check. */
@@ -439,6 +442,8 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
         transicionar(session, id, "CONFIRMADA");
 
         // CONFIRMADA --recibir--> RECIBIDA (fechaEntregaReal stamped, totalReal copied)
+        var articulo = articulosService.findById(articuloComun.intValue());
+        double stockAntes = inventarioService.getStock(articulo.getCodigoBarra());
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of("totalReal", 33.5))
@@ -448,6 +453,13 @@ class OrdenCompraResourceTest extends support.ContextPathIsolation {
                 .body("data.estado", equalTo("RECIBIDA"))
                 .body("data.fechaEntregaReal", notNullValue())
                 .body("data.totalReal", equalTo(33.5f));
+
+        // Modelo A: la orden es un compromiso, no mueve stock. La factura
+        // recibida es la que ingresa inventario (movimiento pendiente de
+        // aprobación en el módulo de Inventarios).
+        double stockDespues = inventarioService.getStock(articulo.getCodigoBarra());
+        org.assertj.core.api.Assertions.assertThat(stockDespues)
+                .isCloseTo(stockAntes, org.assertj.core.api.Assertions.within(0.0001));
 
         // RECIBIDA → FACTURADA (the only legal exit)
         transicionar(session, id, "FACTURADA");

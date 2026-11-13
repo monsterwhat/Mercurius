@@ -496,7 +496,7 @@ public class ArticuloResource {
                 return failureWith(TAB_ACTIVOS, "error", MSG_SELECCION_REQUERIDA, 400, "VALIDATION_ERROR");
             }
             if (form.codigoBarra != null && !form.codigoBarra.isBlank()
-                    && articulosService.findByBarCode(form.codigoBarra.trim()) != null) {
+                    && articulosService.existeCodigoBarra(form.codigoBarra.trim(), null)) {
                 return failureWith(TAB_ACTIVOS, "warn", MSG_BARRA_DUPLICADA, 409, "DUPLICATE_BARCODE");
             }
 
@@ -631,6 +631,10 @@ public class ArticuloResource {
             }
             if (form.cabysCodigo == null || findCabys(form.cabysCodigo) == null) {
                 return failureWith(TAB_ACTIVOS, "warn", MSG_CABYS_REQUERIDO, 400, "VALIDATION_ERROR");
+            }
+            if (form.codigoBarra != null && !form.codigoBarra.isBlank()
+                    && articulosService.existeCodigoBarra(form.codigoBarra.trim(), (long) codigo)) {
+                return failureWith(TAB_ACTIVOS, "warn", MSG_BARRA_DUPLICADA, 409, "DUPLICATE_BARCODE");
             }
 
             String antes = DiffUtils.snapshotEntity(articulo);

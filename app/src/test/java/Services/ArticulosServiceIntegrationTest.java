@@ -251,6 +251,21 @@ class ArticulosServiceIntegrationTest {
     // stamped by @PrePersist; primitives status/processed are set
     // explicitly. Category links point at the seeded rows.
     // ------------------------------------------------------------------
+    @Test
+    void findByBarCodeIsDeterministicAndExisteCodigoBarraDetectsDuplicates() {
+        Articulos primero = createArticulo("IT Bar A", "IT-DUP-001");
+        Articulos segundo = createArticulo("IT Bar B", "IT-DUP-001");
+
+        Articulos encontrado = articulosService.findByBarCode("IT-DUP-001");
+        assertNotNull(encontrado);
+        long esperado = Math.min(primero.getCodigo(), segundo.getCodigo());
+        assertEquals(esperado, encontrado.getCodigo().longValue());
+
+        assertTrue(articulosService.existeCodigoBarra("IT-DUP-001", null));
+        assertTrue(articulosService.existeCodigoBarra("IT-DUP-001", primero.getCodigo()));
+        assertFalse(articulosService.existeCodigoBarra("IT-UNICO-999", null));
+    }
+
     private Articulos createArticulo(String nombre, String codigoBarra) {
         Articulos articulo = new Articulos();
         articulo.setNombre(nombre);
