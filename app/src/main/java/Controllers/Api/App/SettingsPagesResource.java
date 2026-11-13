@@ -157,7 +157,7 @@ public class SettingsPagesResource {
      * API key/encryption key, Fides auth password) are never carried.
      */
     private static AppSettingsDTO toDTO(@Nonnull ConfiguracionAplicacion s) {
-        return new AppSettingsDTO(
+        AppSettingsDTO dto = new AppSettingsDTO(
                 s.getId(),
                 s.getNombrePerfil(),
                 s.getLogo(),
@@ -212,6 +212,8 @@ public class SettingsPagesResource {
                 s.getImapCorreoPuerto(),
                 s.getSmtpCorreoHost(),
                 s.getSmtpCorreoPuerto());
+        dto.setModoHacienda(s.getModoHacienda());
+        return dto;
     }
 
     /**

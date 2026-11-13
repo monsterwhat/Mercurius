@@ -55,6 +55,7 @@ public class HaciendaSigner {
     private final HaciendaCertificateService certificateService;
 
     @Inject HaciendaXsdValidator xsdValidator;
+    @Inject HaciendaTransmissionPolicy haciendaTransmissionPolicy;
 
     public HaciendaSigner(HaciendaCertificateService certificateService) {
         this.certificateService = certificateService;
@@ -117,6 +118,14 @@ public class HaciendaSigner {
             }
 
             // ── 2. Load keystore & certificate ───────────────────────────────
+            if (haciendaTransmissionPolicy != null
+                    && haciendaTransmissionPolicy.simulada()
+                    && !certificateService.hasCertificate()) {
+                LOG.info("Firma omitida (modo simulado sin certificado): el XML valida contra el XSD"
+                        + " | source=HaciendaSigner.signXml()"
+                        + " | despues=se usa el XML sin firma y no hay llamada de red");
+                return SignResult.ok(xmlContent);
+            }
             KeyStore keyStore = certificateService.loadKeyStore();
             PrivateKey privateKey = null;
             X509Certificate certificate = null;

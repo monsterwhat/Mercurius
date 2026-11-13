@@ -551,18 +551,6 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
             resultado.mensaje = "estado terminal: " + estado;
             return resultado;
         }
-        // Candado de entorno ANTES de cualquier escalamiento o envio: en
-        // desarrollo no se transmite ni se marca VENCIDO por el reloj.
-        if (!haciendaTransmissionPolicy.habilitada()) {
-            resultado.omitido = true;
-            resultado.mensaje = "Transmision a Hacienda deshabilitada en este entorno (modo desarrollo)";
-            LOG.info("Reintento OMITIDO: transmision deshabilitada en este entorno"
-                    + " | clave=" + registro.getClave()
-                    + " | source=EnvioFueraLineaService.reintentar()"
-                    + " | despues=la fila queda como esta");
-            return resultado;
-        }
-
         LocalDateTime vencimiento = registro.getVencimiento();
         if (vencimiento != null && !ahora.isBefore(vencimiento)) {
             escalarVencido(registro, "Vencio el plazo de Art. 21 parrafo 3 (dos dias habiles) el "

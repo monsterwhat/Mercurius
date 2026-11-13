@@ -92,6 +92,9 @@ public class AppSettingsDTO {
     private String provedor;
     private String codigoActividad;
 
+    /** simulada | real; null = decide el perfil. */
+    @Nullable private String modoHacienda;
+
     private Boolean estatus; // Si se esta usando o no en el sistema
     private int completedSteps; // En que punto del setup esta
 
@@ -493,6 +496,15 @@ public class AppSettingsDTO {
 
     public void setCodigoActividad(@Nullable String codigoActividad) {
         this.codigoActividad = codigoActividad;
+    }
+
+    @Nullable
+    public String getModoHacienda() {
+        return modoHacienda;
+    }
+
+    public void setModoHacienda(@Nullable String modoHacienda) {
+        this.modoHacienda = modoHacienda;
     }
 
     @Nullable

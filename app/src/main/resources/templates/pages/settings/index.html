@@ -832,6 +832,28 @@
                         </p>
                     </div>
                 </div>
+                <div class="column is-one-third">
+                    <div class="field">
+                        <label class="label is-small" for="modo-hacienda">Transmisión a Hacienda</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select id="modo-hacienda" name="modoHacienda"
+                                        aria-describedby="modo-hacienda-help">
+                                    <option value="simulada"
+                                            {#if settings.modoHacienda == 'simulada'}selected{/if}>Simulada (no se envía)</option>
+                                    <option value="real"
+                                            {#if settings.modoHacienda == 'real'}selected{/if}>Real (envía a Hacienda)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help mercurius-text-muted" id="modo-hacienda-help">
+                            <strong>Simulada</strong> arma, valida, firma e imprime el
+                            comprobante igual que siempre, pero no hace la llamada a
+                            Tributación. <strong>Real</strong> transmite al ambiente
+                            configurado (sandbox o producción).
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <hr/>

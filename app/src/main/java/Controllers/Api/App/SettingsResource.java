@@ -232,7 +232,8 @@ public class SettingsResource {
             @FormParam("canton") @Nullable String canton,
             @FormParam("distrito") @Nullable String distrito,
             @FormParam("barrio") @Nullable String barrio,
-            @FormParam("direccionCompleta") @Nullable String direccionCompleta) {
+            @FormParam("direccionCompleta") @Nullable String direccionCompleta,
+            @FormParam("modoHacienda") @Nullable String modoHacienda) {
 
         OperationalSettingsRequest request = new OperationalSettingsRequest();
         request.notificarRechazos = casilla(notificarRechazos, notificarRechazosPresente);
@@ -268,6 +269,7 @@ public class SettingsResource {
         request.distrito = distrito;
         request.barrio = barrio;
         request.direccionCompleta = direccionCompleta;
+        request.modoHacienda = modoHacienda;
         return aplicarCambios(request);
     }
 
@@ -430,6 +432,16 @@ public class SettingsResource {
                             .build();
                 }
                 settings.setCodigoActividad(actividad.isEmpty() ? null : actividad);
+            }
+            if (request.modoHacienda != null) {
+                String modo = request.modoHacienda.trim().toLowerCase();
+                if (!modo.isEmpty() && !"simulada".equals(modo) && !"real".equals(modo)) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El modo de transmisión debe ser 'simulada' o 'real'."))
+                            .build();
+                }
+                settings.setModoHacienda(modo.isEmpty() ? null : modo);
             }
             if (request.telefono != null) {
                 settings.setTelefono(textoLimitado(request.telefono, 20, "El teléfono"));
@@ -1134,7 +1146,7 @@ private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionad
      * here — the DTO does not carry them.
      */
     private static AppSettingsDTO toDTO(@Nonnull ConfiguracionAplicacion s) {
-        return new AppSettingsDTO(
+        AppSettingsDTO dto = new AppSettingsDTO(
                 s.getId(),
                 s.getNombrePerfil(),
                 s.getLogo(),
@@ -1189,6 +1201,8 @@ private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionad
                 s.getImapCorreoPuerto(),
                 s.getSmtpCorreoHost(),
                 s.getSmtpCorreoPuerto());
+        dto.setModoHacienda(s.getModoHacienda());
+        return dto;
     }
 
     /**
@@ -1258,6 +1272,9 @@ private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionad
         @Nullable public String distrito;
         @Nullable public String barrio;
         @Nullable public String direccionCompleta;
+
+        /** simulada | real; null = no cambiar. */
+        @Nullable public String modoHacienda;
 
         /**
          * Proveedor de buzone: GMAIL | OUTLOOK | YAHOO | PERSONALIZADO. Un valor

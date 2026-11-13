@@ -66,17 +66,23 @@ public class HaciendaApiService {
     HaciendaTransmissionPolicy haciendaTransmissionPolicy;
 
     /**
-     * Unico punto de red real: sin token no hay ninguna llamada a Hacienda.
-     * En desarrollo la politica devuelve un token fallido y todos los metodos
-     * (enviar, consultar estado, aceptar, rechazar) cortan sin tocar la red.
+     * Unico punto de red real: en modo simulado no hay ninguna llamada a
+     * Hacienda, pero el flujo sigue como si la hubiera.
      */
     private @Nullable TokenResponse tokenBloqueadoPorEntorno() {
-        if (haciendaTransmissionPolicy == null || haciendaTransmissionPolicy.habilitada()) {
+        if (haciendaTransmissionPolicy == null || !haciendaTransmissionPolicy.simulada()) {
             return null;
         }
-        TokenResponse bloqueado = new TokenResponse();
-        bloqueado.error = "Transmision a Hacienda deshabilitada en este entorno (modo desarrollo)";
-        return bloqueado;
+        TokenResponse simulado = new TokenResponse();
+        simulado.accessToken = "simulado-desarrollo";
+        simulado.tokenType = "Bearer";
+        simulado.expiresIn = 3600;
+        return simulado;
+    }
+
+    /** Respuesta que Hacienda habria dado: aceptada, sin salir a la red. */
+    private @Nonnull ApiResponse respuestaSimulada() {
+        return ApiResponse.ok("{\"estado\":\"aceptado\",\"simulado\":true}");
     }
 
     private String getCallbackUrl() {
@@ -245,12 +251,11 @@ public class HaciendaApiService {
      * 3. Otherwise → full ROPC authentication
      */
     public synchronized TokenResponse getAccessToken() {
-        TokenResponse bloqueado = tokenBloqueadoPorEntorno();
-        if (bloqueado != null) {
-            LOG.info("Token de Hacienda NO solicitado: transmision deshabilitada en este entorno"
-                    + " | source=HaciendaApiService.getAccessToken()"
-                    + " | despues=ninguna llamada de red");
-            return bloqueado;
+        TokenResponse simulado = tokenBloqueadoPorEntorno();
+        if (simulado != null) {
+            LOG.info("Token de Hacienda SIMULADO: no hay llamada de red en este entorno"
+                    + " | source=HaciendaApiService.getAccessToken()");
+            return simulado;
         }
         // ── 1. Return cached token if still valid ────────────────────────────
         if (isCacheValid()) {
@@ -425,6 +430,9 @@ public class HaciendaApiService {
     public ApiResponse sendInvoice(String clave, String xmlContent,
                                     String emisorTipoId, String emisorNumeroId,
                                     String receptorTipoId, String receptorNumeroId) {
+        if (haciendaTransmissionPolicy != null && haciendaTransmissionPolicy.simulada()) {
+            return respuestaSimulada();
+        }
         try {
             TokenResponse token = getAccessToken();
             if (!token.isSuccess()) {
@@ -480,6 +488,9 @@ public class HaciendaApiService {
     }
 
     public ApiResponse checkInvoiceStatus(String clave) {
+        if (haciendaTransmissionPolicy != null && haciendaTransmissionPolicy.simulada()) {
+            return respuestaSimulada();
+        }
         try {
             TokenResponse token = getAccessToken();
             if (!token.isSuccess()) {
@@ -515,6 +526,9 @@ public class HaciendaApiService {
     public ApiResponse acceptInvoice(String clave, String xmlAcceptance,
                                       String emisorTipoId, String emisorNumeroId,
                                       String receptorTipoId, String receptorNumeroId) {
+        if (haciendaTransmissionPolicy != null && haciendaTransmissionPolicy.simulada()) {
+            return respuestaSimulada();
+        }
         try {
             TokenResponse token = getAccessToken();
             if (!token.isSuccess()) {
@@ -561,6 +575,9 @@ public class HaciendaApiService {
     public ApiResponse rejectInvoice(String clave, String xmlRejection,
                                       String emisorTipoId, String emisorNumeroId,
                                       String receptorTipoId, String receptorNumeroId) {
+        if (haciendaTransmissionPolicy != null && haciendaTransmissionPolicy.simulada()) {
+            return respuestaSimulada();
+        }
         try {
             TokenResponse token = getAccessToken();
             if (!token.isSuccess()) {

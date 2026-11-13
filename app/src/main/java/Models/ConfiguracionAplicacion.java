@@ -80,6 +80,15 @@ public class ConfiguracionAplicacion {
     
     private String provedor;
     private String codigoActividad;
+
+    /**
+     * Modo de transmision a Hacienda, configurable en Ajustes:
+     * {@code simulada} arma, valida, firma e imprime el comprobante pero no
+     * hace la llamada HTTP; {@code real} transmite al ambiente configurado.
+     * {@code null} deja decidir al perfil (dev simula, produccion transmite).
+     */
+    @Nullable @Column(name = "modoHacienda", length = 20)
+    private String modoHacienda;
     
     //
     private Boolean estatus; //Si se esta usando o no en el sistema
