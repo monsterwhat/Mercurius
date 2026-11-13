@@ -58,6 +58,7 @@ public class ProgramadorTareas {
     @Inject @Nonnull private TipoCambioService tipoCambioService;
     @Inject @Nonnull private EmailService emailer;
     @Inject @Nonnull private AppSettingsService appSettingsService;
+    @Inject @Nonnull private Services.HaciendaTransmissionPolicy haciendaTransmissionPolicy;
     @Inject @Nonnull private ComprobantesEmitidosService comprobantesEmitidosService;
     @Inject @Nonnull private ComprobantesRecibidosService comprobantesRecibidosService;
     @Inject @Nonnull private HaciendaApiService haciendaApiService;
@@ -271,6 +272,11 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
     @Scheduled(cron = "0 */30 * * * ?")
     public void verificarEstadoFacturasEnviadas() {
+        if (!haciendaTransmissionPolicy.habilitada()) {
+            LOG.debug("Verificacion de estado OMITIDA: transmision deshabilitada en este entorno"
+                    + " | source=ProgramadorTareas.verificarEstadoFacturasEnviadas()");
+            return;
+        }
         try {
             List<ComprobantesEmitidos> facturas = comprobantesEmitidosService.findFacturasParaVerificarEstado();
             if (facturas == null || facturas.isEmpty()) return;
@@ -376,6 +382,11 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
     @Scheduled(cron = "0 */15 * * * ?")
     public void verificarFacturasSinRespuesta3Horas() {
+        if (!haciendaTransmissionPolicy.habilitada()) {
+            LOG.debug("Verificacion de facturas sin respuesta OMITIDA: transmision deshabilitada"
+                    + " | source=ProgramadorTareas.verificarFacturasSinRespuesta3Horas()");
+            return;
+        }
         try {
             List<ComprobantesEmitidos> facturas = comprobantesEmitidosService.findFacturasSinRespuesta3Horas();
             if (facturas == null || facturas.isEmpty()) return;

@@ -100,6 +100,9 @@ public class ComprobanteService implements Serializable {
     private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
 
     @Inject
+    private @Nonnull HaciendaTransmissionPolicy haciendaTransmissionPolicy;
+
+    @Inject
     private @Nonnull EncabezadoService encabezadoService;
     @Inject
     private @Nonnull DetalleServicioService detallesService;
@@ -744,6 +747,20 @@ public class ComprobanteService implements Serializable {
         EnvioPendiente envio = result.envio;
         ComprobantesEmitidos comprobante = result.comprobante;
         try {
+            if (!haciendaTransmissionPolicy.habilitada()) {
+                // Desarrollo: no se firma, no se envia y no se encola nada.
+                // El comprobante queda local y el POS lo dice sin alarmar al
+                // cajero con un "requiere envio manual" que no aplica.
+                result.haciendaEnviado = false;
+                result.pendienteEnvio = false;
+                result.haciendaMensaje = "Transmision a Hacienda deshabilitada en este entorno "
+                        + "(desarrollo). El comprobante queda local y no se encola.";
+                LOG.info("Envio omitido por candado de entorno (modo desarrollo)"
+                        + " | clave=" + comprobante.getHaciendaClave()
+                        + " | source=ComprobanteService.enviarComprobanteCreado()"
+                        + " | despues=comprobante local, sin firmar ni encolar");
+                return;
+            }
             if (!envio.hayConectividad) {
                 // Hacienda inalcanzable en el momento de la venta: el documento
                 // ya está firmado con situacion 3 y se transmite dentro de dos
@@ -871,6 +888,16 @@ public class ComprobanteService implements Serializable {
      * is tracked explicitly.
      */
     public boolean enviarComprobanteAHacienda(ComprobantesEmitidos comprobante) {
+        // Candado de entorno: en desarrollo (perfil dev) la transmision esta
+        // apagada. El documento no se firma, no se envia y NO cambia de estado;
+        // asi una venta de prueba no ensucia consecutivos ni la cola.
+        if (!haciendaTransmissionPolicy.habilitada()) {
+            LOG.info("Envio a Hacienda OMITIDO: transmision deshabilitada en este entorno"
+                + " | clave=" + comprobante.getHaciendaClave()
+                + " | source=ComprobanteService.enviarComprobanteAHacienda()"
+                + " | despues=comprobante local, sin cambios de estado");
+            return false;
+        }
         // Preflight FUERA del try, igual que el de la cédula del Mensaje Receptor:
         // un documento con el bloque de referencia incompleto no puede ir a
         // Hacienda (nota 9 del XSD v4.4, códigos 13/15 obligatorios desde el
@@ -937,6 +964,11 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
+                // El sello optimista ENVIADO solo vale si el documento salio.
+                // Antes, un fallo local (p. ej. XSD) dejaba el comprobante en
+                // ENVIADO sin fecha de envio ni de respuesta, que se lee como
+                // "transmitido" cuando en realidad nunca salio de la maquina.
+                comprobante.setHaciendaEstado("RECHAZADO");
                 comprobantesEmitidosService.update(comprobante);
                 LOG.info("Hacienda rechazo comprobante: " + result.errorMessage
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()"

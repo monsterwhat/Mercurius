@@ -62,6 +62,23 @@ public class HaciendaApiService {
         this.certificateService = certificateService;
     }
 
+    @Inject
+    HaciendaTransmissionPolicy haciendaTransmissionPolicy;
+
+    /**
+     * Unico punto de red real: sin token no hay ninguna llamada a Hacienda.
+     * En desarrollo la politica devuelve un token fallido y todos los metodos
+     * (enviar, consultar estado, aceptar, rechazar) cortan sin tocar la red.
+     */
+    private @Nullable TokenResponse tokenBloqueadoPorEntorno() {
+        if (haciendaTransmissionPolicy == null || haciendaTransmissionPolicy.habilitada()) {
+            return null;
+        }
+        TokenResponse bloqueado = new TokenResponse();
+        bloqueado.error = "Transmision a Hacienda deshabilitada en este entorno (modo desarrollo)";
+        return bloqueado;
+    }
+
     private String getCallbackUrl() {
         try {
             ConfiguracionAplicacion settings = certificateService.getActiveSettings();
@@ -228,6 +245,13 @@ public class HaciendaApiService {
      * 3. Otherwise → full ROPC authentication
      */
     public synchronized TokenResponse getAccessToken() {
+        TokenResponse bloqueado = tokenBloqueadoPorEntorno();
+        if (bloqueado != null) {
+            LOG.info("Token de Hacienda NO solicitado: transmision deshabilitada en este entorno"
+                    + " | source=HaciendaApiService.getAccessToken()"
+                    + " | despues=ninguna llamada de red");
+            return bloqueado;
+        }
         // ── 1. Return cached token if still valid ────────────────────────────
         if (isCacheValid()) {
             TokenResponse result = new TokenResponse();

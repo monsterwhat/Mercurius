@@ -148,6 +148,9 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
     private @Nonnull HaciendaApiService haciendaApiService;
 
     @Inject
+    private @Nonnull HaciendaTransmissionPolicy haciendaTransmissionPolicy;
+
+    @Inject
     private @Nonnull EmailService emailService;
 
     private volatile long sondeoVenceEnMillis;
@@ -546,6 +549,17 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
                 || ESTADO_VENCIDO.equals(estado)) {
             resultado.omitido = true;
             resultado.mensaje = "estado terminal: " + estado;
+            return resultado;
+        }
+        // Candado de entorno ANTES de cualquier escalamiento o envio: en
+        // desarrollo no se transmite ni se marca VENCIDO por el reloj.
+        if (!haciendaTransmissionPolicy.habilitada()) {
+            resultado.omitido = true;
+            resultado.mensaje = "Transmision a Hacienda deshabilitada en este entorno (modo desarrollo)";
+            LOG.info("Reintento OMITIDO: transmision deshabilitada en este entorno"
+                    + " | clave=" + registro.getClave()
+                    + " | source=EnvioFueraLineaService.reintentar()"
+                    + " | despues=la fila queda como esta");
             return resultado;
         }
 
