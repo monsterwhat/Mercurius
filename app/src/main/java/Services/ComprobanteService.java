@@ -477,7 +477,17 @@ public class ComprobanteService implements Serializable {
             encabezado.setClave(clave);
             
             encabezadoService.create(encabezado);
-            DetalleServicio detalles = detallesComprobante(carrito, tipoDocumento);
+
+            if (datosEspeciales != null && datosEspeciales.moneda() != null
+                    && !"CRC".equalsIgnoreCase(datosEspeciales.moneda())
+                    && puntosARedimir != null
+                    && puntosARedimir.compareTo(BigDecimal.ZERO) > 0) {
+                throw new IllegalArgumentException(
+                        "Los puntos no están disponibles en facturas en moneda extranjera.");
+            }
+            List<ArticuloCarrito> carritoFactura = convertirCarrito(carrito, datosEspeciales);
+            List<EntradaPago> pagosFactura = convertirPagos(pagos, datosEspeciales);
+            DetalleServicio detalles = detallesComprobante(carritoFactura, tipoDocumento);
 
             // REP V4.4: DetalleServicio is MANDATORY (minOccurs="1")
             if ("10".equals(tipoDocumento) && (detalles == null
@@ -488,7 +498,7 @@ public class ComprobanteService implements Serializable {
             }
 
             detallesService.create(detalles);
-            ResumenFactura resumen = resumenComprobante(carrito);
+            ResumenFactura resumen = resumenComprobante(carritoFactura);
             aplicarMoneda(resumen, datosEspeciales);
 
             // Descuento por puntos EN EL DOCUMENTO (summary-level). Hasta aquí
@@ -525,7 +535,7 @@ public class ComprobanteService implements Serializable {
             BigDecimal totalOtrosCargos = calcularTotalOtrosCargos(detalles);
             resumen.setTotalOtrosCargos(totalOtrosCargos);
 
-            BigDecimal totalIVADevuelto = calcularTotalIVADevuelto(carrito, pagos);
+            BigDecimal totalIVADevuelto = calcularTotalIVADevuelto(carritoFactura, pagosFactura);
             // El XSD v4.4 de la Factura Electrónica de Compra (08) no define
             // TotalIVADevuelto en ResumenFactura; emitirlo hace fallar la
             // validación XSD antes de firmar (el resto de tipos sí lo admite).
@@ -542,7 +552,7 @@ public class ComprobanteService implements Serializable {
             List<MedioPagoR> mediosPagoResumen = new ArrayList<>();
             BigDecimal sumaPagos = BigDecimal.ZERO;
             int pagoCount = 0;
-            for (EntradaPago entry : pagos) {
+            for (EntradaPago entry : pagosFactura) {
                 if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
                 MedioPagoR medioR = new MedioPagoR();
                 medioR.setTipoMedioPago(entry.getMetodoPago());
@@ -1143,6 +1153,68 @@ public class ComprobanteService implements Serializable {
         moneda.setCodigoMoneda(codigo);
         moneda.setTipoCambioMoneda(tasa);
         resumen.setCodigoMoneda(moneda);
+    }
+
+    /**
+     * Copia el carrito con los precios base convertidos a la moneda del
+     * comprobante. No muta el original (el carrito de la sesión y el inventario
+     * siguen en colones). Las promociones y los ajustes manuales quedan fuera:
+     * sus descuentos están denominados en colones y convertirlos sin un diseño
+     * explícito produciría totales inconsistentes.
+     */
+    static @Nonnull List<ArticuloCarrito> convertirCarrito(
+            @Nonnull List<ArticuloCarrito> carrito, @Nullable DatosEspeciales datos) {
+        if (datos == null || datos.moneda() == null
+                || "CRC".equalsIgnoreCase(datos.moneda())) {
+            return carrito;
+        }
+        BigDecimal tasa = datos.tipoCambio();
+        if (tasa == null || tasa.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Tipo de cambio inválido para la moneda " + datos.moneda());
+        }
+        List<ArticuloCarrito> out = new ArrayList<>(carrito.size());
+        for (ArticuloCarrito item : carrito) {
+            if (item.isPromo() || item.hasPrecioAjustado()) {
+                throw new IllegalArgumentException(
+                        "La factura en " + datos.moneda()
+                        + " no está disponible para carritos con promociones o precios ajustados.");
+            }
+            ArticuloCarrito copia = new ArticuloCarrito();
+            copia.setCodigo(item.getCodigo());
+            copia.setCantidad(item.getCantidad());
+            copia.setArticulo(item.getArticulo());
+            copia.setDescuento(item.getDescuento());
+            copia.setPromociones(item.getPromociones());
+            copia.setPromo(item.isPromo());
+            copia.setPrecioConvertido(item.getPrecioEfectivo()
+                    .divide(tasa, 5, RoundingMode.HALF_UP));
+            out.add(copia);
+        }
+        return out;
+    }
+
+    /** Convierte los montos cobrados a la moneda del comprobante. */
+    static @Nonnull List<EntradaPago> convertirPagos(
+            @Nonnull List<EntradaPago> pagos, @Nullable DatosEspeciales datos) {
+        if (datos == null || datos.moneda() == null
+                || "CRC".equalsIgnoreCase(datos.moneda())) {
+            return pagos;
+        }
+        BigDecimal tasa = datos.tipoCambio();
+        if (tasa == null || tasa.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Tipo de cambio inválido para la moneda " + datos.moneda());
+        }
+        List<EntradaPago> out = new ArrayList<>(pagos.size());
+        for (EntradaPago p : pagos) {
+            EntradaPago copia = new EntradaPago();
+            copia.setMetodoPago(p.getMetodoPago());
+            BigDecimal monto = p.getMonto() == null ? BigDecimal.ZERO : p.getMonto();
+            copia.setMonto(monto.divide(tasa, 5, RoundingMode.HALF_UP));
+            out.add(copia);
+        }
+        return out;
     }
 
     public ResumenFactura resumenComprobante(List<ArticuloCarrito> carrito) {

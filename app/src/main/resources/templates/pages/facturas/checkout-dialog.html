@@ -67,6 +67,21 @@
             {/if}
         </div>
 
+        <div class="field">
+            <label class="label is-small" for="cobro-moneda">Moneda de la factura</label>
+            <div class="control">
+                <div class="select is-medium is-fullwidth">
+                    <select id="cobro-moneda" name="moneda">
+                        <option value="CRC" selected>Colones (CRC)</option>
+                        <option value="USD">Dólares (USD)</option>
+                        <option value="EUR">Euros (EUR)</option>
+                    </select>
+                </div>
+            </div>
+            <p class="help">USD/EUR convierten las líneas al tipo de cambio del día.
+                No disponible con promociones, precios ajustados ni puntos.</p>
+        </div>
+
         {#if cobro.tipoDocumento == '03' || cobro.tipoDocumento == '10' || cobro.tipoDocumento == '08'}
         <div class="notification is-info is-light" role="note" style="padding:0.5rem 0.75rem">
             {#if cobro.tipoDocumento == '10'}

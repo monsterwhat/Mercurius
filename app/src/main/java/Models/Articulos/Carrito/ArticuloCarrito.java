@@ -48,6 +48,15 @@ public class ArticuloCarrito {
     private BigDecimal precioPersonalizado;
 
     /**
+     * Precio base sin IVA convertido a la moneda del comprobante. Es distinto
+     * de {@link #precioPersonalizado}: no es un ajuste manual del cajero y no
+     * debe generar auditoría de precio ajustado. Se llena solo al emitir en
+     * USD/EUR.
+     */
+    @Transient
+    private BigDecimal precioConvertido;
+
+    /**
      * Auditoria del ajuste manual de precio. Vive solo en memoria: el carrito
      * POS no se persiste, y el rastro real se copia a la LineaDetalle de la
      * factura al emitir (ComprobanteService.detallesComprobante).
@@ -87,6 +96,9 @@ public class ArticuloCarrito {
     }
 
     public BigDecimal getPrecioEfectivo() {
+        if (precioConvertido != null) {
+            return precioConvertido;
+        }
         if (precioPersonalizado != null) {
             return precioPersonalizado;
         }

@@ -3,6 +3,7 @@ package Services;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Cabys;
+import Models.EntradaPago;
 import Models.Detalles.DetalleServicio;
 import Models.Detalles.Exoneracion;
 import Models.Detalles.Impuesto;
@@ -335,6 +336,22 @@ class ComprobanteTaxMathTest {
         assertThat(resumen).isNotNull();
         assertThat(resumen.getTotalServGravados()).isEqualByComparingTo("100");
         assertThat(resumen.getTotalMercanciasGravadas()).isEqualByComparingTo("200");
+    }
+
+    @Test
+    void convertirCarritoYPagosDividePorLaTasa() {
+        ArticuloCarrito item = item(91L, "501010115", "13", "1000", "1");
+        ComprobanteService.DatosEspeciales datos = new ComprobanteService.DatosEspeciales(
+                null, null, null, null, null, null, "USD", new BigDecimal("500"));
+
+        List<ArticuloCarrito> carrito = ComprobanteService.convertirCarrito(List.of(item), datos);
+        assertThat(carrito).hasSize(1);
+        assertThat(carrito.get(0).getPrecioConvertido()).isEqualByComparingTo("2");
+
+        EntradaPago pago = new EntradaPago();
+        pago.setMonto(new BigDecimal("1000"));
+        List<EntradaPago> pagos = ComprobanteService.convertirPagos(List.of(pago), datos);
+        assertThat(pagos.get(0).getMonto()).isEqualByComparingTo("2");
     }
 
     @Test
