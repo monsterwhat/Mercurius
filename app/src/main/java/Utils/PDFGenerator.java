@@ -223,7 +223,7 @@ public class PDFGenerator {
             BigDecimal monto = linea.getMontoTotalLinea() != null
                     ? linea.getMontoTotalLinea()
                     : (linea.getMontoTotal() != null ? linea.getMontoTotal() : BigDecimal.ZERO);
-            table.addCell(celdaPdf(FormatoVista.moneda(monto) + " " + letraImpuesto(linea),
+            table.addCell(celdaPdf(moneda(nc, monto) + " " + letraImpuesto(linea),
                     font, Element.ALIGN_RIGHT));
         }
         document.add(table);
@@ -237,9 +237,10 @@ public class PDFGenerator {
                 ? nc.getResumen().getTotalComprobante() : BigDecimal.ZERO;
         PdfPTable totales = new PdfPTable(2);
         totales.setWidthPercentage(100);
-        filaTotalPdf(totales, "Descuentos:", descuentos, font);
-        filaTotalPdf(totales, "IVA:", iva, font);
-        filaTotalPdf(totales, "Total:", total, font);
+        String monedaDoc = monedaCodigo(nc);
+        filaTotalPdf(totales, "Descuentos:", descuentos, font, monedaDoc);
+        filaTotalPdf(totales, "IVA:", iva, font, monedaDoc);
+        filaTotalPdf(totales, "Total:", total, font, monedaDoc);
         document.add(totales);
         return document;
     }
@@ -291,14 +292,30 @@ public class PDFGenerator {
         return cell;
     }
 
+    /** Moneda del comprobante; CRC si el resumen no la trae (datos históricos). */
+    private static @Nonnull String monedaCodigo(@Nullable ComprobantesEmitidos c) {
+        if (c != null && c.getResumen() != null
+                && c.getResumen().getCodigoMoneda() != null
+                && c.getResumen().getCodigoMoneda().getCodigoMoneda() != null) {
+            return c.getResumen().getCodigoMoneda().getCodigoMoneda();
+        }
+        return "CRC";
+    }
+
+    private static @Nonnull String moneda(@Nullable ComprobantesEmitidos c, @Nullable Object valor) {
+        return FormatoVista.moneda(valor, monedaCodigo(c));
+    }
+
     private static void filaTotalPdf(@Nonnull PdfPTable table, @Nonnull String etiqueta,
                                      @Nonnull BigDecimal valor,
-                                     com.lowagie.text.Font font) {
+                                     com.lowagie.text.Font font,
+                                     @Nonnull String monedaCodigo) {
         PdfPCell label = new PdfPCell(new Phrase(etiqueta, font));
         label.setBorder(PdfPCell.NO_BORDER);
         label.setHorizontalAlignment(Element.ALIGN_LEFT);
         table.addCell(label);
-        PdfPCell value = new PdfPCell(new Phrase(FormatoVista.moneda(valor), font));
+        PdfPCell value = new PdfPCell(new Phrase(
+                FormatoVista.moneda(valor, monedaCodigo), font));
         value.setBorder(PdfPCell.NO_BORDER);
         value.setHorizontalAlignment(Element.ALIGN_RIGHT);
         table.addCell(value);
@@ -502,7 +519,7 @@ public class PDFGenerator {
             articulosTable.addCell(descripcionCell); // Add to table
 
             // Create and configure the cell for Monto
-            PdfPCell montoCell = new PdfPCell(new Phrase(FormatoVista.moneda(articulo.getTotalArticulos()) + " " + codigoLetra, font));
+            PdfPCell montoCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, articulo.getTotalArticulos()) + " " + codigoLetra, font));
             montoCell.setBorder(PdfPCell.NO_BORDER); // Set no border
             montoCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
             montoCell.setPadding(1); // Optional: set padding for better spacing
@@ -522,7 +539,7 @@ public class PDFGenerator {
         descuentosTable.addCell(descuentostotalCell);
 
         BigDecimal totalDescuento = tiqueteElectronico.getResumen().getTotalDescuentos();
-        PdfPCell descuentovalueCell = new PdfPCell(new Phrase(FormatoVista.moneda(totalDescuento), font));
+        PdfPCell descuentovalueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, totalDescuento), font));
         descuentovalueCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
         descuentovalueCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
         descuentosTable.addCell(descuentovalueCell);
@@ -562,7 +579,7 @@ public class PDFGenerator {
         ivaTable.addCell(ivatotalCell);
 
         BigDecimal totalImpuesto = tiqueteElectronico.getResumen().getTotalImpuesto();
-        PdfPCell ivavalueCell = new PdfPCell(new Phrase(FormatoVista.moneda(totalImpuesto), font));
+        PdfPCell ivavalueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, totalImpuesto), font));
         ivavalueCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
         ivavalueCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
         ivaTable.addCell(ivavalueCell);
@@ -577,7 +594,7 @@ public class PDFGenerator {
         totalCell.setHorizontalAlignment(Element.ALIGN_LEFT); // Align left
         table.addCell(totalCell);
 
-        PdfPCell valueCell = new PdfPCell(new Phrase(FormatoVista.moneda(tiqueteElectronico.getResumen().getTotalComprobante()), font));
+        PdfPCell valueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, tiqueteElectronico.getResumen().getTotalComprobante()), font));
         valueCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
         valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
         table.addCell(valueCell);
@@ -597,7 +614,7 @@ public class PDFGenerator {
                 labelCell.setBorder(PdfPCell.NO_BORDER);
                 labelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
                 paymentTable.addCell(labelCell);
-                PdfPCell paymentValueCell = new PdfPCell(new Phrase(FormatoVista.moneda(pe.getMonto()), font));
+                PdfPCell paymentValueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, pe.getMonto()), font));
                 paymentValueCell.setBorder(PdfPCell.NO_BORDER);
                 paymentValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
                 paymentTable.addCell(paymentValueCell);
@@ -608,7 +625,7 @@ public class PDFGenerator {
             labelCell.setBorder(PdfPCell.NO_BORDER);
             labelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
             paymentTable.addCell(labelCell);
-            PdfPCell fallbackValueCell = new PdfPCell(new Phrase(FormatoVista.moneda(pago), font));
+            PdfPCell fallbackValueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, pago), font));
             fallbackValueCell.setBorder(PdfPCell.NO_BORDER);
             fallbackValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
             paymentTable.addCell(fallbackValueCell);
@@ -618,7 +635,7 @@ public class PDFGenerator {
         totalLabelCell.setBorder(PdfPCell.NO_BORDER);
         totalLabelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
         paymentTable.addCell(totalLabelCell);
-        PdfPCell totalValueCell = new PdfPCell(new Phrase(FormatoVista.moneda(sumaMostrada), font));
+        PdfPCell totalValueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, sumaMostrada), font));
         totalValueCell.setBorder(PdfPCell.NO_BORDER);
         totalValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         paymentTable.addCell(totalValueCell);
@@ -626,7 +643,7 @@ public class PDFGenerator {
         vueltoLabelCell.setBorder(PdfPCell.NO_BORDER);
         vueltoLabelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
         paymentTable.addCell(vueltoLabelCell);
-        PdfPCell vueltoValueCell = new PdfPCell(new Phrase(FormatoVista.moneda(vuelto.negate()), font));
+        PdfPCell vueltoValueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, vuelto.negate()), font));
         vueltoValueCell.setBorder(PdfPCell.NO_BORDER);
         vueltoValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         paymentTable.addCell(vueltoValueCell);
@@ -646,7 +663,7 @@ public class PDFGenerator {
             taxLabelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
             taxTable.addCell(taxLabelCell);
 
-            PdfPCell taxValueCell = new PdfPCell(new Phrase(FormatoVista.moneda(total), font));
+            PdfPCell taxValueCell = new PdfPCell(new Phrase(moneda(tiqueteElectronico, total), font));
             taxValueCell.setBorder(PdfPCell.NO_BORDER);
             taxValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
             taxTable.addCell(taxValueCell);
