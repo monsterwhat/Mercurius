@@ -1492,7 +1492,17 @@ public class DevolucionesResource {
 
             ResumenFactura ncResumen = new ResumenFactura();
             CodigoTipoMoneda moneda = new CodigoTipoMoneda();
-            moneda.setCodigoMoneda("CRC");
+            CodigoTipoMoneda originalMoneda = facturaSeleccionada.getResumen() != null
+                    ? facturaSeleccionada.getResumen().getCodigoMoneda() : null;
+            if (originalMoneda != null) {
+                // La NC compensa el documento original: misma moneda y misma
+                // tasa, nunca la del día.
+                moneda.setCodigoMoneda(originalMoneda.getCodigoMoneda());
+                moneda.setTipoCambioMoneda(originalMoneda.getTipoCambioMoneda());
+            } else {
+                moneda.setCodigoMoneda("CRC");
+                moneda.setTipoCambioMoneda(BigDecimal.ONE);
+            }
             ncResumen.setCodigoMoneda(moneda);
             BigDecimal totalGravado = BigDecimal.ZERO;
             BigDecimal totalExento = BigDecimal.ZERO;

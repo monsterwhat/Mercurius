@@ -7,6 +7,7 @@ import Models.TipoCambio;
 import com.fasterxml.jackson.core.JsonProcessingException; 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import jakarta.inject.Inject;
@@ -82,6 +83,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             tipoCambio.setFecha(fechaVenta);
             tipoCambio.setValorCompra(valorCompra);
             tipoCambio.setValorVenta(valorVenta);
+            tipoCambio.setMoneda("USD");
             tipoCambio.setManual(Boolean.FALSE);
             
             return tipoCambio;
@@ -98,10 +100,17 @@ public class TipoCambioService extends GService<TipoCambio> {
 
     /** Persists a user rate as today's entry (scale 5, callers validate). */
     public void saveManualRate(@Nonnull BigDecimal compra, @Nonnull BigDecimal venta) {
+        saveManualRate(compra, venta, "USD");
+    }
+
+    /** Igual que el anterior, pero para una moneda concreta (USD/EUR). */
+    public void saveManualRate(@Nonnull BigDecimal compra, @Nonnull BigDecimal venta,
+                               @Nonnull String moneda) {
         TipoCambio tipoCambio = new TipoCambio();
         tipoCambio.setFecha(LocalDateTime.now());
         tipoCambio.setValorCompra(compra.setScale(5, RoundingMode.HALF_UP));
         tipoCambio.setValorVenta(venta.setScale(5, RoundingMode.HALF_UP));
+        tipoCambio.setMoneda(moneda.trim().toUpperCase());
         tipoCambio.setManual(Boolean.TRUE);
         saveTipoCambio(tipoCambio);
     }
@@ -213,9 +222,56 @@ public class TipoCambioService extends GService<TipoCambio> {
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public TipoCambio getNewestTipoCambioFromDb() {
-        TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.id DESC", TipoCambio.class);
+        return getNewestTipoCambioFromDb("USD");
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public TipoCambio getNewestTipoCambioFromDb(@Nonnull String moneda) {
+        TypedQuery<TipoCambio> query = em.createQuery(
+                "SELECT t FROM TipoCambio t WHERE (t.moneda = :moneda "
+                        + "OR (t.moneda IS NULL AND :moneda = 'USD')) ORDER BY t.id DESC",
+                TipoCambio.class);
+        query.setParameter("moneda", moneda);
         query.setMaxResults(1);
         return query.getResultList().stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Tasa vigente para una moneda: CRC = 1; USD/EUR = la fila del día o la
+     * más reciente de esa moneda. Null si no hay tasa: el llamador debe fallar,
+     * nunca usar 1 para una moneda extranjera.
+     */
+    public @Nullable BigDecimal tasaVigente(@Nullable String moneda, @Nonnull LocalDate fecha) {
+        String codigo = moneda == null || moneda.isBlank()
+                ? "CRC" : moneda.trim().toUpperCase();
+        if ("CRC".equals(codigo)) {
+            return BigDecimal.ONE;
+        }
+        TipoCambio tc = findForDate(codigo, fecha);
+        if (tc == null) {
+            tc = getNewestTipoCambioFromDb(codigo);
+        }
+        return tc != null ? tc.getValorVenta() : null;
+    }
+
+    @Nullable
+    private TipoCambio findForDate(@Nonnull String moneda, @Nonnull LocalDate fecha) {
+        try {
+            TypedQuery<TipoCambio> query = em.createQuery(
+                    "SELECT t FROM TipoCambio t WHERE (t.moneda = :moneda "
+                            + "OR (t.moneda IS NULL AND :moneda = 'USD')) "
+                            + "AND CAST(t.fecha AS date) = :date ORDER BY t.id DESC",
+                    TipoCambio.class);
+            query.setParameter("moneda", moneda);
+            query.setParameter("date", java.sql.Date.valueOf(fecha));
+            query.setMaxResults(1);
+            List<TipoCambio> filas = query.getResultList();
+            return filas.isEmpty() ? null : filas.get(0);
+        } catch (RuntimeException e) {
+            LOG.warn("Error buscando TipoCambio " + moneda + " por fecha: " + e.getMessage()
+                    + " | source=TipoCambioService.findForDate()", e);
+            return null;
+        }
     }
 
     /**

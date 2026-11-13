@@ -299,6 +299,14 @@ public class HaciendaServiceFacade {
                 && comprobante.getResumen().getTotalComprobante() != null
                 ? comprobante.getResumen().getTotalComprobante().toPlainString() : "0";
 
+        if (comprobante.getResumen() != null
+                && comprobante.getResumen().getCodigoMoneda() != null) {
+            var moneda = comprobante.getResumen().getCodigoMoneda();
+            data.currency = moneda.getCodigoMoneda();
+            data.exchangeRate = moneda.getTipoCambioMoneda() != null
+                    ? moneda.getTipoCambioMoneda().toPlainString() : "1";
+        }
+
         return data;
     }
 

@@ -119,6 +119,10 @@ public class FidesApiService {
         public String codigoActividadEmisor;
         public List<ItemData> items;
         public String total;
+        /** CRC/USD/EUR; Fides defaults to CRC when absent. */
+        public String currency;
+        /** CRC per 1 unit of currency; 1 for CRC. */
+        public String exchangeRate;
 
         public static class ItemData {
             public String code;
@@ -358,6 +362,8 @@ public class FidesApiService {
                 }
             }
             payload.set("items", items);
+            payload.put("currency", data.currency != null ? data.currency : "CRC");
+            payload.put("exchange_rate", data.exchangeRate != null ? data.exchangeRate : "1");
             payload.put("total", data.total != null ? data.total : "0");
             if (data.accessKey != null && !data.accessKey.isEmpty()) {
                 payload.put("access_key", data.accessKey);

@@ -489,6 +489,16 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         // Null puntos means "use the staged ctx discount" inside doFacturar;
         // explicit JSON values keep their original semantics verbatim.
         BigDecimal puntos = request == null ? null : request.puntosARedimir;
+        String moneda = request == null || request.moneda == null || request.moneda.isBlank()
+                ? "CRC" : request.moneda.trim().toUpperCase();
+        BigDecimal tasa = tipoCambioService.tasaVigente(moneda, java.time.LocalDate.now());
+        if (tasa == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("TIPO_CAMBIO_NO_DISPONIBLE",
+                            "No hay tipo de cambio para " + moneda
+                                    + ". Registre la tasa antes de facturar en esa moneda."))
+                    .build();
+        }
         ComprobanteService.DatosEspeciales datos = request == null ? null
                 : new ComprobanteService.DatosEspeciales(
                         request.condicionVenta,
@@ -496,7 +506,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                         request.referenciaNumero,
                         request.referenciaFecha,
                         request.referenciaCodigo,
-                        request.referenciaRazon);
+                        request.referenciaRazon,
+                        moneda,
+                        tasa);
         return doFacturar(tipoDocumento, request == null ? null : request.pagos, puntos, datos);
     }
 
@@ -2005,7 +2017,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             @FormParam("referenciaNumero") @Nullable String referenciaNumero,
             @FormParam("referenciaFecha") @Nullable String referenciaFecha,
             @FormParam("referenciaCodigo") @Nullable String referenciaCodigo,
-            @FormParam("referenciaRazon") @Nullable String referenciaRazon) {
+            @FormParam("referenciaRazon") @Nullable String referenciaRazon,
+            @FormParam("moneda") @Nullable String moneda) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
@@ -2032,9 +2045,21 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
         BigDecimal puntosParam = puntos == null || puntos.isBlank() ? null : parseDecimal(puntos);
 
+        String monedaCodigo = moneda == null || moneda.isBlank()
+                ? "CRC" : moneda.trim().toUpperCase();
+        BigDecimal tasa = tipoCambioService.tasaVigente(monedaCodigo, java.time.LocalDate.now());
+        if (tasa == null) {
+            return htmlOk(facturarResultadoTemplate.data("resultado", resultadoModel(username,
+                    Response.status(Response.Status.CONFLICT)
+                            .entity(ApiResponse.error("TIPO_CAMBIO_NO_DISPONIBLE",
+                                    "No hay tipo de cambio para " + monedaCodigo
+                                            + ". Registre la tasa antes de facturar en esa moneda."))
+                            .build())).render());
+        }
         ComprobanteService.DatosEspeciales datos = new ComprobanteService.DatosEspeciales(
                 condicionVenta, referenciaTipoDoc, referenciaNumero,
-                referenciaFecha, referenciaCodigo, referenciaRazon);
+                referenciaFecha, referenciaCodigo, referenciaRazon,
+                monedaCodigo, tasa);
         Response result = doFacturar(documento, pagos.isEmpty() ? null : pagos, puntosParam, datos);
         return htmlOk(facturarResultadoTemplate
                 .data("resultado", resultadoModel(username, result)).render());
@@ -2666,6 +2691,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     public static class FacturarRequest {
         /** Hacienda document code; defaults to TE ("04"). */
         public @Nullable String tipoDocumento;
+        /** Moneda del comprobante: CRC (default), USD o EUR. */
+        public @Nullable String moneda;
         /** Optional inline payments; otherwise the staged /payment-entries win. */
         public @Nullable List<EntradaPago> pagos;
         /** Points to redeem (1 punto = ₡1), clamped to the client balance. */

@@ -220,10 +220,12 @@ public class ComprobanteService implements Serializable {
             @Nullable String referenciaNumero,
             @Nullable String referenciaFecha,
             @Nullable String referenciaCodigo,
-            @Nullable String referenciaRazon) {
+            @Nullable String referenciaRazon,
+            @Nullable String moneda,
+            @Nullable BigDecimal tipoCambio) {
 
         public static final DatosEspeciales NINGUNO =
-                new DatosEspeciales(null, null, null, null, null, null);
+                new DatosEspeciales(null, null, null, null, null, null, null, null);
     }
 
     public static class CrearComprobanteResult {
@@ -487,6 +489,7 @@ public class ComprobanteService implements Serializable {
 
             detallesService.create(detalles);
             ResumenFactura resumen = resumenComprobante(carrito);
+            aplicarMoneda(resumen, datosEspeciales);
 
             // Descuento por puntos EN EL DOCUMENTO (summary-level). Hasta aquí
             // el canje solo existía en caja (calcularVuelto) y en el débito:
@@ -1115,6 +1118,31 @@ public class ComprobanteService implements Serializable {
         ref.setCodigo(datos.referenciaCodigo() == null ? null : datos.referenciaCodigo().trim());
         ref.setRazon(datos.referenciaRazon() == null ? null : datos.referenciaRazon().trim());
         return ref;
+    }
+
+    /**
+     * Fija la moneda y el tipo de cambio del comprobante. CRC usa 1; USD/EUR
+     * exigen una tasa &gt; 0 (la resuelve el POS con TipoCambioService). Sin
+     * moneda en los datos especiales se conserva el comportamiento histórico
+     * CRC/1.
+     */
+    private static void aplicarMoneda(@Nonnull ResumenFactura resumen,
+                                      @Nullable DatosEspeciales datos) {
+        String codigo = datos != null && datos.moneda() != null && !datos.moneda().isBlank()
+                ? datos.moneda().trim().toUpperCase(java.util.Locale.ROOT)
+                : "CRC";
+        BigDecimal tasa = datos != null ? datos.tipoCambio() : null;
+        if (tasa == null) {
+            tasa = "CRC".equals(codigo) ? BigDecimal.ONE : null;
+        }
+        if (tasa == null || tasa.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Tipo de cambio inválido para la moneda " + codigo);
+        }
+        CodigoTipoMoneda moneda = new CodigoTipoMoneda();
+        moneda.setCodigoMoneda(codigo);
+        moneda.setTipoCambioMoneda(tasa);
+        resumen.setCodigoMoneda(moneda);
     }
 
     public ResumenFactura resumenComprobante(List<ArticuloCarrito> carrito) {
