@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.Tuple;
 import jakarta.transaction.Transactional;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -21,8 +22,10 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import org.jboss.logging.Logger;
 
 /**
@@ -97,6 +100,27 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
 
     /** Rows per scheduler tick, so one pass cannot run for hours. */
     public static final int LOTE_MAXIMO = 50;
+
+    /**
+     * Serializa el barrido del outbox entre el scheduler y la acción manual de
+     * la pantalla de cola. {@code ConcurrentExecution.SKIP} solo evita solapar
+     * ejecuciones del scheduler; no impide que un POST cargue las mismas filas
+     * y las envíe dos veces. El lock es justo eso: scheduler vs HTTP.
+     */
+    private static final ReentrantLock LOTE_LOCK = new ReentrantLock();
+
+    /**
+     * Fila de la cola sin los {@code @Lob} del XML: la pantalla nunca necesita
+     * el payload firmado, y leerlo dispara "Unable to access lob stream" en
+     * algunos drivers. El reintento por id carga la entidad completa aparte.
+     */
+    public record ColaFila(
+            Long id, String tipoDocumento, String consecutivo, String clave,
+            String situacion, Integer intentos, LocalDateTime proximoIntento,
+            LocalDateTime vencimiento, String estado, String ultimoError,
+            String origen, LocalDateTime fechaEmision,
+            LocalDateTime fechaUltimoIntento, LocalDateTime fechaEnvio) {
+    }
 
     private static final String SANDBOX_BASE_URL =
             "https://api.comprobanteselectronicos.go.cr/recepcion-sandbox/v1";
@@ -406,7 +430,32 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
 
     /** Processes the outbox as of the current instant. */
     public int procesarPendientes() {
-        return procesarPendientes(LocalDateTime.now());
+        return procesarPendientes(LocalDateTime.now(), LOTE_MAXIMO);
+    }
+
+    /**
+     * Barrido con candado compartido entre el scheduler y la acción manual de
+     * la pantalla de cola.
+     *
+     * @return cuántos documentos se transmitieron, o {@code -1} si ya había un
+     *         barrido en curso (el llamador decide cómo avisarlo)
+     */
+    public int procesarPendientesConLock(int limite) {
+        if (!LOTE_LOCK.tryLock()) {
+            LOG.info("Barrido del buzon ya en curso; se omite esta ejecucion"
+                    + " | source=EnvioFueraLineaService.procesarPendientesConLock()");
+            return -1;
+        }
+        try {
+            return procesarPendientes(LocalDateTime.now(), limite);
+        } finally {
+            LOTE_LOCK.unlock();
+        }
+    }
+
+    /** Variante histórica; conserva el tope {@link #LOTE_MAXIMO}. */
+    public int procesarPendientes(@Nonnull LocalDateTime ahora) {
+        return procesarPendientes(ahora, LOTE_MAXIMO);
     }
 
     /**
@@ -415,11 +464,12 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
      * on that row and the pass continues. Never throws — a sick outbox must not
      * take the scheduler down with it.
      *
+     * @param limite tope de filas de esta pasada (la UI usa un valor menor)
      * @return how many rows were transmitted
      */
     @Transactional
-    public int procesarPendientes(@Nonnull LocalDateTime ahora) {
-        List<EnvioFueraLinea> candidatos = findListosParaReintento(ahora);
+    public int procesarPendientes(@Nonnull LocalDateTime ahora, int limite) {
+        List<EnvioFueraLinea> candidatos = findListosParaReintento(ahora, limite);
         if (candidatos.isEmpty()) {
             return 0;
         }
@@ -691,6 +741,15 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
      * {@link #reintentar(EnvioFueraLinea, LocalDateTime)} can escalate them.
      */
     public @Nonnull List<EnvioFueraLinea> findListosParaReintento(@Nonnull LocalDateTime ahora) {
+        return findListosParaReintento(ahora, LOTE_MAXIMO);
+    }
+
+    /**
+     * Variante acotada para la acción manual de la cola; el scheduler conserva
+     * {@link #LOTE_MAXIMO}.
+     */
+    public @Nonnull List<EnvioFueraLinea> findListosParaReintento(@Nonnull LocalDateTime ahora,
+                                                                  int limite) {
         try {
             return em.createQuery(
                             "SELECT e FROM EnvioFueraLinea e WHERE e.estado = :estado "
@@ -699,7 +758,7 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
                             EnvioFueraLinea.class)
                     .setParameter("estado", ESTADO_PENDIENTE)
                     .setParameter("ahora", ahora)
-                    .setMaxResults(LOTE_MAXIMO)
+                    .setMaxResults(Math.max(1, limite))
                     .getResultList();
         } catch (PersistenceException e) {
             LOG.warn("Error listando documentos encolados: " + e.getMessage()
@@ -722,6 +781,99 @@ public class EnvioFueraLineaService extends GService<EnvioFueraLinea> {
             LOG.warn("Error listando documentos pendientes de envio: " + e.getMessage()
                     + " | source=EnvioFueraLineaService.findPendientes()");
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Rows in one state, soonest deadline first, capped for the queue screen.
+     * Proyección sin {@code xmlFirmado}/{@code xmlFirmadoBytes}: la pantalla no
+     * necesita el payload y leer el LOB puede fallar en el driver.
+     */
+    public @Nonnull List<ColaFila> findByEstado(@Nonnull String estado, int limite) {
+        try {
+            List<Tuple> rows = em.createQuery(
+                            "SELECT e.id, e.tipoDocumento, e.consecutivo, e.clave, e.situacion, "
+                                    + "e.intentos, e.proximoIntento, e.vencimiento, e.estado, "
+                                    + "e.ultimoError, e.origen, e.fechaEmision, "
+                                    + "e.fechaUltimoIntento, e.fechaEnvio "
+                                    + "FROM EnvioFueraLinea e WHERE e.estado = :estado "
+                                    + "ORDER BY e.vencimiento ASC, e.proximoIntento ASC",
+                            Tuple.class)
+                    .setParameter("estado", estado)
+                    .setMaxResults(Math.max(1, limite))
+                    .getResultList();
+            List<ColaFila> out = new ArrayList<>(rows.size());
+            for (Tuple t : rows) {
+                out.add(mapColaFila(t));
+            }
+            return out;
+        } catch (PersistenceException e) {
+            LOG.warn("Error listando documentos en estado " + estado + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.findByEstado()");
+            return Collections.emptyList();
+        }
+    }
+
+    /** Una fila de la cola por id, sin cargar los LOB del XML. */
+    public @Nullable ColaFila findColaFila(long id) {
+        try {
+            List<Tuple> rows = em.createQuery(
+                            "SELECT e.id, e.tipoDocumento, e.consecutivo, e.clave, e.situacion, "
+                                    + "e.intentos, e.proximoIntento, e.vencimiento, e.estado, "
+                                    + "e.ultimoError, e.origen, e.fechaEmision, "
+                                    + "e.fechaUltimoIntento, e.fechaEnvio "
+                                    + "FROM EnvioFueraLinea e WHERE e.id = :id",
+                            Tuple.class)
+                    .setParameter("id", id)
+                    .setMaxResults(1)
+                    .getResultList();
+            return rows.isEmpty() ? null : mapColaFila(rows.get(0));
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando la fila de cola " + id + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.findColaFila()");
+            return null;
+        }
+    }
+
+    private static ColaFila mapColaFila(@Nonnull Tuple t) {
+        return new ColaFila(
+                t.get(0, Long.class), t.get(1, String.class), t.get(2, String.class),
+                t.get(3, String.class), t.get(4, String.class), t.get(5, Integer.class),
+                t.get(6, LocalDateTime.class), t.get(7, LocalDateTime.class),
+                t.get(8, String.class), t.get(9, String.class), t.get(10, String.class),
+                t.get(11, LocalDateTime.class), t.get(12, LocalDateTime.class),
+                t.get(13, LocalDateTime.class));
+    }
+
+    /** Count of rows in one state, for the queue counters. */
+    public long contarPorEstado(@Nonnull String estado) {
+        try {
+            return em.createQuery(
+                            "SELECT COUNT(e) FROM EnvioFueraLinea e WHERE e.estado = :estado",
+                            Long.class)
+                    .setParameter("estado", estado)
+                    .getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando documentos en estado " + estado + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.contarPorEstado()");
+            return 0L;
+        }
+    }
+
+    /** Enviados con {@code fechaEnvio >= desde}; KPI sin hidratar filas. */
+    public long contarEnviadosDesde(@Nonnull LocalDateTime desde) {
+        try {
+            return em.createQuery(
+                            "SELECT COUNT(e) FROM EnvioFueraLinea e WHERE e.estado = :estado "
+                                    + "AND e.fechaEnvio IS NOT NULL AND e.fechaEnvio >= :desde",
+                            Long.class)
+                    .setParameter("estado", ESTADO_ENVIADO)
+                    .setParameter("desde", desde)
+                    .getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando documentos enviados desde " + desde + ": " + e.getMessage()
+                    + " | source=EnvioFueraLineaService.contarEnviadosDesde()");
+            return 0L;
         }
     }
 

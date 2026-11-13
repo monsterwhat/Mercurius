@@ -138,9 +138,8 @@ public class EnvioFueraLinea {
     @Column(name = "estado", length = 20, nullable = false)
     private String estado;
 
-    @Lob
     @Nullable
-    @Column(name = "ultimo_error")
+    @Column(name = "ultimo_error", length = 2000)
     private String ultimoError;
 
     /** Why the row exists: OFFLINE_SITUACION_3 or FALLO_ENVIO_INMEDIATO. */

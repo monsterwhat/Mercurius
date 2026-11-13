@@ -1,0 +1,254 @@
+{!
+  pages/tributacion/cola-envio - pantalla de la outbox de Art. 21 ¶3.
+
+  Solo lectura de EnvioFueraLinea; las acciones viven en
+  /api/app/tributacion/cola-envio. El GET de la página NO ejecuta el probe de
+  conectividad (es synchronized y bloquea hasta 2,5 s): solo el botón
+  "Verificar conexión" lo hace contra /app/tributacion/cola-envio/conexion.
+
+  El bloque #cola-tablero se refresca por polling HTMX y también es el target
+  de los POST de reintento, que devuelven este mismo fragmento con un aviso.
+!}
+{#include layout}
+    {#title}Cola de envío a Hacienda | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        {#include _kit/confirm /}
+
+        {#include _kit/page-header title="Cola de envío a Hacienda"
+             subtitle="Documentos firmados pendientes de transmitir · Art. 21 ¶3, dos días hábiles"}
+            {#actions}
+                <button type="button" class="button"
+                        hx-get="{baseUrl}"
+                        hx-target="#cola-tablero" hx-swap="innerHTML"
+                        hx-disabled-elt="this">Actualizar</button>
+                <button type="button" class="button is-primary"
+                        hx-post="/api/app/tributacion/cola-envio/reintentar-todos"
+                        hx-target="#cola-tablero" hx-swap="innerHTML"
+                        hx-disabled-elt="this"
+                        hx-confirm="¿Reintentar ahora los documentos cuyo turno ya venció? Máximo {loteMaximo} por lote."
+                        {#if !puedeReintentarTodos}disabled{/if}>Reintentar el lote</button>
+            {/actions}
+        {/include}
+
+        {#fragment id=conexion}
+        {#include _kit/surface id="cola-conexion" title="Conectividad con Hacienda"}
+            {#actions}
+                <span class="status-chip {conexionChipClass}">{conexionTexto}</span>
+            {/actions}
+            {#content}
+                <div id="cola-conexion-detalle">
+                    <p class="help">{conexionDetalle}</p>
+                    <button type="button" class="button is-small"
+                            hx-get="{baseUrl}/conexion"
+                            hx-target="#cola-conexion" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Verificar conexión</button>
+                </div>
+            {/content}
+        {/include}
+        {/fragment}
+
+        <div id="cola-tablero"
+             hx-get="{baseUrl}"
+             hx-trigger="every {intervaloPoll}"
+             hx-target="#cola-tablero" hx-swap="innerHTML">
+            {#fragment id=tablero}
+
+            {#if toastMessage??}
+            <div class="notification is-{#if toastSeverity eq 'success'}success{#else if toastSeverity eq 'danger'}danger{#else if toastSeverity eq 'warning'}warning{#else}info{/if}" role="status">
+                <p>{toastMessage}</p>
+            </div>
+            {/if}
+
+            {#if contingencia}
+            <div class="notification is-warning" role="alert">
+                <p><strong>Contingencia activa:</strong> {contingenciaFilas} documento(s)
+                    firmados sin conexión (Situación 3). Deben transmitirse dentro de
+                    {plazoDias} días hábiles.</p>
+            </div>
+            {/if}
+
+            <div class="metric-strip">
+                {#include _kit/metric label="Pendientes" value=totalPendientes /}
+                {#include _kit/metric label="Vencidos" value=totalVencidos /}
+                {#include _kit/metric label="Rechazados en cola" value=totalRechazados /}
+                {#include _kit/metric label="Enviados hoy" value=enviadosHoy /}
+                {#include _kit/metric label="Tope de intentos" value=maxIntentos /}
+            </div>
+
+            <p class="help">
+                Actualizado: {ahoraTexto}. El tablero se refresca cada {intervaloPoll};
+                el reintento automático corre cada 15 minutos.
+            </p>
+
+            {#include _kit/surface title="Pendientes de envío"
+                 subtitle="Ordenados por vencimiento; el más urgente primero"}
+                {#content}
+                {#if filasPendientes}
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                        <tr>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Consecutivo</th>
+                            <th scope="col">Clave</th>
+                            <th scope="col">Emisión</th>
+                            <th scope="col">Vence</th>
+                            <th scope="col">Intentos</th>
+                            <th scope="col">Próximo</th>
+                            <th scope="col">Origen</th>
+                            <th scope="col">Último error</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {#for f in filasPendientes}
+                        <tr>
+                            <td><span title="Código {f.tipoDocumento}">{f.tipoDocumentoTexto}</span></td>
+                            <td class="kit-code">{f.consecutivo}</td>
+                            <td class="kit-code" title="{f.clave}">{f.claveCorta}</td>
+                            <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yy HH:mm')}{#else}—{/if}</td>
+                            <td>
+                                {#if f.vencimiento??}
+                                <span class="status-chip {#if f.fueraDePlazo}is-danger{#else if f.porVencer}is-warning{#else}is-neutral{/if}">
+                                    {time:format(f.vencimiento, 'dd/MM/yy HH:mm')}
+                                </span>
+                                {#else}—{/if}
+                            </td>
+                            <td>
+                                {#if f.intentos ge f.maxIntentos}
+                                <span class="status-chip is-danger">{f.intentosTexto}</span>
+                                {#else}{f.intentosTexto}{/if}
+                            </td>
+                            <td>{#if f.proximoIntento??}{time:format(f.proximoIntento, 'dd/MM/yy HH:mm')}{#else}ahora{/if}</td>
+                            <td>
+                                {#if f.situacion eq '3'}
+                                <span class="status-chip is-warning" title="Emitido en contingencia (Art. 21 ¶3)">Sin conexión</span>
+                                {#else}{f.origenTexto}{/if}
+                            </td>
+                            <td>
+                                {#if f.tieneError}
+                                <details>
+                                    <summary>{f.ultimoErrorResumen}</summary>
+                                    <pre style="white-space:pre-wrap">{f.ultimoErrorCompleto}</pre>
+                                </details>
+                                {#else}—{/if}
+                            </td>
+                            <td>
+                                {#if f.puedeReintentar}
+                                <button type="button" class="button is-small"
+                                        hx-post="/api/app/tributacion/cola-envio/{f.id}/reintentar"
+                                        hx-target="#cola-tablero" hx-swap="innerHTML"
+                                        hx-disabled-elt="this">Reintentar</button>
+                                {#else}
+                                <span class="help">{f.motivoNoReintentable}</span>
+                                {/if}
+                            </td>
+                        </tr>
+                        {/for}
+                        </tbody>
+                    </table>
+                </div>
+                {#else}
+                <p class="kit-empty">No hay documentos pendientes de envío.</p>
+                {/if}
+                {#if notaTope??}<p class="help">{notaTope}</p>{/if}
+                {/content}
+            {/include}
+
+            {#include _kit/surface title="Vencidos"
+                 subtitle="Incumplieron el plazo de dos días hábiles; requieren envío manual"}
+                {#content}
+                {#if filasVencidos}
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                        <tr>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Consecutivo</th>
+                            <th scope="col">Clave</th>
+                            <th scope="col">Emisión</th>
+                            <th scope="col">Venció</th>
+                            <th scope="col">Intentos</th>
+                            <th scope="col">Origen</th>
+                            <th scope="col">Motivo</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {#for f in filasVencidos}
+                        <tr>
+                            <td><span title="Código {f.tipoDocumento}">{f.tipoDocumentoTexto}</span></td>
+                            <td class="kit-code">{f.consecutivo}</td>
+                            <td class="kit-code" title="{f.clave}">{f.claveCorta}</td>
+                            <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yy HH:mm')}{#else}—{/if}</td>
+                            <td>{#if f.vencimiento??}{time:format(f.vencimiento, 'dd/MM/yy HH:mm')}{#else}—{/if}</td>
+                            <td>{f.intentosTexto}</td>
+                            <td>{f.origenTexto}</td>
+                            <td>
+                                {#if f.tieneError}
+                                <details>
+                                    <summary>{f.ultimoErrorResumen}</summary>
+                                    <pre style="white-space:pre-wrap">{f.ultimoErrorCompleto}</pre>
+                                </details>
+                                {#else}—{/if}
+                            </td>
+                        </tr>
+                        {/for}
+                        </tbody>
+                    </table>
+                </div>
+                {#else}
+                <p class="kit-empty">No hay documentos vencidos.</p>
+                {/if}
+                {/content}
+            {/include}
+
+            {#include _kit/surface title="Rechazados en cola"
+                 subtitle="El outbox no produce este estado; si aparece, lo escribió un proceso externo"}
+                {#content}
+                {#if filasRechazados}
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                        <tr>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Consecutivo</th>
+                            <th scope="col">Clave</th>
+                            <th scope="col">Emisión</th>
+                            <th scope="col">Intentos</th>
+                            <th scope="col">Motivo</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {#for f in filasRechazados}
+                        <tr>
+                            <td><span title="Código {f.tipoDocumento}">{f.tipoDocumentoTexto}</span></td>
+                            <td class="kit-code">{f.consecutivo}</td>
+                            <td class="kit-code" title="{f.clave}">{f.claveCorta}</td>
+                            <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yy HH:mm')}{#else}—{/if}</td>
+                            <td>{f.intentosTexto}</td>
+                            <td>
+                                {#if f.tieneError}
+                                <details>
+                                    <summary>{f.ultimoErrorResumen}</summary>
+                                    <pre style="white-space:pre-wrap">{f.ultimoErrorCompleto}</pre>
+                                </details>
+                                {#else}—{/if}
+                            </td>
+                        </tr>
+                        {/for}
+                        </tbody>
+                    </table>
+                </div>
+                {#else}
+                <p class="kit-empty">No hay documentos rechazados en la cola.</p>
+                {/if}
+                {/content}
+            {/include}
+
+            {/fragment}
+        </div>
+    </section>
+    {/body}
+{/include}

@@ -52,7 +52,13 @@ public class EnvioFueraLineaRetryJob {
             concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     public void reintentarDocumentosPendientes() {
         try {
-            int enviados = envioFueraLineaService.procesarPendientes();
+            int enviados = envioFueraLineaService.procesarPendientesConLock(
+                    EnvioFueraLineaService.LOTE_MAXIMO);
+            if (enviados < 0) {
+                LOG.info("Barrido omitido: otro proceso ya esta reintentando el buzon"
+                        + " | source=EnvioFueraLineaRetryJob.reintentarDocumentosPendientes()");
+                return;
+            }
             if (enviados > 0) {
                 LOG.info("Buzon de envio fuera de linea: " + enviados
                         + " documento(s) transmitidos a Hacienda"
