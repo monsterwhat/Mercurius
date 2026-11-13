@@ -52,6 +52,26 @@ public final class FormatoVista {
     }
 
     /** Número sin símbolo ni decimales forzados (máximo dos). */
+    /** Monto en la moneda indicada (CRC/USD/EUR). */
+    public static String moneda(Object valor, String codigoMoneda) {
+        BigDecimal numero = comoDecimal(valor, "moneda");
+        if (numero == null) {
+            return valor == null ? SIN_DATO : String.valueOf(valor);
+        }
+        String simbolo = switch (codigoMoneda == null ? "CRC" : codigoMoneda.toUpperCase(Locale.ROOT)) {
+            case "USD" -> "$";
+            case "EUR" -> "\u20ac";
+            default -> "\u20a1";
+        };
+        NumberFormat formato = NumberFormat.getNumberInstance(ES_CR);
+        formato.setMinimumFractionDigits(2);
+        formato.setMaximumFractionDigits(2);
+        formato.setRoundingMode(RoundingMode.HALF_UP);
+        BigDecimal redondeado = numero.setScale(2, RoundingMode.HALF_UP);
+        String monto = formato.format(redondeado.abs());
+        return redondeado.signum() < 0 ? "-" + simbolo + monto : simbolo + monto;
+    }
+
     public static String numero(Object valor) {
         BigDecimal numero = comoDecimal(valor, "numero");
         if (numero == null) {

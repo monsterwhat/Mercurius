@@ -454,6 +454,11 @@ public class RecibosResource {
                 && !enc.getReceptor().getNombre().isBlank()
                 ? enc.getReceptor().getNombre() : "Cliente contado";
 
+        ResumenFactura resumen = f.getResumen();
+        String monedaCodigo = resumen != null && resumen.getCodigoMoneda() != null
+                && resumen.getCodigoMoneda().getCodigoMoneda() != null
+                ? resumen.getCodigoMoneda().getCodigoMoneda() : "CRC";
+
         List<Map<String, Object>> lineas = new ArrayList<>();
         if (f.getDetalles() != null && f.getDetalles().getLineasDetalle() != null) {
             for (LineaDetalle l : f.getDetalles().getLineasDetalle()) {
@@ -462,22 +467,22 @@ public class RecibosResource {
                 fila.put("detalle", l.getDetalle() == null ? "" : l.getDetalle());
                 BigDecimal monto = l.getMontoTotalLinea() != null
                         ? l.getMontoTotalLinea() : l.getMontoTotal();
-                fila.put("monto", FormatoVista.moneda(monto == null ? BigDecimal.ZERO : monto));
+                fila.put("monto", FormatoVista.moneda(
+                        monto == null ? BigDecimal.ZERO : monto, monedaCodigo));
                 BigDecimal impuesto = l.getImpuestoNeto();
                 fila.put("impuesto", impuesto != null && impuesto.compareTo(BigDecimal.ZERO) > 0
-                        ? "IVA " + FormatoVista.moneda(impuesto) : null);
+                        ? "IVA " + FormatoVista.moneda(impuesto, monedaCodigo) : null);
                 lineas.add(fila);
             }
         }
 
-        ResumenFactura resumen = f.getResumen();
         List<Map<String, Object>> pagos = new ArrayList<>();
         if (resumen != null && resumen.getMediosPago() != null) {
             for (MedioPagoR p : resumen.getMediosPago()) {
                 Map<String, Object> fila = new LinkedHashMap<>();
                 fila.put("metodo", metodoPagoLabel(p.getTipoMedioPago(), p.getMedioPagoOtros()));
                 fila.put("monto", FormatoVista.moneda(p.getTotalMedioPago() == null
-                        ? BigDecimal.ZERO : p.getTotalMedioPago()));
+                        ? BigDecimal.ZERO : p.getTotalMedioPago(), monedaCodigo));
                 pagos.add(fila);
             }
         }
@@ -519,12 +524,13 @@ public class RecibosResource {
         model.put("lineas", lineas);
         model.put("pagos", pagos);
         model.put("tienePagos", !pagos.isEmpty());
-        model.put("descuentos", FormatoVista.moneda(descuentos));
+        model.put("descuentos", FormatoVista.moneda(descuentos, monedaCodigo));
         model.put("tieneDescuentos", descuentos.compareTo(BigDecimal.ZERO) > 0);
-        model.put("iva", FormatoVista.moneda(iva));
-        model.put("otrosCargos", FormatoVista.moneda(otros));
+        model.put("iva", FormatoVista.moneda(iva, monedaCodigo));
+        model.put("otrosCargos", FormatoVista.moneda(otros, monedaCodigo));
         model.put("tieneOtrosCargos", otros.compareTo(BigDecimal.ZERO) > 0);
-        model.put("total", FormatoVista.moneda(total));
+        model.put("total", FormatoVista.moneda(total, monedaCodigo));
+        model.put("moneda", monedaCodigo);
         model.put("qrDataUri", qrDataUri);
         model.put("altoMm", altoMm);
         model.put("anchoMm", 72);
