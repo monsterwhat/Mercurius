@@ -48,7 +48,7 @@ public class HaciendaApiService {
      * <p>Raising these is legitimate for a slow link, but whatever the total,
      * a send that cannot be confirmed in time is enqueued in
      * {@code EnvioFueraLinea} and transmitted by the 48 h batch under
-     * Art. 21 ¶3 — the poll is an optimisation, never the durability
+     * Art. 21 Â¶3 â€” the poll is an optimisation, never the durability
      * mechanism.</p>
      */
     @ConfigProperty(name = "mercatus.hacienda.poll.intentos", defaultValue = "8")
@@ -141,7 +141,7 @@ public class HaciendaApiService {
         }
     }
 
-    // ── In-memory token cache (ApplicationScoped → singleton) ────────────────
+    // â”€â”€ In-memory token cache (ApplicationScoped â†’ singleton) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private String cachedAccessToken;
     private String cachedRefreshToken;
     private LocalDateTime tokenExpiry;
@@ -178,21 +178,39 @@ public class HaciendaApiService {
         certificateService.saveTokenExpiry(null);
     }
 
+    /**
+     * Ambiente efectivo. En un perfil de desarrollo NUNCA se usa produccion:
+     * aunque la base diga {@code production}, se fuerza sandbox y se avisa.
+     * Asi el toggle "Real" no puede mandar un documento fiscal real desde una
+     * maquina de desarrollo.
+     */
+    private String entornoEfectivo() {
+        String configurado = certificateService.getEnvironment();
+        if (HaciendaTransmissionPolicy.perfilDesarrollo()
+                && "production".equalsIgnoreCase(configurado)) {
+            LOG.warn("Perfil de desarrollo con ambiente 'production': se fuerza sandbox"
+                    + " | source=HaciendaApiService.entornoEfectivo()"
+                    + " | despues=ningun documento sale a produccion");
+            return "sandbox";
+        }
+        return configurado;
+    }
+
     private String getBaseUrl() {
-        String environment = certificateService.getEnvironment();
+        String environment = entornoEfectivo();
         return "production".equalsIgnoreCase(environment) 
             ? PRODUCTION_BASE_URL 
             : SANDBOX_BASE_URL;
     }
 
     private String getTokenUrl() {
-        String environment = certificateService.getEnvironment();
+        String environment = entornoEfectivo();
         String realm = "production".equalsIgnoreCase(environment) ? "rut" : "rut-stag";
         return "https://idp.comprobanteselectronicos.go.cr/auth/realms/" + realm + "/protocol/openid-connect/token";
     }
 
     private String getClientId() {
-        String environment = certificateService.getEnvironment();
+        String environment = entornoEfectivo();
         return "production".equalsIgnoreCase(environment) ? "api-prod" : "api-stag";
     }
 
@@ -204,14 +222,14 @@ public class HaciendaApiService {
 
         String prefix;
         switch (tipoId) {
-            case "01": prefix = "cpf"; break;  // Persona Física
-            case "02": prefix = "cpj"; break;  // Persona Jurídica
+            case "01": prefix = "cpf"; break;  // Persona FÃ­sica
+            case "02": prefix = "cpj"; break;  // Persona JurÃ­dica
             case "03": prefix = "ced"; break;  // DIMEX
             case "04": prefix = "nite"; break; // NITE
             default: prefix = "cpf"; break;
         }
 
-        String environment = certificateService.getEnvironment();
+        String environment = entornoEfectivo();
         String envPrefix = "production".equalsIgnoreCase(environment) ? "prod" : "stag";
         return prefix + "-" + tipoId + "-" + idpIdNumber(tipoId, idNumber)
                 + "@" + envPrefix + ".comprobanteselectronicos.go.cr";
@@ -246,9 +264,9 @@ public class HaciendaApiService {
 
     /**
      * Returns a valid access token using the cache-first strategy:
-     * 1. If cached token is still valid (with 30s buffer) → return it
-     * 2. If refresh token is still valid → refresh access token
-     * 3. Otherwise → full ROPC authentication
+     * 1. If cached token is still valid (with 30s buffer) â†’ return it
+     * 2. If refresh token is still valid â†’ refresh access token
+     * 3. Otherwise â†’ full ROPC authentication
      */
     public synchronized TokenResponse getAccessToken() {
         TokenResponse simulado = tokenBloqueadoPorEntorno();
@@ -257,7 +275,7 @@ public class HaciendaApiService {
                     + " | source=HaciendaApiService.getAccessToken()");
             return simulado;
         }
-        // ── 1. Return cached token if still valid ────────────────────────────
+        // â”€â”€ 1. Return cached token if still valid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (isCacheValid()) {
             TokenResponse result = new TokenResponse();
             result.accessToken = cachedAccessToken;
@@ -266,16 +284,16 @@ public class HaciendaApiService {
             return result;
         }
 
-        // ── 2. Try refresh if we have a valid refresh token ──────────────────
+        // â”€â”€ 2. Try refresh if we have a valid refresh token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (hasValidRefreshToken()) {
             TokenResponse refreshResult = refreshAccessToken();
             if (refreshResult.isSuccess()) {
                 return refreshResult;
             }
-            // Refresh failed — fall through to full auth
+            // Refresh failed â€” fall through to full auth
         }
 
-        // ── 3. Full ROPC authentication ──────────────────────────────────────
+        // â”€â”€ 3. Full ROPC authentication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try {
             ConfiguracionAplicacion settings = certificateService.getActiveSettings();
             if (settings == null) {
@@ -418,7 +436,7 @@ public class HaciendaApiService {
      *
      * <p><b>No {@code @Retry}/{@code @Fallback} here, deliberately.</b> This
      * method's only caller is {@link #submitAndWait} in this same bean, and a
-     * CDI self-invocation bypasses the fault-tolerance interceptor entirely —
+     * CDI self-invocation bypasses the fault-tolerance interceptor entirely â€”
      * annotations on this method never executed. Combined with
      * {@code delay = 7200000} (a units error: MicroProfile Fault Tolerance
      * {@code delay} is MILLISECONDS, so 7 200 000 ms = 2 hours, capped at
@@ -483,8 +501,8 @@ public class HaciendaApiService {
     public ApiResponse sendInvoiceFallback(String clave, String xmlContent,
                                             String emisorTipoId, String emisorNumeroId,
                                             String receptorTipoId, String receptorNumeroId) {
-        return ApiResponse.error(503, "No se pudo enviar la factura a Hacienda después de varios intentos. "
-            + "Puede reenviarla manualmente desde la sección de Consultas. Clave: " + clave);
+        return ApiResponse.error(503, "No se pudo enviar la factura a Hacienda despuÃ©s de varios intentos. "
+            + "Puede reenviarla manualmente desde la secciÃ³n de Consultas. Clave: " + clave);
     }
 
     public ApiResponse checkInvoiceStatus(String clave) {
@@ -623,12 +641,12 @@ public class HaciendaApiService {
 
     /**
      * Sends a document to Hacienda and polls until a terminal state is reached.
-     * Hacienda POST /recepcion returns 202 Accepted — the actual result (ACEPTADO/RECHAZADO)
+     * Hacienda POST /recepcion returns 202 Accepted â€” the actual result (ACEPTADO/RECHAZADO)
      * must be obtained by polling GET /recepcion/{clave} until terminal state.
      *
      * <p><b>This is the real fault-tolerance boundary.</b> It is called from
      * {@code HaciendaServiceFacade.submitDocument} and
-     * {@code EnvioFueraLineaService.reintentar} — different beans, so the
+     * {@code EnvioFueraLineaService.reintentar} â€” different beans, so the
      * interceptors below genuinely execute. The previous
      * {@code @Retry/@Fallback} sat on {@link #sendInvoice}, whose only caller is
      * this method in the same bean, so CDI self-invocation meant it never ran
@@ -638,10 +656,10 @@ public class HaciendaApiService {
      * <p>{@code delay} and {@code maxDuration} are MILLISECONDS. Three retries
      * 2 s apart, capped at 30 s total, is sized for a transient network blip.
      * Anything longer belongs to the {@code EnvioFueraLinea} outbox and its 48 h
-     * batch under Art. 21 ¶3, not to a retry loop that would be holding a
+     * batch under Art. 21 Â¶3, not to a retry loop that would be holding a
      * pessimistic lock on the invoice-number row for hours.</p>
      *
-     * <p>Polling budget comes from {@code mercatus.hacienda.poll.*} — see the
+     * <p>Polling budget comes from {@code mercatus.hacienda.poll.*} â€” see the
      * field javadoc for why it is bounded and configurable.</p>
      */
     @Retry(maxRetries = 3, delay = 2000, maxDuration = 30000)
@@ -692,7 +710,7 @@ public class HaciendaApiService {
         return ApiResponse.error(408, "Hacienda processing timeout after "
             + ((long) Math.max(1, pollIntentos) * Math.max(0L, pollIntervaloMs) / 1000L)
             + "s for clave: " + clave
-            + ". The signed document stays queued for automatic transmission under Art. 21 ¶3; "
+            + ". The signed document stays queued for automatic transmission under Art. 21 Â¶3; "
             + "check status manually via Consultas.");
     }
 
@@ -708,8 +726,8 @@ public class HaciendaApiService {
     public ApiResponse submitAndWaitFallback(String clave, String xmlContent,
                                               String emisorTipoId, String emisorNumeroId,
                                               String receptorTipoId, String receptorNumeroId) {
-        return ApiResponse.error(503, "No se pudo confirmar el envío a Hacienda después de varios intentos. "
-            + "El comprobante queda encolado para envío automático. Clave: " + clave);
+        return ApiResponse.error(503, "No se pudo confirmar el envÃ­o a Hacienda despuÃ©s de varios intentos. "
+            + "El comprobante queda encolado para envÃ­o automÃ¡tico. Clave: " + clave);
     }
 
     private String readStream(InputStream stream) throws IOException {
