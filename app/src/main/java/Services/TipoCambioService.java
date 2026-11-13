@@ -67,6 +67,69 @@ public class TipoCambioService extends GService<TipoCambio> {
         }
     }
 
+    /**
+     * Tasa EUR del día desde Hacienda (`/indicadores/tc/euro`). El endpoint
+     * devuelve `{fecha, dolares, colones}`: se usa `colones` (CRC por 1 EUR).
+     * Si el usuario fijó una tasa manual EUR, no se sobreescribe.
+     */
+    public void getTipoCambioEurFromApi() {
+        if (isManualLatchActive("EUR")) {
+            return;
+        }
+        LocalDateTime currentDateTime = LocalDateTime.now()
+                .withHour(0).withMinute(0).withSecond(0).withNano(0);
+        if (tipoCambioExistsForDate(currentDateTime, "EUR")) {
+            return;
+        }
+        try (Client client = ClientBuilder.newClient()) {
+            Response response = client
+                    .target("https://api.hacienda.go.cr/indicadores/tc/euro")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                TipoCambio tipoCambio = parseTipoCambioEur(response.readEntity(String.class));
+                if (tipoCambio != null) {
+                    saveTipoCambio(tipoCambio);
+                }
+            } else {
+                LOG.warn("No se pudo obtener el tipo de cambio EUR. Response code: "
+                        + response.getStatus()
+                        + " | source=TipoCambioService.getTipoCambioEurFromApi()");
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Error fetching TipoCambio EUR from API: " + e.getMessage()
+                    + " | source=TipoCambioService.getTipoCambioEurFromApi()", e);
+        }
+    }
+
+    @Nullable
+    private TipoCambio parseTipoCambioEur(@Nonnull String jsonResponse) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(jsonResponse);
+            JsonNode colones = root.get("colones");
+            JsonNode fecha = root.get("fecha");
+            if (colones == null || fecha == null) {
+                LOG.warn("Respuesta EUR sin colones/fecha: " + jsonResponse
+                        + " | source=TipoCambioService.parseTipoCambioEur()");
+                return null;
+            }
+            BigDecimal valor = new BigDecimal(colones.asText())
+                    .setScale(5, RoundingMode.HALF_UP);
+            TipoCambio tipoCambio = new TipoCambio();
+            tipoCambio.setFecha(LocalDateTime.parse(fecha.asText() + "T00:00:00"));
+            tipoCambio.setValorCompra(valor);
+            tipoCambio.setValorVenta(valor);
+            tipoCambio.setMoneda("EUR");
+            tipoCambio.setManual(Boolean.FALSE);
+            return tipoCambio;
+        } catch (JsonProcessingException e) {
+            LOG.warn("Error parsing EUR JSON: " + e.getMessage()
+                    + " | source=TipoCambioService.parseTipoCambioEur()");
+            return null;
+        }
+    }
+
     @Nullable
     private TipoCambio parseTipoCambio(@Nonnull String jsonResponse) {
         try {
@@ -116,11 +179,15 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     private boolean isManualLatchActive() {
+        return isManualLatchActive("USD");
+    }
+
+    private boolean isManualLatchActive(@Nonnull String moneda) {
         try {
-            TipoCambio newest = getNewestTipoCambioFromDb();
+            TipoCambio newest = getNewestTipoCambioFromDb(moneda);
             return newest != null && Boolean.TRUE.equals(newest.getManual());
         } catch (RuntimeException e) {
-            LOG.warn("no se pudo verificar tasa manual", e);
+            LOG.warn("no se pudo verificar tasa manual " + moneda, e);
             return false;
         }
     }
@@ -186,7 +253,12 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     private boolean tipoCambioExistsForDate(@Nonnull LocalDateTime date) {
-        return findForDate(date) != null;
+        return tipoCambioExistsForDate(date, "USD");
+    }
+
+    private boolean tipoCambioExistsForDate(@Nonnull LocalDateTime date,
+                                            @Nonnull String moneda) {
+        return findForDate(moneda, date.toLocalDate()) != null;
     }
 
     /** Primera fila de esa fecha (la tasa es diaria), o null. */

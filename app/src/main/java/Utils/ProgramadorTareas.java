@@ -78,8 +78,9 @@ public class ProgramadorTareas {
 
     //Media noche
     @Scheduled(cron = "0 0 0 * * ?")
-    public void actualizarTipoCambioUSD() {
+    public void actualizarTiposCambio() {
         tipoCambioService.getTipoCambioFromApi();
+        tipoCambioService.getTipoCambioEurFromApi();
     }
 
     //Log retention: unbounded file backups, .gz after 30 days, delete after 4 years (1461d).
