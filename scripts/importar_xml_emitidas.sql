@@ -21,7 +21,7 @@ CREATE TEMP TABLE stg_xres (clave text, moneda text, tipo_cambio text, serv_grav
 DROP TABLE IF EXISTS stg_xlin;
 CREATE TEMP TABLE stg_xlin (clave text, numero text, detalle text, cantidad text, unidad text,
     precio_unitario text, monto_total text, sub_total text, base_imponible text,
-    impuesto_neto text, monto_total_linea text, codigocabys text);
+    impuesto_neto text, monto_total_linea text, codigocabys text, codigocomercial text);
 \copy stg_xlin FROM '/tmp/dbf_reconciliacion/xml_lin.csv' WITH (FORMAT csv, HEADER true)
 
 \echo '===== secuencias'
@@ -130,6 +130,18 @@ SELECT nextval('s_lin'), coalesce(NULLIF(l.numero,'')::int, 1), left(l.detalle, 
        NULLIF(l.codigocabys,''), coalesce(nullif(l.unidad,''),'Unid'), 'Unidad',
        '01', '4.4', m.det_id
 FROM stg_xlin l JOIN mapa_x m ON m.clave = l.clave;
+
+-- CodigoComercial (codigo de barras) de cada linea: sin esto la venta no se
+-- puede asociar a un articulo y no genera movimiento de inventario.
+INSERT INTO codigo_comercial (linea_detalle_id, tipo, codigo)
+SELECT ld.id, '01', NULLIF(l.codigocomercial,'')
+FROM stg_xlin l
+JOIN mapa_x m ON m.clave = l.clave
+JOIN linea_detalle ld ON ld.detalle_servicio_id = m.det_id
+     AND ld.numero_linea = coalesce(NULLIF(l.numero,'')::int, 1)
+WHERE NULLIF(l.codigocomercial,'') IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM codigo_comercial cc
+                  WHERE cc.linea_detalle_id = ld.id AND cc.codigo = l.codigocomercial);
 
 INSERT INTO comprobantesemitidos (id, status, usuario, schemaversion, haciendaclave,
                                   haciendaestado, encabezado_id, detalle_servicio_id, resumen_id)

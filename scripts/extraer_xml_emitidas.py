@@ -59,6 +59,21 @@ def numero(valor, default="0"):
         return default
 
 
+def codigo_comercial(linea):
+    """Primer CodigoComercial tipo 01 (codigo de barras); si no, el primero."""
+    primero = ""
+    for nodo in linea:
+        if sin_ns(nodo.tag) != "CodigoComercial":
+            continue
+        tipo = texto(nodo, "Tipo")
+        codigo = texto(nodo, "Codigo")
+        if codigo and not primero:
+            primero = codigo
+        if tipo == "01" and codigo:
+            return codigo
+    return primero
+
+
 vistos = set()
 enc, res, lin = [], [], []
 xmls = 0
@@ -123,6 +138,7 @@ for ruta in RAIZ.rglob("*.xml"):
             numero(texto(linea, "ImpuestoNeto")),
             numero(texto(linea, "MontoTotalLinea")),
             texto(linea, "CodigoCABYS"),
+            codigo_comercial(linea),
         ])
 
 
@@ -148,4 +164,4 @@ escribir("xml_res.csv",
 escribir("xml_lin.csv",
          ["clave", "numero", "detalle", "cantidad", "unidad", "precio_unitario",
           "monto_total", "sub_total", "base_imponible", "impuesto_neto",
-          "monto_total_linea", "codigocabys"], lin)
+          "monto_total_linea", "codigocabys", "codigocomercial"], lin)

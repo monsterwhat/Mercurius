@@ -200,23 +200,49 @@ if (-not ($dry.Output -match "ROLLBACK")) { Fail "El dry-run no hizo rollback: $
 Write-Log "Dry-run: nuevas=$nuevas lineas=$lineas"
 
 if ($DryRunOnly) {
+    $movSqlDry = "generar_movimientos_ventas.sql"
+    & $pscp -batch -i $SshKey -hostkey $HostKey (Join-Path $Repo "scripts\$movSqlDry") "${SshUser}@${Server}:$RemoteDir/$movSqlDry" 2>&1 | Out-Null
+    $movDry = Invoke-Plink "sudo -n -u postgres psql -d $DbName -v aplicar=false -f $RemoteDir/$movSqlDry 2>&1"
+    $mMov = [regex]::Match($movDry.Output, "(?m)^\s*movimientos_nuevos\s*\|\s*(\d+)")
+    if ($mMov.Success) { Write-Log "Dry-run movimientos: $($mMov.Groups[1].Value)" }
     Write-Log "DryRunOnly: no se aplica ni se marcan los ZIP"
     exit 0
 }
-if ($nuevas -eq 0) {
-    $processed = @($processed + ($listos | ForEach-Object { $_.Name }) | Select-Object -Unique)
-    @{ procesados = $processed } | ConvertTo-Json | Set-Content $stateFile -Encoding UTF8
-    Write-Log "Sin comprobantes nuevos; ZIP marcados como procesados"
-    exit 0
+
+# ---------- aplicar facturas (si hay) ----------
+if ($nuevas -gt 0) {
+    $apply = Invoke-Plink "sudo -n -u postgres psql -d $DbName -v aplicar=true -f $RemoteDir/$sqlName 2>&1"
+    if ($apply.Code -ne 0) { Fail "Fallo la aplicacion: $($apply.Output)" }
+    if (-not ($apply.Output -match "APLICADO")) { Fail "El SQL no confirmo APLICADO: $($apply.Output)" }
+    Write-Log "Facturas APLICADAS: +$nuevas comprobantes, +$lineas lineas"
+} else {
+    Write-Log "Sin comprobantes nuevos; se revisan igual los movimientos"
 }
 
-# ---------- aplicar ----------
-$apply = Invoke-Plink "sudo -n -u postgres psql -d $DbName -v aplicar=true -f $RemoteDir/$sqlName 2>&1"
-if ($apply.Code -ne 0) { Fail "Fallo la aplicacion: $($apply.Output)" }
-if (-not ($apply.Output -match "APLICADO")) { Fail "El SQL no confirmo APLICADO: $($apply.Output)" }
+# ---------- movimientos de inventario de esas ventas ----------
+$movSql = "generar_movimientos_ventas.sql"
+& $pscp -batch -i $SshKey -hostkey $HostKey (Join-Path $Repo "scripts\$movSql") "${SshUser}@${Server}:$RemoteDir/$movSql" 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { Fail "Fallo la copia de $movSql" }
+$fixMov = Invoke-Plink "chmod 644 $RemoteDir/$movSql"
+if ($fixMov.Code -ne 0) { Fail "No se pudieron ajustar permisos de $movSql" }
+
+$movDry = Invoke-Plink "sudo -n -u postgres psql -d $DbName -v aplicar=false -f $RemoteDir/$movSql 2>&1"
+if ($movDry.Code -ne 0) { Fail "Fallo el dry-run de movimientos: $($movDry.Output)" }
+$mMov = [regex]::Match($movDry.Output, "(?m)^\s*movimientos_nuevos\s*\|\s*(\d+)")
+if (-not $mMov.Success) { Fail "No se pudo leer movimientos_nuevos: $($movDry.Output)" }
+$movNuevas = [int]$mMov.Groups[1].Value
+Write-Log "Dry-run movimientos: nuevas=$movNuevas"
+
+if ($movNuevas -gt 0) {
+    $movApply = Invoke-Plink "sudo -n -u postgres psql -d $DbName -v aplicar=true -f $RemoteDir/$movSql 2>&1"
+    if ($movApply.Code -ne 0) { Fail "Fallo la aplicacion de movimientos: $($movApply.Output)" }
+    if (-not ($movApply.Output -match "APLICADO")) { Fail "Los movimientos no confirmaron APLICADO: $($movApply.Output)" }
+    Write-Log "Movimientos APLICADOS: +$movNuevas salidas de venta"
+} else {
+    Write-Log "Sin movimientos nuevos"
+}
 
 $processed = @($processed + ($listos | ForEach-Object { $_.Name }) | Select-Object -Unique)
 @{ procesados = $processed } | ConvertTo-Json | Set-Content $stateFile -Encoding UTF8
-
-Write-Log "APLICADO: +$nuevas comprobantes, +$lineas lineas (ZIP: $(($listos | ForEach-Object { $_.Name }) -join ', '))"
+Write-Log "APLICADO: +$nuevas comprobantes, +$lineas lineas, +$movNuevas movimientos (ZIP: $(($listos | ForEach-Object { $_.Name }) -join ', '))"
 exit 0
