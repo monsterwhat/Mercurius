@@ -1,13 +1,13 @@
--- Corrige total_impuesto y total_venta_neta de los comprobantes emitidos de 2026
--- (enero a agosto) usando el IVA por linea del sistema viejo (detafact*.IMP),
--- sin doble conteo entre archivos solapados.
+-- Corrige total_impuesto y total_venta_neta de los comprobantes emitidos usando
+-- el IVA por linea del sistema viejo (detafact*.IMP), sin doble conteo entre
+-- archivos solapados.
 --
--- El CSV lo genera scripts/construir_iva_fix.py a partir de un export de la base:
+-- El CSV lo genera scripts/conciliar_lineas.py a partir de un export de la base:
 --   comprobante_id,iva,neta
 --
--- Uso:
---   psql -d mercurius -v aplicar=false -f corregir_iva_2026.sql   (dry-run)
---   psql -d mercurius -v aplicar=true  -f corregir_iva_2026.sql   (aplica)
+-- Uso: copiar el CSV como /tmp/dbf_reconciliacion/iva_fix.csv y correr
+--   psql -d mercurius -v aplicar=false -f corregir_iva.sql
+--   psql -d mercurius -v aplicar=true  -f corregir_iva.sql
 --
 -- Deja respaldo en resumen_factura_bkp_iva_2026 (solo la primera vez que toca
 -- cada resumen), asi que se puede revertir con un UPDATE ... FROM.
@@ -17,7 +17,7 @@
 
 DROP TABLE IF EXISTS stg_iva_fix;
 CREATE TEMP TABLE stg_iva_fix (comprobante_id bigint, iva numeric, neta numeric);
-\copy stg_iva_fix FROM '/tmp/dbf_reconciliacion/iva_2026_fix.csv' WITH (FORMAT csv, HEADER true)
+\copy stg_iva_fix FROM '/tmp/dbf_reconciliacion/iva_fix.csv' WITH (FORMAT csv, HEADER true)
 
 DROP TABLE IF EXISTS iva_target;
 CREATE TEMP TABLE iva_target AS

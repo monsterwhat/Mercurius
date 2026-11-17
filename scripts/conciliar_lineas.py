@@ -1,29 +1,29 @@
 """
-Concilia las lineas de venta 2026 (enero-julio) contra el total de cada
-comprobante ya importado en Mercurius.
+Concilia las lineas de venta contra el total de cada comprobante ya importado
+en Mercurius.
 
 Por que no basta filtrar por numero ni por numero de linea:
-  * los numeros de factura se repiten entre 2025 y 2026;
+  * los numeros de factura se repiten entre anios;
   * NNUMELINEA se repite cuando el tiquete tiene lineas identicas;
-  * detafact.dbf y detafactbk se solapan en febrero.
+  * detafact.dbf, detafactbk y detafact_respaldo se solapan entre si.
 
 Estrategia por factura:
-  1. se toman los candidatos de detafact.dbf y de detafactbk27022026.DBF;
-  2. se descartan los que no caen cerca de la fecha del comprobante (separa 2025);
-  3. se elige el conjunto (detafact / bk / union) cuya suma de TOTAL cuadre
-     con el total del comprobante; empate -> detafact.dbf.
+  1. se toman los candidatos de cada DBF;
+  2. se descartan los que no caen cerca de la fecha del comprobante (separa anios);
+  3. se elige el conjunto (archivo / union) cuya suma de TOTAL cuadre con el
+     total del comprobante; empate -> prioridad detafact > bk > respaldo.
 
 Entrada:
   export CSV: comprobante_id,clave,numero_consecutivo,fecha,total,iva_actual,neta_actual
-  DBF: detafact.dbf, detafactbk27022026.DBF
+  DBF dir: detafact.dbf, detafactbk27022026.DBF, detafact_respaldo_respaldo.dbf
 
-Salida:
-  lineas_2026.csv    comprobante_id,linea,fecha,codigo,cabys,cantidad,total,imp,descuento,exento,porceimp,cajero,usuario
-  iva_2026_fix.csv   comprobante_id,iva,neta
-  conciliacion_lineas.csv  comprobante_id,numero,fuente,lineas,suma_total,total_comprobante,diferencia
+Salida (prefijo, por defecto 2026):
+  lineas_<prefijo>.csv       comprobante_id,linea,fecha,codigo,cabys,cantidad,total,imp,...
+  iva_<prefijo>_fix.csv      comprobante_id,iva,neta
+  conciliacion_<prefijo>.csv comprobante_id,numero,fuente,lineas,suma_total,total_comprobante,diferencia
 
 Uso:
-  python scripts/conciliar_lineas_2026.py <export.csv> <dir_dbf> <salida_dir>
+  python scripts/conciliar_lineas.py <export.csv> <dir_dbf> <salida_dir> [prefijo]
 """
 import csv
 import datetime
@@ -32,7 +32,8 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-FILES = ["detafact.dbf", "detafactbk27022026.DBF"]
+FILES = ["detafact.dbf", "detafactbk27022026.DBF", "detafact_respaldo_respaldo.dbf"]
+PRIORIDAD = {"detafact.dbf": 0, "detafactbk27022026.DBF": 1, "detafact_respaldo_respaldo.dbf": 2}
 JD_EPOCH = 2415019
 VENTANA_DIAS = 75
 
@@ -137,12 +138,10 @@ def cargar(dbf_dir):
     return por_archivo
 
 
-def main(export_csv, dbf_dir, out_dir):
+def main(export_csv, dbf_dir, out_dir, prefijo="2026"):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     datos = cargar(dbf_dir)
-    det = datos["detafact.dbf"]
-    bk = datos["detafactbk27022026.DBF"]
 
     comprobantes = []
     for r in csv.DictReader(open(export_csv, encoding="utf-8")):
@@ -157,16 +156,16 @@ def main(export_csv, dbf_dir, out_dir):
     suma_dif = 0.0
 
     for cid, num, fecha, total, iva_actual, neta_actual in comprobantes:
-        a = [x for x in det.get(num, []) if x["fecha"] and abs((x["fecha"] - fecha).days) <= VENTANA_DIAS]
-        b = [x for x in bk.get(num, []) if x["fecha"] and abs((x["fecha"] - fecha).days) <= VENTANA_DIAS]
+        disponibles = []
+        for fn in FILES:
+            filas = [x for x in datos.get(fn, {}).get(num, [])
+                     if x["fecha"] and abs((x["fecha"] - fecha).days) <= VENTANA_DIAS]
+            if filas:
+                disponibles.append((fn, filas, sum(x["total"] for x in filas)))
 
-        opciones = []
-        if a:
-            opciones.append(("detafact", a, sum(x["total"] for x in a)))
-        if b:
-            opciones.append(("bk", b, sum(x["total"] for x in b)))
-        if a and b:
-            union = a + b
+        opciones = list(disponibles)
+        if len(disponibles) > 1:
+            union = [x for _, filas, _ in disponibles for x in filas]
             opciones.append(("union", union, sum(x["total"] for x in union)))
 
         if not opciones:
@@ -174,7 +173,7 @@ def main(export_csv, dbf_dir, out_dir):
             conc.append((cid, num, "", 0, 0.0, total, total))
             continue
 
-        mejor = min(opciones, key=lambda o: (abs(o[2] - total), 0 if o[0] == "detafact" else 1))
+        mejor = min(opciones, key=lambda o: (abs(o[2] - total), PRIORIDAD.get(o[0], 9)))
         fuente, elegidas, suma = mejor
         dif = round(suma - total, 2)
         stats[fuente] += 1
@@ -194,18 +193,18 @@ def main(export_csv, dbf_dir, out_dir):
                 x["cajero"], x["usuario"],
             ))
 
-    with (out / "lineas_2026.csv").open("w", newline="", encoding="utf-8") as fh:
+    with (out / f"lineas_{prefijo}.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["comprobante_id", "linea", "fecha", "codigo", "cabys", "cantidad",
                     "total", "imp", "descuento", "exento", "porceimp", "cajero", "usuario"])
         w.writerows(lineas_out)
 
-    with (out / "iva_2026_fix.csv").open("w", newline="", encoding="utf-8") as fh:
+    with (out / f"iva_{prefijo}_fix.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["comprobante_id", "iva", "neta"])
         w.writerows(iva_out)
 
-    with (out / "conciliacion_lineas.csv").open("w", newline="", encoding="utf-8") as fh:
+    with (out / f"conciliacion_{prefijo}.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["comprobante_id", "numero", "fuente", "lineas", "suma_total",
                     "total_comprobante", "diferencia"])
@@ -221,7 +220,7 @@ def main(export_csv, dbf_dir, out_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         print(__doc__)
         sys.exit(2)
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else "2026")

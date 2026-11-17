@@ -1,4 +1,4 @@
-# Importación 2026: IVA, líneas con código de barras y movimientos de venta
+# Importación histórica: IVA, líneas con código de barras y movimientos de venta
 
 **Fecha:** 2026-11-16 · **Servidor:** `192.168.1.72` (base `mercurius`)
 **Origen:** `Z:\Sistema\Sistema_vsuper_20261102-182919.zip` (DBF extraídos en
@@ -76,22 +76,60 @@ mayo y julio.
 
 | Archivo | Qué hace |
 |---|---|
-| `scripts/conciliar_lineas_2026.py` | export + DBF → `lineas_2026.csv`, `iva_2026_fix.csv`, `conciliacion_lineas.csv` |
-| `scripts/completar_lineas_2026.sql` | rellena código de barras, CAByS, base e impuesto por línea |
-| `scripts/corregir_iva_2026.sql` | corrige `total_impuesto`/`total_venta_neta` de los resúmenes (respaldo en `resumen_factura_bkp_iva_2026`) |
+| `scripts/conciliar_lineas.py` | export + DBF → `lineas_<prefijo>.csv`, `iva_<prefijo>_fix.csv`, `conciliacion_<prefijo>.csv` |
+| `scripts/completar_lineas.sql` | rellena código de barras, CAByS, base e impuesto por línea |
+| `scripts/corregir_iva.sql` | corrige `total_impuesto`/`total_venta_neta` de los resúmenes (respaldo en `resumen_factura_bkp_iva_2026`) |
+| `scripts/corregir_iva_desde_lineas.sql` | completa resúmenes en cero cuando las líneas sí tienen impuesto |
 | `scripts/reconstruir_ventas_febrero_2026.sql` | borra y reconstruye los movimientos `Venta` de febrero (respaldo en `inventario_bkp_venta_feb2026`) |
 | `scripts/crear_articulo_guaro_2026.sql` | crea el artículo faltante con stock y precio |
+| `scripts/crear_articulos_faltantes.py` / `.sql` | crea los artículos vendidos que no estaban en el catálogo |
 
 Ejecución: los CSV se copian a `/tmp/dbf_reconciliacion/` y se corre
 `psql -v aplicar=false|true -f ...` como `postgres`. Todos son idempotentes.
 
-## 6. Pendientes conocidos
+## 6. Histórico completo (2022–2025)
 
-- **2.097 facturas (3,4 %)** donde la suma de líneas del origen no cuadra con el
-  total de la factura (faltan líneas repetidas que el sistema viejo no guardó).
-  Es un problema del respaldo, no del cruce: el total de la factura se mantiene.
+Se aplicó el mismo proceso a todo lo que tiene detalle en los respaldos:
+
+| Año | Comprobantes | Total | IVA antes | IVA después | % IVA |
+|---|---|---|---|---|---|
+| 2022 | 119.036 | 304.115.938 | 15.626.519 | **15.626.519** | 5,1 |
+| 2023 | 116.440 | 275.134.458 | 1.872 | **26.446.161** | 9,6 |
+| 2024 | 104.617 | 259.593.672 | 15.040.321 | **26.359.862** | 10,2 |
+| 2025 | 96.034 | 233.461.398 | 1.699.355 | **24.479.713** | 10,5 |
+| 2026 | 96.208 | 252.080.922 | — | **26.783.866** | 10,6 |
+
+- 771.875 líneas de 2022–2025 recibieron código de barras, CAByS e impuesto.
+- 373 artículos que se vendieron y no estaban en el catálogo fueron creados
+  (9 siguen activos en el maestro; 364 quedan inactivos).
+- 915.606 de 915.883 líneas con código (99,97 %) resuelven un artículo.
+
+El IVA de 2022 queda en 5,1 % porque el respaldo solo trae impuesto en 139.894
+de sus 212.483 líneas; no hay otra fuente para el resto.
+
+## 7. Pendientes conocidos
+
+- **2.097 facturas de 2026 (3,4 %)** donde la suma de líneas del origen no cuadra
+  con el total de la factura (faltan líneas repetidas que el sistema viejo no
+  guardó). Es un problema del respaldo, no del cruce: el total de la factura se
+  mantiene.
 - **Stock:** `articulostock` viene del maestro del sistema viejo, no de la suma
   del kardex (8.984 artículos ya difieren). Por eso la reconstrucción de febrero
   no toca existencias.
-- **Líneas de agosto:** 16.759 líneas, solo 3.464 con código de barras; vienen de
-  XML, que solo trae código cuando el emisor lo incluyó.
+- **Líneas de agosto 2026:** 16.759 líneas, solo 3.464 con código de barras; vienen
+  de XML, que solo trae código cuando el emisor lo incluyó.
+- **413 "códigos" sin artículo** que en realidad son códigos de actividad
+  (`CACTIVIDAD`) guardados por un import viejo en líneas huérfanas. No se crean.
+
+## 8. Años sin IVA recuperable
+
+| Año | Facturas | Detalle | Por qué no hay IVA |
+|---|---|---|---|
+| 2013 | 49.396 | ninguno | el `DETAFACT` del respaldo 2019 está vacío |
+| 2014 | 208.561 | 1 línea | ídem |
+| 2015 | 203.102 | 87.201 (oct–dic) | el kardex no guarda impuesto |
+| 2016 | 147.227 | 265.377 | el kardex no guarda impuesto |
+| 2017 | 0 | — | no hubo ventas (numeración continua 2016→2018) |
+| 2018 | 14.094 | 37 | el detalle no existe en ningún archivo |
+| 2019 | 2 | 5 | ídem |
+| 2020–2021 | 0 | — | no hubo ventas |

@@ -1,8 +1,8 @@
--- Completa la metadata de las lineas de venta 2026 (enero-julio) desde los DBF
--- del sistema viejo: codigo de barras, CAByS, base/impuesto y precio neto.
+-- Completa la metadata de las lineas de venta desde los DBF del sistema viejo:
+-- codigo de barras, CAByS, base/impuesto y precio neto.
 --
--- El CSV lo genera scripts/conciliar_lineas_2026.py y trae comprobante_id, asi
--- que no hay ambiguedad de numeros repetidos entre 2025 y 2026.
+-- El CSV lo genera scripts/conciliar_lineas.py y trae comprobante_id, asi que
+-- no hay ambiguedad de numeros repetidos entre anios.
 --
 -- El DBF trae lineas repetidas con el mismo NNUMELINEA (productos identicos);
 -- se agrupan por (comprobante_id, linea) igual que quedo la tabla.
@@ -10,7 +10,8 @@
 -- 'total' del DBF es BRUTO (incluye IVA); base = total - imp, como en las
 -- lineas que vienen de XML.
 --
--- Uso: psql -v aplicar=false|true -f completar_lineas_2026.sql
+-- Uso: copiar el CSV como /tmp/dbf_reconciliacion/lineas_ventas.csv y correr
+--      psql -v aplicar=false|true -f completar_lineas.sql
 
 \pset pager off
 \set ON_ERROR_STOP on
@@ -20,7 +21,7 @@ CREATE TEMP TABLE stg_lin2026 (
     comprobante_id bigint, linea text, fecha text, codigo text, cabys text, cantidad text,
     total text, imp text, descuento text, exento text, porceimp text, cajero text, usuario text
 );
-\copy stg_lin2026 FROM '/tmp/dbf_reconciliacion/lineas_2026.csv' WITH (FORMAT csv, HEADER true)
+\copy stg_lin2026 FROM '/tmp/dbf_reconciliacion/lineas_ventas.csv' WITH (FORMAT csv, HEADER true)
 
 DROP TABLE IF EXISTS lin_target;
 CREATE TEMP TABLE lin_target AS
@@ -79,17 +80,12 @@ WHERE t.codigo IS NOT NULL
 \echo '===== verificacion'
 SELECT count(*) AS lineas_con_codigo
 FROM linea_detalle l
-JOIN comprobantesemitidos c ON c.detalle_servicio_id = l.detalle_servicio_id
-JOIN encabezado h ON h.id = c.encabezado_id
-WHERE h.fecha_emision >= '2026-01-01' AND h.fecha_emision < '2026-08-01'
-  AND EXISTS (SELECT 1 FROM codigo_comercial cc WHERE cc.linea_detalle_id = l.id AND cc.tipo = '01');
+WHERE EXISTS (SELECT 1 FROM codigo_comercial cc
+              WHERE cc.linea_detalle_id = l.id AND cc.tipo = '01');
 
 SELECT count(*) AS lineas_resuelven_articulo
 FROM linea_detalle l
-JOIN comprobantesemitidos c ON c.detalle_servicio_id = l.detalle_servicio_id
-JOIN encabezado h ON h.id = c.encabezado_id
-WHERE h.fecha_emision >= '2026-01-01' AND h.fecha_emision < '2026-08-01'
-  AND EXISTS (SELECT 1 FROM codigo_comercial cc JOIN articulos a ON a.codigobarra = cc.codigo
+WHERE EXISTS (SELECT 1 FROM codigo_comercial cc JOIN articulos a ON a.codigobarra = cc.codigo
               WHERE cc.linea_detalle_id = l.id);
 
 \if :aplicar
