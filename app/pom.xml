@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.mercurius</groupId>
   <artifactId>mercurius-quarkus</artifactId>
-  <version>3.19.14</version>
+  <version>3.19.15</version>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>3.36.2</quarkus.version>
@@ -338,6 +338,29 @@
   <build>
     <finalName>mercurius-quarkus</finalName>
     <plugins>
+      <!-- Mercurius compila con release 25: si el build corre con un JDK menor,
+           fallar temprano y con un mensaje claro en vez de un error de javac. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.2</version>
+        <executions>
+          <execution>
+            <id>enforce-java-25</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[25,)</version>
+                  <message>Mercurius requiere JDK 25 o superior (maven.compiler.release=25).</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
