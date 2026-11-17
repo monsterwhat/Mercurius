@@ -183,9 +183,42 @@ correrlo otra vez ya no inserta nada).
 | 2026 | 256.048 | 224.374 | +31.674 (líneas sin código) |
 
 Se agregaron **22.420 movimientos** (20.415 de 2022–2025 y 2.005 de 2026).
-`inventario` quedó en **1.597.209** filas.
+`inventario` quedó en **1.583.355** filas.
 
-Las diferencias que quedan no son huecos del proceso: 2015 y 2024 tienen más
-movimientos que líneas porque el kardex registra salidas que la factura no
-detalla, y en 2026 las 31.674 unidades corresponden a líneas cuyo código no
-existe como artículo (códigos de actividad guardados por un import viejo).
+## 11. Limpieza de duplicados (2024)
+
+El exceso de movimientos en 2024 **no** era merma ni consumo: eran movimientos
+duplicados entre las dos importaciones (kardex, notas = número de documento, y
+facturas, notas = `Venta ...`).
+
+Se borraron **10.032 filas / 14.305 unidades** de 2024 cuya (artículo, fecha,
+cantidad) ya existía como movimiento de factura. Respaldo completo en
+`inventario_bkp_dup_venta_2026`.
+
+2024 pasó de 283.819 a **269.514** unidades contra 269.449 de las líneas (+65).
+
+No se limpiaron 2015/2016/2025/2026:
+
+- **2025** ya estaba exacto (248.403 = 248.403); el emparejamiento por cantidad
+  confundía dos ventas reales del mismo producto el mismo día.
+- **2015** tiene más movimientos que líneas porque `salidas.dbf` cubre agosto y
+  septiembre, meses sin detalle de factura.
+- **2026** tiene un déficit propio por líneas cuyo código no es un artículo.
+
+Los ajustes sí existen, pero no como "merma"/"consumo"/"transferencia": el
+sistema viejo los guardaba como `AJ` con subtipo (`DS` 1.008, `DP` 853, `AS` 803,
+`AJ` 446, `AL` 138, `PR` 68…). Se importaron los 4.455 como tipo `Ajuste`, sin el
+subtipo (la tabla `inventario` no tiene columna para él).
+
+## 12. Diferencias finales por año
+
+| Año | Líneas (unid.) | Movimientos | Diferencia | Por qué |
+|---|---|---|---|---|
+| 2015 | 123.943 | 169.847 | −45.904 | ago–sep sin líneas |
+| 2016 | 352.816 | 350.528 | +2.288 | líneas con código sin artículo |
+| 2018 | 37 | 428 | −390 | sin detalle |
+| 2022 | 289.606 | 289.617 | −11 | redondeo |
+| 2023 | 290.194 | 290.194 | **0** | — |
+| 2024 | 269.449 | 269.514 | −65 | 0,02 % |
+| 2025 | 248.403 | 248.403 | **0** | — |
+| 2026 | 256.048 | 224.374 | +31.674 | códigos de actividad |
