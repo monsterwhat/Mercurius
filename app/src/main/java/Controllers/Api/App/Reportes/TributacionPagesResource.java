@@ -482,7 +482,12 @@ public class TributacionPagesResource {
         Date end = Date.from(finMes.atTime(23, 59, 59)
                 .atZone(java.time.ZoneId.systemDefault()).toInstant());
 
-        List<ComprobantesEmitidos> emitidas = orEmpty(emitidosService.listByDateRangeConClave(start, end));
+        // TODO(clave-obligatoria): el historico importado del sistema viejo no
+        // trae clave de Hacienda en todas las facturas (2013-2026), asi que el
+        // D-104 suma TODAS las ventas. Cuando toda emision tenga clave (requisito
+        // a futuro), volver a listByDateRangeConClave y validar que no quede
+        // ningun comprobante sin clave.
+        List<ComprobantesEmitidos> emitidas = orEmpty(emitidosService.listByDateRange(start, end));
         List<ComprobantesRecibidos> recibidas = orEmpty(recibidosService.listByDateRange(start, end));
 
         BigDecimal totalVentas = BigDecimal.ZERO;
@@ -533,7 +538,9 @@ public class TributacionPagesResource {
             ventasMes[i] = BigDecimal.ZERO;
             impuestoMes[i] = BigDecimal.ZERO;
         }
-        for (ComprobantesEmitidos f : orEmpty(emitidosService.listByDateRangeConClave(yearStart, yearEnd))) {
+        // TODO(clave-obligatoria): igual que el periodo, el resumen mensual suma
+        // todas las ventas porque el historico no siempre tiene clave.
+        for (ComprobantesEmitidos f : orEmpty(emitidosService.listByDateRange(yearStart, yearEnd))) {
             if (f.getResumen() == null || f.getEncabezado() == null
                     || f.getEncabezado().getFechaEmision() == null) {
                 continue;
