@@ -122,7 +122,6 @@ de sus 212.483 líneas; no hay otra fuente para el resto.
   (`CACTIVIDAD`) guardados por un import viejo en líneas huérfanas. No se crean.
 
 ## 8. Años sin IVA recuperable
-
 | Año | Facturas | Detalle | Por qué no hay IVA |
 |---|---|---|---|
 | 2013 | 49.396 | ninguno | el `DETAFACT` del respaldo 2019 está vacío |
@@ -133,3 +132,32 @@ de sus 212.483 líneas; no hay otra fuente para el resto.
 | 2018 | 14.094 | 37 | el detalle no existe en ningún archivo |
 | 2019 | 2 | 5 | ídem |
 | 2020–2021 | 0 | — | no hubo ventas |
+
+## 9. Movimientos de inventario que faltaban (entradas y ajustes)
+
+Se encontró un **respaldo de enero 2026** que nadie había usado:
+`F:\Desktop\Super\New folder (3)\Original DBF\`. Su `kardex.DBF` tiene
+**843.552 filas** (2022–2026) mientras el KARDEX actual solo conserva 2026
+(152.807). El kardex viejo trae 63.244 entradas (IM) y 2.021 ajustes (AJ) que
+nunca se importaron.
+
+| Fuente | Movimientos IM/AJ | Años |
+|---|---|---|
+| `E:\VPALMERAS\kardex.DBF` | 31.301 | 2015–2019 |
+| `F:\Desktop\Super\...\kardex.DBF` | 64.807 | 2022–2026 |
+
+Resultado: **93.371 movimientos** nuevos (91.500 entradas + 1.871 ajustes;
+2.376 ya existían y 361 quedaron sin artículo). `inventario` pasó de 1.481.418 a
+**1.574.789** filas.
+
+El inventario ahora cubre **2015–2026** con aperturas, entradas, ajustes y
+ventas. Antes de esto, 2022–2025 no tenía ninguna entrada y 2015–2016 solo una
+parte.
+
+Lo que sigue sin existir en ninguna fuente:
+
+- **2018**: 14.094 facturas y solo 204 movimientos. El `salidas.dbf` de E: tiene
+  101 filas para ese año y el kardex 103; el detalle se purgó antes del respaldo
+  de 2019.
+- **2015 enero–septiembre** y **2013–2014**: sin detalle de líneas.
+- **2015–2016**: sin impuesto por línea (el kardex no lo guarda).
