@@ -161,3 +161,31 @@ Lo que sigue sin existir en ninguna fuente:
   de 2019.
 - **2015 enero–septiembre** y **2013–2014**: sin detalle de líneas.
 - **2015–2016**: sin impuesto por línea (el kardex no lo guarda).
+
+## 10. Movimientos de venta generados desde las líneas
+
+El import histórico creó los movimientos desde el kardex, no desde las líneas,
+así que había facturas con detalle y sin movimiento.
+
+Se comparó, por artículo y fecha, el total vendido según las líneas contra el
+total ya registrado como `Venta`, y se insertó solo la diferencia (idempotente:
+correrlo otra vez ya no inserta nada).
+
+| Año | Líneas | Movimientos | Diferencia |
+|---|---|---|---|
+| 2015 | 123.943 | 169.847 | −45.904 (kardex + salidas) |
+| 2016 | 352.816 | 350.528 | +2.288 |
+| 2018 | 37 | 428 | −391 (sin detalle) |
+| 2022 | 289.606 | 289.617 | −11 |
+| 2023 | 290.194 | 290.194 | **0** |
+| 2024 | 269.449 | 283.819 | −14.370 (kardex) |
+| 2025 | 248.403 | 248.403 | **0** |
+| 2026 | 256.048 | 224.374 | +31.674 (líneas sin código) |
+
+Se agregaron **22.420 movimientos** (20.415 de 2022–2025 y 2.005 de 2026).
+`inventario` quedó en **1.597.209** filas.
+
+Las diferencias que quedan no son huecos del proceso: 2015 y 2024 tienen más
+movimientos que líneas porque el kardex registra salidas que la factura no
+detalla, y en 2026 las 31.674 unidades corresponden a líneas cuyo código no
+existe como artículo (códigos de actividad guardados por un import viejo).
