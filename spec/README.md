@@ -1,4 +1,16 @@
-# spec/ — leyes verificadas con Bend
+# spec/ — piloto de Bend (ARCHIVADO)
+
+> **ARCHIVADO el 2026-11-17.** Este directorio queda como documentación del
+> experimento: no se mantiene ni forma parte del build. El motivo está en
+> [`docs/plans/bend-integracion-plan.md`](../docs/plans/bend-integracion-plan.md).
+> Lo que se usa en su lugar es
+> [`scripts/verificar_integridad.sql`](../scripts/verificar_integridad.sql),
+> que corre a diario con la tarea `Mercurius-VerificarIntegridad`.
+>
+> Resumen de por qué se archivó: todas las leyes que se pudieron probar eran
+> cálculos (`{==}`), no teoremas; la ley interesante necesita inducción; `Nat`
+> es unario y `U32` no alcanza para el año; y los bugs reales que tuvimos
+> (duplicados de febrero y 2024, IVA en cero) eran de datos, no de teoremas.
 
 Especificación ejecutable de las reglas de negocio puras de Mercurius, escrita
 en [Bend 2](https://bend-lang.com). **No entra en runtime**: el sistema sigue

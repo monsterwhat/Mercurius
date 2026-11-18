@@ -186,3 +186,35 @@ No hay referencias a Java 21 en el pom, el README ni los workflows.
 
 Sin cambios de comportamiento: el jar ya está compilado para 25 y corre sobre
 25. El enforcer solo afecta el build. No requiere reinicio del servicio.
+
+---
+
+# Cierre del piloto (2026-11-17)
+
+**Decisión: se archiva Bend.** Se completaron F0 y F1 (ver `spec/`), y la
+conclusión fue que no paga para este proyecto:
+
+- Todas las leyes que se pudieron probar son cálculos (`{==}`), no teoremas:
+  lo mismo que un `assert`.
+- La ley que sí importa (el IVA nunca supera la base, para todo `base`) requiere
+  inducción y quedó abierta.
+- `Nat` es unario (desborda con miles de millones) y `U32` no alcanza para el
+  acumulado anual: el modelo numérico pelea con el dominio.
+- Los bugs reales (febrero duplicado, 10.032 movimientos duplicados de 2024,
+  IVA en cero en tres años, `encabezado.clave` vacío) eran de datos y ETL, no
+  de teoremas. Bend no toca el Java ni el SQL.
+
+**En su lugar** se implementó un verificador de integridad que corre a diario:
+
+| Pieza | Qué hace |
+|---|---|
+| `scripts/verificar_integridad.sql` | falla (código ≠ 0) si neta+iva≠total, si un electrónico no tiene resumen, si un comprobante con total no tiene líneas o si el resumen tiene IVA en cero con líneas con IVA; avisa de IVA distinto al de líneas, comprobantes sin clave, líneas sin artículo y movimientos repetidos |
+| `scripts/verificar_integridad_diario.ps1` | lo corre sobre los últimos 2 días y escribe `logs/integridad.log` |
+| Tarea `Mercurius-VerificarIntegridad` | diaria 23:30, después del import de las 23:00 |
+
+Prueba del gate: con la ventana de octubre 2018 (que sabemos que no tiene
+líneas) sale **código 2** y `INTEGRIDAD 3: 20 comprobantes con total y sin
+lineas`; con la ventana actual sale **0** e `Integridad OK`.
+
+El código de Bend y los archivos del piloto quedan en `spec/` como
+documentación, y Bend se desinstaló del servidor.
