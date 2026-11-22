@@ -186,7 +186,9 @@ public class MarketplaceProductService {
             List<BigDecimal> results = query.getResultList();
             return !results.isEmpty() && results.get(0).compareTo(BigDecimal.ZERO) > 0;
         } catch (PersistenceException e) {
-            return false;
+            LOG.warn("Error leyendo stock del marketplace para " + barcode
+                    + " | source=MarketplaceProductService.hasStock()", e);
+            throw e;
         }
     }
 
@@ -204,7 +206,9 @@ public class MarketplaceProductService {
             List<BigDecimal> results = query.getResultList();
             return results.isEmpty() ? BigDecimal.ZERO : results.get(0);
         } catch (PersistenceException e) {
-            return BigDecimal.ZERO;
+            LOG.warn("Error leyendo cantidad de stock del marketplace para " + barcode
+                    + " | source=MarketplaceProductService.getStockQuantity()", e);
+            throw e;
         }
     }
 }

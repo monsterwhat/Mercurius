@@ -199,6 +199,13 @@ class PosFacturarEnvioFueraDeTransaccionTest extends support.ContextPathIsolatio
             settings.setTipoIdentificacion("02");
             appSettingsService.update(settings);
         }
+        // ProveedorSistemas es obligatorio en el XSD v4.4 (justo después de
+        // Clave). Si otra prueba dejó el perfil sin él, el XML no valida y el
+        // envío diferido ni siquiera puede firmarse.
+        if (settings.getProvedor() == null || settings.getProvedor().isBlank()) {
+            settings.setProvedor("Mercurius");
+            appSettingsService.update(settings);
+        }
     }
 
     /** Artículo exento: el total de la venta es el precio, exacto y sin IVA. */
@@ -328,8 +335,9 @@ class PosFacturarEnvioFueraDeTransaccionTest extends support.ContextPathIsolatio
                 cartSessionStore.getOrCreate(USUARIO).getCartContext().getCarrito());
         assertThat(carrito).as("el carrito debe tener la línea escaneada").hasSize(1);
 
-        // Hacienda alcanzable: se intenta el envío inmediato.
-        when(envioFueraLineaService.hayConectividadConHacienda()).thenReturn(true);
+        // Hacienda alcanzable: se intenta el envío inmediato. La venta consulta
+        // conectividadParaVenta(), no el sondeo directo.
+        when(envioFueraLineaService.conectividadParaVenta()).thenReturn(true);
         when(haciendaServiceFacade.isFidesEnabled()).thenReturn(false);
 
         // La frontera de Hacienda: la PRIMERA llamada se queda esperando (el
@@ -408,7 +416,7 @@ class PosFacturarEnvioFueraDeTransaccionTest extends support.ContextPathIsolatio
         Map<String, String> sesion = adminSession();
         escanear(sesion, articulo);
 
-        when(envioFueraLineaService.hayConectividadConHacienda()).thenReturn(true);
+        when(envioFueraLineaService.conectividadParaVenta()).thenReturn(true);
         when(haciendaServiceFacade.isFidesEnabled()).thenReturn(false);
         when(haciendaServiceFacade.submitDocument(any()))
                 .thenReturn(HaciendaServiceFacade.SubmitResult.rejected(

@@ -80,10 +80,13 @@ class AgregadosCantidadNulaTest {
     void bestSellingToleraCantidadNula() {
         Siembra siembra = sembrarRepSinCantidad();
         try {
+            // La prueba verifica presencia, no ranking: con la base compartida
+            // del suite completo hay mas de 50 nombres y el REP de 0 unidades
+            // quedaria fuera de un top-50 sin que eso sea un fallo del codigo.
             var resumen = productPerformanceService.getBestSellingProducts(
                     java.util.Date.from(LocalDateTime.now().minusDays(30).atZone(
                             java.time.ZoneId.systemDefault()).toInstant()),
-                    new java.util.Date(), 50);
+                    new java.util.Date(), 10_000);
             assertThat(resumen).isNotNull();
             // El articulo del REP aparece con 0 unidades, no con un NPE.
             var fila = resumen.stream()
@@ -106,7 +109,7 @@ class AgregadosCantidadNulaTest {
             var resumen = productPerformanceService.getBestSellingProductsByRevenue(
                     java.util.Date.from(LocalDateTime.now().minusDays(30).atZone(
                             java.time.ZoneId.systemDefault()).toInstant()),
-                    new java.util.Date(), 50);
+                    new java.util.Date(), 10_000);
             assertThat(resumen).isNotNull();
             assertThat(resumen.stream()
                     .filter(f -> siembra.nombreArticulo().equals(f.getProductName()))

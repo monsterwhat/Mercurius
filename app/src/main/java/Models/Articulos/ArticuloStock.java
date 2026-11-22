@@ -9,11 +9,28 @@ import lombok.EqualsAndHashCode;
 //Tabla con el valor actual del stock de los articulos.
 @Entity
 @Data
+@Table(indexes = {
+        @Index(name = "idx_articulostock_articulo", columnList = "articulo_codigo")
+})
 public class ArticuloStock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    /**
+     * Stable article id. The barcode remains the alternate unique key for
+     * barcode-driven POS flows, but the article id is what reports, forecasts
+     * and the Mercatus API use as the primary stock identity.
+     *
+     * <p>Nullable on purpose: rows written before this column existed keep
+     * working and are adopted lazily by {@code updateStock}. The column is
+     * indexed but not unique so an existing database with a stale duplicate
+     * can boot; the reconciliation diagnostic reports the duplicate instead of
+     * letting Hibernate silently split or merge stock.</p>
+     */
+    @Column(name = "articulo_codigo")
+    private Long articuloCodigo;
 
     /**
      * Referencing the stable barcode of the Articulo — the natural key of this

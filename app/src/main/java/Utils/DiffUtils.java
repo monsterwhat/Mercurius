@@ -1,27 +1,76 @@
 package Utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
+import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility class for capturing entity state snapshots and parsing diffs
  * for the activity log (Registros Internos).
  *
+ * <p><b>Redaccion.</b> Las entidades hidratan relaciones como
+ * {@code Usuarios}, que incluye el hash de la contrasena. El snapshot se usa en
+ * logs y alertas, asi que un serializador con {@link BeanSerializerModifier}
+ * elimina cualquier propiedad sensible antes de escribirla. Nunca se registra
+ * un secreto ni un hash.</p>
+ *
  * @author Al
  */
 public final class DiffUtils {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    /** Nombres de propiedad que jamas deben aparecer en un snapshot. */
+    private static final Set<String> PROPIEDADES_SENSIBLES = Set.of(
+            "password", "contrasena", "contraseña", "certificadopassword",
+            "haciendaapikey", "fidesauthpassword", "authsessionkey",
+            "haciendaencryptionkey", "secret", "token", "jwt", "apikey",
+            "apikeysecret", "sessionkey", "encryptionkey");
 
-    private DiffUtils() {}
+    private static final ObjectMapper MAPPER = crearMapper();
+
+    private DiffUtils() {
+    }
+
+    private static ObjectMapper crearMapper() {
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.setSerializerFactory(mapper.getSerializerFactory()
+                .withSerializerModifier(new BeanSerializerModifier() {
+                    @Override
+                    public List<BeanPropertyWriter> changeProperties(
+                            SerializationConfig config,
+                            BeanDescription beanDesc,
+                            List<BeanPropertyWriter> beanProperties) {
+                        beanProperties.removeIf(propiedad ->
+                                esSensible(propiedad.getName()));
+                        return beanProperties;
+                    }
+                }));
+        return mapper;
+    }
+
+    private static boolean esSensible(String nombre) {
+        String limpio = nombre == null ? "" : nombre.toLowerCase(Locale.ROOT);
+        return PROPIEDADES_SENSIBLES.contains(limpio)
+                || limpio.contains("password")
+                || limpio.contains("contrasena")
+                || limpio.contains("secret")
+                || limpio.contains("apikey")
+                || limpio.contains("sessionkey")
+                || limpio.contains("encryptionkey");
+    }
 
     /**
      * Captures the state of an entity as a JSON string before/after modification.

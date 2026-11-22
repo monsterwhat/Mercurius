@@ -3,17 +3,10 @@ package Controllers.Api.App.Reportes;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
-import Models.PrecisionPronostico;
-import Services.SeleccionMetodoService;
 import Services.StockForecastService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,7 +16,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -57,12 +49,9 @@ import org.jboss.logging.Logger;
  *
  * <p><b>Exactitud del pronóstico.</b> Cada fila por artículo de las secciones
  * {@code pronosticos} y {@code reorden} añade tres columnas de solo lectura —
- * método elegido, MASE y sesgo — leídas de {@link PrecisionPronostico} (la
- * última corrida de backtesting) y de
- * {@link SeleccionMetodoService#mejorFila(java.util.List)}, que es la única
- * fuente de verdad de la elección. Un artículo sin filas de precisión se muestra
- * como "sin evaluar", nunca como celda vacía ni como error: una columna de
- * exactitud no puede ser la razón por la que la página no carga.</p>
+ * método, MASE y sesgo — que salen de la MISMA corrida canónica que produjo la
+ * demanda mostrada. No se consulta una tabla de precisión por separado: si el
+ * pronóstico no tiene MASE medido, la columna dice "sin evaluar".</p>
  */
 @Path("/app/reportes/inventario/pronosticos")
 @Produces(MediaType.TEXT_HTML)
@@ -87,10 +76,6 @@ public class PronosticosResource {
     @Inject
     @Nonnull
     StockForecastService stockForecastService;
-
-    @Inject
-    @Nonnull
-    EntityManager entityManager;
 
     @Inject
     @Location("pages/reportes/pronosticos")
@@ -181,6 +166,7 @@ public class PronosticosResource {
                     Tablas.paginaDe(filas, paginaActual, tamanoPagina);
             paginaVisible = new ArrayList<>(recorte.size());
             for (StockForecastService.FilaPronostico fila : recorte) {
+                Exactitud exactitud = exactitudDe(fila.metodo(), fila.mase(), fila.sesgo());
                 paginaVisible.add(Tablas.fila(
                         "articuloCodigo", fila.articuloCodigo(),
                         "articulo", fila.articulo(),
@@ -191,16 +177,11 @@ public class PronosticosResource {
                         "diasRestantes", fila.diasRestantes(),
                         "cantidadSugerida", String.valueOf(fila.cantidadSugerida()),
                         "recomendacion", fila.recomendacion(),
-                        "prioridad", fila.recomendacion()));
-            }
-
-            // Accuracy solo de la página visible (máximo `size` artículos).
-            Map<Long, Exactitud> exactitudes = exactitudPorArticulo(codigosDe(paginaVisible));
-            for (Map<String, Object> fila : paginaVisible) {
-                Exactitud acc = exactitudDe(fila, exactitudes);
-                fila.put("metodoElegido", acc.metodo());
-                fila.put("mase", acc.mase());
-                fila.put("sesgo", acc.sesgo());
+                        "prioridad", fila.recomendacion(),
+                        "metodoElegido", exactitud.metodo(),
+                        "mase", exactitud.mase(),
+                        "sesgo", exactitud.sesgo(),
+                        "calidad", calidadLegible(fila.calidadFlags())));
             }
         }
 
@@ -297,6 +278,8 @@ public class PronosticosResource {
                     Map.of("label", "Cantidad Sugerida", "key", "cantidadSugerida"),
                     Map.of("label", "Prioridad", "key", "prioridad")));
             columnas.addAll(columnasExactitud());
+            columnas.add(Map.of("label", "Calidad", "key", "calidad",
+                    "help", "Banderas de calidad del pronóstico. OK = sin advertencias."));
             return List.copyOf(columnas);
         }
         List<Map<String, Object>> columnas = new ArrayList<>(List.of(
@@ -308,6 +291,8 @@ public class PronosticosResource {
                 Map.of("label", "Días Restantes", "key", "diasRestantes"),
                 Map.of("label", "Recomendación", "key", "recomendacion")));
         columnas.addAll(columnasExactitud());
+        columnas.add(Map.of("label", "Calidad", "key", "calidad",
+                "help", "Banderas de calidad del pronóstico. OK = sin advertencias."));
         return List.copyOf(columnas);
     }
 
@@ -334,6 +319,7 @@ public class PronosticosResource {
             case "diasRestantes" -> fila.diasRestantes();
             case "cantidadSugerida" -> fila.cantidadSugerida();
             case "recomendacion", "prioridad" -> fila.recomendacion();
+            case "calidad" -> fila.calidadFlags();
             default -> null;
         };
     }
@@ -350,11 +336,11 @@ public class PronosticosResource {
     private static List<Map<String, Object>> columnasExactitud() {
         return List.of(
                 Map.of("label", "Método",
-                        "help", "Método de pronóstico elegido por backtesting: el de menor MASE entre los elegibles."),
+                        "help", "Método con el que se generó este pronóstico: el ganador del backtesting para este horizonte, o el respaldo por régimen si no hay evaluación."),
                 Map.of("label", "MASE",
-                        "help", "Error absoluto medio escalado. Menos de 1 es mejor que el pronóstico ingenuo; 1 es igual; más de 1 es peor."),
+                        "help", "Error absoluto medio escalado del método mostrado. Menos de 1 es mejor que el pronóstico ingenuo; 1 es igual; más de 1 es peor."),
                 Map.of("label", "Sesgo",
-                        "help", "Error medio escalado. Positivo: se pronostica por debajo de la demanda real. Negativo: por encima. Cerca de 0 es mejor."));
+                        "help", "Error medio escalado del método mostrado. Positivo: se pronostica por debajo de la demanda real. Negativo: por encima. Cerca de 0 es mejor."));
     }
 
     // ------------------------------------------------------------------
@@ -378,97 +364,28 @@ public class PronosticosResource {
                         PronosticosResource.SIN_METRICA);
     }
 
-    /** Exactitud de una fila visible, o el marcador "sin evaluar" si no hay datos. */
-    @Nonnull
-    private static Exactitud exactitudDe(
-            @Nonnull Map<String, Object> fila,
-            @Nonnull Map<Long, Exactitud> porArticulo) {
-        Object valor = fila.get("articuloCodigo");
-        if (valor instanceof Number numero) {
-            return porArticulo.getOrDefault(numero.longValue(), Exactitud.SIN_EVALUAR);
-        }
-        return Exactitud.SIN_EVALUAR;
-    }
-
-    /** Códigos de los artículos de la página visible (máximo `size`). */
-    @Nonnull
-    private static Set<Long> codigosDe(@Nonnull List<Map<String, Object>> filas) {
-        Set<Long> codigos = new LinkedHashSet<>();
-        for (Map<String, Object> fila : filas) {
-            Object valor = fila.get("articuloCodigo");
-            if (valor instanceof Number numero) {
-                codigos.add(numero.longValue());
-            } else if (valor != null) {
-                try {
-                    codigos.add(Long.valueOf(String.valueOf(valor)));
-                } catch (NumberFormatException e) {
-                    LOG.debugf("Pronosticos: código de artículo no numérico: %s", valor);
-                }
-            }
-        }
-        return codigos;
-    }
-
     /**
-     * Lee la precisión de los artículos de la página visible en UNA consulta y
-     * resuelve el método elegido de cada uno ya evaluado.
-     *
-     * <p>La elección se delega a
-     * {@link SeleccionMetodoService#mejorFila(java.util.List)}: el desempate por
-     * simplicidad es regla del servicio y no se reimplementa aquí.</p>
-     *
-     * <p>La consulta se limita a los artículos visibles (normalmente 10). La
-     * versión anterior pedía la precisión de todo el catálogo y con 1.160
-     * artículos convertía esta página en 45 segundos de espera.</p>
-     *
-     * <p>Si la lectura falla se registra y se degrada a "sin evaluar" para toda
-     * la vista: la exactitud es información añadida y no puede ser el motivo de
-     * que la página devuelva 500.</p>
+     * Exactitud de la MISMA corrida que produjo el pronostico. Si el
+     * pronostico no tiene MASE medido, la columna dice "sin evaluar": no se
+     * inventa una confianza que no existe.
      */
     @Nonnull
-    private Map<Long, Exactitud> exactitudPorArticulo(
-            @Nullable Collection<Long> codigos) {
-        if (codigos == null || codigos.isEmpty()) {
-            return Map.of();
+    private static Exactitud exactitudDe(@Nullable String metodo,
+                                         @Nullable Double mase,
+                                         @Nullable Double sesgo) {
+        if (metodo == null || metodo.isBlank() || mase == null || !Double.isFinite(mase)) {
+            return Exactitud.SIN_EVALUAR;
         }
+        return new Exactitud(nombreMetodo(metodo), dosDecimales(mase), sesgoLegible(sesgo));
+    }
 
-        List<PrecisionPronostico> filas;
-        try {
-            filas = entityManager.createQuery(
-                            "SELECT p FROM PrecisionPronostico p "
-                                    + "WHERE p.articulo.codigo IN :codigos",
-                            PrecisionPronostico.class)
-                    .setParameter("codigos", codigos)
-                    .getResultList();
-        } catch (RuntimeException e) {
-            LOG.warn("exactitudPorArticulo: no se pudieron leer las filas de precision de "
-                    + codigos.size() + " articulo(s) (" + e.getMessage()
-                    + "); la vista se mostrara como 'sin evaluar'", e);
-            return Map.of();
+    /** Banderas de calidad legibles; vacio = OK. */
+    @Nonnull
+    private static String calidadLegible(@Nullable String flags) {
+        if (flags == null || flags.isBlank()) {
+            return "OK";
         }
-
-        Map<Long, List<PrecisionPronostico>> porArticulo = new HashMap<>();
-        for (PrecisionPronostico fila : filas) {
-            if (fila.getArticulo() != null && fila.getArticulo().getCodigo() != null) {
-                porArticulo.computeIfAbsent(fila.getArticulo().getCodigo(),
-                        clave -> new ArrayList<>()).add(fila);
-            }
-        }
-
-        Map<Long, Exactitud> resultado = new HashMap<>();
-        for (Map.Entry<Long, List<PrecisionPronostico>> articulo : porArticulo.entrySet()) {
-            Optional<PrecisionPronostico> elegida =
-                    SeleccionMetodoService.mejorFila(articulo.getValue());
-            if (elegida.isEmpty()) {
-                continue;
-            }
-            PrecisionPronostico fila = elegida.get();
-            resultado.put(articulo.getKey(), new Exactitud(
-                    nombreMetodo(fila.getMetodo()),
-                    dosDecimales(fila.getMase()),
-                    sesgoLegible(fila.getSesgo())));
-        }
-        return resultado;
+        return flags.replace(",", " \u00b7 ");
     }
 
     /**

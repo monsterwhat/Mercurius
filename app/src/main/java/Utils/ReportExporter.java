@@ -857,10 +857,12 @@ public final class ReportExporter {
             List<Object[]> rows = new ArrayList<>();
             if (pronosticos != null) {
                 for (ProductForecast pronostico : pronosticos) {
-                    int sugerido = Math.max(0,
-                            pronostico.avgDailySales().multiply(java.math.BigDecimal.valueOf(dias))
-                                    .setScale(0, java.math.RoundingMode.HALF_UP).intValue()
-                            - pronostico.currentStock());
+                    int sugerido = pronostico.metodo() != null
+                            ? pronostico.recommendedReorder()
+                            : Math.max(0,
+                                pronostico.avgDailySales().multiply(java.math.BigDecimal.valueOf(dias))
+                                        .setScale(0, java.math.RoundingMode.HALF_UP).intValue()
+                                - pronostico.currentStock());
                     rows.add(new Object[]{
                         pronostico.articuloNombre() != null ? pronostico.articuloNombre() : "",
                         pronostico.currentStock(),
@@ -881,10 +883,13 @@ public final class ReportExporter {
                     diasRestantes = java.math.BigDecimal.valueOf(pronostico.currentStock())
                             .divide(pronostico.avgDailySales(), 0, java.math.RoundingMode.DOWN).intValue();
                 }
+                Object demanda = pronostico.metodo() != null
+                        ? Math.round(pronostico.predictedDemand())
+                        : pronostico.predictedSales();
                 rows.add(new Object[]{
                     pronostico.articuloNombre() != null ? pronostico.articuloNombre() : "",
                     pronostico.currentStock(),
-                    pronostico.predictedSales(),
+                    demanda,
                     Math.max(0, diasRestantes),
                     pronostico.shouldReorder() && pronostico.predictedStock() <= 0 ? "Comprar" : (pronostico.shouldReorder() ? "Pronto" : "OK")
                 });

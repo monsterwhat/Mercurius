@@ -24,6 +24,7 @@ import Models.Sucursal;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.ConfiguracionMargenService;
+import Services.ConfiguracionPronosticoService;
 import Services.ConsecutivoEmitidoService;
 import Services.SucursalService;
 
@@ -70,6 +71,10 @@ public class SettingsPagesResource {
     @Inject
     @Nonnull
     ConfiguracionMargenService margenService;
+
+    @Inject
+    @Nonnull
+    ConfiguracionPronosticoService pronosticoService;
 
     @Inject
     @Nonnull
@@ -137,6 +142,10 @@ public class SettingsPagesResource {
             ConfiguracionMargen configMargen = margenService.findOrCreateDefault();
             model.put("configuracionMargen", configMargen);
             model.put("margenHistorial", margenService.listAllOrderById());
+
+            Models.ConfiguracionPronostico configPronostico = pronosticoService.findOrCreateDefault();
+            model.put("configuracionPronostico", configPronostico);
+            model.put("pronosticoHistorial", pronosticoService.listAllOrderById());
 
             TemplateInstance instance = page.instance();
             model.forEach(instance::data);

@@ -342,6 +342,22 @@ public class InventarioResource {
         }
     }
 
+    @GET
+    @Path("/reconciliacion")
+    @Operation(summary = "Compare projected stock (articulostock) against the movement ledger (inventario)")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Discrepancies (empty list means consistent)"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response reconciliacionStock() {
+        try {
+            return Response.ok(ApiResponse.ok(inventarioService.reconciliarStock())).build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error ejecutando la reconciliación de stock", e);
+            return serverError("Error ejecutando la reconciliación de stock");
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════
     // Create adjustment (legacy createInventarioDialog)
     // ════════════════════════════════════════════════════════════════════

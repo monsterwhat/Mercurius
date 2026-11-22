@@ -109,6 +109,8 @@ class SettingsPageTest extends AppBase {
         configuracionMargen.setMargenBase(new BigDecimal("25.00"));
         configuracionMargen.setAjusteRefrigerado(new BigDecimal("5.00"));
         configuracionMargen.setAjusteCongelado(new BigDecimal("10.00"));
+        Models.ConfiguracionPronostico configuracionPronostico =
+                Models.ConfiguracionPronostico.defecto();
 
         String html = pagina.getFragment("contenido")
                 .data("titulo", "Ajustes de la Aplicación")
@@ -120,6 +122,8 @@ class SettingsPageTest extends AppBase {
                 .data("baseUrl", "/api/app/settings")
                 .data("configuracionMargen", configuracionMargen)
                 .data("margenHistorial", java.util.Collections.emptyList())
+                .data("configuracionPronostico", configuracionPronostico)
+                .data("pronosticoHistorial", java.util.Collections.emptyList())
                 .render();
 
         // every legacy field group is present and marked
@@ -129,6 +133,13 @@ class SettingsPageTest extends AppBase {
         assertTrue(html.contains("cashbackPercentage"), "falta cashback en loyalty");
         assertTrue(html.contains("puntosInactivityMonths"), "faltan puntosInactivityMonths en loyalty");
         assertTrue(html.contains("data-group=\"stock-umbrales\""), "falta grupo umbrales de stock");
+        assertTrue(html.contains("id=\"ajustes-pronostico\""), "falta el formulario de pronóstico");
+        assertTrue(html.contains("name=\"costoFaltante\""), "falta el costo de faltante editable");
+        assertTrue(html.contains("name=\"costoMantenimiento\""), "falta el costo de mantenimiento editable");
+        assertTrue(html.contains("name=\"plazoReposicionDias\""), "falta el plazo del proveedor editable");
+        assertTrue(html.contains("name=\"cantidadMinimaPedido\""), "falta el mínimo de pedido editable");
+        assertTrue(html.contains("name=\"multiploPedido\""), "falta el múltiplo de pedido editable");
+        assertTrue(html.contains("name=\"nivelServicio\""), "falta el nivel de servicio editable");
         // prevalidacion: se eliminó a propósito (selector deshabilitado sin
         // opciones reales); el grupo ya no existe.
         assertFalse(html.contains("data-group=\"prevalidacion\""), "el grupo prevalidacion debía quitarse");

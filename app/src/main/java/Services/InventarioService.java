@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Articulos.ArticuloStock; 
+import Models.Articulos.Articulos;
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
 import Models.Usuarios;
@@ -55,6 +56,7 @@ public class InventarioService extends GService<Inventario> {
             em.flush();
         } catch (PersistenceException e) {
             LOG.warn("Error creating entity: " + e.getMessage() + " | source=InventarioService.create() | despues=" + e.getMessage());
+            throw e;
         }
     }
     
@@ -67,6 +69,7 @@ public class InventarioService extends GService<Inventario> {
             em.flush();
         } catch (PersistenceException e) {
             LOG.warn("Error creating entity: " + e.getMessage() + " | source=InventarioService.createWithStock() | despues=" + e.getMessage());
+            throw e;
         }
     }
 
@@ -86,6 +89,7 @@ public class InventarioService extends GService<Inventario> {
             }
         } catch (PersistenceException e) {
             LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=InventarioService.delete() | despues=" + e.getMessage());
+            throw e;
         }
     }
 
@@ -99,6 +103,7 @@ public class InventarioService extends GService<Inventario> {
             em.flush();
         } catch (PersistenceException e) {
             LOG.warn("Error updating entity: " + e.getMessage() + " | source=InventarioService.update() | despues=" + e.getMessage());
+            throw e;
         }
     }
     
@@ -124,6 +129,7 @@ public class InventarioService extends GService<Inventario> {
             }
         } catch (PersistenceException e) {
             LOG.warn("Error marking as processed: " + e.getMessage() + " | source=InventarioService.markAsProcessed() | despues=" + e.getMessage());
+            throw e;
         }
     }
 
@@ -134,7 +140,7 @@ public class InventarioService extends GService<Inventario> {
             return query.getResultList();
         } catch (PersistenceException e) {
             LOG.warn("Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAll() | despues=" + e.getMessage());
-            return null;
+            throw e;
         }
     }
     
@@ -186,8 +192,9 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0; // Return 0 if no stock found
             }
         } catch (PersistenceException e) {
-            LOG.warn("Error getting stock for barcode: " + barcode + " - " + e.getMessage() + " | source=InventarioService.getStock() | despues=" + e.getMessage());
-            return 0.0;
+            LOG.warn("Error getting stock for barcode: " + barcode + " - " + e.getMessage()
+                    + " | source=InventarioService.getStock() | despues=" + e.getMessage());
+            throw e;
         }
     }
 
@@ -205,8 +212,10 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0;
             }
         } catch (PersistenceException e) {
-            LOG.warn("Error calculating total stock for item by barcode: " + e.getMessage() + " | source=InventarioService.calculateTotalStockForItemByBarcode() | despues=" + e.getMessage());
-            return 0.0;
+            LOG.warn("Error calculating total stock for item by barcode: " + e.getMessage()
+                    + " | source=InventarioService.calculateTotalStockForItemByBarcode()"
+                    + " | despues=" + e.getMessage());
+            throw e;
         }
     }
 
@@ -547,31 +556,44 @@ public class InventarioService extends GService<Inventario> {
      */
     @Transactional
     public void updateStock(Inventario entity) {
-        String codigoBarra = entity.getArticulo() != null ? entity.getArticulo().getCodigoBarra() : null;
+        Articulos articulo = entity.getArticulo();
+        String codigoBarra = articulo != null ? articulo.getCodigoBarra() : null;
+        Long articuloCodigo = articulo != null ? articulo.getCodigo() : null;
         if (codigoBarra == null || codigoBarra.isBlank()) {
             throw new IllegalArgumentException(
                     "No se puede actualizar el stock: el movimiento no tiene articulo con codigo de barra.");
         }
+        if (articuloCodigo == null) {
+            throw new IllegalArgumentException(
+                    "No se puede actualizar el stock: el articulo no tiene codigo estable.");
+        }
         BigDecimal cantidad = entity.getCantidad() != null ? entity.getCantidad() : BigDecimal.ZERO;
 
         try {
-            TypedQuery<ArticuloStock> query = em.createQuery(
-                    "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :barcode",
-                    ArticuloStock.class);
-            query.setParameter("barcode", codigoBarra);
-            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-            query.setMaxResults(1);
-
-            ArticuloStock stock;
-            try {
-                stock = query.getSingleResult();
+            ArticuloStock stock = buscarStockBloqueado(articuloCodigo, codigoBarra);
+            if (stock == null) {
+                stock = new ArticuloStock();
+                stock.setArticuloCodigo(articuloCodigo);
+                stock.setCodigoBarra(codigoBarra);
+                stock.setStock(cantidad);
+            } else {
+                if (stock.getArticuloCodigo() == null) {
+                    stock.setArticuloCodigo(articuloCodigo);
+                } else if (!stock.getArticuloCodigo().equals(articuloCodigo)) {
+                    throw new IllegalStateException(
+                            "Stock inconsistente para el codigo de barra " + codigoBarra
+                                    + ": la fila pertenece al articulo " + stock.getArticuloCodigo()
+                                    + " y el movimiento al articulo " + articuloCodigo
+                                    + ". Ejecute la reconciliacion de stock antes de continuar.");
+                }
+                if (!codigoBarra.equals(stock.getCodigoBarra())) {
+                    // El articulo se edito con otro codigo: la fila sigue siendo
+                    // la misma porque la identidad estable es el articulo.
+                    stock.setCodigoBarra(codigoBarra);
+                }
                 stock.setStock(stock.getStock() == null
                         ? cantidad
                         : stock.getStock().add(cantidad));
-            } catch (NoResultException e) {
-                stock = new ArticuloStock();
-                stock.setCodigoBarra(codigoBarra);
-                stock.setStock(cantidad);
             }
             em.merge(stock);
             em.flush();
@@ -586,6 +608,43 @@ public class InventarioService extends GService<Inventario> {
             throw new RuntimeException(
                     "No se pudo actualizar el stock del articulo " + codigoBarra + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Finds the running-stock row under a pessimistic lock, first by stable
+     * article id and then by barcode for rows written before the article-id
+     * column existed. Two rows for the same article are a reconciliation
+     * error, not something to merge silently.
+     */
+    @Nullable
+    private ArticuloStock buscarStockBloqueado(long articuloCodigo, String codigoBarra) {
+        List<ArticuloStock> porArticulo = em.createQuery(
+                        "SELECT a FROM ArticuloStock a WHERE a.articuloCodigo = :articuloCodigo",
+                        ArticuloStock.class)
+                .setParameter("articuloCodigo", articuloCodigo)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+        if (porArticulo.size() > 1) {
+            throw new IllegalStateException(
+                    "Hay " + porArticulo.size() + " filas de stock para el articulo "
+                            + articuloCodigo + "; ejecute la reconciliacion antes de vender.");
+        }
+        if (!porArticulo.isEmpty()) {
+            return porArticulo.get(0);
+        }
+
+        List<ArticuloStock> porBarra = em.createQuery(
+                        "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :barcode",
+                        ArticuloStock.class)
+                .setParameter("barcode", codigoBarra)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+        if (porBarra.size() > 1) {
+            throw new IllegalStateException(
+                    "Hay " + porBarra.size() + " filas de stock para el codigo de barra "
+                            + codigoBarra + "; ejecute la reconciliacion antes de vender.");
+        }
+        return porBarra.isEmpty() ? null : porBarra.get(0);
     }
     
     public List<Inventario> getMovementsByUserAndTipo(String userId) {
@@ -739,27 +798,121 @@ public class InventarioService extends GService<Inventario> {
         }
     }
 
+    /**
+     * Diagnostico de reconciliacion: compara el stock proyectado en
+     * {@code articulostock} con la suma del libro {@code inventario}.
+     *
+     * <p>No corrige nada. Devuelve solo las diferencias para que un operador
+     * decida; un fallo de lectura se registra y se propaga en vez de
+     * convertirse en "sin diferencias".</p>
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public @Nonnull List<DiscrepanciaStock> reconciliarStock() {
+        String sql = """
+                SELECT a.codigo,
+                       a.codigobarra,
+                       a.nombre,
+                       COALESCE(
+                           (SELECT SUM(st.stock) FROM articulostock st
+                            WHERE st.articulo_codigo = a.codigo),
+                           (SELECT SUM(st2.stock) FROM articulostock st2
+                            WHERE st2.articulo_codigo IS NULL AND st2.codigo_barra = a.codigobarra),
+                           0) AS proyectado,
+                       COALESCE(
+                           (SELECT SUM(i.cantidad) FROM inventario i
+                            WHERE i.articulo_codigo = a.codigo),
+                           0) AS libro
+                FROM articulos a
+                WHERE a.status = true
+                """;
+        try {
+            @SuppressWarnings("unchecked")
+            List<Object[]> filas = em.createNativeQuery(sql).getResultList();
+            List<DiscrepanciaStock> discrepancias = new ArrayList<>();
+            for (Object[] fila : filas) {
+                BigDecimal proyectado = aDecimal(fila[3]);
+                BigDecimal libro = aDecimal(fila[4]);
+                if (proyectado.compareTo(libro) == 0) {
+                    continue;
+                }
+                discrepancias.add(new DiscrepanciaStock(
+                        ((Number) fila[0]).longValue(),
+                        fila[1] == null ? null : String.valueOf(fila[1]),
+                        fila[2] == null ? "" : String.valueOf(fila[2]),
+                        proyectado, libro, proyectado.subtract(libro)));
+            }
+            if (!discrepancias.isEmpty()) {
+                LOG.warn("Reconciliacion de stock: " + discrepancias.size()
+                        + " articulo(s) con diferencias entre articulostock e inventario"
+                        + " | source=InventarioService.reconciliarStock()");
+            }
+            return List.copyOf(discrepancias);
+        } catch (PersistenceException e) {
+            LOG.warn("No se pudo ejecutar la reconciliacion de stock"
+                    + " | source=InventarioService.reconciliarStock()", e);
+            throw e;
+        }
+    }
+
+    private static BigDecimal aDecimal(@Nullable Object valor) {
+        if (valor instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (valor instanceof Number numero) {
+            return BigDecimal.valueOf(numero.doubleValue());
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /** Diferencia entre el stock proyectado y el libro de movimientos. */
+    public record DiscrepanciaStock(long articuloCodigo,
+                                    @Nullable String codigoBarra,
+                                    @Nonnull String nombre,
+                                    @Nonnull BigDecimal stockProyectado,
+                                    @Nonnull BigDecimal stockLedger,
+                                    @Nonnull BigDecimal diferencia) {
+    }
+
     public List<ArticuloStock> getAllStock() {
         try {
             TypedQuery<ArticuloStock> query = em.createQuery("SELECT a FROM ArticuloStock a", ArticuloStock.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.warn("Error getting all stock: " + e.getMessage() + " | source=InventarioService.getAllStock() | despues=" + e.getMessage());
-            return new ArrayList<>();
+            LOG.warn("Error getting all stock: " + e.getMessage()
+                    + " | source=InventarioService.getAllStock() | despues=" + e.getMessage());
+            throw e;
         }
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public ArticuloStock findStockByArticleCode(int articleCode) {
         try {
+            List<ArticuloStock> porArticulo = em.createQuery(
+                            "SELECT a FROM ArticuloStock a WHERE a.articuloCodigo = :id",
+                            ArticuloStock.class)
+                    .setParameter("id", (long) articleCode)
+                    .getResultList();
+            if (!porArticulo.isEmpty()) {
+                return porArticulo.get(0);
+            }
             return em.createQuery(
-                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = (SELECT ar.codigoBarra FROM Articulos ar WHERE ar.codigo = :id)",
-                ArticuloStock.class)
-                .setParameter("id", (long) articleCode)
-                .getResultStream().findFirst().orElse(null);
-        } catch (Exception e) {
-            return null;
+                            "SELECT a FROM ArticuloStock a WHERE a.articuloCodigo IS NULL "
+                                    + "AND a.codigoBarra = (SELECT ar.codigoBarra FROM Articulos ar WHERE ar.codigo = :id)",
+                            ArticuloStock.class)
+                    .setParameter("id", (long) articleCode)
+                    .getResultStream().findFirst().orElse(null);
+        } catch (PersistenceException e) {
+            LOG.warn("No se pudo leer el stock del articulo " + articleCode
+                    + " | source=InventarioService.findStockByArticleCode()", e);
+            throw e;
         }
+    }
+
+    /** Current stock by stable article id, with the legacy barcode row as fallback. */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public @Nonnull BigDecimal getStockByArticleId(long articleCode) {
+        ArticuloStock stock = findStockByArticleCode((int) articleCode);
+        return stock == null || stock.getStock() == null ? BigDecimal.ZERO : stock.getStock();
     }
 
     // ── Resumen de Inventario (app) ───────────────────────────────────────
@@ -775,17 +928,19 @@ public class InventarioService extends GService<Inventario> {
      * Stock of the joined article. A missing {@code articulostock} row means
      * zero, exactly like the previous in-memory map default.
      */
-    private static final String RESUMEN_STOCK = "COALESCE(s.stock, 0)";
+    private static final String RESUMEN_STOCK = "COALESCE(s.stock, s2.stock, 0)";
 
     /**
-     * FROM shared by the resumen COUNT/page/chart queries. The barcode join is
-     * a plain equality: {@code NULL = anything} is UNKNOWN, so an article with
-     * a null barcode never matches (LEFT JOIN) and keeps the stock-0 default.
-     * All other joins are to-one, so no row multiplication.
+     * FROM shared by the resumen COUNT/page/chart queries. The primary join is
+     * the stable article id; the barcode join is the legacy fallback for rows
+     * written before {@code articulo_codigo} existed. Both are to-one, so no
+     * row multiplication.
      */
     private static final String RESUMEN_FROM =
             " FROM articulos a"
-            + " LEFT JOIN articulostock s ON s.codigo_barra = a.codigobarra"
+            + " LEFT JOIN articulostock s ON s.articulo_codigo = a.codigo"
+            + " LEFT JOIN articulostock s2 ON s2.articulo_codigo IS NULL"
+            + " AND s2.codigo_barra = a.codigobarra"
             + " LEFT JOIN familia f ON f.id = a.familia_id"
             + " LEFT JOIN departamento d ON d.id = a.departamento_id";
 

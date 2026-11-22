@@ -941,11 +941,15 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
-                // El sello optimista ENVIADO solo vale si el documento salio.
-                // Antes, un fallo local (p. ej. XSD) dejaba el comprobante en
-                // ENVIADO sin fecha de envio ni de respuesta, que se lee como
-                // "transmitido" cuando en realidad nunca salio de la maquina.
-                comprobante.setHaciendaEstado("RECHAZADO");
+                // Un rechazo de fondo es una RESPUESTA de Hacienda: el documento
+                // sí salió, así que el sello ENVIADO se conserva y el veredicto
+                // queda en el encabezado (contrato fijado en 2e5f6d89). Solo un
+                // fallo local (firma/XSD/transporte, estado ERROR) no llegó a
+                // salir y por eso no puede quedar como ENVIADO.
+                boolean rechazoDeHacienda = "RECHAZADO".equals(result.estado);
+                if (!rechazoDeHacienda) {
+                    comprobante.setHaciendaEstado("RECHAZADO");
+                }
                 comprobantesEmitidosService.update(comprobante);
                 LOG.info("Hacienda rechazo comprobante: " + result.errorMessage
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()"
@@ -1346,6 +1350,12 @@ public class ComprobanteService implements Serializable {
                 List<TotalDesgloseImpuesto> desgloseList = new ArrayList<>();
                 for (Map.Entry<BigDecimal, BigDecimal> entry : taxByRate.entrySet()) {
                     String rateStr = entry.getKey().toPlainString();
+                    // Una tasa 0 no es un impuesto cobrado: la base ya viaja en
+                    // TotalExento y un desglose de monto cero solo agrega
+                    // ruido (TotalDesgloseImpuesto es minOccurs=0).
+                    if (entry.getKey().compareTo(BigDecimal.ZERO) <= 0) {
+                        continue;
+                    }
                     // Only include rates that map to a valid tariff
                     try {
                         Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(rateStr);
@@ -1602,41 +1612,44 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 List<Impuesto> impuestos = new ArrayList<>();
                 BigDecimal impuestoNetoLinea = articulo.getTotalImpuesto()
                         .multiply(Cantidad).setScale(5, RoundingMode.HALF_UP);
-                if (impuestoNetoLinea.compareTo(BigDecimal.ZERO) != 0) {
-                    Impuesto impuesto = new Impuesto();
-                    String codigoImpuestoRaw = articulo.getArticulo().getCodigoCabys().getImpuesto();
-                    String codigoImpuesto = normalizeImpuesto(codigoImpuestoRaw);
-                    impuesto.setCodigo("01");
-                    Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
-                    impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
-                    impuesto.setTarifa(new BigDecimal(codigoImpuesto));
-                    // Escala Hacienda (igual que el resumen): cantidad
-                    // fraccionaria × tasa reducida supera los 5 decimales.
-                    impuesto.setMonto(impuestoNetoLinea);
-                    // El FK vive del lado del Impuesto (@ManyToOne). Sin esta
-                    // linea el impuesto se guarda con linea_detalle_id NULL:
-                    // la fila queda huerfana y el XML sale SIN <Impuesto>, que
-                    // el XSD v4.4 exige (minOccurs=1).
-                    impuesto.setLineaDetalle(linea);
-                    ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
-                            articulo.getArticulo().getCodigo().toString());
-                    if (exoneracion != null) {
-                        Exoneracion exoneracionEntity = new Exoneracion();
-                        exoneracionEntity.setTipoDocumentoEX1(exoneracion.getTipoDocumentoEX1());
-                        exoneracionEntity.setTipoDocumentoOTRO(exoneracion.getTipoDocumentoOTRO());
-                        exoneracionEntity.setNumeroDocumento(exoneracion.getNumeroDocumento());
-                        exoneracionEntity.setArticulo(exoneracion.getArticulo());
-                        exoneracionEntity.setInciso(exoneracion.getInciso());
-                        exoneracionEntity.setNombreInstitucion(exoneracion.getNombreInstitucion());
-                        exoneracionEntity.setNombreInstitucionOtros(exoneracion.getNombreInstitucionOtros());
-                        exoneracionEntity.setFechaEmisionEX(exoneracion.getFechaEmisionEX());
-                        exoneracionEntity.setTarifaExonerada(exoneracion.getTarifaExonerada());
-                        exoneracionEntity.setMontoExoneracion(exoneracion.getMontoExoneracion());
-                        exoneracionEntity.setImpuesto(impuesto);
-                        impuesto.setExoneracion(exoneracionEntity);
-                    }
-                    impuestos.add(impuesto);
+                // El XSD v4.4 declara <Impuesto> con minOccurs=1 en TODA
+                // linea de detalle (TE/FE/NC/ND), incluidas las exentas. Antes
+                // se omitia cuando el monto era cero, y el XML exento no
+                // validaba. La tasa 0 se emite como Tarifa Exenta (codigo 10,
+                // Anexo v4.4 nota 8.1) con Tarifa y Monto en cero.
+                Impuesto impuesto = new Impuesto();
+                String codigoImpuestoRaw = articulo.getArticulo().getCodigoCabys().getImpuesto();
+                String codigoImpuesto = normalizeImpuesto(codigoImpuestoRaw);
+                impuesto.setCodigo("01");
+                Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
+                impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
+                impuesto.setTarifa(new BigDecimal(codigoImpuesto));
+                // Escala Hacienda (igual que el resumen): cantidad
+                // fraccionaria × tasa reducida supera los 5 decimales.
+                impuesto.setMonto(impuestoNetoLinea);
+                // El FK vive del lado del Impuesto (@ManyToOne). Sin esta
+                // linea el impuesto se guarda con linea_detalle_id NULL:
+                // la fila queda huerfana y el XML sale SIN <Impuesto>, que
+                // el XSD v4.4 exige (minOccurs=1).
+                impuesto.setLineaDetalle(linea);
+                ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
+                        articulo.getArticulo().getCodigo().toString());
+                if (exoneracion != null) {
+                    Exoneracion exoneracionEntity = new Exoneracion();
+                    exoneracionEntity.setTipoDocumentoEX1(exoneracion.getTipoDocumentoEX1());
+                    exoneracionEntity.setTipoDocumentoOTRO(exoneracion.getTipoDocumentoOTRO());
+                    exoneracionEntity.setNumeroDocumento(exoneracion.getNumeroDocumento());
+                    exoneracionEntity.setArticulo(exoneracion.getArticulo());
+                    exoneracionEntity.setInciso(exoneracion.getInciso());
+                    exoneracionEntity.setNombreInstitucion(exoneracion.getNombreInstitucion());
+                    exoneracionEntity.setNombreInstitucionOtros(exoneracion.getNombreInstitucionOtros());
+                    exoneracionEntity.setFechaEmisionEX(exoneracion.getFechaEmisionEX());
+                    exoneracionEntity.setTarifaExonerada(exoneracion.getTarifaExonerada());
+                    exoneracionEntity.setMontoExoneracion(exoneracion.getMontoExoneracion());
+                    exoneracionEntity.setImpuesto(impuesto);
+                    impuesto.setExoneracion(exoneracionEntity);
                 }
+                impuestos.add(impuesto);
                 BigDecimal descuentoLinea = BigDecimal.ZERO;
                 for (Descuento d : descuentos) {
                     if (d.getMontoDescuento() != null) {

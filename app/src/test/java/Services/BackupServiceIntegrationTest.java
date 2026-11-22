@@ -12,6 +12,7 @@ import support.PgDumpAvailability;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,8 +20,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -126,5 +129,53 @@ class BackupServiceIntegrationTest {
         assertTrue(listed.stream()
                         .anyMatch(entry -> entry.startsWith(dumpFile.getFileName().toString() + "|")),
                 "listarBackups (fuente de BackupController) debe ver el artefacto producido");
+    }
+
+    @Test
+    void verificacionAceptaUnGzipCompletoYCalculaSha256() throws IOException {
+        Path archivo = tempDir.resolve("mercurius_20260101_000000.sql.gz");
+        escribirGzip(archivo, "PostgreSQL database dump\nCREATE TABLE x(id int);\n");
+
+        BackupService.Verificacion verificacion = backupService.verificarArchivo(archivo);
+
+        assertTrue(verificacion.valido(), "un gzip completo debe verificar");
+        assertTrue(verificacion.bytes() > 0);
+        assertNotNull(verificacion.sha256());
+        assertEquals(64, verificacion.sha256().length(), "SHA-256 en hexadecimal");
+    }
+
+    @Test
+    void verificacionRechazaUnArchivoTruncadoOVacio() throws IOException {
+        Path truncado = tempDir.resolve("mercurius_truncado.sql.gz");
+        Files.writeString(truncado, "esto no es gzip");
+        assertFalse(backupService.verificarArchivo(truncado).valido());
+
+        Path vacio = tempDir.resolve("mercurius_vacio.sql.gz");
+        Files.write(vacio, new byte[0]);
+        assertFalse(backupService.verificarArchivo(vacio).valido());
+    }
+
+    @Test
+    void estadoDelBackupDistingueVerificadoDeSoloArchivo() throws IOException {
+        ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
+        settings.setBackupRuta(tempDir.toString());
+        appSettingsService.update(settings);
+
+        Path archivo = tempDir.resolve("mercurius_20260101_000000.sql.gz");
+        escribirGzip(archivo, "PostgreSQL database dump\n");
+
+        BackupService.EstadoBackup estado = backupService.estadoBackup();
+
+        assertEquals(archivo.getFileName().toString(), estado.archivo());
+        assertTrue(estado.verificado(), "el gzip legible debe contar como verificado");
+        assertFalse(estado.vencido(), "un backup recien creado no esta vencido");
+        assertNotNull(estado.sha256());
+    }
+
+    private static void escribirGzip(Path archivo, String contenido) throws IOException {
+        try (OutputStream salida = Files.newOutputStream(archivo);
+             GZIPOutputStream gzip = new GZIPOutputStream(salida)) {
+            gzip.write(contenido.getBytes(StandardCharsets.UTF_8));
+        }
     }
 }

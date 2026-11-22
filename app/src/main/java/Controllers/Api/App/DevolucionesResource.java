@@ -1463,7 +1463,19 @@ public class DevolucionesResource {
                     }
                     nl.setImpuestos(new ArrayList<>(List.of(ni)));
                 } else {
-                    nl.setImpuestos(new ArrayList<>());
+                    // XSD v4.4 exige <Impuesto> (minOccurs=1) en toda linea
+                    // de la Nota de Credito. Una linea exenta copiada sin
+                    // impuestos —por ejemplo, una factura emitida antes de que
+                    // el emisor creara el nodo— se completa con la tarifa
+                    // exenta (10), Tarifa 0 y Monto 0, en vez de dejar la
+                    // linea invalida.
+                    Impuesto ni = new Impuesto();
+                    ni.setCodigo("01");
+                    ni.setCodigoTarifaIVA(Models.Enums.Tipo_TarifaIVA.TARIFA_EXENTA.getCodigo());
+                    ni.setTarifa(BigDecimal.ZERO);
+                    ni.setMonto(BigDecimal.ZERO);
+                    ni.setLineaDetalle(nl);
+                    nl.setImpuestos(new ArrayList<>(List.of(ni)));
                 }
 
                 boolean hasDescuentos = ol.getDescuentos() != null && !ol.getDescuentos().isEmpty();
@@ -1534,11 +1546,17 @@ public class DevolucionesResource {
                 boolean hasTax = linea.getImpuestos() != null && !linea.getImpuestos().isEmpty();
                 boolean hasExoneracion = hasTax && linea.getImpuestos().stream()
                         .anyMatch(i -> i.getExoneracion() != null);
+                // Una linea exenta tambien lleva <Impuesto> (XSD minOccurs=1),
+                // pero con tarifa 0: eso NO la convierte en gravada. El bucket
+                // se decide por la tarifa efectiva, no por la presencia del nodo.
+                boolean esGravada = hasTax && linea.getImpuestos().stream()
+                        .anyMatch(i -> i.getTarifa() != null
+                                && i.getTarifa().compareTo(BigDecimal.ZERO) > 0);
                 if (hasExoneracion) {
                     totalExonerado = totalExonerado.add(linea.getMontoTotal());
                     totalServExonerado = totalServExonerado.add(linea.getMontoTotal());
                     totalMercExonerada = totalMercExonerada.add(linea.getMontoTotal());
-                } else if (hasTax) {
+                } else if (esGravada) {
                     totalGravado = totalGravado.add(linea.getMontoTotal());
                     totalMercGravadas = totalMercGravadas.add(linea.getMontoTotal());
                     for (Impuesto i : linea.getImpuestos()) {
@@ -1582,6 +1600,11 @@ public class DevolucionesResource {
             if (!taxByRate.isEmpty()) {
                 List<Models.Resumen.TotalDesgloseImpuesto> desgloseList = new ArrayList<>();
                 for (Map.Entry<BigDecimal, BigDecimal> entry : taxByRate.entrySet()) {
+                    // Una tasa 0 no es un impuesto cobrado; se omite igual que
+                    // en el resumen de la venta.
+                    if (entry.getKey().compareTo(BigDecimal.ZERO) <= 0) {
+                        continue;
+                    }
                     try {
                         Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa(entry.getKey().stripTrailingZeros().toPlainString());
                         Models.Resumen.TotalDesgloseImpuesto item = new Models.Resumen.TotalDesgloseImpuesto();

@@ -20,6 +20,7 @@ When you annotate one of these classes, delete its line in the same commit.
 - `Controllers.Api.Accounting.PaymentsController` — `/api/v1/accounting/*`, `filters.PublicApiJwtFilter`
 - `Controllers.Api.Accounting.ReportsController` — `/api/v1/accounting/*`, `filters.PublicApiJwtFilter`
 - `Controllers.Api.Accounting.SuppliersController` — `/api/v1/accounting/*`, `filters.PublicApiJwtFilter`
+- `Controllers.Api.InvoicingApiResource` — `/api/v1/invoicing/*`, `filters.PublicApiJwtFilter`; the resource self-checks `apiClientId`/scope
 - `Controllers.Api.Mercatus.ArticlesController` — `/api/v1/mercatus/*`, `filters.PublicApiJwtFilter`
 - `Controllers.Api.Mercatus.ClientAuthController` — `/api/v1/mercatus/*`, `filters.PublicApiJwtFilter`
 - `Controllers.Api.Mercatus.DepartamentosController` — `/api/v1/mercatus/*`, `filters.PublicApiJwtFilter`

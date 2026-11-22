@@ -221,6 +221,96 @@ class ElectronicDocumentPipelineTest {
         };
     }
 
+    /**
+     * Regresión del bloqueador fiscal: una línea exenta debe viajar con un
+     * {@code <Impuesto>} cero (Tarifa Exenta 10 / Tarifa 0 / Monto 0) y el
+     * documento firmado debe validar contra el XSD v4.4 real. Antes del
+     * arreglo, la línea exenta salía sin nodo y el XSD la rechazaba.
+     */
+    @Test
+    void exemptLineTEValidatesAgainstTheRealXsd() throws Exception {
+        Encabezado enc = createEncabezado(false, false);
+        DetalleServicio ds = createDetalleServicio("EXENTO");
+        ResumenFactura res = createResumen();
+        res.setTotalVenta(new BigDecimal("100.00000"));
+        res.setTotalVentaNeta(new BigDecimal("100.00000"));
+        res.setTotalImpuesto(BigDecimal.ZERO);
+        res.setTotalComprobante(new BigDecimal("100.00000"));
+        res.setTotalGravado(BigDecimal.ZERO);
+        res.setTotalExento(new BigDecimal("100.00000"));
+        res.setTotalMercanciasExentas(new BigDecimal("100.00000"));
+        MedioPagoR efectivo = new MedioPagoR();
+        efectivo.setTipoMedioPago("01");
+        efectivo.setTotalMedioPago(new BigDecimal("100.00000"));
+        res.setMediosPago(List.of(efectivo));
+
+        var doc = new TiqueteElectronicoDocumento();
+        doc.setEncabezado(new Models.Jaxb.TE.Encabezado(enc));
+        doc.setDetalleServicio(new Models.Jaxb.TE.DetalleServicio(ds));
+        doc.setResumen(new Models.Jaxb.TE.ResumenFactura(res));
+
+        String flatXml = XmlEncabezadoFlattener.flatten(marshal(teCtx, doc));
+        HaciendaSigner.SignResult signResult = signer.signXml(flatXml);
+        assertTrue(signResult.success,
+                "la firma de un TE exento falló: " + signResult.errorMessage);
+
+        HaciendaXsdValidator.ValidationResult resultado =
+                new HaciendaXsdValidator().validate(signResult.signedXml, TE_NS);
+        assertTrue(resultado.valid,
+                "el TE exento NO valida contra el XSD v4.4: " + resultado.errorMessage
+                        + "\nXML:\n" + flatXml);
+
+        Document signed = parseXml(signResult.signedXml);
+        NodeList impuestos = signed.getElementsByTagNameNS(TE_NS, "Impuesto");
+        assertEquals(1, impuestos.getLength(),
+                "la línea exenta debe llevar exactamente un <Impuesto>");
+    }
+
+    /**
+     * Contraparte: la línea gravada conserva sus nodos y montos (tarifa 08,
+     * Tarifa 13, Monto 13). El arreglo del caso exento no puede alterarla.
+     */
+    @Test
+    void taxableLineKeepsItsTaxNodesAndAmounts() throws Exception {
+        Encabezado enc = createEncabezado(false, false);
+        DetalleServicio ds = createDetalleServicio("FULL");
+        ResumenFactura res = createResumen();
+
+        var doc = new TiqueteElectronicoDocumento();
+        doc.setEncabezado(new Models.Jaxb.TE.Encabezado(enc));
+        doc.setDetalleServicio(new Models.Jaxb.TE.DetalleServicio(ds));
+        doc.setResumen(new Models.Jaxb.TE.ResumenFactura(res));
+
+        String flatXml = XmlEncabezadoFlattener.flatten(marshal(teCtx, doc));
+        HaciendaSigner.SignResult signResult = signer.signXml(flatXml);
+        assertTrue(signResult.success,
+                "la firma de un TE gravado falló: " + signResult.errorMessage);
+
+        HaciendaXsdValidator.ValidationResult resultado =
+                new HaciendaXsdValidator().validate(signResult.signedXml, TE_NS);
+        assertTrue(resultado.valid,
+                "el TE gravado NO valida contra el XSD v4.4: " + resultado.errorMessage);
+
+        Document signed = parseXml(signResult.signedXml);
+        NodeList impuestos = signed.getElementsByTagNameNS(TE_NS, "Impuesto");
+        assertEquals(1, impuestos.getLength());
+        Element impuesto = (Element) impuestos.item(0);
+        assertEquals("08", textoDe(impuesto, TE_NS, "CodigoTarifaIVA"));
+        assertDecimal(textoDe(impuesto, TE_NS, "Tarifa"), "13");
+        assertDecimal(textoDe(impuesto, TE_NS, "Monto"), "13");
+    }
+
+    private static String textoDe(Element padre, String ns, String etiqueta) {
+        NodeList nodos = padre.getElementsByTagNameNS(ns, etiqueta);
+        assertEquals(1, nodos.getLength(), "falta <" + etiqueta + "> en el XML");
+        return nodos.item(0).getTextContent();
+    }
+
+    private static void assertDecimal(String valor, String esperado) {
+        assertEquals(0, new BigDecimal(valor).compareTo(new BigDecimal(esperado)),
+                "se esperaba " + esperado + " y llegó " + valor);
+    }
+
     // ── Individual document type tests (non-parameterized for clarity) ────
 
     @Test
@@ -412,35 +502,49 @@ class ElectronicDocumentPipelineTest {
         boolean isRep = "REP".equals(variant);
         boolean isFee = "FEE".equals(variant);
         boolean isFull = "FULL".equals(variant);
+        boolean isExento = "EXENTO".equals(variant);
 
         LineaDetalle linea = new LineaDetalle();
         linea.setNumeroLinea(1);
 
         if (!isRep) {
-            linea.setCodigoCabys("2349002011400");
+            linea.setCodigoCabys(isExento ? "3627001010000" : "2349002011400");
             linea.setCantidad(new BigDecimal("1.000"));
             linea.setUnidadMedida("Unid");
             linea.setPrecioUnitario(new BigDecimal("100.00000"));
         }
-        linea.setDetalle("Takis Fuego ES 1p 56g FLOW BAR");
+        linea.setDetalle(isExento ? "Preservativos de prueba exenta" : "Takis Fuego ES 1p 56g FLOW BAR");
         linea.setMontoTotal(new BigDecimal("100.00000"));
         linea.setSubTotal(new BigDecimal("100.00000"));
         if (!isRep && !isFee) {
             linea.setBaseImponible(new BigDecimal("100.00000"));
         }
         if (!isFee) {
-            linea.setImpuestoNeto(new BigDecimal("13.00000"));
+            linea.setImpuestoNeto(isExento ? BigDecimal.ZERO : new BigDecimal("13.00000"));
         }
-        linea.setMontoTotalLinea(new BigDecimal("113.00000"));
-        if (isFull) {
-            linea.setImpuestoAsumidoEmisorFabrica(new BigDecimal("13.00000"));
+        linea.setMontoTotalLinea(isExento
+                ? new BigDecimal("100.00000") : new BigDecimal("113.00000"));
+        if (isFull || isExento) {
+            // ImpuestoAsumidoEmisorFabrica es obligatorio en TE/FE incluso en
+            // una línea exenta; producción lo emite en cero.
+            linea.setImpuestoAsumidoEmisorFabrica(
+                    isExento ? BigDecimal.ZERO : new BigDecimal("13.00000"));
         }
 
         Impuesto impuesto = new Impuesto();
         impuesto.setCodigo("01");
-        impuesto.setCodigoTarifaIVA("08");
-        impuesto.setTarifa(new BigDecimal("13.00"));
-        impuesto.setMonto(new BigDecimal("13.00000"));
+        if (isExento) {
+            // Anexo v4.4 nota 8.1: un CAByS exento de IVA usa la Tarifa Exenta
+            // (10) con Tarifa 0 y Monto 0. El XSD exige el nodo <Impuesto>
+            // igualmente (minOccurs=1), aunque el monto sea cero.
+            impuesto.setCodigoTarifaIVA("10");
+            impuesto.setTarifa(BigDecimal.ZERO);
+            impuesto.setMonto(BigDecimal.ZERO);
+        } else {
+            impuesto.setCodigoTarifaIVA("08");
+            impuesto.setTarifa(new BigDecimal("13.00"));
+            impuesto.setMonto(new BigDecimal("13.00000"));
+        }
         linea.setImpuestos(List.of(impuesto));
 
         DetalleServicio ds = new DetalleServicio();

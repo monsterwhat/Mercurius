@@ -979,7 +979,8 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
     private static void assertDecimal(JsonNode expected, BigDecimal real, String campo) {
         assertNotNull(real, campo + " must not be null");
         assertEquals(0, BigDecimal.valueOf(expected.decimalValue().doubleValue()).compareTo(real),
-                campo + " must match the golden fixture");
+                campo + " must match the golden fixture: expected " + expected.decimalValue()
+                        + " but was " + real);
     }
 
     private JsonNode loadGoldenFixture() throws Exception {

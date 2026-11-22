@@ -252,6 +252,16 @@ class DevolucionEnvioFueraDeTransaccionTest extends support.ContextPathIsolation
         exento.setDetalle("Producto Exento Concurrencia");
         exento.setMontoTotal(new BigDecimal("2000.00"));
         exento.setSubTotal(new BigDecimal("2000.00"));
+        // El XSD v4.4 exige <Impuesto> también en la línea exenta. Es la
+        // misma forma que produce ComprobanteService: código 01, Tarifa
+        // Exenta (10), Tarifa 0 y Monto 0.
+        Impuesto impuestoExento = new Impuesto();
+        impuestoExento.setLineaDetalle(exento);
+        impuestoExento.setCodigo("01");
+        impuestoExento.setCodigoTarifaIVA("10");
+        impuestoExento.setTarifa(BigDecimal.ZERO);
+        impuestoExento.setMonto(BigDecimal.ZERO);
+        exento.setImpuestos(new ArrayList<>(List.of(impuestoExento)));
 
         detalles.setLineasDetalle(new ArrayList<>(List.of(gravado, exento)));
 
@@ -288,6 +298,12 @@ class DevolucionEnvioFueraDeTransaccionTest extends support.ContextPathIsolation
         if (settings.getIdentificacion() == null || settings.getIdentificacion().isBlank()) {
             settings.setIdentificacion("310112345678");
             settings.setTipoIdentificacion("02");
+            appSettingsService.update(settings);
+        }
+        // ProveedorSistemas es obligatorio en el XSD v4.4; sin él la NC no
+        // valida y el envío diferido no puede firmarse.
+        if (settings.getProvedor() == null || settings.getProvedor().isBlank()) {
+            settings.setProvedor("Mercurius");
             appSettingsService.update(settings);
         }
     }

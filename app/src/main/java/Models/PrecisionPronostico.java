@@ -21,14 +21,14 @@ import lombok.ToString;
  * Precisión de un método de pronóstico sobre un artículo, medida por
  * backtesting con orígenes móviles (<em>rolling origins</em>).
  *
- * <p><b>Una fila por (articulo, metodo) por corrida de backtesting.</b> No es
- * un histórico incremental: cada evaluación borra las filas previas del
- * artículo ({@code SeleccionMetodoService.evaluarArticulo}) y vuelve a
- * insertar una fila por cada método candidato elegible, de modo que la tabla
- * siempre refleja la última corrida y nunca duplica resultados. El
- * desempate entre métodos con el mismo MASE se resuelve con un orden de
- * simplicidad fijo, por lo que el conjunto de filas de un artículo es
- * determinístico.</p>
+ * <p><b>Una fila por (articulo, horizonte, metodo) por corrida de
+ * backtesting.</b> No es un historico incremental: cada evaluacion borra las
+ * filas previas del mismo (articulo, horizonte)
+ * ({@code SeleccionMetodoService.evaluarArticulo}) y vuelve a insertar una
+ * fila por cada metodo candidato elegible, de modo que la tabla siempre
+ * refleja la ultima corrida y nunca duplica resultados. La fila ganadora lleva
+ * {@code seleccionado = true}; las demas se conservan para auditoria y
+ * desempate.</p>
  *
  * <p>Columnas de interés:</p>
  * <ul>
@@ -63,7 +63,9 @@ import lombok.ToString;
 @Entity
 @Data
 @Table(name = "precision_pronostico", indexes = {
-        @Index(name = "idx_precision_pronostico_articulo", columnList = "articulo_codigo")
+        @Index(name = "idx_precision_pronostico_articulo", columnList = "articulo_codigo"),
+        @Index(name = "idx_precision_pronostico_articulo_horizonte",
+                columnList = "articulo_codigo, horizonte_dias")
 })
 public class PrecisionPronostico implements Serializable {
 
@@ -100,6 +102,54 @@ public class PrecisionPronostico implements Serializable {
     /** Días hacia adelante evaluados en cada origen de la corrida. */
     @Column(name = "horizonte_dias", nullable = false)
     private int horizonteDias;
+
+    /**
+     * Error absoluto medio en unidades por dia. Se guarda junto al MASE para
+     * que la pagina pueda mostrar una cifra en la unidad del negocio sin
+     * tener que recuperar la escala ingenua.
+     */
+    @Column(name = "mae")
+    private Double mae;
+
+    /** Numero efectivo de origenes moviles usados en la corrida. */
+    @Column(name = "origenes")
+    private Integer origenes;
+
+    /** Numero de observaciones reales comparadas (origenes x horizonte). */
+    @Column(name = "observaciones")
+    private Integer observaciones;
+
+    /** Ultimo dia con historia utilizada en la evaluacion. */
+    @Column(name = "fecha_fin_historia")
+    private java.time.LocalDate fechaFinHistoria;
+
+    /** Version del contrato/pipeline que produjo la fila. */
+    @Column(name = "modelo_version", length = 40)
+    private String modeloVersion;
+
+    /** Banderas de calidad separadas por coma (ver {@code FlagCalidad}). */
+    @Column(name = "calidad_flags", length = 255)
+    private String calidadFlags;
+
+    /**
+     * Mejora relativa del ganador sobre la mejor linea base
+     * ({@code (maseBase - maseGanador) / maseBase}). Negativa significa que no
+     * supero la base y se eligio la base por politica.
+     */
+    @Column(name = "mejora_baseline")
+    private Double mejoraBaseline;
+
+    /** Metodo de linea base contra el que se comparo el ganador. */
+    @Column(name = "metodo_baseline", length = 40)
+    private String metodoBaseline;
+
+    /**
+     * Marca el ganador de la corrida para este (articulo, horizonte). Las filas
+     * restantes se conservan para auditoria y desempate. {@code null} en filas
+     * antiguas o sembradas a mano: el lector aplica la politica de seleccion.
+     */
+    @Column(name = "seleccionado")
+    private Boolean seleccionado;
 
     /** Momento en que se ejecutó el backtesting que produjo esta fila. */
     @Column(name = "fecha_calculo", nullable = false)

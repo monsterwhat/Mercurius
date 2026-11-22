@@ -73,6 +73,35 @@ class CartSessionStoreTest {
     }
 
     @Test
+    void twoTerminalsOfOneCashierDoNotShareTheCart() {
+        String user = uniqueUser("t37terminal");
+        CartSessionStore.Entry caja1 = store.getOrCreate(user, "caja-1");
+        CartSessionStore.Entry caja2 = store.getOrCreate(user, "caja-2");
+
+        assertThat(caja2).isNotSameAs(caja1);
+        assertThat(caja2.getCartContext()).isNotSameAs(caja1.getCartContext());
+
+        caja1.getCartContext().setCodigoBarra("ONLY-CAJA-1");
+        assertThat(caja2.getCartContext().getCodigoBarra()).isNull();
+
+        assertThat(store.remove(user, "caja-1")).isTrue();
+        assertThat(store.getOrCreate(user, "caja-2")).isSameAs(caja2);
+        store.remove(user, "caja-2");
+    }
+
+    @Test
+    void blankTerminalUsesTheDefaultOwnershipKey() {
+        String user = uniqueUser("t37terminal-default");
+        CartSessionStore.Entry sinTerminal = store.getOrCreate(user);
+        CartSessionStore.Entry conDefault = store.getOrCreate(user, CartSessionStore.DEFAULT_TERMINAL);
+        CartSessionStore.Entry conBlanco = store.getOrCreate(user, "   ");
+
+        assertThat(conDefault).isSameAs(sinTerminal);
+        assertThat(conBlanco).isSameAs(sinTerminal);
+        store.remove(user);
+    }
+
+    @Test
     void removeIsFalseForUnknownUsername() {
         assertThat(store.remove(uniqueUser("t37ghost"))).isFalse();
     }

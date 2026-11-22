@@ -34,6 +34,19 @@ class MotorPronosticoTest {
 
     private static final Hiperparametros POR_DEFECTO = Hiperparametros.defecto();
 
+    @Test
+    @DisplayName("smoke: el motor devuelve un horizonte finito y no negativo")
+    void smokeMotor() {
+        List<Double> pronostico = MotorPronostico.pronosticar(
+                MetodoPronostico.SES, serie(LUNES, repeticion(30, 5L)), 14, POR_DEFECTO);
+
+        assertThat(pronostico).hasSize(14)
+                .allSatisfy(v -> {
+                    assertThat(Double.isFinite(v)).isTrue();
+                    assertThat(v).isGreaterThanOrEqualTo(0.0);
+                });
+    }
+
     /** Periodos con venta dentro de una serie de 120 dias (85% de ceros). */
     private static final int[] PICOS_INTERMITENTES = {
             2, 9, 13, 20, 27, 31, 38, 45, 52, 59, 66, 73, 80, 87, 94, 101, 108, 115

@@ -155,7 +155,7 @@ class ComprobanteTaxMathTest {
     /** Official CR IVA table: rate string → enum (mirrors Tipo_TarifaIVA.getTarifa switch). */
     static Stream<Arguments> tarifasValidas() {
         return Stream.of(
-                Arguments.of("0", Tipo_TarifaIVA.TARIFA_0_EXENTO),
+                Arguments.of("0", Tipo_TarifaIVA.TARIFA_EXENTA),
                 Arguments.of("0.5", Tipo_TarifaIVA.TARIFA_REDUCIDA_05),
                 Arguments.of("1", Tipo_TarifaIVA.TARIFA_REDUCIDA_1),
                 Arguments.of("2", Tipo_TarifaIVA.TARIFA_REDUCIDA_2),
@@ -175,10 +175,8 @@ class ComprobanteTaxMathTest {
         assertThat(Tipo_TarifaIVA.getTarifa(rateStr)).isEqualTo(expected);
 
         // Same mapping surfaced on the built line's Impuesto (detallesComprobante).
-        // BEHAVIOR PIN: the Impuesto branch is guarded by
-        // getTotalImpuesto().equals(BigDecimal.ZERO) (ComprobanteService:659), so
-        // zero-rate lines carry NO Impuesto entity at all (empirically verified:
-        // rate "0" yields an empty impuestos list regardless of price scale).
+        // XSD v4.4 exige <Impuesto> en toda linea, incluidas las exentas: una
+        // tasa 0 sale como Tarifa Exenta (10) con Tarifa 0 y Monto 0.
         ArticuloCarrito articulo = item(1L, "501010101", rateStr, "100", "1");
         DetalleServicio detalles = service.detallesComprobante(List.of(articulo), "01");
 
@@ -186,13 +184,11 @@ class ComprobanteTaxMathTest {
         List<LineaDetalle> lineas = detalles.getLineasDetalle();
         assertThat(lineas).hasSize(1);
         List<Impuesto> impuestos = lineas.get(0).getImpuestos();
-        if ("0".equals(rateStr)) {
-            assertThat(impuestos).isEmpty();
-        } else {
-            assertThat(impuestos).hasSize(1);
-            assertThat(impuestos.get(0).getCodigoTarifaIVA()).isEqualTo(expected.getCodigo());
-            assertThat(impuestos.get(0).getTarifa()).isEqualByComparingTo(rateStr);
-        }
+        assertThat(impuestos).hasSize(1);
+        assertThat(impuestos.get(0).getCodigo()).isEqualTo("01");
+        assertThat(impuestos.get(0).getCodigoTarifaIVA()).isEqualTo(expected.getCodigo());
+        assertThat(impuestos.get(0).getTarifa()).isEqualByComparingTo(rateStr);
+        assertThat(impuestos.get(0).getLineaDetalle()).isSameAs(lineas.get(0));
     }
 
     @Test
@@ -205,12 +201,17 @@ class ComprobanteTaxMathTest {
         assertThat(resumen.getTotalMercanciasGravadas()).isEqualByComparingTo("0");
         assertThat(resumen.getTotalImpuesto()).isEqualByComparingTo("0");
 
-        // Detalles side: "" parses to a zero rate, and the equals-based guard at
-        // ComprobanteService:659 means zero-tax lines carry NO Impuesto entity.
+        // Detalles side: "" parses to a zero rate and still emits the mandatory
+        // <Impuesto>, as Tarifa Exenta (10) with zero tariff and amount.
         DetalleServicio detalles = service.detallesComprobante(
                 List.of(item(12L, "501010103", "", "500", "1")), "01");
         assertThat(detalles).isNotNull();
-        assertThat(detalles.getLineasDetalle().get(0).getImpuestos()).isEmpty();
+        List<Impuesto> impuestos = detalles.getLineasDetalle().get(0).getImpuestos();
+        assertThat(impuestos).hasSize(1);
+        assertThat(impuestos.get(0).getCodigoTarifaIVA())
+                .isEqualTo(Tipo_TarifaIVA.TARIFA_EXENTA.getCodigo());
+        assertThat(impuestos.get(0).getTarifa()).isEqualByComparingTo("0");
+        assertThat(impuestos.get(0).getMonto()).isEqualByComparingTo("0");
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -242,7 +243,7 @@ class ComprobanteTaxMathTest {
     }
 
     @Test
-    void zeroRateItemGoesToExemptBucketAndStillEmitsDesgloseEntry() {
+    void zeroRateItemGoesToExemptBucketAndEmitsNoDesgloseEntry() {
         ResumenFactura resumen = service.resumenComprobante(
                 List.of(item(31L, "501010105", "0", "500", "1")));
 
@@ -253,11 +254,11 @@ class ComprobanteTaxMathTest {
         assertThat(resumen.getTotalGravado()).isEqualByComparingTo("0");
         assertThat(resumen.getTotalImpuesto()).isEqualByComparingTo("0");
 
-        // Current behavior: calculateTotalTaxByRate keys zero-rate items under 0,
-        // so the map is non-empty and a TARIFA_0_EXENTO desglose entry IS emitted.
-        assertThat(resumen.getTotalDesgloseImpuestos()).hasSize(1);
-        assertThat(resumen.getTotalDesgloseImpuestos().get(0).getCodigoTarifaIVA())
-                .isEqualTo(Tipo_TarifaIVA.TARIFA_0_EXENTO.getCodigo());
+        // La tasa 0 no es un impuesto cobrado: no se agrega una entrada de
+        // desglose con monto cero (el nodo es minOccurs=0 y TotalExento ya
+        // lleva la base exenta).
+        assertThat(resumen.getTotalDesgloseImpuestos() == null
+                || resumen.getTotalDesgloseImpuestos().isEmpty()).isTrue();
     }
 
     @Test
@@ -401,6 +402,29 @@ class ComprobanteTaxMathTest {
         // XSD v4.4 rechaza el documento.
         assertThat(linea.getImpuestos()).isNotEmpty();
         assertThat(linea.getImpuestos().get(0).getLineaDetalle()).isSameAs(linea);
+    }
+
+    @Test
+    void lineaExentaEmiteImpuestoCeroConTarifaExentaParaElXsd() {
+        ArticuloCarrito articulo = item(103L, "501010120", "0", "2000.00", "1");
+
+        DetalleServicio detalles = service.detallesComprobante(List.of(articulo), "04");
+
+        assertThat(detalles).isNotNull();
+        LineaDetalle linea = detalles.getLineasDetalle().get(0);
+        // El XSD v4.4 exige minOccurs=1 en <Impuesto>: una linea exenta sin
+        // nodo no valida y Hacienda rechaza el comprobante antes de firmarlo.
+        assertThat(linea.getImpuestos()).hasSize(1);
+        Impuesto imp = linea.getImpuestos().get(0);
+        assertThat(imp.getCodigo()).isEqualTo("01");
+        assertThat(imp.getCodigoTarifaIVA()).isEqualTo(Tipo_TarifaIVA.TARIFA_EXENTA.getCodigo());
+        assertThat(imp.getTarifa()).isEqualByComparingTo("0");
+        assertThat(imp.getMonto()).isEqualByComparingTo("0");
+        assertThat(imp.getLineaDetalle()).isSameAs(linea);
+        // La linea exenta conserva sus montos: el total es la base.
+        assertThat(linea.getImpuestoNeto()).isEqualByComparingTo("0");
+        assertThat(linea.getMontoTotalLinea()).isEqualByComparingTo("2000.00");
+        assertThat(linea.getBaseImponible()).isEqualByComparingTo("2000.00");
     }
 
 

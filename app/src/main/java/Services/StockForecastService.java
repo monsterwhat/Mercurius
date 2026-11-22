@@ -2,7 +2,12 @@ package Services;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import Models.Articulos.ArticuloStock;
 import Models.Articulos.Articulos;
+import Models.PrecisionPronostico;
+import Services.pronostico.CalculadoraPronostico;
+import Services.pronostico.FlagCalidad;
+import Services.pronostico.SerieDiaria;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -24,11 +29,19 @@ import java.util.stream.Collectors;
 /**
  * Pronostico de stock por articulo.
  *
+ * <p><b>Camino canonico por defecto.</b> La pagina, el API y la exportacion
+ * consumen el snapshot de {@code CalculadoraPronostico} + {@code MotorPronostico}
+ * (rejilla diaria cero-rellenada, seleccion por horizonte y economia de
+ * reposicion). El calculo heredado de media por dias con venta y tendencia
+ * multiplicativa queda detras de
+ * {@code mercurius.pronostico.canonico-habilitado=false}, solo para rollback
+ * durante un ciclo de evaluacion.</p>
+ *
  * <p>Igual que {@link ProductPerformanceService}, {@code getSalesHistory} agrega
  * con {@code COALESCE(SUM(ld.cantidad), 0)}: los comprobantes REP (tipo 10) no
  * llevan Cantidad en su LineaDetalle, de modo que un dia con solo lineas REP
  * agrupaba a NULL y el mapeo lanzaba NullPointerException en vez de reportar 0
- * unidades vendidas.
+ * unidades vendidas.</p>
  */
 @ApplicationScoped
 @Named("stockForecastService")
@@ -107,12 +120,49 @@ public class StockForecastService {
             ORDER BY a.codigo
             """;
 
+    /**
+     * Catalogo activo con stock. Sin ventas ni nombres de factura: la serie
+     * diaria se lee aparte por clave de articulo ({@link SeleccionMetodoService#seriesDiariasActivas(int)}).
+     */
+    private static final String CONSULTA_CATALOGO = """
+            SELECT a.codigo,
+                   a.nombre,
+                   COALESCE(dep.nombre, ''),
+                   COALESCE(fam.nombre, ''),
+                   COALESCE(st.stock, st2.stock, 0)
+            FROM articulos a
+            LEFT JOIN articulostock st ON st.articulo_codigo = a.codigo
+            LEFT JOIN articulostock st2 ON st2.articulo_codigo IS NULL
+                 AND st2.codigo_barra = a.codigobarra
+            LEFT JOIN departamento dep ON dep.id = a.departamento_id
+            LEFT JOIN familia fam ON fam.id = a.familia_id
+            WHERE a.status = true
+            ORDER BY a.codigo
+            """;
+
     @Inject @Nonnull
     EntityManager entityManager;
+
+    @Inject @Nonnull
+    SeleccionMetodoService seleccionMetodoService;
+
+    @Inject @Nonnull
+    ConfiguracionPronosticoService configuracionPronosticoService;
+
+    /** Activa el pipeline canonico (MotorPronostico). false deja el camino legado para rollback. */
+    @ConfigProperty(name = "mercurius.pronostico.canonico-habilitado", defaultValue = "true")
+    boolean canonicoHabilitado;
+
+    /** Dias de historia con los que se estima la demanda canonica. */
+    @ConfigProperty(name = "mercurius.pronostico.historial-dias", defaultValue = "180")
+    int historialDiasConfigurado;
 
     /** Vigencia de la lectura del catálogo en memoria (0 = sin caché). */
     @ConfigProperty(name = "mercurius.pronostico.catalogo-ttl-ms", defaultValue = "60000")
     long vigenciaCatalogoMs;
+
+    /** Snapshot canonico por horizonte, para que pagina, API y exportacion compartan la misma corrida. */
+    private final AtomicReference<SnapshotCanonico> snapshotCanonico = new AtomicReference<>();
 
     /** Última lectura agregada del catálogo y hasta cuándo vale. */
     private final AtomicReference<CatalogoVigente> catalogoVigente = new AtomicReference<>();
@@ -123,6 +173,9 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public List<ProductForecast> generateForecast(@Nonnull Long articuloId, int forecastDays) {
+        if (canonicoHabilitado) {
+            return generarForecastCanonico(articuloId, forecastDays);
+        }
         Articulos articulo = entityManager.find(Articulos.class, articuloId);
         if (articulo == null) return Collections.emptyList();
 
@@ -173,6 +226,9 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public List<ProductForecast> generateBulkForecast(int daysToForecast) {
+        if (canonicoHabilitado) {
+            return pronosticosCanonicos(daysToForecast);
+        }
         return pronosticosDe(estadisticasCatalogo(), daysToForecast);
     }
 
@@ -186,6 +242,9 @@ public class StockForecastService {
     @Nonnull
     public List<ProductForecast> generateBulkForecast(
             @Nonnull List<EstadisticaArticulo> estadisticas, int daysToForecast) {
+        if (canonicoHabilitado) {
+            return pronosticosCanonicos(daysToForecast);
+        }
         return pronosticosDe(estadisticas, daysToForecast);
     }
 
@@ -218,6 +277,9 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public DemandPrediction predictDemand(@Nonnull Long articuloId, int daysToPredict) {
+        if (canonicoHabilitado) {
+            return predecirDemandaCanonica(articuloId, daysToPredict);
+        }
         List<SalesData> salesHistory = getSalesHistory(articuloId, 180);
         
         if (salesHistory.isEmpty()) {
@@ -255,12 +317,32 @@ public class StockForecastService {
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public InventoryHealthReport getInventoryHealthReport() {
+        if (canonicoHabilitado) {
+            return snapshotCanonico(30).salud();
+        }
+        return saludDe(estadisticasCatalogo());
+    }
+
+    /**
+     * Salud del inventario para el mismo horizonte que muestra el reporte.
+     * La pagina y la exportacion la piden aqui para no mezclar un horizonte
+     * con otro.
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public InventoryHealthReport salud(int horizonteDias) {
+        if (canonicoHabilitado) {
+            return snapshotCanonico(horizonteDias).salud();
+        }
         return saludDe(estadisticasCatalogo());
     }
 
     @Transactional(TxType.SUPPORTS)
     @Nullable
     public ReorderRecommendation getReorderRecommendation(@Nonnull Long articuloId) {
+        if (canonicoHabilitado) {
+            return recomendacionCanonica(articuloId);
+        }
         Articulos articulo = entityManager.find(Articulos.class, articuloId);
         if (articulo == null) return null;
 
@@ -421,6 +503,9 @@ public class StockForecastService {
                                                  @Nullable String seccion,
                                                  @Nullable String departamento,
                                                  @Nullable String familia) {
+        if (canonicoHabilitado) {
+            return reportePronosticosCanonico(dias, seccion, departamento, familia);
+        }
         List<EstadisticaArticulo> estadisticas = estadisticasCatalogo();
         String depto = normalizarFiltro(departamento);
         String fam = normalizarFiltro(familia);
@@ -456,7 +541,8 @@ public class StockForecastService {
                         proyeccion.ventaPronosticada(),
                         diasRestantes(e),
                         cantidadSugerida(e, dias),
-                        proyeccion.stockPronosticado() <= 0 ? "Comprar" : "Pronto"));
+                        proyeccion.stockPronosticado() <= 0 ? "Comprar" : "Pronto",
+                        null, null, null, ""));
             }
         }
 
@@ -487,7 +573,14 @@ public class StockForecastService {
                 criticos);
     }
 
-    /** Agregados de venta y stock de un artículo, listos para pronosticar. */
+    /**
+     * Agregados de venta y stock de un articulo para el camino heredado.
+     *
+     * <p><b>No es el contrato de produccion.</b> {@code promedioDiario()} divide
+     * por dias CON venta, que es justamente el defecto que corrige la rejilla
+     * canonica. Esta estructura solo se usa con
+     * {@code mercurius.pronostico.canonico-habilitado=false}.</p>
+     */
     public record EstadisticaArticulo(
             long codigo,
             @Nonnull String nombre,
@@ -607,7 +700,11 @@ public class StockForecastService {
             int demandaEstimada,
             @Nonnull String diasRestantes,
             int cantidadSugerida,
-            @Nonnull String recomendacion) {
+            @Nonnull String recomendacion,
+            @Nullable String metodo,
+            @Nullable Double mase,
+            @Nullable Double sesgo,
+            @Nonnull String calidadFlags) {
     }
 
     /** Fila de la sección de salud del inventario. */
@@ -694,7 +791,565 @@ public class StockForecastService {
                 .setScale(0, RoundingMode.HALF_UP).intValue() - e.stock());
     }
 
-    /** El filtro por departamento/familia (vacío = todos). */
+    /** Diagnostico de demanda historica que no se puede atribuir a un articulo unico. */
+    public record DiagnosticoDemanda(long lineasSinArticulo,
+                                     double unidadesSinArticulo,
+                                     long nombresSinArticulo,
+                                     long lineasConNombreAmbiguo) {
+    }
+
+    /**
+     * Cuenta las lineas de factura de la ventana cuya {@code detalle} no
+     * corresponde a exactamente un articulo activo.
+     *
+     * <p>El pipeline canonico ya no usa nombres para pronosticar: la demanda
+     * sale de movimientos de inventario por clave. Este diagnostico existe para
+     * que el historical sin movimiento de inventario sea visible y medible en
+     * vez de desaparecer en silencio. Un nombre repetido no se atribuye a
+     * ninguno de los dos: sumarlo contaminaria a ambos.</p>
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public DiagnosticoDemanda diagnosticoDemandaHistorica(int dias) {
+        int ventana = dias <= 0 ? Math.max(1, historialDiasConfigurado) : dias;
+        LocalDateTime inicio = LocalDate.now().minusDays(ventana).atStartOfDay();
+        LocalDateTime fin = LocalDate.now().atTime(23, 59, 59);
+        try {
+            Object[] fila = (Object[]) entityManager.createNativeQuery("""
+                            SELECT
+                                COUNT(*) FILTER (WHERE (
+                                    SELECT COUNT(*) FROM articulos a2
+                                    WHERE a2.nombre = ld.detalle AND a2.status = true) = 0),
+                                COALESCE(SUM(ABS(ld.cantidad)) FILTER (WHERE (
+                                    SELECT COUNT(*) FROM articulos a2
+                                    WHERE a2.nombre = ld.detalle AND a2.status = true) = 0), 0),
+                                COUNT(DISTINCT ld.detalle) FILTER (WHERE (
+                                    SELECT COUNT(*) FROM articulos a2
+                                    WHERE a2.nombre = ld.detalle AND a2.status = true) = 0),
+                                COUNT(*) FILTER (WHERE (
+                                    SELECT COUNT(*) FROM articulos a2
+                                    WHERE a2.nombre = ld.detalle AND a2.status = true) > 1)
+                            FROM comprobantesemitidos f
+                            JOIN detalle_servicio d ON d.id = f.detalle_servicio_id
+                            JOIN linea_detalle ld ON ld.detalle_servicio_id = d.id
+                            JOIN encabezado e ON e.id = f.encabezado_id
+                            WHERE f.status = true
+                              AND e.fecha_emision BETWEEN :inicio AND :fin
+                            """)
+                    .setParameter("inicio", inicio)
+                    .setParameter("fin", fin)
+                    .getSingleResult();
+            DiagnosticoDemanda diagnostico = new DiagnosticoDemanda(
+                    numeroLargo(fila[0]), decimal(fila[1]).doubleValue(),
+                    numeroLargo(fila[2]), numeroLargo(fila[3]));
+            if (diagnostico.lineasSinArticulo() > 0 || diagnostico.lineasConNombreAmbiguo() > 0) {
+                LOG.warnf("Demanda historica no atribuible: lineas=%d unidades=%.2f nombres=%d ambiguas=%d",
+                        diagnostico.lineasSinArticulo(), diagnostico.unidadesSinArticulo(),
+                        diagnostico.nombresSinArticulo(), diagnostico.lineasConNombreAmbiguo());
+            }
+            return diagnostico;
+        } catch (RuntimeException e) {
+            LOG.error("diagnosticoDemandaHistorica: no se pudo medir la demanda sin articulo; "
+                    + "no se reporta cero", e);
+            throw e;
+        }
+    }
+
+    /** Snapshot canonico compartido por pagina, API y exportacion. */
+    private record SnapshotCanonico(int horizonte,
+                                    long expiraEn,
+                                    @Nonnull List<CalculadoraPronostico.Resultado> resultados,
+                                    @Nonnull InventoryHealthReport salud) {
+    }
+
+    /**
+     * Snapshot canonico de todo el catalogo para un horizonte. La lectura de
+     * catalogo y series se comparte entre la pagina, el API y la exportacion
+     * durante {@code mercurius.pronostico.catalogo-ttl-ms}; sin esto, abrir la
+     * pagina pagaria dos escaneos completos.
+     */
+    @Nonnull
+    private SnapshotCanonico snapshotCanonico(int horizonteDias) {
+        int horizonte = normalizarHorizonte(horizonteDias);
+        long ahora = System.currentTimeMillis();
+        SnapshotCanonico vigente = snapshotCanonico.get();
+        if (vigente != null && vigente.horizonte() == horizonte && vigente.expiraEn() > ahora) {
+            return vigente;
+        }
+        synchronized (this) {
+            vigente = snapshotCanonico.get();
+            long solicitado = System.currentTimeMillis();
+            if (vigente != null && vigente.horizonte() == horizonte && vigente.expiraEn() > solicitado) {
+                return vigente;
+            }
+            SnapshotCanonico leido = construirSnapshot(horizonte);
+            if (vigenciaCatalogoMs > 0) {
+                snapshotCanonico.set(new SnapshotCanonico(horizonte,
+                        solicitado + vigenciaCatalogoMs, leido.resultados(), leido.salud()));
+            }
+            return leido;
+        }
+    }
+
+    @Nonnull
+    private SnapshotCanonico construirSnapshot(int horizonte) {
+        List<Object[]> filas;
+        try {
+            filas = entityManager.createNativeQuery(CONSULTA_CATALOGO).getResultList();
+        } catch (RuntimeException e) {
+            LOG.error("snapshotCanonico: no se pudo leer el catalogo; no se degrada a "
+                    + "'sin datos'"
+                    + " | horizonte=" + horizonte, e);
+            throw new IllegalStateException(
+                    "No se pudo leer el catálogo para el pronóstico: " + e.getMessage(), e);
+        }
+
+        Map<Long, List<SerieDiaria>> series;
+        try {
+            series = seleccionMetodoService.seriesDiariasActivas(historialDiasConfigurado);
+        } catch (RuntimeException e) {
+            LOG.error("snapshotCanonico: no se pudo leer la demanda diaria; no se pronostica "
+                    + "con historia vacia"
+                    + " | horizonte=" + horizonte, e);
+            throw new IllegalStateException(
+                    "No se pudo leer la demanda diaria para el pronóstico: " + e.getMessage(), e);
+        }
+
+        Map<Long, PrecisionPronostico> selecciones;
+        try {
+            selecciones = seleccionMetodoService.selecciones(horizonte);
+        } catch (RuntimeException e) {
+            LOG.error("snapshotCanonico: no se pudo leer la seleccion de metodos; no se "
+                    + "sustituye por un respaldo silencioso"
+                    + " | horizonte=" + horizonte, e);
+            throw new IllegalStateException(
+                    "No se pudo leer la selección de métodos para el pronóstico: "
+                            + e.getMessage(), e);
+        }
+
+        CalculadoraPronostico.Opciones opciones = opcionesCanonicas();
+        Map<Long, BigDecimal> ordenesAbiertas = ordenesCompraAbiertasPorArticulo();
+        List<CalculadoraPronostico.Resultado> resultados = new ArrayList<>(filas.size());
+        for (Object[] fila : filas) {
+            long codigo = numeroLargo(fila[0]);
+            CalculadoraPronostico.Articulo articulo = new CalculadoraPronostico.Articulo(
+                    codigo, texto(fila[1]), texto(fila[2]), texto(fila[3]), numeroEntero(fila[4]));
+            List<SerieDiaria> serie = series.getOrDefault(codigo, List.of());
+            double abiertas = ordenesAbiertas.getOrDefault(codigo, BigDecimal.ZERO).doubleValue();
+            CalculadoraPronostico.Resultado resultado = CalculadoraPronostico.calcular(
+                    articulo, serie, horizonte, selecciones.get(codigo), opciones,
+                    false, false, abiertas);
+            resultados.add(resultado);
+        }
+
+        InventoryHealthReport salud = saludCanonica(resultados);
+        LOG.infof("snapshotCanonico: horizonte=%d articulos=%d conHistoria=%d metodoTop=%s",
+                horizonte, resultados.size(),
+                resultados.stream().filter(r -> !r.diario().isEmpty() && r.diasConDemanda() > 0).count(),
+                metodoFrecuente(resultados));
+        return new SnapshotCanonico(horizonte, 0, List.copyOf(resultados), salud);
+    }
+
+    /** Unidades ya pedidas y no recibidas, por articulo. */
+    @Nonnull
+    private Map<Long, BigDecimal> ordenesCompraAbiertasPorArticulo() {
+        try {
+            List<Object[]> filas = entityManager.createQuery("""
+                            SELECT d.articulo.codigo, SUM(d.cantidad)
+                            FROM OrdenCompraDetalle d
+                            WHERE d.ordenCompra.status = true
+                              AND d.ordenCompra.estado IN ('BORRADOR', 'ENVIADA', 'CONFIRMADA')
+                            GROUP BY d.articulo.codigo
+                            """, Object[].class)
+                    .getResultList();
+            Map<Long, BigDecimal> abiertas = new HashMap<>();
+            for (Object[] fila : filas) {
+                abiertas.put(numeroLargo(fila[0]), decimal(fila[1]));
+            }
+            return Map.copyOf(abiertas);
+        } catch (RuntimeException e) {
+            LOG.error("No se pudieron leer las ordenes de compra abiertas; no se ignora el "
+                    + "compromiso de stock", e);
+            throw new IllegalStateException(
+                    "No se pudieron leer las órdenes de compra abiertas: " + e.getMessage(), e);
+        }
+    }
+
+    /** Unidades abiertas de un articulo, para la ficha individual. */
+    private double ordenesCompraAbiertas(Long articuloId) {
+        return ordenesCompraAbiertasPorArticulo()
+                .getOrDefault(articuloId, BigDecimal.ZERO)
+                .doubleValue();
+    }
+
+    /** Opciones economicas de reposicion desde configuracion. */
+    @Nonnull
+    private CalculadoraPronostico.Opciones opcionesCanonicas() {
+        ConfiguracionPronosticoService.ParametrosPronostico parametros =
+                configuracionPronosticoService.parametros();
+        return new CalculadoraPronostico.Opciones(
+                parametros.nivelServicio(),
+                parametros.costoFaltante(),
+                parametros.costoMantenimiento(),
+                parametros.plazoReposicionDias(),
+                parametros.cantidadMinimaPedido(),
+                parametros.multiploPedido());
+    }
+
+    @Nonnull
+    private List<ProductForecast> pronosticosCanonicos(int daysToForecast) {
+        int horizonte = normalizarHorizonte(daysToForecast);
+        SnapshotCanonico snapshot = snapshotCanonico(horizonte);
+        List<ProductForecast> salida = new ArrayList<>(snapshot.resultados().size());
+        for (CalculadoraPronostico.Resultado resultado : snapshot.resultados()) {
+            if (resultado.diasConDemanda() <= 0 || resultado.diario().isEmpty()) {
+                continue;
+            }
+            salida.add(productoForecast(resultado));
+        }
+        return salida;
+    }
+
+    @Nonnull
+    private List<ProductForecast> generarForecastCanonico(@Nonnull Long articuloId, int forecastDays) {
+        int horizonte = normalizarHorizonte(forecastDays);
+        Articulos articulo = entityManager.find(Articulos.class, articuloId);
+        if (articulo == null) {
+            return Collections.emptyList();
+        }
+        List<SerieDiaria> serie = seleccionMetodoService.serieDiaria(articuloId, historialDiasConfigurado);
+        if (serie == null || serie.isEmpty()) {
+            return Collections.emptyList();
+        }
+        CalculadoraPronostico.Resultado resultado = CalculadoraPronostico.calcular(
+                new CalculadoraPronostico.Articulo(articulo.getCodigo(), articulo.getNombre(),
+                        "", "", getCurrentStock(articuloId)),
+                serie, horizonte,
+                seleccionMetodoService.seleccionPara(articuloId, horizonte).orElse(null),
+                opcionesCanonicas(), false, true, ordenesCompraAbiertas(articuloId));
+
+        List<ProductForecast> forecast = new ArrayList<>(horizonte);
+        double acumulado = 0.0;
+        for (int dia = 1; dia <= horizonte; dia++) {
+            double demandaDia = resultado.diario().get(dia - 1);
+            acumulado += demandaDia;
+            int stockProyectado = Math.max(0,
+                    (int) Math.round(resultado.articulo().stock() - acumulado));
+            boolean reordenar = stockProyectado <= resultado.puntoReorden();
+            forecast.add(new ProductForecast(
+                    resultado.articulo().codigo(), resultado.articulo().nombre(),
+                    LocalDate.now().plusDays(dia), resultado.articulo().stock(),
+                    (int) Math.round(demandaDia), stockProyectado, reordenar,
+                    BigDecimal.valueOf(resultado.promedioDiarioCalendario())
+                            .setScale(2, RoundingMode.HALF_UP),
+                    BigDecimal.valueOf(1.0 - resultado.coeficienteVariacion())
+                            .setScale(2, RoundingMode.HALF_UP),
+                    resultado.metodo() == null ? null : resultado.metodo().name(),
+                    resultado.mase(), resultado.sesgo(),
+                    etiquetas(resultado.flags()), resultado.demandaTotal(),
+                    resultado.puntoReorden(), resultado.cantidadSugerida()));
+        }
+        return forecast;
+    }
+
+    @Nonnull
+    private ProductForecast productoForecast(CalculadoraPronostico.Resultado resultado) {
+        List<Double> diario = resultado.diario();
+        int demandaUltimoDia = diario.isEmpty() ? 0
+                : (int) Math.round(diario.get(diario.size() - 1));
+        int stockProyectado = Math.max(0,
+                (int) Math.round(resultado.articulo().stock() - resultado.demandaTotal()));
+        boolean reordenar = resultado.cantidadSugerida() > 0
+                || stockProyectado <= resultado.puntoReorden();
+        BigDecimal velocidad = BigDecimal.valueOf(
+                1.0 - resultado.coeficienteVariacion());
+        return new ProductForecast(
+                resultado.articulo().codigo(), resultado.articulo().nombre(),
+                LocalDate.now().plusDays(resultado.horizonte()),
+                resultado.articulo().stock(), demandaUltimoDia, stockProyectado, reordenar,
+                BigDecimal.valueOf(resultado.promedioDiarioCalendario())
+                        .setScale(2, RoundingMode.HALF_UP),
+                velocidad.setScale(2, RoundingMode.HALF_UP),
+                resultado.metodo() == null ? null : resultado.metodo().name(),
+                resultado.mase(), resultado.sesgo(),
+                etiquetas(resultado.flags()), resultado.demandaTotal(),
+                resultado.puntoReorden(), resultado.cantidadSugerida());
+    }
+
+    @Nonnull
+    private DemandPrediction predecirDemandaCanonica(@Nonnull Long articuloId, int daysToPredict) {
+        int horizonte = normalizarHorizonte(daysToPredict);
+        Articulos articulo = entityManager.find(Articulos.class, articuloId);
+        if (articulo == null) {
+            LOG.warnf("predictDemand: el articulo %d no existe; se devuelve INSUFFICIENT_DATA", articuloId);
+            return new DemandPrediction(articuloId, BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ZERO, "INSUFFICIENT_DATA");
+        }
+        List<SerieDiaria> serie = seleccionMetodoService.serieDiaria(articuloId, historialDiasConfigurado);
+        if (serie == null || serie.isEmpty()) {
+            return new DemandPrediction(articuloId, BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ZERO, "INSUFFICIENT_DATA");
+        }
+        CalculadoraPronostico.Resultado resultado = CalculadoraPronostico.calcular(
+                new CalculadoraPronostico.Articulo(articulo.getCodigo(), articulo.getNombre(),
+                        "", "", getCurrentStock(articuloId)),
+                serie, horizonte,
+                seleccionMetodoService.seleccionPara(articuloId, horizonte).orElse(null),
+                opcionesCanonicas(), false, true, ordenesCompraAbiertas(articuloId));
+
+        String confianza = confianza(resultado);
+        return new DemandPrediction(
+                articuloId,
+                BigDecimal.valueOf(resultado.demandaTotal()).setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.valueOf(resultado.promedioDiarioCalendario())
+                        .setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.valueOf(tendenciaCalendario(serie)).setScale(2, RoundingMode.HALF_UP),
+                confianza,
+                resultado.metodo() == null ? null : resultado.metodo().name(),
+                resultado.mase(), resultado.sesgo(),
+                etiquetas(resultado.flags()),
+                resultado.intervaloInferior(), resultado.intervaloSuperior(),
+                resultado.intervaloAproximado() ? "APROXIMADO" : "EMPIRICO");
+    }
+
+    @Nullable
+    private ReorderRecommendation recomendacionCanonica(@Nonnull Long articuloId) {
+        Articulos articulo = entityManager.find(Articulos.class, articuloId);
+        if (articulo == null) {
+            return null;
+        }
+        int stock = getCurrentStock(articuloId);
+        List<SerieDiaria> serie = seleccionMetodoService.serieDiaria(articuloId, historialDiasConfigurado);
+        if (serie == null || serie.isEmpty()) {
+            return new ReorderRecommendation(articuloId, articulo.getNombre(), stock,
+                    0, 0, "NO_SALES_DATA", BigDecimal.ZERO);
+        }
+        int horizonte = normalizarHorizonte(Math.max(30,
+                configuracionPronosticoService.parametros().plazoReposicionDias() * 2));
+        CalculadoraPronostico.Resultado resultado = CalculadoraPronostico.calcular(
+                new CalculadoraPronostico.Articulo(articulo.getCodigo(), articulo.getNombre(), "", "", stock),
+                serie, horizonte,
+                seleccionMetodoService.seleccionPara(articuloId, horizonte).orElse(null),
+                opcionesCanonicas(), false, true, ordenesCompraAbiertas(articuloId));
+
+        int dias = resultado.diasHastaQuiebre();
+        String estado;
+        if (stock <= 0) {
+            estado = "OUT_OF_STOCK";
+        } else if (dias <= 3) {
+            estado = "CRITICAL";
+        } else if (dias <= 7) {
+            estado = "LOW";
+        } else if (dias <= 14) {
+            estado = "MODERATE";
+        } else {
+            estado = "OPTIMAL";
+        }
+        return new ReorderRecommendation(articuloId, articulo.getNombre(), stock,
+                resultado.cantidadSugerida(), Math.min(999, dias), estado,
+                BigDecimal.valueOf(resultado.promedioDiarioCalendario())
+                        .setScale(2, RoundingMode.HALF_UP));
+    }
+
+    @Nonnull
+    private ReportePronosticos reportePronosticosCanonico(int dias,
+                                                          @Nullable String seccion,
+                                                          @Nullable String departamento,
+                                                          @Nullable String familia) {
+        SnapshotCanonico snapshot = snapshotCanonico(dias);
+        String depto = normalizarFiltro(departamento);
+        String fam = normalizarFiltro(familia);
+        boolean vistaSalud = "salud".equals(seccion);
+
+        SortedSet<String> departamentos = new TreeSet<>();
+        SortedSet<String> familias = new TreeSet<>();
+        for (CalculadoraPronostico.Resultado resultado : snapshot.resultados()) {
+            if (!resultado.articulo().departamento().isBlank()) {
+                departamentos.add(resultado.articulo().departamento());
+            }
+            if (!resultado.articulo().familia().isBlank()) {
+                familias.add(resultado.articulo().familia());
+            }
+        }
+
+        List<FilaPronostico> filas = new ArrayList<>();
+        if (!vistaSalud) {
+            for (CalculadoraPronostico.Resultado resultado : snapshot.resultados()) {
+                if (resultado.diasConDemanda() <= 0 || resultado.diario().isEmpty()) {
+                    continue;
+                }
+                if (!coincide(resultado.articulo().departamento(),
+                        resultado.articulo().familia(), depto, fam)) {
+                    continue;
+                }
+                filas.add(new FilaPronostico(
+                        resultado.articulo().codigo(),
+                        resultado.articulo().nombre(),
+                        resultado.articulo().departamento(),
+                        resultado.articulo().familia(),
+                        resultado.articulo().stock(),
+                        (int) Math.round(resultado.demandaTotal()),
+                        diasRestantesCanonico(resultado),
+                        resultado.cantidadSugerida(),
+                        resultado.recomendacion(),
+                        resultado.metodo() == null ? null : resultado.metodo().name(),
+                        resultado.mase(),
+                        resultado.sesgo(),
+                        etiquetas(resultado.flags())));
+            }
+        }
+
+        List<FilaCritico> criticos = new ArrayList<>();
+        if (vistaSalud) {
+            for (CalculadoraPronostico.Resultado resultado : snapshot.resultados()) {
+                if (criticos.size() >= CRITICOS_VISIBLES) {
+                    break;
+                }
+                if (esCriticoCanonico(resultado)
+                        && coincide(resultado.articulo().departamento(),
+                        resultado.articulo().familia(), depto, fam)) {
+                    criticos.add(new FilaCritico(resultado.articulo().codigo(),
+                            resultado.articulo().nombre(), resultado.articulo().departamento(),
+                            resultado.articulo().familia()));
+                }
+            }
+        }
+
+        return new ReportePronosticos(
+                List.copyOf(departamentos),
+                List.copyOf(familias),
+                snapshot.salud(),
+                filas,
+                criticos);
+    }
+
+    @Nonnull
+    private static InventoryHealthReport saludCanonica(
+            @Nonnull List<CalculadoraPronostico.Resultado> resultados) {
+        int optimo = 0;
+        int bajo = 0;
+        int exceso = 0;
+        int sinStock = 0;
+        List<String> criticos = new ArrayList<>();
+        for (CalculadoraPronostico.Resultado resultado : resultados) {
+            int stock = resultado.articulo().stock();
+            if (stock <= 0) {
+                sinStock++;
+                if (criticos.size() < CRITICOS_VISIBLES) {
+                    criticos.add(resultado.articulo().nombre());
+                }
+            } else if (resultado.diasConDemanda() <= 0) {
+                optimo++;
+            } else {
+                double reorden = resultado.puntoReorden();
+                if (stock < reorden) {
+                    bajo++;
+                    if (stock < reorden / 2.0 && criticos.size() < CRITICOS_VISIBLES) {
+                        criticos.add(resultado.articulo().nombre());
+                    }
+                } else if (stock > resultado.stockOptimo() * 2) {
+                    exceso++;
+                } else {
+                    optimo++;
+                }
+            }
+        }
+        return new InventoryHealthReport(
+                resultados.size(), optimo, bajo, exceso, sinStock, criticos);
+    }
+
+    private static boolean esCriticoCanonico(@Nonnull CalculadoraPronostico.Resultado resultado) {
+        int stock = resultado.articulo().stock();
+        if (stock <= 0) {
+            return true;
+        }
+        if (resultado.diasConDemanda() <= 0) {
+            return false;
+        }
+        return stock < resultado.puntoReorden() / 2.0;
+    }
+
+    @Nonnull
+    private static String diasRestantesCanonico(@Nonnull CalculadoraPronostico.Resultado resultado) {
+        if (resultado.promedioDiarioCalendario() <= 0.0) {
+            return "-";
+        }
+        int dias = resultado.diasHastaQuiebre();
+        if (dias > resultado.horizonte()) {
+            dias = (int) Math.floor(resultado.articulo().stock()
+                    / resultado.promedioDiarioCalendario());
+        }
+        return String.valueOf(Math.max(0, Math.min(999, dias)));
+    }
+
+    @Nonnull
+    private static String confianza(@Nonnull CalculadoraPronostico.Resultado resultado) {
+        if (resultado.mase() == null || !Double.isFinite(resultado.mase())) {
+            return "UNMEASURED";
+        }
+        if (resultado.mase() <= 0.80) {
+            return "HIGH";
+        }
+        if (resultado.mase() <= 1.00) {
+            return "MEDIUM";
+        }
+        return "LOW";
+    }
+
+    /** Tendencia de la serie cero-rellenada: segunda mitad / primera mitad, acotada. */
+    private static double tendenciaCalendario(@Nonnull List<SerieDiaria> serie) {
+        if (serie.size() < 7) {
+            return 1.0;
+        }
+        int mitad = serie.size() / 2;
+        double primera = 0.0;
+        double segunda = 0.0;
+        for (int i = 0; i < mitad; i++) {
+            primera += serie.get(i).cantidad();
+        }
+        for (int i = mitad; i < serie.size(); i++) {
+            segunda += serie.get(i).cantidad();
+        }
+        double diasPrimera = mitad;
+        double diasSegunda = serie.size() - mitad;
+        if (diasPrimera <= 0 || primera <= 0.0) {
+            return 1.0;
+        }
+        double factor = (segunda / diasSegunda) / (primera / diasPrimera);
+        return Math.max(0.5, Math.min(2.0, factor));
+    }
+
+    @Nonnull
+    private static String etiquetas(@Nonnull java.util.Set<FlagCalidad> flags) {
+        if (flags.isEmpty()) {
+            return "";
+        }
+        return flags.stream().map(FlagCalidad::name).sorted().reduce((a, b) -> a + "," + b).orElse("");
+    }
+
+    private static String metodoFrecuente(@Nonnull List<CalculadoraPronostico.Resultado> resultados) {
+        Map<String, Integer> conteo = new HashMap<>();
+        for (CalculadoraPronostico.Resultado resultado : resultados) {
+            if (resultado.diasConDemanda() > 0 && resultado.metodo() != null) {
+                conteo.merge(resultado.metodo().name(), 1, Integer::sum);
+            }
+        }
+        return conteo.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("-");
+    }
+
+    private static int normalizarHorizonte(int dias) {
+        if (dias <= 0) {
+            return 30;
+        }
+        return Math.min(90, dias);
+    }
+
+    /**
+     * El filtro por departamento/familia (vacío = todos).
+     */
     private static boolean coincide(@Nonnull String departamentoArticulo,
                                     @Nonnull String familiaArticulo,
                                     @Nonnull String departamento,
@@ -733,6 +1388,17 @@ public class StockForecastService {
         return valor == null ? "" : String.valueOf(valor);
     }
 
+    /**
+     * Historial heredado por nombre de articulo. Solo se usa con
+     * {@code mercurius.pronostico.canonico-habilitado=false}; el camino de
+     * produccion lee la rejilla canonica por clave en
+     * {@link SeleccionMetodoService#seriesDiariasActivas(int)}.
+     *
+     * <p>Se conserva durante un ciclo de evaluacion para poder revertir sin
+     * recompilar. No debe usarse en codigo nuevo: dos articulos con el mismo
+     * nombre comparten este historial.</p>
+     */
+    @Deprecated
     @CacheResult(cacheName = "analytics-forecast")
     List<SalesData> getSalesHistory(Long articuloId, int days) {
         LocalDateTime startDate = LocalDate.now().minusDays(days).atStartOfDay();
@@ -776,16 +1442,29 @@ public class StockForecastService {
 
     private int getCurrentStock(Long articuloId) {
         try {
-            BigDecimal stock = entityManager.createQuery(
-                "SELECT COALESCE(SUM(i.cantidad), 0) FROM Inventario i WHERE i.articulo.codigo = :articuloId",
-                BigDecimal.class
+            List<ArticuloStock> filas = entityManager.createQuery(
+                "SELECT s FROM ArticuloStock s "
+                    + "WHERE s.articuloCodigo = :articuloId "
+                    + "OR (s.articuloCodigo IS NULL AND s.codigoBarra = "
+                    + "(SELECT a.codigoBarra FROM Articulos a WHERE a.codigo = :articuloId))",
+                ArticuloStock.class
             ).setParameter("articuloId", articuloId)
-             .getSingleResult();
-            return stock != null ? stock.intValue() : 0;
+             .getResultList();
+            if (filas.isEmpty()) {
+                return 0;
+            }
+            // Si conviven la fila nueva (por articulo) y una legacy (por
+            // barcode), manda la de identidad estable. La reconciliacion
+            // reporta la diferencia en vez de sumar dos veces.
+            ArticuloStock elegida = filas.stream()
+                    .filter(fila -> fila.getArticuloCodigo() != null)
+                    .findFirst()
+                    .orElse(filas.get(0));
+            return elegida.getStock() == null ? 0 : elegida.getStock().intValue();
         } catch (jakarta.persistence.PersistenceException e) {
             LOG.warn("getCurrentStock: no se pudo leer el stock del articulo "
-                    + articuloId + "; se asume 0", e);
-            return 0;
+                    + articuloId + "; no se convierte el fallo en cero", e);
+            throw e;
         }
     }
 
@@ -912,10 +1591,27 @@ public class StockForecastService {
         private boolean shouldReorder;
         private BigDecimal avgDailySales;
         private BigDecimal salesVelocity;
+        private String metodo;
+        private Double mase;
+        private Double sesgo;
+        private String calidadFlags;
+        private double predictedDemand;
+        private double reorderPoint;
+        private int recommendedReorder;
 
         public ProductForecast(Long articuloId, String articuloNombre, LocalDate forecastDate,
                             int currentStock, int predictedSales, int predictedStock,
                             boolean shouldReorder, BigDecimal avgDailySales, BigDecimal salesVelocity) {
+            this(articuloId, articuloNombre, forecastDate, currentStock, predictedSales,
+                    predictedStock, shouldReorder, avgDailySales, salesVelocity,
+                    null, null, null, "", predictedSales, 0, 0);
+        }
+
+        public ProductForecast(Long articuloId, String articuloNombre, LocalDate forecastDate,
+                            int currentStock, int predictedSales, int predictedStock,
+                            boolean shouldReorder, BigDecimal avgDailySales, BigDecimal salesVelocity,
+                            String metodo, Double mase, Double sesgo, String calidadFlags,
+                            double predictedDemand, double reorderPoint, int recommendedReorder) {
             this.articuloId = articuloId;
             this.articuloNombre = articuloNombre;
             this.forecastDate = forecastDate;
@@ -925,6 +1621,13 @@ public class StockForecastService {
             this.shouldReorder = shouldReorder;
             this.avgDailySales = avgDailySales;
             this.salesVelocity = salesVelocity;
+            this.metodo = metodo;
+            this.mase = mase;
+            this.sesgo = sesgo;
+            this.calidadFlags = calidadFlags;
+            this.predictedDemand = predictedDemand;
+            this.reorderPoint = reorderPoint;
+            this.recommendedReorder = recommendedReorder;
         }
 
         @JsonProperty("articuloId")
@@ -945,6 +1648,21 @@ public class StockForecastService {
         public BigDecimal avgDailySales() { return avgDailySales; }
         @JsonProperty("salesVelocity")
         public BigDecimal salesVelocity() { return salesVelocity; }
+        @JsonProperty("metodo")
+        public String metodo() { return metodo; }
+        @JsonProperty("mase")
+        public Double mase() { return mase; }
+        @JsonProperty("sesgo")
+        public Double sesgo() { return sesgo; }
+        @JsonProperty("calidadFlags")
+        public String calidadFlags() { return calidadFlags; }
+        /** Demanda total del horizonte; campo nuevo, `predictedSales` sigue siendo la del dia. */
+        @JsonProperty("predictedDemand")
+        public double predictedDemand() { return predictedDemand; }
+        @JsonProperty("reorderPoint")
+        public double reorderPoint() { return reorderPoint; }
+        @JsonProperty("recommendedReorder")
+        public int recommendedReorder() { return recommendedReorder; }
     }
 
     public static class DemandPrediction {
@@ -953,14 +1671,36 @@ public class StockForecastService {
         private BigDecimal avgDailySales;
         private BigDecimal trendFactor;
         private String confidence;
+        private String metodo;
+        private Double mase;
+        private Double sesgo;
+        private String calidadFlags;
+        private double lowerBound;
+        private double upperBound;
+        private String intervalType;
 
         public DemandPrediction(Long articuloId, BigDecimal predictedDemand, BigDecimal avgDailySales,
                              BigDecimal trendFactor, String confidence) {
+            this(articuloId, predictedDemand, avgDailySales, trendFactor, confidence,
+                    null, null, null, "", 0.0, 0.0, "APROXIMADO");
+        }
+
+        public DemandPrediction(Long articuloId, BigDecimal predictedDemand, BigDecimal avgDailySales,
+                             BigDecimal trendFactor, String confidence, String metodo,
+                             Double mase, Double sesgo, String calidadFlags,
+                             double lowerBound, double upperBound, String intervalType) {
             this.articuloId = articuloId;
             this.predictedDemand = predictedDemand;
             this.avgDailySales = avgDailySales;
             this.trendFactor = trendFactor;
             this.confidence = confidence;
+            this.metodo = metodo;
+            this.mase = mase;
+            this.sesgo = sesgo;
+            this.calidadFlags = calidadFlags;
+            this.lowerBound = lowerBound;
+            this.upperBound = upperBound;
+            this.intervalType = intervalType;
         }
 
         public Long articuloId() { return articuloId; }
@@ -968,6 +1708,13 @@ public class StockForecastService {
         public BigDecimal avgDailySales() { return avgDailySales; }
         public BigDecimal trendFactor() { return trendFactor; }
         public String confidence() { return confidence; }
+        public String metodo() { return metodo; }
+        public Double mase() { return mase; }
+        public Double sesgo() { return sesgo; }
+        public String calidadFlags() { return calidadFlags; }
+        public double lowerBound() { return lowerBound; }
+        public double upperBound() { return upperBound; }
+        public String intervalType() { return intervalType; }
     }
 
     public static class InventoryHealthReport {

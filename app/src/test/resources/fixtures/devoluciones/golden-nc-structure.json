@@ -44,7 +44,7 @@
       "montoTotal": 2000,
       "subTotal": 2000,
       "montoTotalLinea": 2000,
-      "impuestos": []
+      "impuestos": [ { "codigo": "01", "tarifa": 0, "monto": 0 } ]
     }
   ],
   "resumen": {

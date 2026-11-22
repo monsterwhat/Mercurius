@@ -185,6 +185,31 @@ class DemandaServiceTest {
         }
     }
 
+    @Test
+    void familiaMarcaArticuloSinParticipacionEnLugarDeRepartirACiegas() {
+        Long familiaCodigo = null;
+        List<Long> articulos = new ArrayList<>();
+        try {
+            familiaCodigo = sembrarFamilia("familiaDormida");
+            articulos.add(sembrarArticuloConVentas("activo", familiaCodigo));
+            articulos.add(sembrarArticuloEnFamilia("dormido", familiaCodigo)); // sin ventas
+
+            LocalDate hoy = LocalDate.now();
+            DemandaService.PrediccionDemanda familia = demandaService.predecirFamilia(
+                    familiaCodigo, hoy.plusDays(1), hoy.plusDays(DIAS_PREDICCION));
+
+            assertNotNull(familia);
+            assertTrue(familia.calidadFlags().contains("NO_RECENT_PARTICIPATION"),
+                    "un articulo sin venta en la ventana de participacion debe marcarse, fue "
+                            + familia.calidadFlags());
+        } finally {
+            for (Long codigo : articulos) {
+                limpiarArticulo(codigo);
+            }
+            limpiarFamilia(familiaCodigo);
+        }
+    }
+
     /**
      * Un articulo sin ninguna venta no es un error: pronostica 0 con intervalo degenerado, metodo
      * INGENUO y MASE nulo. Es el caso de un articulo recien dado de alta, que aparece en todos los
@@ -336,6 +361,27 @@ class DemandaServiceTest {
         articulosService.create(articulo);
         assertNotNull(articulo.getCodigo(), "el alta del articulo debe asignar codigo");
         return articulo.getCodigo();
+    }
+
+    private Long sembrarArticuloEnFamilia(String etiqueta, Long familiaCodigo) {
+        Long codigo = sembrarArticulo(etiqueta);
+        Articulos articulo = em.find(Articulos.class, codigo);
+        Familia familia = em.find(Familia.class, familiaCodigo.intValue());
+        assertNotNull(familia, "la familia de fixture debe existir");
+        articulo.setFamilia(familia);
+        try {
+            utx.begin();
+            em.merge(articulo);
+            utx.commit();
+        } catch (Exception e) {
+            try {
+                utx.rollback();
+            } catch (Exception rollback) {
+                rollback.printStackTrace(); // best-effort cleanup; primary failure already reported
+            }
+            throw new IllegalStateException("No se pudo asignar la familia al articulo de prueba", e);
+        }
+        return codigo;
     }
 
     /** Familia activa propia del escenario, porque el pronostico top-down se pide por su id. */

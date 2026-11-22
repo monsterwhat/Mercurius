@@ -1,5 +1,7 @@
 package Services;
 
+import Services.pronostico.CalculadoraPronostico;
+import Services.pronostico.FlagCalidad;
 import Services.pronostico.Hiperparametros;
 import Services.pronostico.MetodoPronostico;
 import Services.pronostico.MotorPronostico;
@@ -48,8 +50,8 @@ import java.util.TreeMap;
  *       detalle por articulo de forma fiable);</li>
  *   <li>recorrer <em>rolling origins</em> —entrenar en el prefijo y comparar el horizonte con
  *       lo que realmente ocurrio— para medir precision en vez de supuesto;</li>
- *   <li>decidir el ganador y dejar una fila por metodo candidato para que el desempate sea
- *       auditable.</li>
+ *   <li>decidir el ganador por horizonte y dejar una fila por metodo candidato
+ *       para que el desempate sea auditable.</li>
  * </ul>
  *
  * <p><b>Metrica.</b> Se usa el MASE de {@link MotorPronostico#mase}: error absoluto medio del
@@ -70,9 +72,10 @@ import java.util.TreeMap;
  *
  * <p><b>Alcance de la reevaluacion.</b> {@link #reelegirTodo()} abre una transaccion por
  * articulo, no una para todo el catalogo: un articulo problematico no puede tirar abajo la
- * seleccion de los demas. El coste (una consulta de movimientos y hasta 4 pronosticos por origen
- * y articulo) es aceptable para el tamano de catalogo actual; si creciera, el siguiente paso es
- * es laminar la lista de articulos candidatos por un filtro de rotacion.</p>
+ * seleccion de los demas. El coste (una consulta de movimientos y hasta 7 pronosticos por origen,
+ * por cada uno de los horizontes 7/14/30/60) es aceptable mientras el catalogo con rotacion sea
+ * manejable; si creciera, el siguiente paso es laminar la lista de articulos candidatos por un
+ * filtro de rotacion.</p>
  *
  * @author Mercurius
  */
@@ -108,12 +111,41 @@ public class SeleccionMetodoService {
             "HOLT_AMORTIGUADO",
             "HOLT_WINTERS");
 
+    /**
+     * Horizontes que se evaluan y persisten por separado. Un ganador medido a
+     * 14 dias no se reutiliza a 60: el horizonte cambia el error del modelo y
+     * la planificacion de inventario tiene que ver el ganador que corresponde.
+     */
+    public static final List<Integer> HORIZONTES_SOPORTADOS = List.of(7, 14, 30, 60);
+
+    /**
+     * Lineas base obligatorias. Un modelo complejo solo se elige si mejora a
+     * la mejor de estas por al menos {@link #UMBRAL_MEJORA_BASELINE}.
+     */
+    private static final List<MetodoPronostico> BASELINES = List.of(
+            MetodoPronostico.INGENUO,
+            MetodoPronostico.ESTACIONAL_INGENUO,
+            MetodoPronostico.MEDIA_MOVIL);
+
+    /** Mejora minima (5 %) sobre la mejor linea base para preferir un modelo complejo. */
+    private static final double UMBRAL_MEJORA_BASELINE = 0.05;
+
+    /** Si el ganador y el segundo quedan a menos de este margen, la eleccion es inestable. */
+    private static final double UMBRAL_ESTABILIDAD = 0.02;
+
+    /** Version del pipeline de seleccion, persistida en cada fila. */
+    public static final String MODELO_VERSION = CalculadoraPronostico.MODELO_VERSION;
+
     /** Horizonte por defecto de la reevaluacion semanal, en dias. */
     @ConfigProperty(name = "mercurius.pronostico.horizonte-dias", defaultValue = "14")
     int horizontePorDefecto;
 
-    /** Numero de origenes moviles por defecto de la reevaluacion semanal. */
-    @ConfigProperty(name = "mercurius.pronostico.origenes", defaultValue = "3")
+    /**
+     * Numero de origenes moviles por defecto. Ocho es el minimo con el que el
+     * MASE deja de moverse solo por el ruido de un origen; con historia
+     * suficiente se usan mas.
+     */
+    @ConfigProperty(name = "mercurius.pronostico.origenes", defaultValue = "8")
     int origenesPorDefecto;
 
     @Inject
@@ -127,11 +159,18 @@ public class SeleccionMetodoService {
     // ------------------------------------------------------------------
 
     /**
-     * Reevalua un articulo: mide cada metodo candidato de su regimen con origenes moviles y
-     * reemplaza por completo las filas de precision anteriores de ese articulo.
+     * Reevalua un articulo para un horizonte: mide cada candidato del regimen
+     * mas las tres lineas base obligatorias con origenes moviles y reemplaza
+     * las filas de precision de ese (articulo, horizonte).
      *
-     * <p>El borrado es previo y total (una fila por metodo candidato elegible, nunca mas), de
-     * modo que repetir la evaluacion no duplica resultados: es idempotente.</p>
+     * <p><b>Politica de seleccion.</b> Un modelo complejo solo gana si mejora
+     * a la mejor linea base (ingenuo, estacional ingenuo o media movil) por al
+     * menos un 5 %. Si no, se queda la linea base. Ante una diferencia menor al
+     * 2 % entre el ganador y el segundo se marca {@link FlagCalidad#MODEL_UNSTABLE}
+     * y se prefiere el mas simple.</p>
+     *
+     * <p>El borrado es por horizonte, no total: evaluar 14 dias no borra la
+     * seleccion de 60. Repetir la misma corrida sigue siendo idempotente.</p>
      *
      * @param codigoArticulo articulo a evaluar
      * @param horizonteDias  dias hacia adelante comparados en cada origen
@@ -154,7 +193,7 @@ public class SeleccionMetodoService {
         if (serie.size() < 2) {
             LOG.warn("evaluarArticulo: el articulo " + codigoArticulo + " tiene "
                     + serie.size() + " dia(s) de historia; se borran sus filas de precision por no ser evaluable");
-            borrarPrecision(codigoArticulo);
+            borrarPrecision(codigoArticulo, horizonte);
             return 0;
         }
 
@@ -163,20 +202,19 @@ public class SeleccionMetodoService {
             LOG.warn("evaluarArticulo: el articulo " + codigoArticulo + " tiene " + serie.size()
                     + " dia(s) de historia y no admite ningun origen con horizonte de " + horizonte
                     + " dias; se borran sus filas de precision por no ser evaluable");
-            borrarPrecision(codigoArticulo);
+            borrarPrecision(codigoArticulo, horizonte);
             return 0;
         }
 
         Regimen regimen = MotorPronostico.clasificar(serie);
-        List<MetodoPronostico> candidatos = MotorPronostico.candidatos(regimen);
+        List<MetodoPronostico> candidatos = candidatosConBaselines(regimen);
 
         Map<MetodoPronostico, Acumulador> metricas = new EnumMap<>(MetodoPronostico.class);
         for (MetodoPronostico metodo : candidatos) {
             metricas.put(metodo, new Acumulador());
         }
 
-        for (int indice : indicesOrigen) {
-            // El entrenamiento cierra en el propio dia del origen; el horizonte son los
+        for (int indice : indicesOrigen) {            // El entrenamiento cierra en el propio dia del origen; el horizonte son los
             // horizonte dias siguientes, que son los que se comparan con lo real.
             List<SerieDiaria> entrenamiento = List.copyOf(serie.subList(0, indice + 1));
             List<Double> reales = new ArrayList<>(horizonte);
@@ -202,61 +240,240 @@ public class SeleccionMetodoService {
             }
         }
 
-        borrarPrecision(codigoArticulo);
+        borrarPrecision(codigoArticulo, horizonte);
 
-        LocalDateTime ahora = LocalDateTime.now();
-        int guardadas = 0;
+        List<FilaEvaluada> evaluadas = new ArrayList<>();
         for (Map.Entry<MetodoPronostico, Acumulador> entrada : metricas.entrySet()) {
             Acumulador acumulado = entrada.getValue();
             if (!acumulado.hayObservaciones()) {
                 continue;
             }
+            evaluadas.add(new FilaEvaluada(entrada.getKey(), acumulado));
+        }
+        Seleccion seleccion = elegirGanador(evaluadas);
+
+        LocalDateTime ahora = LocalDateTime.now();
+        java.time.LocalDate finHistoria = serie.get(serie.size() - 1).fecha();
+        int guardadas = 0;
+        for (FilaEvaluada evaluada : evaluadas) {
             PrecisionPronostico fila = new PrecisionPronostico();
             fila.setArticulo(articulo);
-            fila.setMetodo(entrada.getKey().name());
-            fila.setMase(acumulado.mase());
-            fila.setSesgo(acumulado.sesgo());
+            fila.setMetodo(evaluada.metodo().name());
+            fila.setMase(evaluada.acumulador().mase());
+            fila.setSesgo(evaluada.acumulador().sesgo());
+            fila.setMae(evaluada.acumulador().mae());
             fila.setHorizonteDias(horizonte);
+            fila.setOrigenes(indicesOrigen.size());
+            fila.setObservaciones(evaluada.acumulador().observaciones());
+            fila.setFechaFinHistoria(finHistoria);
+            fila.setModeloVersion(MODELO_VERSION);
+            fila.setSeleccionado(evaluada.metodo() == seleccion.ganador());
+            fila.setMejoraBaseline(evaluada.metodo() == seleccion.ganador()
+                    ? seleccion.mejoraBaseline() : null);
+            fila.setMetodoBaseline(seleccion.metodoBaseline() == null
+                    ? null : seleccion.metodoBaseline().name());
+            fila.setCalidadFlags(seleccion.inestable() ? FlagCalidad.MODEL_UNSTABLE.name() : null);
             fila.setFechaCalculo(ahora);
             entityManager.persist(fila);
             guardadas++;
         }
 
-        LOG.info("evaluarArticulo: articulo " + codigoArticulo + " regimen=" + regimen
-                + " origenes=" + indicesOrigen.size() + " horizon=" + horizonte
-                + " candidatos=" + candidatos.size() + " filas=" + guardadas);
+        LOG.infof("evaluarArticulo: articulo=%d regimen=%s horizonte=%d origenes=%d "
+                        + "candidatos=%d filas=%d ganador=%s mase=%s baseline=%s mejora=%s inestable=%s",
+                codigoArticulo, regimen, horizonte, indicesOrigen.size(), candidatos.size(),
+                guardadas, seleccion.ganador(), seleccion.mase(),
+                seleccion.metodoBaseline(), seleccion.mejoraBaseline(), seleccion.inestable());
         return guardadas;
+    }
+
+    /**
+     * Reevalua un articulo en todos los horizontes soportados. Cada horizonte
+     * conserva su propio ganador; el coste es proporcional al numero de
+     * horizontes y por eso la corrida semanal lo usa en lugar de reutilizar el
+     * ganador de 14 dias.
+     *
+     * @return total de filas guardadas en todos los horizontes
+     */
+    @Transactional
+    public int evaluarTodosHorizontes(@Nonnull Long codigoArticulo, int origenes) {
+        int total = 0;
+        for (int horizonte : HORIZONTES_SOPORTADOS) {
+            total += evaluarArticulo(codigoArticulo, horizonte, origenes);
+        }
+        return total;
+    }
+
+    /** Candidatos del regimen mas las tres lineas base, sin duplicados y con las bases primero. */
+    private static List<MetodoPronostico> candidatosConBaselines(Regimen regimen) {
+        List<MetodoPronostico> lista = new ArrayList<>(BASELINES);
+        for (MetodoPronostico metodo : MotorPronostico.candidatos(regimen)) {
+            if (!lista.contains(metodo)) {
+                lista.add(metodo);
+            }
+        }
+        return List.copyOf(lista);
     }
 
     // ------------------------------------------------------------------
     // Seleccion
     // ------------------------------------------------------------------
 
-    /**
-     * Metodo con mejor MASE de los almacenados para el articulo.
-     *
-     * <p>Solo se consideran las filas con MASE no nulo (una metrica indefinida no es comparable) y
-     * el empate se resuelve por el orden de simplicidad de {@link #ORDEN_SIMPLICIDAD}.</p>
-     *
-     * @param codigoArticulo articulo consultado
-     * @return nombre del metodo elegido, o {@link Optional#empty()} si no hay ninguna fila con
-     *         MASE definido
-     */
-    @Transactional(TxType.SUPPORTS)
-    public Optional<String> metodoElegido(@Nonnull Long codigoArticulo) {
-        List<PrecisionPronostico> filas = entityManager.createQuery(
-                        "SELECT p FROM PrecisionPronostico p "
-                                + "WHERE p.articulo.codigo = :codigo AND p.mase IS NOT NULL",
-                        PrecisionPronostico.class)
-                .setParameter("codigo", codigoArticulo)
-                .getResultList();
+    /** Par metodo/acumulador de una corrida. */
+    private record FilaEvaluada(MetodoPronostico metodo, Acumulador acumulador) {
+    }
 
-        return mejorFila(filas).map(PrecisionPronostico::getMetodo);
+    /** Resultado de aplicar la politica de seleccion a un conjunto de filas. */
+    private record Seleccion(@Nonnull MetodoPronostico ganador,
+                             @Nullable Double mase,
+                             @Nullable MetodoPronostico metodoBaseline,
+                             @Nullable Double mejoraBaseline,
+                             boolean inestable) {
     }
 
     /**
-     * Fila ganadora entre las precisiones ya cargadas de un artículo: menor
-     * MASE, y ante empate el método más simple según {@link #ORDEN_SIMPLICIDAD}.
+     * Aplica la politica: linea base salvo mejora demostrada, y el metodo mas
+     * simple ante empate. Devuelve tambien la mejora sobre la base y si el
+     * resultado es inestable.
+     */
+    private static Seleccion elegirGanador(List<FilaEvaluada> filas) {
+        if (filas.isEmpty()) {
+            // No deberia ocurrir: el llamador solo invoca con filas acumuladas.
+            return new Seleccion(MetodoPronostico.INGENUO, null, null, null, false);
+        }
+
+        List<FilaEvaluada> conMase = filas.stream()
+                .filter(fila -> fila.acumulador().mase() != null)
+                .sorted(Comparator
+                        .comparingDouble((FilaEvaluada fila) -> fila.acumulador().mase())
+                        .thenComparingInt(fila -> posicionSimplicidad(fila.metodo().name())))
+                .toList();
+
+        if (conMase.isEmpty()) {
+            FilaEvaluada simple = filas.stream()
+                    .min(Comparator.comparingInt(fila -> posicionSimplicidad(fila.metodo().name())))
+                    .orElse(filas.get(0));
+            return new Seleccion(simple.metodo(), null, null, null, false);
+        }
+
+        FilaEvaluada mejorBase = conMase.stream()
+                .filter(fila -> BASELINES.contains(fila.metodo()))
+                .findFirst()
+                .orElse(null);
+        FilaEvaluada mejorGlobal = conMase.get(0);
+
+        FilaEvaluada ganador;
+        if (mejorBase == null) {
+            ganador = mejorGlobal;
+        } else if (mejorGlobal == mejorBase || BASELINES.contains(mejorGlobal.metodo())) {
+            ganador = mejorBase;
+        } else {
+            double maseBase = mejorBase.acumulador().mase();
+            double maseComplejo = mejorGlobal.acumulador().mase();
+            boolean mejoraSuficiente = maseBase > 0.0
+                    && maseComplejo <= maseBase * (1.0 - UMBRAL_MEJORA_BASELINE);
+            ganador = mejoraSuficiente ? mejorGlobal : mejorBase;
+        }
+
+        Double maseGanador = ganador.acumulador().mase();
+        Double mejora = null;
+        MetodoPronostico nombreBase = null;
+        if (mejorBase != null) {
+            nombreBase = mejorBase.metodo();
+            double maseBase = mejorBase.acumulador().mase();
+            if (maseBase > 0.0 && maseGanador != null) {
+                mejora = (maseBase - maseGanador) / maseBase;
+            }
+        }
+
+        boolean inestable = false;
+        if (conMase.size() >= 2) {
+            FilaEvaluada segundo = conMase.get(1);
+            double diferencia = Math.abs(segundo.acumulador().mase() - maseGanador);
+            double escala = Math.max(Math.abs(maseGanador), 1e-9);
+            inestable = diferencia / escala <= UMBRAL_ESTABILIDAD;
+        }
+
+        return new Seleccion(ganador.metodo(), maseGanador, nombreBase, mejora, inestable);
+    }
+
+    /**
+     * Metodo con mejor MASE de los almacenados para el articulo en el horizonte
+     * por defecto. Se conserva por compatibilidad; la planificacion real debe
+     * pedir el horizonte que va a usar con {@link #metodoElegido(Long, int)}.
+     */
+    @Transactional(TxType.SUPPORTS)
+    public Optional<String> metodoElegido(@Nonnull Long codigoArticulo) {
+        return metodoElegido(codigoArticulo, Math.max(1, horizontePorDefecto));
+    }
+
+    /**
+     * Metodo ganador para un (articulo, horizonte). Solo se consideran filas
+     * del horizonte exacto: reutilizar el ganador de 14 dias para 60 seria
+     * exactamente el error que esta capa tiene que evitar.
+     */
+    @Transactional(TxType.SUPPORTS)
+    public Optional<String> metodoElegido(@Nonnull Long codigoArticulo, int horizonteDias) {
+        List<PrecisionPronostico> filas = entityManager.createQuery(
+                        "SELECT p FROM PrecisionPronostico p "
+                                + "WHERE p.articulo.codigo = :codigo AND p.horizonteDias = :horizonte",
+                        PrecisionPronostico.class)
+                .setParameter("codigo", codigoArticulo)
+                .setParameter("horizonte", Math.max(1, horizonteDias))
+                .getResultList();
+
+        return mejorFila(filas, horizonteDias).map(PrecisionPronostico::getMetodo);
+    }
+
+    /** Fila ganadora de un articulo y horizonte, o vacio si no hay evaluacion. */
+    @Transactional(TxType.SUPPORTS)
+    public Optional<PrecisionPronostico> seleccionPara(@Nonnull Long codigoArticulo, int horizonteDias) {
+        List<PrecisionPronostico> filas = entityManager.createQuery(
+                        "SELECT p FROM PrecisionPronostico p "
+                                + "WHERE p.articulo.codigo = :codigo AND p.horizonteDias = :horizonte",
+                        PrecisionPronostico.class)
+                .setParameter("codigo", codigoArticulo)
+                .setParameter("horizonte", Math.max(1, horizonteDias))
+                .getResultList();
+        return mejorFila(filas, horizonteDias);
+    }
+
+    /**
+     * Selecciones ganadoras de todo el catalogo para un horizonte, en UNA
+     * consulta. Se usa en el reporte masivo: preguntar articulo por articulo
+     * convertiria una pagina en 250.000 consultas.
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public Map<Long, PrecisionPronostico> selecciones(int horizonteDias) {
+        int horizonte = Math.max(1, horizonteDias);
+        List<PrecisionPronostico> filas = entityManager.createQuery(
+                        "SELECT p FROM PrecisionPronostico p "
+                                + "WHERE p.horizonteDias = :horizonte "
+                                + "AND (p.seleccionado = true OR p.seleccionado IS NULL)",
+                        PrecisionPronostico.class)
+                .setParameter("horizonte", horizonte)
+                .getResultList();
+
+        Map<Long, List<PrecisionPronostico>> porArticulo = new java.util.HashMap<>();
+        for (PrecisionPronostico fila : filas) {
+            if (fila.getArticulo() != null && fila.getArticulo().getCodigo() != null) {
+                porArticulo.computeIfAbsent(fila.getArticulo().getCodigo(),
+                        clave -> new ArrayList<>()).add(fila);
+            }
+        }
+        Map<Long, PrecisionPronostico> resultado = new java.util.HashMap<>();
+        for (Map.Entry<Long, List<PrecisionPronostico>> entrada : porArticulo.entrySet()) {
+            mejorFila(entrada.getValue(), horizonte)
+                    .ifPresent(fila -> resultado.put(entrada.getKey(), fila));
+        }
+        return Map.copyOf(resultado);
+    }
+
+    /**
+     * Fila ganadora entre las precisiones ya cargadas de un artículo: la
+     * marcada como {@code seleccionado} por la politica; si no hay marca
+     * (filas antiguas o sembradas a mano), menor MASE con desempate por
+     * simplicidad.
      *
      * <p>Existe para que una vista que ya trajo todas las filas de varios
      * artículos en una sola consulta pueda elegir sin volver a preguntar por
@@ -269,10 +486,32 @@ public class SeleccionMetodoService {
     @Nonnull
     public static Optional<PrecisionPronostico> mejorFila(
             @Nullable List<PrecisionPronostico> filas) {
+        return mejorFila(filas, 0);
+    }
+
+    /**
+     * Igual que {@link #mejorFila(List)} pero restringida a un horizonte.
+     * {@code horizonte <= 0} significa "cualquiera" (compatibilidad).
+     */
+    @Nonnull
+    public static Optional<PrecisionPronostico> mejorFila(
+            @Nullable List<PrecisionPronostico> filas, int horizonte) {
         if (filas == null || filas.isEmpty()) {
             return Optional.empty();
         }
-        return filas.stream()
+        List<PrecisionPronostico> delHorizonte = horizonte <= 0 ? filas : filas.stream()
+                .filter(fila -> fila.getHorizonteDias() == horizonte)
+                .toList();
+        if (delHorizonte.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<PrecisionPronostico> marcada = delHorizonte.stream()
+                .filter(fila -> Boolean.TRUE.equals(fila.getSeleccionado()))
+                .findFirst();
+        if (marcada.isPresent()) {
+            return marcada;
+        }
+        return delHorizonte.stream()
                 .filter(fila -> fila.getMase() != null)
                 .min(Comparator.comparingDouble(PrecisionPronostico::getMase)
                         .thenComparingInt(fila -> posicionSimplicidad(fila.getMetodo()))
@@ -280,7 +519,8 @@ public class SeleccionMetodoService {
     }
 
     /**
-     * Reevalua todos los articulos activos con el horizonte y el numero de origenes configurados.
+     * Reevalua todos los articulos activos en todos los horizontes soportados
+     * con el numero de origenes configurado.
      *
      * <p>Cada articulo se procesa en su propia transaccion y los errores se registran y se
      * saltan: un articulo con datos raros no puede dejar la seleccion del resto del catalogo a
@@ -291,7 +531,6 @@ public class SeleccionMetodoService {
      * @return numero de articulos que quedaron con al menos una fila de precision
      */
     public int reelegirTodo() {
-        int horizonte = Math.max(1, horizontePorDefecto);
         int origenesPedidos = Math.max(1, origenesPorDefecto);
 
         List<Long> codigos = enTransaccion(() -> entityManager.createQuery(
@@ -309,7 +548,7 @@ public class SeleccionMetodoService {
                     }
                     // Auto-invocacion: el interceptor de @Transactional no se aplica y la
                     // transaccion abierta por enTransaccion() es la que gobierna la unidad.
-                    return evaluarArticulo(codigo, horizonte, origenesPedidos);
+                    return evaluarTodosHorizontes(codigo, origenesPedidos);
                 });
                 if (filas > 0) {
                     reevaluados++;
@@ -320,9 +559,9 @@ public class SeleccionMetodoService {
             }
         }
 
-        LOG.info("reelegirTodo: " + reevaluados + " de " + codigos.size()
-                + " articulos activos quedaron con metodo elegido (horizonte=" + horizonte
-                + ", origenes=" + origenesPedidos + ")");
+        LOG.infof("reelegirTodo: %d de %d articulos activos quedaron con metodo elegido "
+                        + "(horizontes=%s, origenes=%d)",
+                reevaluados, codigos.size(), HORIZONTES_SOPORTADOS, origenesPedidos);
         return reevaluados;
     }
 
@@ -387,7 +626,8 @@ public class SeleccionMetodoService {
                 return min.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             }
         } catch (RuntimeException e) {
-            LOG.warnf("sin fecha minima para %d, se usa hoy", codigoArticulo);
+            LOG.errorf("sin fecha minima para %d; no se degrada a hoy", codigoArticulo);
+            throw e;
         }
         return LocalDate.now();
     }
@@ -428,10 +668,87 @@ public class SeleccionMetodoService {
         }
 
         List<SerieDiaria> serie = new ArrayList<>(porDia.size());
-        for (LocalDate dia = porDia.firstKey(); !dia.isAfter(porDia.lastKey()); dia = dia.plusDays(1)) {
+        for (LocalDate dia = porDia.firstKey(); !dia.isAfter(hoy); dia = dia.plusDays(1)) {
             serie.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0.0)));
         }
         return serie;
+    }
+
+    /**
+     * Series diarias de TODO el catalogo activo en una sola consulta, con la
+     * misma definicion de demanda que {@link #serieDiaria(Long, int)}: solo
+     * movimientos {@code 'Venta'} enlazados por la clave del articulo.
+     *
+     * <p>La rejilla empieza en el primer dia con venta dentro de la ventana y
+     * termina hoy; los dias intermedios sin movimiento valen 0. Arrancar en el
+     * primer dia con venta —y no en el inicio de la ventana— evita castigar a
+     * un articulo nuevo con ceros de antes de existir, sin dejar de usar dias
+     * naturales como denominador.</p>
+     *
+     * <p>Es la unica lectura masiva de demanda del reporte. El enlace es por
+     * {@code articulo_codigo} (FK), nunca por nombre: dos articulos con el
+     * mismo nombre no comparten historia.</p>
+     *
+     * @param dias ventana retrospectiva en dias; {@code <= 0} usa 180
+     * @return mapa articulo -> serie diaria cero-rellenada (solo articulos con venta)
+     */
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public Map<Long, List<SerieDiaria>> seriesDiariasActivas(int dias) {
+        int ventana = dias <= 0 ? 180 : Math.max(1, dias);
+        LocalDate hoy = LocalDate.now();
+        LocalDate inicio = hoy.minusDays(ventana);
+        ZoneId zona = ZoneId.systemDefault();
+        Date desde = Date.from(inicio.atStartOfDay(zona).toInstant());
+        Date hasta = Date.from(hoy.plusDays(1).atStartOfDay(zona).toInstant().minusMillis(1));
+
+        List<Object[]> movimientos = entityManager.createQuery("""
+                        SELECT i.articulo.codigo,
+                               CAST(i.fechaMovimiento AS date),
+                               SUM(ABS(i.cantidad))
+                        FROM Inventario i
+                        WHERE i.tipoMovimiento = 'Venta'
+                          AND (i.status IS NULL OR i.status = true)
+                          AND i.fechaMovimiento BETWEEN :desde AND :hasta
+                          AND i.articulo.status = true
+                        GROUP BY i.articulo.codigo, CAST(i.fechaMovimiento AS date)
+                        ORDER BY i.articulo.codigo, CAST(i.fechaMovimiento AS date)
+                        """, Object[].class)
+                .setParameter("desde", desde)
+                .setParameter("hasta", hasta)
+                .getResultList();
+
+        Map<Long, TreeMap<LocalDate, Double>> porArticulo = new java.util.HashMap<>();
+        for (Object[] movimiento : movimientos) {
+            if (movimiento[0] == null) {
+                continue;
+            }
+            long codigo = ((Number) movimiento[0]).longValue();
+            LocalDate dia = aFecha(movimiento[1]);
+            if (dia == null || dia.isBefore(inicio) || dia.isAfter(hoy)) {
+                continue;
+            }
+            double unidades = movimiento[2] instanceof Number numero
+                    ? Math.abs(numero.doubleValue()) : 0.0;
+            porArticulo.computeIfAbsent(codigo, clave -> new TreeMap<>())
+                    .merge(dia, unidades, Double::sum);
+        }
+
+        Map<Long, List<SerieDiaria>> series = new java.util.HashMap<>(porArticulo.size());
+        for (Map.Entry<Long, TreeMap<LocalDate, Double>> entrada : porArticulo.entrySet()) {
+            TreeMap<LocalDate, Double> porDia = entrada.getValue();
+            if (porDia.isEmpty()) {
+                continue;
+            }
+            List<SerieDiaria> serie = new ArrayList<>();
+            for (LocalDate dia = porDia.firstKey(); !dia.isAfter(hoy); dia = dia.plusDays(1)) {
+                serie.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0.0)));
+            }
+            series.put(entrada.getKey(), List.copyOf(serie));
+        }
+        LOG.debugf("seriesDiariasActivas: %d articulo(s) con venta en %d dia(s) de ventana",
+                series.size(), ventana);
+        return Map.copyOf(series);
     }
 
     /**
@@ -516,6 +833,15 @@ public class SeleccionMetodoService {
     private void borrarPrecision(@Nonnull Long codigoArticulo) {
         entityManager.createQuery("DELETE FROM PrecisionPronostico p WHERE p.articulo.codigo = :codigo")
                 .setParameter("codigo", codigoArticulo)
+                .executeUpdate();
+    }
+
+    /** Borra solo las filas de un (articulo, horizonte): reevaluar 14 no borra 60. */
+    private void borrarPrecision(@Nonnull Long codigoArticulo, int horizonteDias) {
+        entityManager.createQuery("DELETE FROM PrecisionPronostico p "
+                        + "WHERE p.articulo.codigo = :codigo AND p.horizonteDias = :horizonte")
+                .setParameter("codigo", codigoArticulo)
+                .setParameter("horizonte", Math.max(1, horizonteDias))
                 .executeUpdate();
     }
 
@@ -635,6 +961,23 @@ public class SeleccionMetodoService {
         /** Sesgo escalado, o {@code null} si es indefinido. */
         Double sesgo() {
             return aNullable(MotorPronostico.sesgoEscalado(reales, pronosticos, escalaMedia()));
+        }
+
+        /** MAE en unidades por periodo (media de |real - pronostico|), o {@code null} sin pares. */
+        Double mae() {
+            if (reales.isEmpty()) {
+                return null;
+            }
+            double suma = 0.0;
+            for (int i = 0; i < reales.size(); i++) {
+                suma += Math.abs(reales.get(i) - pronosticos.get(i));
+            }
+            return suma / reales.size();
+        }
+
+        /** Observaciones real/pronostico acumuladas (origenes x horizonte menos huecos). */
+        int observaciones() {
+            return reales.size();
         }
 
         /**

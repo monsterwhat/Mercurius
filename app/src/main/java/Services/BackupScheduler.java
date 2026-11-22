@@ -26,6 +26,23 @@ public class BackupScheduler {
     @Inject
     BackupService backupService;
 
+    @Scheduled(cron = "0 0 8 * * ?", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
+    void comprobarVigenciaBackup() {
+        try {
+            BackupService.EstadoBackup estado = backupService.estadoBackup();
+            if (estado.vencido()) {
+                LOG.warn("El respaldo mas reciente no es válido o está vencido: "
+                        + (estado.archivo() == null ? "(sin archivo)" : estado.archivo())
+                        + " | edadDias=" + estado.edadDias()
+                        + " | verificado=" + estado.verificado()
+                        + " | motivo=" + estado.motivo()
+                        + " | source=BackupScheduler.comprobarVigenciaBackup()");
+            }
+        } catch (RuntimeException e) {
+            LOG.error("No se pudo comprobar la vigencia del respaldo", e);
+        }
+    }
+
     @Scheduled(cron = "0 */10 * * * ?", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     void respaldoAutomatico() {
         try {

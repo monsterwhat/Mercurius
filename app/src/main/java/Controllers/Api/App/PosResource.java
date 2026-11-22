@@ -47,6 +47,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -249,6 +250,24 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Nonnull
     UriInfo uriInfo;
 
+    @Context
+    @Nonnull
+    HttpHeaders headers;
+
+    /**
+     * Terminal that owns the cart. Clients that operate more than one terminal
+     * send {@code X-Terminal-Id} (or {@code ?terminal=}); old clients keep the
+     * default terminal and the historical one-cart-per-cashier behavior.
+     */
+    private @Nullable String terminalId() {
+        String header = headers.getHeaderString("X-Terminal-Id");
+        if (header != null && !header.isBlank()) {
+            return header.trim();
+        }
+        String query = uriInfo.getQueryParameters().getFirst("terminal");
+        return query == null || query.isBlank() ? null : query.trim();
+    }
+
     // ── Scan / add / remove ─────────────────────────────────────────────
 
     /**
@@ -264,7 +283,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
 
         // Mirrors the JSF bindings: page writes both fields onto cartCtx before
         // invoking processCodigoBarra(); the service validates and clears them.
@@ -312,7 +331,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                             + "o no tiene código CAByS asignado; no se puede facturar.");
         }
 
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         carritoService.addArticulo(ctx, articulo, cantidad);
 
@@ -363,7 +382,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return userNotProvisioned(username);
         }
 
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -406,7 +425,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     .build();
         }
 
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ctx.setSelectedClient(cliente);
         // Descuento del cliente: se aplica por LINEA (no al total). Si es 0,
         // limpia el descuento de las lineas no promocionales.
@@ -441,7 +460,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return badRequest("VALIDATION_ERROR", "Debe enviar al menos una entrada de pago");
         }
 
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         entry.setPagos(pagos);
 
@@ -544,7 +563,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         // Serialize one cashier's concurrent submits on their own entry. Without
         // this, two simultaneous POSTs both pass the idempotency-stamp check
         // below and both invoice. Only the same user's requests ever contend on
@@ -891,7 +910,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         // 12. Cleanup: drop the whole session entry (staged payments, supervisor
         //     authorization and cart die together) — the REST twin of throwing
         //     the JSF view away. The next getOrCreate starts a fresh cart.
-        cartSessionStore.remove(username);
+        cartSessionStore.remove(username, terminalId());
 
         FacturarResult out = new FacturarResult();
         out.pdfUrl = uriBasePath() + "api/app/pos/facturas/" + fileName;
@@ -985,7 +1004,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             }
         }
 
-        cartSessionStore.remove(username);
+        cartSessionStore.remove(username, terminalId());
 
         FacturarResult out = new FacturarResult();
         out.pdfUrl = uriBasePath() + "api/app/pos/facturas/" + fileName;
@@ -1053,7 +1072,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             return userNotProvisioned(username);
         }
 
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         CartOperationResult result = carritoService.cancel(ctx, currentUser);
         entry.setPagos(new ArrayList<>());
@@ -1080,7 +1099,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        return Response.ok(ApiResponse.ok(toCartSummary(cartSessionStore.getOrCreate(username))))
+        return Response.ok(ApiResponse.ok(toCartSummary(cartSessionStore.getOrCreate(username, terminalId()))))
                 .build();
     }
 
@@ -1126,7 +1145,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 return invalidCredentials();
             }
 
-            cartSessionStore.getOrCreate(username).setAuthorizedBy(authUser.getUsername());
+            cartSessionStore.getOrCreate(username, terminalId()).setAuthorizedBy(authUser.getUsername());
             return Response.ok(ApiResponse.ok(
                     new AppAuthResource.SupervisorAuthorizationDTO(
                             authUser.getUsername(), deriveRoles(authUser)))).build();
@@ -1230,7 +1249,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ctx.setCodigoBarra(codigoBarra);
         ctx.setCantidadArticulo(parsePositiveOrDefault(cantidad));
 
@@ -1269,7 +1288,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
             return htmlOk(cartPanelTemplate.data("panel",
@@ -1319,7 +1338,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     panelModel(username, message("VALIDATION_ERROR", "error",
                             "La cantidad debe ser mayor a cero", null))).render());
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
             return htmlOk(cartPanelTemplate.data("panel",
@@ -1364,7 +1383,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                             "Solo un administrador puede aplicar descuentos o ajustar precios",
                             "Pida a un administrador que autorice el descuento."))).render());
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         Usuarios usuarioAjuste = loginService.findByUsername(username);
         String clienteAjuste = ctx.getSelectedClient() != null
                 ? ctx.getSelectedClient().getName() : null;
@@ -1490,7 +1509,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                             "Solo un administrador puede aplicar descuentos o ajustar precios",
                             "Pida a un administrador que autorice el descuento."))).render());
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
             return htmlOk(cartPanelTemplate.data("panel",
@@ -1605,7 +1624,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
         if (target == null) {
             return htmlOk(cartPanelTemplate.data("panel",
@@ -1700,7 +1719,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     panelModel(username, message("CLIENTE_NO_ENCONTRADO", "error",
                             "No existe un cliente con ese código", null))).render());
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         ctx.setSelectedClient(cliente);
         // Descuento del cliente por LINEA (igual que el endpoint JSON).
         CarritoService.aplicarDescuentoCliente(ctx);
@@ -1769,7 +1788,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                             null))).render());
         }
         BigDecimal qty = parsePositiveOrDefault(cantidad);
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         carritoService.addArticulo(ctx, articulo, qty);
         return htmlOk(cartPanelTemplate.data("panel",
                 panelModel(username, message("ARTICULO_AGREGADO", "info",
@@ -1789,7 +1808,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         Clientes cliente = ctx.getSelectedClient();
         if (cliente == null || cliente.getCode() == 0) {
             return badRequest("PUNTOS_SIN_CLIENTE",
@@ -1820,7 +1839,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (username == null) {
             return unauthenticated();
         }
-        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username, terminalId()).getCartContext();
         Clientes cliente = ctx.getSelectedClient();
         if (cliente == null || cliente.getCode() == 0) {
             return htmlOk(cartPanelTemplate.data("panel",
@@ -1965,7 +1984,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                                         LOG.info("Intento fallido de autorización de: " + supervisor + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                     errorGeneral = "Usuario o contraseña incorrectos";
                 } else {
-                    cartSessionStore.getOrCreate(username).setAuthorizedBy(authUser.getUsername());
+                    cartSessionStore.getOrCreate(username, terminalId()).setAuthorizedBy(authUser.getUsername());
                     exito = true;
                 }
             } catch (RuntimeException e) {
@@ -2132,7 +2151,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         CartOperationResult result = carritoService.cancel(ctx, currentUser);
         entry.setPagos(new ArrayList<>());
@@ -2154,7 +2173,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      */
     @Nonnull
     Map<String, Object> panelModel(@Nonnull String username, @Nullable OperationMessage mensaje) {
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
 
         List<Map<String, Object>> items = new ArrayList<>();
@@ -2214,7 +2233,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     }
 
     Map<String, Object> cobroModel(@Nonnull String username, @Nullable String tipoDocumento) {
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         BigDecimal total = carritoService.calculateTotalCarrito(ctx);
         Map<String, Object> badge = tipoCambioBadge();
@@ -2237,7 +2256,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     /** Payment-dialog view model: staged rows + server-computed totals. */
     @Nonnull
     Map<String, Object> dialogModel(@Nonnull String username, @Nullable OperationMessage mensaje) {
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
 
         List<Map<String, Object>> filas = new ArrayList<>();
@@ -2434,7 +2453,7 @@ ComprobantesEmitidosService comprobantesEmitidosService;
 
     /** Shared staging of payment entries (JSON + form twins). */
     private void stagePagos(@Nonnull String username, @Nonnull List<EntradaPago> pagos) {
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username, terminalId());
         CartSessionContext ctx = entry.getCartContext();
         entry.setPagos(pagos);
 

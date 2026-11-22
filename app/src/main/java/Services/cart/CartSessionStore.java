@@ -12,35 +12,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * T37-prep (plan mercurius-jsf-to-api-migration): per-cashier POS cart session
- * store for the future REST POS surface.
+ * Per-cashier, per-terminal POS cart session store for the REST POS surface.
  *
- * <p>One {@link CartSessionContext} per authenticated username (user decision:
- * un carrito por cajero logueado). The context itself stays caller-owned
- * mutable state exactly as extracted in T5 — this store only decides WHO owns
- * which instance and for how long. {@link CartSessionContext} is NOT modified.</p>
+ * <p><b>Deployment assumption (documented, not implicit).</b> This store is an
+ * in-process {@link ConcurrentHashMap}: it is safe for a <b>single Mercurius
+ * instance</b>, but a restart, a second instance, or a failover loses every
+ * active cart. If the deployment grows to multiple instances or requires
+ * failover, this class must be replaced by a shared store (database, Redis or
+ * similar) with expiry and cross-instance serialization. Until then the
+ * limitation is explicit and the terminal identifier prevents two terminals
+ * of the same cashier from silently sharing a cart.</p>
  *
- * <p>Each entry is wrapped internally with last-access tracking plus the two
- * pieces of per-session state that live OUTSIDE the legacy context (the
- * supervisor price-override authorization recorded by
- * {@code PosResource.overrideAuthorize}, and the payment-entries list edited
- * via POST /payment-entries). Entries idle longer than {@link #TTL_MILLIS}
- * (4 hours) are evicted by a scheduled sweep every 30 minutes; any subsequent
- * {@link #getOrCreate} for the same user simply starts a fresh cart.</p>
- *
- * <p>Thread-safety: {@link ConcurrentHashMap} keyed by username; the cart lines
- * ({@code CartSessionContext.carrito}) and the staged payments are
- * {@code CopyOnWriteArrayList}, so concurrent mutation and iteration neither
- * lose entries nor throw. Scalar entry fields stay volatile. Sale-level
- * atomicity (no double invoice) is NOT provided here — it lives in
- * {@code PosResource.doFacturar}'s per-entry monitor plus the
- * {@code facturadoComprobanteId} stamp.</p>
+ * <p>Ownership key: {@code terminalId + "\0" + username}. The legacy single
+ * argument {@link #getOrCreate(String)} keeps working with the
+ * {@value #DEFAULT_TERMINAL} terminal, so existing callers and tests preserve
+ * their behavior. Entries idle longer than {@link #TTL_MILLIS} (4 hours) are
+ * evicted; the next access starts a fresh cart.</p>
  */
 @ApplicationScoped
 public class CartSessionStore {
 
     /** Idle time after which an entry becomes eligible for eviction: 4 hours. */
     public static final long TTL_MILLIS = 4L * 60L * 60L * 1000L;
+
+    /** Terminal used by callers that do not send an explicit terminal id. */
+    public static final String DEFAULT_TERMINAL = "default";
+
+    private static final char KEY_SEPARATOR = '\u0000';
 
     private final ConcurrentHashMap<String, Entry> sessions = new ConcurrentHashMap<>();
 
@@ -133,23 +131,49 @@ public class CartSessionStore {
     }
 
     /**
-     * Returns the entry for {@code username}, creating (or recreating after a
-     * TTL eviction) an empty one when absent, and refreshes its last-access
-     * timestamp.
+     * Returns the entry for {@code username} on the default terminal,
+     * creating (or recreating after a TTL eviction) an empty one when absent.
      */
     public @Nonnull Entry getOrCreate(@Nonnull String username) {
-        Entry entry = sessions.computeIfAbsent(username, key -> new Entry());
+        return getOrCreate(username, DEFAULT_TERMINAL);
+    }
+
+    /**
+     * Returns the entry for {@code username} on {@code terminalId}, creating
+     * (or recreating after a TTL eviction) an empty one when absent.
+     *
+     * <p>Two terminals operated by the same cashier therefore never share
+     * lines, staged payments or the invoice idempotency stamp.</p>
+     */
+    public @Nonnull Entry getOrCreate(@Nonnull String username, @Nullable String terminalId) {
+        String key = clave(username, terminalId);
+        Entry entry = sessions.computeIfAbsent(key, ignored -> new Entry());
         entry.touch();
         return entry;
     }
 
     /**
-     * Drops the entry for {@code username} if present.
+     * Drops the entry for {@code username} on the default terminal.
      *
      * @return true when an entry was removed
      */
     public boolean remove(@Nonnull String username) {
-        return sessions.remove(username) != null;
+        return remove(username, DEFAULT_TERMINAL);
+    }
+
+    /** Drops the entry for {@code username} on {@code terminalId}. */
+    public boolean remove(@Nonnull String username, @Nullable String terminalId) {
+        return sessions.remove(clave(username, terminalId)) != null;
+    }
+
+    /**
+     * Ownership key. A blank terminal falls back to the default so a client
+     * that has not been updated yet keeps the pre-terminal behavior.
+     */
+    static String clave(@Nonnull String username, @Nullable String terminalId) {
+        String terminal = terminalId == null || terminalId.isBlank()
+                ? DEFAULT_TERMINAL : terminalId.trim();
+        return terminal + KEY_SEPARATOR + username;
     }
 
     /**

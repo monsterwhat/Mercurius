@@ -1,44 +1,39 @@
 package Services.auth;
 
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
- * Maps the free-text {@code Usuarios.groupName} column to Quarkus security roles,
- * preserving the exact observable behavior of the legacy hand-rolled checks in
- * {@code Controllers.SessionController#isFacturation/isInventarios/isUsuarios/
- * isTributacion/isRegistros/isAdmin} (lines 141-187).
+ * Maps the free-text {@code Usuarios.groupName} column to Quarkus security
+ * roles.
  *
- * <p><b>Mapping rules (behavior parity contract):</b>
- * <ul>
- *   <li>The legacy checks are case-sensitive substring tests
- *       ({@code groupName.contains(token)}); this mapper keeps that semantics
- *       byte-for-byte — {@code "ADMIN"} matches nothing, only lowercase
- *       {@code "admin"} does.</li>
- *   <li>Role names are EXACTLY the legacy check tokens (singular):
- *       {@code admin, facturacion, inventario, usuario, tributacion, registro}.
- *       Consistency with existing views beats prettiness.</li>
- *   <li>Every legacy check is {@code contains(token) || isAdmin()}, i.e. an
- *       admin implicitly holds every capability. Therefore a groupName that
- *       contains {@code "admin"} maps to ALL six roles so that
- *       {@code SecurityIdentity.hasRole(x)} answers identically to the legacy
- *       {@code isX()} methods.</li>
- *   <li>{@code null}, empty or blank groupName yields an empty role set
- *       (never throws).</li>
- * </ul>
+ * <p><b>Regla de seguridad.</b> El valor se interpreta como una lista de
+ * <em>tokens exactos</em> separados por comas, con o sin corchetes porque el
+ * alta antigua guardaba {@code Arrays.toString(...)}. Ya no se busca una
+ * subcadena: {@code notadmin}, {@code administrador} y
+ * {@code inventario_backup} no conceden nada. El caso se normaliza a
+ * minusculas y se recortan los espacios alrededor de cada token.</p>
  *
- * <p>This class is a stateless static utility, matching the existing
- * {@code Utils.DiffUtils} style in this codebase.
+ * <p>Un rol desconocido se ignora (no se concede) y se registra en DEBUG. Un
+ * {@code admin} exacto expande a las seis capacidades, igual que hacia el
+ * chequeo heredado {@code isAdmin()}.</p>
  */
 public final class UserRoleMapper {
 
-    /** Role/token constants — role name == legacy substring token (case-sensitive). */
+    private static final Logger LOG = Logger.getLogger(UserRoleMapper.class);
+
     public static final String ROLE_ADMIN = "admin";
     public static final String ROLE_FACTURACION = "facturacion";
     public static final String ROLE_INVENTARIO = "inventario";
     public static final String ROLE_USUARIO = "usuario";
     public static final String ROLE_TRIBUTACION = "tributacion";
     public static final String ROLE_REGISTRO = "registro";
+
+    private static final Set<String> CAPACIDADES = Set.of(
+            ROLE_ADMIN, ROLE_FACTURACION, ROLE_INVENTARIO,
+            ROLE_USUARIO, ROLE_TRIBUTACION, ROLE_REGISTRO);
 
     private UserRoleMapper() {
         // static utility
@@ -51,42 +46,44 @@ public final class UserRoleMapper {
      *                  {@code "facturacion,usuario"} or the JSF
      *                  {@code Arrays.toString} form {@code "[tributacion, registro]"}
      * @return unmodifiable set of Quarkus roles; empty (never {@code null})
-     *         when the input is {@code null}/blank or matches no token
+     *         when the input is null/blank or contains no known token
      */
     public static Set<String> mapGroupNameToRoles(String groupName) {
         if (groupName == null || groupName.isBlank()) {
             return Set.of();
         }
 
-        Set<String> roles = new LinkedHashSet<>();
+        String normalizado = groupName.trim();
+        if (normalizado.startsWith("[")) {
+            normalizado = normalizado.substring(1);
+        }
+        if (normalizado.endsWith("]")) {
+            normalizado = normalizado.substring(0, normalizado.length() - 1);
+        }
 
-        if (groupName.contains(ROLE_ADMIN)) {
-            // Parity: SessionController grants every capability when isAdmin(),
-            // so an admin identity carries all six roles.
-            roles.add(ROLE_ADMIN);
-            roles.add(ROLE_FACTURACION);
-            roles.add(ROLE_INVENTARIO);
-            roles.add(ROLE_USUARIO);
-            roles.add(ROLE_TRIBUTACION);
-            roles.add(ROLE_REGISTRO);
-        } else {
-            if (groupName.contains(ROLE_FACTURACION)) {
-                roles.add(ROLE_FACTURACION);
+        Set<String> roles = new LinkedHashSet<>();
+        boolean admin = false;
+        for (String parte : normalizado.split(",")) {
+            String token = parte.trim().toLowerCase(Locale.ROOT);
+            if (token.isEmpty()) {
+                continue;
             }
-            if (groupName.contains(ROLE_INVENTARIO)) {
-                roles.add(ROLE_INVENTARIO);
+            if (ROLE_ADMIN.equals(token)) {
+                admin = true;
+                continue;
             }
-            if (groupName.contains(ROLE_USUARIO)) {
-                roles.add(ROLE_USUARIO);
-            }
-            if (groupName.contains(ROLE_TRIBUTACION)) {
-                roles.add(ROLE_TRIBUTACION);
-            }
-            if (groupName.contains(ROLE_REGISTRO)) {
-                roles.add(ROLE_REGISTRO);
+            if (CAPACIDADES.contains(token)) {
+                roles.add(token);
+            } else {
+                LOG.debugf("Rol desconocido en groupName ignorado: '%s'", token);
             }
         }
 
+        if (admin) {
+            // Un admin exacto conserva la semantica del chequeo heredado:
+            // todas las capacidades.
+            return Set.copyOf(CAPACIDADES);
+        }
         return Set.copyOf(roles);
     }
 }

@@ -3,7 +3,9 @@ package Services;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import Models.Articulos.Articulos;
+import Models.Articulos.ArticuloStock;
 import Models.Inventario;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * T8 — integration coverage for {@link InventarioService} (GService CRUD
@@ -54,6 +58,9 @@ class InventarioServiceIntegrationTest {
 
     @Inject
     ArticulosService articulosService;
+
+    @Inject
+    EntityManager em;
 
     /**
      * Escenario 1 — ciclo completo crear→buscar→actualizar→eliminar de un
@@ -215,6 +222,115 @@ class InventarioServiceIntegrationTest {
         assertEquals(inventarioService.listAll().size(),
                 inventarioService.countActivos() + inventarioService.countInactivos(),
                 "buckets must partition the full listing");
+    }
+
+    /**
+     * La identidad estable del stock es el articulo: barcode, articulo y libro
+     * deben contar la misma historia.
+     */
+    @Test
+    void stockByArticleIdMatchesBarcodeAndLedger() {
+        Articulos articulo = createBackingArticulo();
+        createWithStock(articulo, BigDecimal.TEN);
+        createWithStock(articulo, BigDecimal.valueOf(-3));
+
+        assertThat(inventarioService.getStockByArticleId(articulo.getCodigo()))
+                .as("stock por id de articulo")
+                .isEqualByComparingTo(BigDecimal.valueOf(7));
+        assertThat(inventarioService.getStock(BACKING_BARCODE))
+                .as("barcode sigue siendo la clave alterna")
+                .isEqualTo(7.0);
+
+        Models.Articulos.ArticuloStock stock =
+                inventarioService.findStockByArticleCode(articulo.getCodigo().intValue());
+        assertNotNull(stock);
+        assertThat(stock.getArticuloCodigo()).isEqualTo(articulo.getCodigo());
+
+        assertThat(inventarioService.reconciliarStock().stream()
+                .noneMatch(d -> d.articuloCodigo() == articulo.getCodigo()))
+                .as("sin diferencias entre la proyeccion y el libro")
+                .isTrue();
+    }
+
+    @Test
+    void barcodeChangeKeepsStockUnderTheSameArticle() {
+        Articulos articulo = createBackingArticulo();
+        createWithStock(articulo, BigDecimal.valueOf(5));
+
+        articulo.setCodigoBarra("IT-BAR-INV-CAMBIADO");
+        em.merge(articulo);
+        em.flush();
+        Articulos actualizado = em.find(Articulos.class, articulo.getCodigo());
+        createWithStock(actualizado, BigDecimal.valueOf(2));
+
+        assertThat(inventarioService.getStockByArticleId(articulo.getCodigo()))
+                .isEqualByComparingTo(BigDecimal.valueOf(7));
+        assertThat(inventarioService.getStock("IT-BAR-INV-CAMBIADO")).isEqualTo(7.0);
+        assertThat(inventarioService.getStock(BACKING_BARCODE))
+                .as("el barcode viejo ya no identifica la fila")
+                .isEqualTo(0.0);
+    }
+
+    @Test
+    void duplicateBarcodeForAnotherArticleIsRejected() {
+        Articulos primero = createBackingArticulo();
+        createWithStock(primero, BigDecimal.valueOf(5));
+
+        Articulos segundo = new Articulos();
+        segundo.setNombre("IT Articulo Barcode Duplicado");
+        segundo.setCodigoBarra(BACKING_BARCODE);
+        segundo.setUnidadMedida("Unidad");
+        segundo.setUnidadMedidaComercial("Unidad");
+        segundo.setStatus(true);
+        segundo.setProcessed(true);
+        segundo.setPrecios(new ArrayList<>());
+        articulosService.create(segundo);
+
+        assertThrows(IllegalStateException.class,
+                () -> createWithStock(segundo, BigDecimal.ONE));
+        assertThat(inventarioService.getStockByArticleId(primero.getCodigo()))
+                .as("el stock del articulo original no se contamina")
+                .isEqualByComparingTo(BigDecimal.valueOf(5));
+    }
+
+    @Test
+    void missingBarcodeIsRejectedNotSilentlyApplied() {
+        Articulos sinBarra = new Articulos();
+        sinBarra.setNombre("IT Articulo sin barcode");
+        sinBarra.setUnidadMedida("Unidad");
+        sinBarra.setStatus(true);
+        sinBarra.setProcessed(true);
+        sinBarra.setPrecios(new ArrayList<>());
+        articulosService.create(sinBarra);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> createWithStock(sinBarra, BigDecimal.ONE));
+    }
+
+    @Test
+    void reconciliationReportsDiscrepancyWithoutCorrectingIt() {
+        Articulos articulo = createBackingArticulo();
+        createWithStock(articulo, BigDecimal.valueOf(5));
+
+        ArticuloStock stock = inventarioService.findStockByArticleCode(articulo.getCodigo().intValue());
+        assertNotNull(stock);
+        stock.setStock(BigDecimal.valueOf(99));
+        em.merge(stock);
+        em.flush();
+
+        var discrepancias = inventarioService.reconciliarStock();
+        var fila = discrepancias.stream()
+                .filter(d -> d.articuloCodigo() == articulo.getCodigo())
+                .findFirst();
+        assertTrue(fila.isPresent(), "la diferencia debe aparecer en el diagnostico");
+        assertThat(fila.get().stockProyectado()).isEqualByComparingTo(BigDecimal.valueOf(99));
+        assertThat(fila.get().stockLedger()).isEqualByComparingTo(BigDecimal.valueOf(5));
+        assertThat(fila.get().diferencia()).isEqualByComparingTo(BigDecimal.valueOf(94));
+
+        // El diagnostico NO corrige: la proyeccion sigue siendo la que el
+        // operador puso, para que la decision sea suya.
+        assertThat(inventarioService.getStockByArticleId(articulo.getCodigo()))
+                .isEqualByComparingTo(BigDecimal.valueOf(99));
     }
 
     // ------------------------------------------------------------------

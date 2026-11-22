@@ -8,99 +8,92 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * Plain JUnit tests for {@link UserRoleMapper} (T12).
- *
- * <p>Parity contract with the legacy hand-rolled checks in
- * {@code Controllers.SessionController} lines 141-187:
- * case-sensitive substring tokens, singular role names, admin expansion to all
- * six roles (every legacy check is {@code contains(token) || isAdmin()}),
- * null/empty-safe.
+ * Contrato de {@link UserRoleMapper}: tokens exactos, sin coincidencias por
+ * subcadena. Los casos {@code notadmin}, {@code administrador} e
+ * {@code inventario_backup} existen precisamente para impedir que un privilegio
+ * se conceda por accidente.
  */
 class UserRoleMapperTest {
 
     private static final Set<String> ALL_SIX_ROLES = Set.of(
             "admin", "facturacion", "inventario", "usuario", "tributacion", "registro");
 
-    // --- single-token groups ---
-
     @Test
     void pureAdminGroupGrantsAllSixRoles() {
-        Set<String> roles = UserRoleMapper.mapGroupNameToRoles("admin");
-
-        assertThat(roles).containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
+        assertThat(UserRoleMapper.mapGroupNameToRoles("admin"))
+                .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
     }
 
     @Test
-    void facturacionTokenMapsToSingularRole() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("facturacion"))
-                .containsExactly("facturacion");
+    void adminCaseIsNormalized() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("ADMIN"))
+                .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
+        assertThat(UserRoleMapper.mapGroupNameToRoles("Admin"))
+                .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
     }
 
     @Test
-    void inventarioTokenStaysSingularAsLegacyCheck() {
-        // DECISION: role name equals today's check token ("inventario"), not a prettier plural.
-        assertThat(UserRoleMapper.mapGroupNameToRoles("inventario"))
-                .containsExactly("inventario");
+    void adminWithWhitespaceIsStillExactAdmin() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("  admin  "))
+                .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
     }
 
     @Test
-    void usuarioTokenMapsToSingularRole() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("usuario"))
-                .containsExactly("usuario");
+    void eachCapabilityMapsToItsExactRole() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("facturacion")).containsExactly("facturacion");
+        assertThat(UserRoleMapper.mapGroupNameToRoles("inventario")).containsExactly("inventario");
+        assertThat(UserRoleMapper.mapGroupNameToRoles("usuario")).containsExactly("usuario");
+        assertThat(UserRoleMapper.mapGroupNameToRoles("tributacion")).containsExactly("tributacion");
+        assertThat(UserRoleMapper.mapGroupNameToRoles("registro")).containsExactly("registro");
     }
-
-    @Test
-    void tributacionTokenMapsToSingularRole() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("tributacion"))
-                .containsExactly("tributacion");
-    }
-
-    @Test
-    void registroTokenMapsToSingularRole() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("registro"))
-                .containsExactly("registro");
-    }
-
-    // --- multi-token groups ---
 
     @Test
     void mixedCommaSeparatedGroupMapsEachToken() {
         assertThat(UserRoleMapper.mapGroupNameToRoles("facturacion,usuario"))
                 .containsExactlyInAnyOrder("facturacion", "usuario");
+        assertThat(UserRoleMapper.mapGroupNameToRoles("admin,usuario"))
+                .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
     }
 
     @Test
     void jsfArraysToStringFormatIsSupported() {
-        // UsersController stores groupName via Arrays.toString(SelectedPuestos)
         assertThat(UserRoleMapper.mapGroupNameToRoles("[tributacion, registro]"))
                 .containsExactlyInAnyOrder("tributacion", "registro");
-    }
-
-    @Test
-    void administradorSubstringStillCountsAsAdmin() {
-        // "administrador".contains("admin") == true — same as legacy isAdmin().
-        assertThat(UserRoleMapper.mapGroupNameToRoles("administrador"))
+        assertThat(UserRoleMapper.mapGroupNameToRoles("[admin, usuario]"))
                 .containsExactlyInAnyOrderElementsOf(ALL_SIX_ROLES);
     }
 
-    // --- case sensitivity preserved as-today ---
-
     @Test
-    void upperCaseAdminDoesNotMatchAsToday() {
-        // String.contains is case-sensitive; legacy behavior kept byte-for-byte.
-        assertThat(UserRoleMapper.mapGroupNameToRoles("ADMIN")).isEmpty();
+    void whitespaceAroundTokensIsTrimmed() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("  facturacion ,  inventario  "))
+                .containsExactlyInAnyOrder("facturacion", "inventario");
     }
 
     @Test
-    void mixedCaseTokenDoesNotMatchAsToday() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("Facturacion")).isEmpty();
+    void notAdminIsNotAdmin() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("notadmin")).isEmpty();
     }
 
-    // --- unknown / degenerate inputs ---
+    @Test
+    void administradorIsNotAdminAnymore() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("administrador")).isEmpty();
+    }
 
     @Test
-    void unknownGroupYieldsEmptySet() {
-        assertThat(UserRoleMapper.mapGroupNameToRoles("ventas")).isEmpty();
+    void superadminBackupIsNotAdmin() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("superadmin_backup")).isEmpty();
+    }
+
+    @Test
+    void inventarioBackupIsNotInventario() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("inventario_backup")).isEmpty();
+        assertThat(UserRoleMapper.mapGroupNameToRoles("inventario_extra")).isEmpty();
+    }
+
+    @Test
+    void unknownRoleIsIgnoredButKnownRolesStillWork() {
+        assertThat(UserRoleMapper.mapGroupNameToRoles("inventario,ventas"))
+                .containsExactly("inventario");
     }
 
     @Test
@@ -112,9 +105,8 @@ class UserRoleMapperTest {
     void emptyAndBlankGroupsYieldEmptySet() {
         assertThat(UserRoleMapper.mapGroupNameToRoles("")).isEmpty();
         assertThat(UserRoleMapper.mapGroupNameToRoles("   ")).isEmpty();
+        assertThat(UserRoleMapper.mapGroupNameToRoles("[,]")).isEmpty();
     }
-
-    // --- returned set contract ---
 
     @Test
     void returnedSetIsUnmodifiable() {

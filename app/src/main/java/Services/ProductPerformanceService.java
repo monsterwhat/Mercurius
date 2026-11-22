@@ -52,11 +52,12 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY ld.detalle " +
@@ -82,11 +83,12 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY ld.detalle " +
@@ -113,15 +115,16 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY ld.detalle " +
-            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) DESC"
+            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) DESC"
         )
         .setParameter("start", start)
         .setParameter("end", end)
@@ -172,16 +175,17 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT a.familia.nombre, SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT a.familia.nombre, SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "JOIN Articulos a ON a.nombre = ld.detalle " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY a.familia.nombre " +
-            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) DESC",
+            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) DESC",
             Object[].class
         )
         .setParameter("start", start)
@@ -203,16 +207,17 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT a.departamento.nombre, SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT a.departamento.nombre, SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "JOIN Articulos a ON a.nombre = ld.detalle " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY a.departamento.nombre " +
-            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) DESC",
+            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) DESC",
             Object[].class
         )
         .setParameter("start", start)
@@ -264,15 +269,16 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) " +
+            "SELECT ld.detalle, SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
             "JOIN f.encabezado e " +
+            "LEFT JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY ld.detalle " +
-            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(f.resumen.codigoMoneda.tipoCambioMoneda, 1)) DESC",
+            "ORDER BY SUM(ld.montoTotalLinea * COALESCE(r.codigoMoneda.tipoCambioMoneda, 1)) DESC",
             Object[].class
         )
         .setParameter("start", start)

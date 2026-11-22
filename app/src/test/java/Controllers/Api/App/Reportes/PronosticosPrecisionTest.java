@@ -30,6 +30,7 @@ import Services.ArticulosService;
 import Services.ComprobantesEmitidosService;
 import Services.InventarioService;
 import Services.SeleccionMetodoService;
+import Services.StockForecastService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.specification.RequestSpecification;
@@ -90,6 +91,9 @@ class PronosticosPrecisionTest {
     SeleccionMetodoService seleccionMetodoService;
 
     @Inject
+    StockForecastService stockForecastService;
+
+    @Inject
     ArticulosService articulosService;
 
     @Inject
@@ -125,11 +129,11 @@ class PronosticosPrecisionTest {
             articulo = sembrarArticuloConVentas("IT Prec Evaluado");
             sembrarComprobante(articulo.nombre(), 5);
 
-            int guardadas = seleccionMetodoService.evaluarArticulo(articulo.codigo(), 14, 3);
+            int guardadas = seleccionMetodoService.evaluarArticulo(articulo.codigo(), 30, 8);
             assertTrue(guardadas > 0,
                     "el fixture debe producir filas de precision; con 0 la prueba no probaria nada");
 
-            String elegido = seleccionMetodoService.metodoElegido(articulo.codigo()).orElse(null);
+            String elegido = seleccionMetodoService.metodoElegido(articulo.codigo(), 30).orElse(null);
             assertNotNull(elegido, "con la serie semanal sembrada debe haber metodo elegido");
             PrecisionPronostico fila = leerPrecision(articulo.codigo()).stream()
                     .filter(precision -> elegido.equals(precision.getMetodo()))
@@ -172,6 +176,7 @@ class PronosticosPrecisionTest {
         try {
             articulo = sembrarArticulo("IT Prec Sin Evaluar");
             sembrarComprobante(articulo.nombre(), 5);
+            sembrarVentasSimples(articulo);
 
             assertTrue(seleccionMetodoService.metodoElegido(articulo.codigo()).isEmpty(),
                     "el fixture no debe tener metodo elegido");
@@ -208,6 +213,7 @@ class PronosticosPrecisionTest {
             for (ArticuloSembrado articulo : List.of(subestimar, sobrestimar, calibrado,
                     indefinido)) {
                 sembrarComprobante(articulo.nombre(), 5);
+                sembrarVentasSimples(articulo);
             }
 
             guardar(
@@ -254,6 +260,30 @@ class PronosticosPrecisionTest {
                 .body(containsString("Método"))
                 .body(containsString(">MASE</th>"))
                 .body(not(containsString("data-kit-sort=\"mase\"")));
+    }
+
+    /**
+     * La demanda historica que solo existe en lineas de factura sin articulo
+     * unico no desaparece en silencio: el diagnostico la cuenta y la registra.
+     */
+    @Test
+    void demandaSinArticuloUnicoEsMedible() {
+        try {
+            String nombreHuerfano = "IT Huerfano -s" + SUFIJOS.incrementAndGet();
+            sembrarComprobante(nombreHuerfano, 7);
+
+            StockForecastService.DiagnosticoDemanda diagnostico =
+                    stockForecastService.diagnosticoDemandaHistorica(180);
+
+            assertTrue(diagnostico.lineasSinArticulo() > 0,
+                    "debe contar la linea de factura cuyo detalle no es un articulo");
+            assertTrue(diagnostico.unidadesSinArticulo() >= 7.0,
+                    "debe sumar las unidades no atribuibles, fueron " + diagnostico.unidadesSinArticulo());
+            assertTrue(diagnostico.nombresSinArticulo() > 0,
+                    "debe contar los nombres distintos no atribuibles");
+        } finally {
+            limpiar(null);
+        }
     }
 
     // ── lectura del HTML ────────────────────────────────────────────────
@@ -333,6 +363,26 @@ class PronosticosPrecisionTest {
             inventarioService.create(movimiento);
         }
         return articulo;
+    }
+
+    /**
+     * Ventas recientes para un artículo que no necesita el patrón semanal: el
+     * pronóstico canónico lee movimientos de inventario por clave de artículo,
+     * no líneas de factura por nombre.
+     */
+    private void sembrarVentasSimples(ArticuloSembrado articulo) {
+        for (int desplazamiento = 29; desplazamiento >= 0; desplazamiento--) {
+            Inventario movimiento = new Inventario();
+            movimiento.setArticulo(buscarArticulo(articulo.codigo()));
+            movimiento.setCantidad(BigDecimal.valueOf(-2));
+            movimiento.setTipoMovimiento("Venta");
+            movimiento.setFechaMovimiento(Date.from(LocalDate.now().minusDays(desplazamiento)
+                    .atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant()));
+            movimiento.setNotas("IT Pronosticos Precision simple");
+            movimiento.setProcessed(Boolean.TRUE);
+            movimiento.setStatus(Boolean.TRUE);
+            inventarioService.create(movimiento);
+        }
     }
 
     private ArticuloSembrado sembrarArticulo(String etiqueta) {
@@ -446,7 +496,7 @@ class PronosticosPrecisionTest {
         fila.setMetodo(metodo);
         fila.setMase(mase);
         fila.setSesgo(sesgo);
-        fila.setHorizonteDias(14);
+        fila.setHorizonteDias(30);
         fila.setFechaCalculo(LocalDateTime.now());
         return fila;
     }

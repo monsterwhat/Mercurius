@@ -910,22 +910,16 @@
             </p>
         </div>
 
-        {! ── Grupo: umbrales de stock (snapshot informativo del motor T33) ── !}
+        {! ── Grupo: umbrales de stock ── !}
         <div class="box mb-5" data-group="stock-umbrales">
             <h2 class="title is-5" id="ajustes-umbrales">Umbrales de stock</h2>
             <p class="subtitle is-6 mercurius-text-muted">
-                Constantes del motor de alertas (solo lectura); la configuración
-                por artículo vive en su propia pantalla.
+                Los parámetros económicos de reposición (nivel de servicio, costos,
+                plazo del proveedor, mínimo y múltiplo de pedido) se editan en la
+                sección «Pronóstico y reposición» al final de esta pantalla y se
+                guardan en la base de datos.
             </p>
-            <div class="columns is-multiline">
-                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Ventana de velocidad</p><p>30 días</p></div>
-                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Plazo de entrega</p><p>3 días</p></div>
-                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Stock de seguridad por defecto</p><p>7 días</p></div>
-                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Respaldo de stock óptimo</p><p>14 días</p></div>
-                <div class="column is-one-fifth"><p class="is-size-7 mercurius-text-muted">Margen de reorden</p><p>30 días</p></div>
-            </div>
-            <a class="button"
-               href="/app/stock-alert-config">
+            <a class="button" href="/app/stock-alert-config">
                 {#include _kit/icon name="chart" /}
                 <span>Configurar umbrales por artículo</span></a>
         </div>
@@ -947,6 +941,101 @@
             </p>
         </div>
     </form>
+
+    {! ── Pronóstico y reposición: formulario propio porque HTML no permite
+       anidar <form> y estos parámetros son de negocio, no del despliegue.
+       Se guardan en configuracion_pronostico (INSERT-only). ── !}
+    {#if modo != 'backups'}
+    <form id="ajustes-pronostico" class="box mb-5" data-json-save
+          hx-post="{baseUrl}/pronostico"
+          hx-swap="none"
+          hx-disabled-elt="find button[type='submit']"
+          hx-on::after-request="if (event.detail.successful) window.location.reload()">
+        <h2 class="title is-5" id="ajustes-pronostico-titulo">Pronóstico y reposición</h2>
+        <p class="subtitle is-6 mercurius-text-muted">
+            El punto de reorden es la demanda esperada durante el plazo más el
+            stock de seguridad. Si el faltante cuesta más que mantener, el nivel
+            de servicio sube por encima del valor configurado.
+        </p>
+        <div class="columns is-multiline">
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-nivel">Nivel de servicio</label>
+                    <div class="control">
+                        <input id="pronostico-nivel" class="input" type="number"
+                               name="nivelServicio" min="0.500" max="0.999" step="0.001"
+                               value="{configuracionPronostico.nivelServicio}"/>
+                    </div>
+                    <p class="help">Cobertura objetivo, entre 0.500 y 0.999. 0.950 es el equilibrio habitual.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-faltante">Costo de faltante</label>
+                    <div class="control">
+                        <input id="pronostico-faltante" class="input" type="number"
+                               name="costoFaltante" min="0" step="0.01"
+                               value="{configuracionPronostico.costoFaltante}"/>
+                    </div>
+                    <p class="help">Costo relativo de una unidad no vendida por quiebre de stock.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-mantenimiento">Costo de mantenimiento</label>
+                    <div class="control">
+                        <input id="pronostico-mantenimiento" class="input" type="number"
+                               name="costoMantenimiento" min="0" step="0.01"
+                               value="{configuracionPronostico.costoMantenimiento}"/>
+                    </div>
+                    <p class="help">Costo relativo de mantener una unidad en inventario.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-plazo">Plazo del proveedor (días)</label>
+                    <div class="control">
+                        <input id="pronostico-plazo" class="input" type="number"
+                               name="plazoReposicionDias" min="1" max="365" step="1"
+                               value="{configuracionPronostico.plazoReposicionDias}"/>
+                    </div>
+                    <p class="help">Días entre la orden de compra y la disponibilidad.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-minimo">Cantidad mínima de pedido</label>
+                    <div class="control">
+                        <input id="pronostico-minimo" class="input" type="number"
+                               name="cantidadMinimaPedido" min="0" step="1"
+                               value="{configuracionPronostico.cantidadMinimaPedido}"/>
+                    </div>
+                    <p class="help">0 = sin mínimo. No obliga a comprar si no hace falta.</p>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="pronostico-multiplo">Múltiplo de pedido</label>
+                    <div class="control">
+                        <input id="pronostico-multiplo" class="input" type="number"
+                               name="multiploPedido" min="1" step="1"
+                               value="{configuracionPronostico.multiploPedido}"/>
+                    </div>
+                    <p class="help">1 = sin restricción. La cantidad se redondea al alza a este múltiplo.</p>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <button class="button is-primary" type="submit">Guardar parámetros de pronóstico</button>
+        </div>
+        {#if pronosticoHistorial && pronosticoHistorial.size() > 1}
+        <p class="help mercurius-text-muted">
+            Historial: {pronosticoHistorial.size()} configuraciones guardadas.
+            La vigente es la más reciente.
+        </p>
+        {/if}
+    </form>
+    {/if}
 
     {! Styled confirm dialog for the backup / terminal hx-confirm actions. !}
     {#include _kit/confirm /}
@@ -998,6 +1087,7 @@
             var esTrigger = url.indexOf('backup-trigger') !== -1;
             var esSucursal = url.indexOf('/sucursales') !== -1;
             var esMargen = url.indexOf('/margen') !== -1;
+            var esPronostico = url.indexOf('/pronostico') !== -1;
             var esCorreoPrueba = url.indexOf('correo/prueba') !== -1;
             var severidad = 'is-danger';
             var mensaje = 'No se pudo contactar al servidor';
@@ -1009,6 +1099,8 @@
                     mensaje = 'Punto de venta actualizado';
                 } else if (esMargen) {
                     mensaje = 'Márgenes actualizados';
+                } else if (esPronostico) {
+                    mensaje = 'Parámetros de pronóstico actualizados';
                 } else if (esCorreoPrueba) {
                     mensaje = 'Correo de prueba enviado a ' + (datos.data.destino || '');
                 } else {

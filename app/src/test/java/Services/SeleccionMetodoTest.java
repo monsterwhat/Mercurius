@@ -103,7 +103,15 @@ class SeleccionMetodoTest {
             List<SerieDiaria> serie = serieEsperada();
 
             Regimen regimen = MotorPronostico.clasificar(serie);
-            List<MetodoPronostico> esperados = MotorPronostico.candidatos(regimen);
+            List<MetodoPronostico> esperados = new ArrayList<>(List.of(
+                    MetodoPronostico.INGENUO,
+                    MetodoPronostico.ESTACIONAL_INGENUO,
+                    MetodoPronostico.MEDIA_MOVIL));
+            for (MetodoPronostico metodo : MotorPronostico.candidatos(regimen)) {
+                if (!esperados.contains(metodo)) {
+                    esperados.add(metodo);
+                }
+            }
             assertFalse(esperados.isEmpty(), "el regimen " + regimen + " debe proponer candidatos");
             for (MetodoPronostico metodo : esperados) {
                 assertTrue(MotorPronostico.elegible(metodo, serie),

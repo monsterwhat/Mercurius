@@ -3,7 +3,10 @@ package Services;
 import Models.Articulos.Articulos;
 import Models.Familia;
 import Models.PrecisionPronostico;
+import Services.pronostico.EconomiaReposicion;
+import Services.pronostico.FlagCalidad;
 import Services.pronostico.Hiperparametros;
+import Services.pronostico.IntervalosPronostico;
 import Services.pronostico.MetodoPronostico;
 import Services.pronostico.MotorPronostico;
 import Services.pronostico.Regimen;
@@ -24,7 +27,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -47,21 +49,18 @@ import java.util.TreeMap;
  * clasifique su serie. En el peor caso se pronostica con
  * {@link MetodoPronostico#INGENUO}, que es el unico metodo que nunca falla.</p>
  *
- * <p><b>Intervalo de prediccion.</b> No hay una tabla de residuos: la sigma se recalcula en cada
- * llamada con el mismo procedimiento, sobre el metodo efectivamente elected, y por eso es
- * coherente con el pronostico que acompana. La sigma es la desviacion tipica (muestral, n - 1) de
- * los residuos <em>un paso adelante</em> —pronosticar el dia t entrenando solo con lo anterior a
- * t— de los ultimos {@value #VENTANA_RESIDUOS} dias de historia. El margen del total es
- * {@code z * sigma * sqrt(horizonteDias)}: la raiz del horizonte es la aproximacion clasica que
- * supone errores independientes y suma de varianzas.</p>
+ * <p><b>Intervalo de prediccion.</b> La sigma de respaldo se recalcula en cada
+ * llamada con el mismo procedimiento, sobre el metodo efectivamente elegido, y
+ * por eso es coherente con el pronostico que acompana: desviacion tipica
+ * muestral de los residuos <em>un paso adelante</em> de los ultimos
+ * {@value #VENTANA_RESIDUOS} dias. Cuando hay suficientes origenes, el
+ * intervalo usa los cuantiles empiricos del error <em>a ese horizonte</em>
+ * ({@link IntervalosPronostico}); si no, cae en
+ * {@code z * sigma * sqrt(horizonte)} y se marca como aproximado.</p>
  *
- * <p><b>Por que una tabla fija de z y no la funcion normal.</b> La cola de la normal se resuelve
- * con una tabla corta de niveles habituales ({@value #NIVEL_MINIMO} a {@value #NIVEL_MAXIMO}) en
- * lugar de una aproximacion numerica: cuatro valores known-good son mas auditables que un
- * algoritmo de aproximacion en un numero que decide cuanto se repone. Un nivel configurado que
- * caiga entre dos claves toma la clave inferior (mas conservador en la parte alta, que es donde
- * esta el coste de reposerse de mas); por debajo de la clave mas baja se usa esa misma clave y por
- * encima de la mas alta, la mas alta.</p>
+ * <p><b>z.</b> Se obtiene con la inversa normal de Acklam en
+ * {@link EconomiaReposicion#z(double)}, porque el nivel efectivo puede subir
+ * por la razon critica de costos y no se limita a cuatro valores tabulados.</p>
  *
  * <p><b>Horizonte.</b> El motor indexa el horizonte desde h = 1 (el dia siguiente a la ultima
  * observacion), asi que el dia solicitado se resuelve como {@code h = dias(hoy, dia) + 1} y el
@@ -112,31 +111,6 @@ public class DemandaService {
     /** Prefijo del metodo en un pronostico top-down de familia. */
     private static final String PREFIJO_TOP_DOWN = "TOP_DOWN:";
 
-    /** Nivel de servicio mas bajo tabulado; se usa tambien como suelo para niveles menores. */
-    private static final double NIVEL_MINIMO = 0.90;
-
-    /** Nivel de servicio mas alto tabulado; se usa como techo para niveles mayores. */
-    private static final double NIVEL_MAXIMO = 0.99;
-
-    /**
-     * z por nivel de servicio. Es una tabla, no un calculo: son cuatro valores de cola
-     * normal que se pueden comprobar a mano en una tabla de normales, y el indice de cola que
-     * decide cuanto se repone no es el sitio para meter una aproximacion numerica.
-     */
-    private static final NavigableMap<Double, Double> Z_POR_NIVEL = new TreeMap<>(Map.of(
-            NIVEL_MINIMO, 1.28,
-            0.95, 1.65,
-            0.975, 1.96,
-            NIVEL_MAXIMO, 2.33));
-
-    /**
-     * Nivel de servicio por defecto de los intervalos de prediccion y del reparto por familia.
-     * Los valores fuera de (0, 1) se registran y se tratan como si fueran {@code 0.95}: un nivel
-     * de servicio negativo no tiene interpretacion de negocio.
-     */
-    @ConfigProperty(name = "mercurius.pronostico.nivel-servicio", defaultValue = "0.95")
-    double nivelServicioConfigurado;
-
     /**
      * Tope del horizonte en dias. Acota tanto la prediccion de articulo como la de familia; un
      * horizonte de mas de un trimestre deja de ser accionable para reponer.
@@ -150,6 +124,9 @@ public class DemandaService {
     @Inject
     SeleccionMetodoService seleccionMetodoService;
 
+    @Inject
+    ConfiguracionPronosticoService configuracionPronosticoService;
+
     // ------------------------------------------------------------------
     // Prediccion por articulo
     // ------------------------------------------------------------------
@@ -158,10 +135,10 @@ public class DemandaService {
      * Pronostico de demanda de un articulo con su intervalo de prediccion.
      *
      * <p>El total es la suma de los valores diarios del pronostico para las fechas del rango
-     * {@code [desde, hasta]} (ambos inclusive). El intervalo se construye como
-     * {@code total +- z * sigma * sqrt(horizonte)} con el limite inferior acotado a 0: una
-     * demanda negativa no existe, y un limite inferior negativo haria que cualquier cobertura
-     * pareciese suficiente.</p>
+     * {@code [desde, hasta]} (ambos inclusive). El intervalo se construye con
+     * {@link IntervalosPronostico}: cuantiles empiricos del error a ese horizonte
+     * cuando hay muestra, o la aproximacion normal marcada como tal. El limite
+     * inferior se acota a 0: una demanda negativa no existe.</p>
      *
      * @param codigoArticulo articulo a pronosticar
      * @param desde          primer dia del rango (inclusive)
@@ -186,21 +163,27 @@ public class DemandaService {
                     MetodoPronostico.INGENUO.name(), null);
         }
 
-        MetodoPronostico metodo = metodoEfectivo(codigoArticulo, serie);
         LocalDate hoy = LocalDate.now();
         int horizonte = horizonte(hasta, hoy);
+        MetodoPronostico metodo = metodoEfectivo(codigoArticulo, serie, horizonte);
         List<Double> diario = MotorPronostico.pronosticar(
                 metodo, serie, horizonte, Hiperparametros.defecto());
 
         double total = sumarRango(diario, desde, hasta, hoy, horizonte);
-        double margen = margen(sigmaResiduos(serie, metodo), horizonte, nivelServicioEfectivo());
-        Double mase = maseAlmacenado(codigoArticulo, metodo);
+        double sigma = IntervalosPronostico.sigmaUnPaso(metodo, serie);
+        IntervalosPronostico.Intervalo intervalo = IntervalosPronostico.intervalo(
+                metodo, serie, horizonte, total, nivelServicioEfectivo(), sigma);
+        Double mase = maseAlmacenado(codigoArticulo, metodo, horizonte);
 
-        LOG.debugf("predecirDemanda: articulo=%d metodo=%s horizonte=%d total=%.2f margen=%.2f mase=%s",
-                codigoArticulo, metodo, horizonte, total, margen, mase);
+        LOG.debugf("predecirDemanda: articulo=%d metodo=%s horizonte=%d total=%.2f "
+                        + "intervalo=[%.2f,%.2f] tipo=%s mase=%s",
+                codigoArticulo, metodo, horizonte, total,
+                intervalo.limiteInferior(), intervalo.limiteSuperior(),
+                intervalo.metodo(), mase);
 
-        return new PrediccionDemanda(desde, hasta, total, Math.max(0.0, total - margen), total + margen,
-                metodo.name(), mase);
+        return new PrediccionDemanda(desde, hasta, total,
+                intervalo.limiteInferior(), intervalo.limiteSuperior(),
+                metodo.name(), mase, intervalo.metodo(), "");
     }
 
     /**
@@ -239,19 +222,26 @@ public class DemandaService {
             return 0.0;
         }
 
-        MetodoPronostico metodo = metodoEfectivo(codigoArticulo, serie);
         LocalDate hoy = LocalDate.now();
         int horizonte = horizonte(hoy.plusDays(plazo), hoy);
+        MetodoPronostico metodo = metodoEfectivo(codigoArticulo, serie, horizonte);
         List<Double> diario = MotorPronostico.pronosticar(
                 metodo, serie, horizonte, Hiperparametros.defecto());
 
         // El plazo de reposicion cubre los dias siguientes a hoy: h = 1..plazo.
         double demanda = sumarRango(diario, hoy.plusDays(1), hoy.plusDays(plazo), hoy, horizonte);
-        double seguridad = valorZ(nivelServicio) * sigmaResiduos(serie, metodo) * Math.sqrt(plazo);
+        double sigma = IntervalosPronostico.sigmaUnPaso(metodo, serie);
+        ConfiguracionPronosticoService.ParametrosPronostico parametros =
+                configuracionPronosticoService.parametros();
+        double nivelEfectivo = EconomiaReposicion.nivelServicio(
+                nivelServicio, parametros.costoFaltante(), parametros.costoMantenimiento());
+        EconomiaReposicion.Reposicion reposicion = EconomiaReposicion.calcular(
+                0, demanda, sigma, plazo, nivelEfectivo, 0, 1);
 
-        LOG.debugf("puntoReorden: articulo=%d metodo=%s plazo=%d demanda=%.2f seguridad=%.2f",
-                codigoArticulo, metodo, plazo, demanda, seguridad);
-        return demanda + seguridad;
+        LOG.debugf("puntoReorden: articulo=%d metodo=%s plazo=%d demanda=%.2f seguridad=%.2f nivel=%.3f",
+                codigoArticulo, metodo, plazo, reposicion.demandaPlazo(),
+                reposicion.stockSeguridad(), reposicion.nivelServicio());
+        return reposicion.puntoReorden();
     }
 
     // ------------------------------------------------------------------
@@ -270,13 +260,11 @@ public class DemandaService {
      * acepta aqui.</p>
      *
      * <p><b>Reparto.</b> Cada articulo recibe la parte proporcional a sus unidades vendidas en los
-     * ultimos {@value #DIAS_PARTICIPACION} dias. Los articulos con parte cero (nunca vendieron en
-     * esa ventana) se reparten <b>por partes iguales el resto no atribuido</b> —lo que queda del
-     * total tras atribuir las partes positivas—, de forma que el reparto conserva siempre la
-     * suma: si ningun articulo tiene participacion, el resto es el total completo y se divide a
-     * partes iguales. Un articulo que no vendio en 30 dias no es un articulo sin demanda: puede
-     * tener justo un almacen vacio en plena rotacion, y darle cero de forma permanente lo
-     * enterraria en la planificacion.</p>
+     * ultimos {@value #DIAS_PARTICIPACION} dias. Los articulos sin venta en esa ventana reciben
+     * <b>cero</b> y se marcan {@link FlagCalidad#NO_RECENT_PARTICIPATION}; no se les asigna una
+     * cuota especulativa. Si ningun articulo tiene participacion, el total repartido es cero y la
+     * respuesta lo declara: no hay base para atribuir demanda. Esto reemplaza el reparto a partes
+     * iguales anterior, que podia crear pronosticos implausibles para SKUs dormidos.</p>
      *
      * <p><b>Metodo.</b> Se elige aqui, sin persistir nada, el candidato elegible con menor MAE de
      * un paso adelante dentro de la muestra: la familia no tiene filas en
@@ -332,22 +320,38 @@ public class DemandaService {
                 metodo, agregada, horizonte, Hiperparametros.defecto());
         double total = sumarRango(diario, desde, hasta, hoy, horizonte);
 
-        // El total devuelto es la suma de las cuotas por articulo: el reparto conserva el agregado
-        // por construccion (las partes suman 1) y asi la cifra que se publica queda atada a las
-        // cifras por articulo que se reparten.
+        // El total devuelto es la suma de las cuotas por articulo. Solo se
+        // reparte entre articulos con participacion positiva: un SKU dormido
+        // no recibe una cuota especulativa, se queda en cero y se marca.
         Map<Long, Double> porArticulo = repartirPorParticipacion(total, miembros);
         double totalRepartido = 0.0;
+        long sinParticipacion = 0;
         for (Double cuota : porArticulo.values()) {
             totalRepartido += cuota;
+            if (cuota <= 0.0) {
+                sinParticipacion++;
+            }
+        }
+        String flags = sinParticipacion > 0
+                ? FlagCalidad.NO_RECENT_PARTICIPATION.name() : "";
+        if (sinParticipacion > 0) {
+            LOG.warnf("predecirFamilia: familia=%d tiene %d articulo(s) sin venta en la ventana "
+                            + "de participacion; se les asigna 0 y se marcan en lugar de repartir a ciegas",
+                    familiaCodigo, sinParticipacion);
         }
 
-        double margen = margen(sigmaResiduos(agregada, metodo), horizonte, nivelServicioEfectivo());
-        LOG.debugf("predecirFamilia: familia=%d metodo=%s articulos=%d total=%.2f reparto=%s",
-                familiaCodigo, metodo, miembros.size(), totalRepartido, porArticulo);
+        double sigma = IntervalosPronostico.sigmaUnPaso(metodo, agregada);
+        IntervalosPronostico.Intervalo intervalo = IntervalosPronostico.intervalo(
+                metodo, agregada, horizonte, totalRepartido, nivelServicioEfectivo(), sigma);
+        LOG.debugf("predecirFamilia: familia=%d metodo=%s articulos=%d total=%.2f "
+                        + "intervalo=[%.2f,%.2f] tipo=%s reparto=%s",
+                familiaCodigo, metodo, miembros.size(), totalRepartido,
+                intervalo.limiteInferior(), intervalo.limiteSuperior(),
+                intervalo.metodo(), porArticulo);
 
         return new PrediccionDemanda(desde, hasta, totalRepartido,
-                Math.max(0.0, totalRepartido - margen), totalRepartido + margen,
-                PREFIJO_TOP_DOWN + metodo.name(), null);
+                intervalo.limiteInferior(), intervalo.limiteSuperior(),
+                PREFIJO_TOP_DOWN + metodo.name(), null, intervalo.metodo(), flags);
     }
 
     // ------------------------------------------------------------------
@@ -367,7 +371,16 @@ public class DemandaService {
                                     double limiteInferior,
                                     double limiteSuperior,
                                     String metodo,
-                                    Double mase) {
+                                    Double mase,
+                                    String tipoIntervalo,
+                                    String calidadFlags) {
+
+        public PrediccionDemanda(LocalDate desde, LocalDate hasta, double totalPronosticado,
+                                 double limiteInferior, double limiteSuperior,
+                                 String metodo, Double mase) {
+            this(desde, hasta, totalPronosticado, limiteInferior, limiteSuperior,
+                    metodo, mase, "APROXIMADO", "");
+        }
     }
 
     // ------------------------------------------------------------------
@@ -379,8 +392,8 @@ public class DemandaService {
      * la historia actual; si no, el primer candidato elegible del regimen de la serie; si tampoco
      * hay ninguno, {@link MetodoPronostico#INGENUO}.
      */
-    private MetodoPronostico metodoEfectivo(Long codigoArticulo, List<SerieDiaria> serie) {
-        Optional<MetodoPronostico> elegido = seleccionMetodoService.metodoElegido(codigoArticulo)
+    private MetodoPronostico metodoEfectivo(Long codigoArticulo, List<SerieDiaria> serie, int horizonte) {
+        Optional<MetodoPronostico> elegido = seleccionMetodoService.metodoElegido(codigoArticulo, horizonte)
                 .flatMap(DemandaService::aMetodo);
         if (elegido.isPresent() && MotorPronostico.elegible(elegido.get(), serie)) {
             return elegido.get();
@@ -453,14 +466,16 @@ public class DemandaService {
      * Ultimo MASE persistido del metodo con el que se pronostica, o {@code null} si el articulo
      * nunca fue evaluado con ese metodo (o su MASE quedo indefinido y se guardo como nulo).
      */
-    private Double maseAlmacenado(Long codigoArticulo, MetodoPronostico metodo) {
+    private Double maseAlmacenado(Long codigoArticulo, MetodoPronostico metodo, int horizonte) {
         List<Double> mases = entityManager.createQuery(
                         "SELECT p.mase FROM PrecisionPronostico p "
-                                + "WHERE p.articulo.codigo = :codigo AND p.metodo = :metodo AND p.mase IS NOT NULL "
+                                + "WHERE p.articulo.codigo = :codigo AND p.metodo = :metodo "
+                                + "AND p.horizonteDias = :horizonte AND p.mase IS NOT NULL "
                                 + "ORDER BY p.fechaCalculo DESC, p.id DESC",
                         Double.class)
                 .setParameter("codigo", codigoArticulo)
                 .setParameter("metodo", metodo.name())
+                .setParameter("horizonte", Math.max(1, horizonte))
                 .setMaxResults(1)
                 .getResultList();
         return mases.isEmpty() ? null : mases.get(0);
@@ -503,11 +518,6 @@ public class DemandaService {
         return residuos;
     }
 
-    /** Sigma de prediccion: desviacion tipica muestral (n - 1) de los residuos de un paso adelante. */
-    private static double sigmaResiduos(List<SerieDiaria> serie, MetodoPronostico metodo) {
-        return desviacion(residuosUnPasoAdelante(serie, metodo));
-    }
-
     /** Media del error absoluto de un paso adelante, que es el criterio de eleccion por familia. */
     private static double maeUnPasoAdelante(List<Double> residuos) {
         if (residuos.isEmpty()) {
@@ -518,46 +528,6 @@ public class DemandaService {
             suma += Math.abs(residuo);
         }
         return suma / residuos.size();
-    }
-
-    /** Desviacion tipica muestral; 0 con menos de dos observaciones (no hay dispersion que medir). */
-    private static double desviacion(List<Double> valores) {
-        if (valores.size() < 2) {
-            return 0.0;
-        }
-        double media = 0.0;
-        for (double valor : valores) {
-            media += valor;
-        }
-        media /= valores.size();
-
-        double sumaCuadrados = 0.0;
-        for (double valor : valores) {
-            double desviacion = valor - media;
-            sumaCuadrados += desviacion * desviacion;
-        }
-        return Math.sqrt(sumaCuadrados / (valores.size() - 1));
-    }
-
-    /**
-     * z del intervalo: la clave tabulada mas alta que no supera el nivel pedido. Un nivel por
-     * debajo de la clave mas baja usa esa clave, y uno por encima de la mas alta usa la mas alta;
-     * un nivel no representativo (NaN, &lt;= 0, &gt; 1) se registra y se resuelve con la clave
-     * mas baja, que es la lectura conservadora en un intervalo cuyo objeto es no quedarse corto.
-     */
-    static double valorZ(double nivelServicio) {
-        if (Double.isNaN(nivelServicio) || nivelServicio <= 0.0 || nivelServicio > 1.0) {
-            LOG.warnf("Nivel de servicio %s fuera de (0, 1]; se usa z=%.2f (nivel %.2f)",
-                    nivelServicio, Z_POR_NIVEL.firstEntry().getValue(), Z_POR_NIVEL.firstKey());
-            return Z_POR_NIVEL.firstEntry().getValue();
-        }
-        Map.Entry<Double, Double> entrada = Z_POR_NIVEL.floorEntry(nivelServicio);
-        return entrada == null ? Z_POR_NIVEL.firstEntry().getValue() : entrada.getValue();
-    }
-
-    /** Ancho del intervalo del total: {@code z * sigma * sqrt(horizonteDias)}. */
-    private static double margen(double sigma, int horizonteDias, double nivelServicio) {
-        return valorZ(nivelServicio) * sigma * Math.sqrt(horizonteDias);
     }
 
     // ------------------------------------------------------------------
@@ -612,40 +582,33 @@ public class DemandaService {
 
     /**
      * Reparte un total de familia entre sus articulos de forma proporcional a las unidades
-     * vendidas en los ultimos {@value #DIAS_PARTICIPACION} dias, con los articulos de parte cero
-     * repartiendo a partes iguales el resto no atribuido (ver el contrato de
-     * {@link #predecirFamilia}).
+     * vendidas en los ultimos {@value #DIAS_PARTICIPACION} dias. Un articulo sin venta en esa
+     * ventana recibe 0 y se marca {@link FlagCalidad#NO_RECENT_PARTICIPATION}: no se le asigna una
+     * cuota especulativa.
      */
     private Map<Long, Double> repartirPorParticipacion(double total, List<Long> miembros) {
         Map<Long, Double> unidades = new LinkedHashMap<>();
         double suma = 0.0;
         for (Long codigo : miembros) {
+            List<SerieDiaria> serie = serieDiaria(codigo);
+            int desde = Math.max(0, serie.size() - DIAS_PARTICIPACION);
             double vendido = 0.0;
-            for (SerieDiaria punto : serieDiaria(codigo)) {
-                vendido += punto.cantidad();
+            for (int i = desde; i < serie.size(); i++) {
+                vendido += serie.get(i).cantidad();
             }
             unidades.put(codigo, vendido);
             suma += vendido;
         }
 
         Map<Long, Double> reparto = new LinkedHashMap<>();
-        List<Long> sinParte = new ArrayList<>();
-        double atribuido = 0.0;
         for (Map.Entry<Long, Double> articulo : unidades.entrySet()) {
             if (suma > 0.0 && articulo.getValue() > 0.0) {
-                double cuota = total * articulo.getValue() / suma;
-                reparto.put(articulo.getKey(), cuota);
-                atribuido += cuota;
+                reparto.put(articulo.getKey(), total * articulo.getValue() / suma);
             } else {
-                sinParte.add(articulo.getKey());
-            }
-        }
-
-        double resto = total - atribuido;
-        if (!sinParte.isEmpty()) {
-            double porArticulo = resto / sinParte.size();
-            for (Long codigo : sinParte) {
-                reparto.put(codigo, porArticulo);
+                // Sin participacion reciente no se inventa una cuota: el SKU
+                // queda en cero y el llamador lo marca
+                // NO_RECENT_PARTICIPATION.
+                reparto.put(articulo.getKey(), 0.0);
             }
         }
         return reparto;
@@ -703,15 +666,9 @@ public class DemandaService {
         return (int) dias;
     }
 
-    /** Nivel de servicio configurado, validado: un valor sin sentido se registra y no se propaga. */
+    /** Nivel de servicio vigente en la configuracion de pronostico, validado por el servicio. */
     private double nivelServicioEfectivo() {
-        if (Double.isNaN(nivelServicioConfigurado) || nivelServicioConfigurado <= 0.0
-                || nivelServicioConfigurado > 1.0) {
-            LOG.warnf("mercurius.pronostico.nivel-servicio=%s no es un nivel valido; se usa %.2f",
-                    nivelServicioConfigurado, 0.95);
-            return 0.95;
-        }
-        return nivelServicioConfigurado;
+        return configuracionPronosticoService.parametros().nivelServicio();
     }
 
     /** El articulo existe: si no, se avisa y el llamador decide que hacer con el hueco. */
