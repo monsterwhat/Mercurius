@@ -75,7 +75,18 @@ public class BackupService implements Serializable {
 
     private String resolvedPgDump;
 
-    public boolean ejecutarBackup() {
+    /**
+     * Ejecuta un respaldo completo.
+     *
+     * <p><b>Serializado a propósito.</b> Antes existían dos schedulers
+     * (ProgramadorTareas y BackupScheduler) que disparaban a la misma hora y
+     * escribían el mismo archivo; el gzip resultante quedaba corrupto. El
+     * segundo scheduler se eliminó, y este lock cubre además un respaldo
+     * manual concurrente. El nombre temporal lleva un UUID para que dos
+     * ejecuciones no puedan compartir el mismo {@code .part} aunque caigan en
+     * el mismo segundo.</p>
+     */
+    public synchronized boolean ejecutarBackup() {
         Path temporal = null;
         Path finalFile = null;
         try {
@@ -101,10 +112,12 @@ public class BackupService implements Serializable {
             String timestamp = LocalDateTime.now().format(FILENAME_FORMATTER);
             String filename = BACKUP_PREFIX + timestamp + BACKUP_SUFFIX;
             finalFile = backupDir.resolve(filename);
-            // El dump se escribe en .part y solo se publica cuando la
+            // El dump se escribe en un .part unico y solo se publica cuando la
             // verificacion de gzip + checksum pasa. Un archivo parcial nunca
             // llega a tener el nombre que listarBackups() considera valido.
-            temporal = backupDir.resolve(filename + ".part");
+            // El UUID evita que dos ejecuciones en el mismo segundo compartan
+            // el .part (el nombre final conserva la convencion historica).
+            temporal = backupDir.resolve(filename + "." + java.util.UUID.randomUUID() + ".part");
 
             ProcessBuilder pb = new ProcessBuilder(buildDumpCommand(resolvePgDump(), dbInfo, dbUser));
             pb.redirectErrorStream(true);

@@ -122,6 +122,7 @@ docs/remediation/cabys-inventory.md
 docs/remediation/cabys-inventory.sql
 docs/remediation/cabys-inventory-prod.md
 docs/remediation/cabys-afectados-produccion.csv
+docs/remediation/operations-2026-11-22.md
 ```
 
 ## 3. Migración de base de datos
@@ -224,7 +225,11 @@ Correcciones posteriores a la verificación:
    multi-instancia.
 3. La reconciliación de stock reporta pero no corrige; requiere decisión
    operativa.
-4. La verificación de backup es gzip + SHA-256, no un `pg_restore` real.
+4. Se ejecutó un ensayo real de restauración el 2026-11-22 (SQL plano vía
+   `psql`, base descartable). Hallazgo: los backups diarios del 11-09 al 11-22
+   estaban corruptos porque dos schedulers escribían el mismo gzip a las 03:00;
+   se corrigió en 3.20.1 y se preservó el último backup válido (11-08). Ver
+   `docs/remediation/operations-2026-11-22.md`.
 5. Persisten joins por nombre en reportes históricos
    (`ProductPerformanceService`, `SalesTrendService`) porque las líneas de
    factura antiguas no tienen FK de artículo. El pronóstico ya no los usa.

@@ -6,7 +6,6 @@ import Models.ComprobantesRecibidos;
 import Models.Departamento;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.AppSettingsService;
-import Services.BackupService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosCorrectionService;
 import Services.ComprobantesEmitidosService;
@@ -32,7 +31,6 @@ import java.math.BigDecimal;
 import org.jboss.logging.Logger;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -67,7 +65,6 @@ public class ProgramadorTareas {
     @Inject @Nonnull private DepartamentoService departamentoService;
     @Inject @Nonnull private InventarioService inventarioService;
     @Inject @Nonnull private LoteService loteService;
-    @Inject @Nonnull private BackupService backupService;
     @Inject @Nonnull private LoyaltyService loyaltyService;
     @Inject @Nonnull private StockAlertService stockAlertService;
     @Inject @Nonnull private MensajeReceptorService mensajeReceptorService;
@@ -799,34 +796,4 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         return body.toString();
     }
 
-    @Scheduled(cron = "0 0 * * * ?")
-    public void ejecutarBackupProgramado() {
-        try {
-            ConfiguracionAplicacion currentSettings = backupService.getSettings();
-            if (currentSettings == null) return;
-
-            Boolean habilitado = currentSettings.getBackupHabilitado();
-            if (habilitado == null || !habilitado) return;
-
-            String backupHora = currentSettings.getBackupHora();
-            if (backupHora == null || backupHora.isBlank()) return;
-
-            LocalTime now = LocalTime.now();
-            LocalTime scheduledTime;
-            try {
-                scheduledTime = LocalTime.parse(backupHora);
-            } catch (java.time.format.DateTimeParseException e) {
-                return;
-            }
-
-            if (now.getHour() == scheduledTime.getHour() && now.getMinute() == scheduledTime.getMinute()) {
-                LOG.info("failed to ejecutar backup programado");
-                backupService.ejecutarBackup();
-            }
-
-        } catch (RuntimeException e) {
-            LOG.warn("failed to ejecutar backup programado", e);
-        }
-    }
-    
 }
